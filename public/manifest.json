@@ -1,0 +1,20 @@
+{
+  "name": "Pet & Plant Pro",
+  "short_name": "PetPlantPro",
+  "description": "Centro Inteligente Seguro para el Cuidado Clínico y Botánico",
+  "start_url": "/",
+  "scope": "/",
+  "id": "/?source=pwa",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#2e7d32",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

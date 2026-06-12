@@ -1,0 +1,370 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Orbitron:wght@400;700&display=swap');
+
+:root {
+  --text: #6b6375;
+  --text-h: #08060d;
+  --bg: #fff;
+  --border: #e5e4e7;
+  --code-bg: #f4f3ec;
+  --accent: #aa3bff;
+  --accent-bg: rgba(170, 59, 255, 0.1);
+  --accent-border: rgba(170, 59, 255, 0.5);
+  --social-bg: rgba(244, 243, 236, 0.5);
+  --shadow:
+    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+
+  font: 18px/145% var(--sans);
+  letter-spacing: 0.18px;
+  color-scheme: light dark;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  @media (max-width: 1024px) {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #9ca3af;
+    --text-h: #f3f4f6;
+    --bg: #16171d;
+    --border: #2e303a;
+    --code-bg: #1f2028;
+    --accent: #c084fc;
+    --accent-bg: rgba(192, 132, 252, 0.15);
+    --accent-border: rgba(192, 132, 252, 0.5);
+    --social-bg: rgba(47, 48, 58, 0.5);
+    --shadow:
+      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+  }
+
+  #social .button-icon {
+    filter: invert(1) brightness(2);
+  }
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  text-align: center;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+h1,
+h2 {
+  font-family: var(--heading);
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+h1 {
+  font-size: 56px;
+  letter-spacing: -1.68px;
+  margin: 32px 0;
+  @media (max-width: 1024px) {
+    font-size: 36px;
+    margin: 20px 0;
+  }
+}
+h2 {
+  font-size: 24px;
+  line-height: 118%;
+  letter-spacing: -0.24px;
+  margin: 0 0 8px;
+  @media (max-width: 1024px) {
+    font-size: 20px;
+  }
+}
+p {
+  margin: 0;
+}
+
+code,
+.counter {
+  font-family: var(--mono);
+  display: inline-flex;
+  border-radius: 4px;
+  color: var(--text-h);
+}
+
+code {
+  font-size: 15px;
+  line-height: 135%;
+  padding: 4px 8px;
+  background: var(--code-bg);
+}
+
+
+
+/* Tema Gaming (Cyberpunk + Zelda + Minecraft) - Anteriormente adventure */
+[data-game-theme="gaming"] {
+  --bg: #0b0c10;
+  --game-bg: #0b0c10;
+  --game-card-bg: rgba(31, 40, 51, 0.88);
+  --game-border-color: #66fcf1;
+  --game-border: 2px solid #66fcf1;
+  --game-text: #c5a1ff;
+  --game-text-bright: #66fcf1;
+  --game-accent: #fbee09;
+  --game-font: 'Orbitron', monospace;
+  --game-accent-light: rgba(102, 252, 241, 0.1);
+  --game-radius: 0px;
+  --game-shadow: 0 0 15px rgba(102, 252, 241, 0.4);
+  --game-bg-image: linear-gradient(rgba(11, 12, 16, 0.75), rgba(11, 12, 16, 0.75)), url("/flow_lab_imagenes/carga_gaming.webp");
+}
+
+/* Tema Nature (Orgánico, verde y natural) - Por defecto */
+[data-game-theme="nature"] {
+  --bg: #f3f7f4;
+  --game-bg: #f3f7f4;
+  --game-card-bg: rgba(255, 255, 255, 0.88);
+  --game-border-color: #2e7d32;
+  --game-border: 1px solid #c8e6c9;
+  --game-text: #2e7d32;
+  --game-text-bright: #1b5e20;
+  --game-accent: #81c784;
+  --game-font: 'Outfit', sans-serif;
+  --game-accent-light: rgba(76, 175, 80, 0.1);
+  --game-radius: 20px;
+  --game-shadow: 0 10px 30px rgba(46, 125, 50, 0.06), 0 4px 12px rgba(0,0,0,0.02);
+  --game-bg-image: linear-gradient(rgba(243, 247, 244, 0.8), rgba(243, 247, 244, 0.8)), url("/flow_lab_imagenes/carga_nature.webp");
+}
+
+/* Tema Kawaii (Estilo burbuja, rosa pastel y adorable) */
+[data-game-theme="kawaii"] {
+  --bg: #fff5f7;
+  --game-bg: #fff5f7;
+  --game-card-bg: rgba(255, 255, 255, 0.88);
+  --game-border-color: #ffb6c1;
+  --game-border: 3px dashed #ffb6c1;
+  --game-text: #b05273;
+  --game-text-bright: #ff6b8b;
+  --game-accent: #da70d6;
+  --game-font: 'Fredoka', sans-serif;
+  --game-accent-light: rgba(255, 182, 193, 0.25);
+  --game-radius: 28px;
+  --game-shadow: 0 10px 25px rgba(255, 182, 193, 0.35);
+  --game-bg-image: linear-gradient(rgba(255, 245, 247, 0.82), rgba(255, 245, 247, 0.82)), url("/flow_lab_imagenes/carga_kawaii.webp");
+}
+
+/* Animaciones y rebotes Kawaii */
+[data-game-theme="kawaii"] button,
+[data-game-theme="kawaii"] select,
+[data-game-theme="kawaii"] input {
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s, border-color 0.2s;
+}
+
+[data-game-theme="kawaii"] button:hover {
+  transform: scale(1.06) rotate(-1deg);
+}
+
+[data-game-theme="kawaii"] button:active {
+  transform: scale(0.95);
+}
+
+/* Animaciones de Logros de Videojuegos */
+@keyframes skyrimLevelUp {
+  0% { transform: scale(0.6) translateY(-50px); opacity: 0; }
+  15% { transform: scale(1.05) translateY(0); opacity: 1; }
+  20% { transform: scale(1); opacity: 1; }
+  90% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.9) translateY(-20px); opacity: 0; }
+}
+
+@keyframes sfVictory {
+  0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+  10% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+  15% { transform: scale(1) rotate(0deg); opacity: 1; }
+  90% { transform: scale(1) rotate(0deg); opacity: 1; }
+  100% { transform: scale(0.5) translateY(50px); opacity: 0; }
+}
+
+.skyrim-banner {
+  animation: skyrimLevelUp 3s forwards;
+}
+
+.sf-victory-banner {
+  animation: sfVictory 3s ease-in-out forwards;
+}
+
+/* Animaciones flotantes para adornos de la Landing */
+@keyframes landingFloat {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(3deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+.landing-decorator {
+  animation: landingFloat 6s ease-in-out infinite;
+  pointer-events: none;
+  user-select: none;
+  font-size: 26px;
+  opacity: 0.55;
+  transition: opacity 0.3s;
+}
+
+.landing-decorator-delay {
+  animation: landingFloat 8s ease-in-out infinite;
+  animation-delay: 2.5s;
+  pointer-events: none;
+  user-select: none;
+  font-size: 26px;
+  opacity: 0.55;
+  transition: opacity 0.3s;
+}
+
+html, body, #root {
+  max-width: 100vw;
+  overflow-x: hidden !important;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+*, *:before, *:after {
+  box-sizing: border-box;
+}
+
+.printable-clinical-record, 
+.dashboard-card {
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   MEJORAS DE ACCESIBILIDAD, SIMETRÍA Y COMPACTACIÓN PARA MÓVILES
+   ========================================================================== */
+
+/* Tamaño de letra un pelín más grande para mejorar legibilidad en inputs y botones */
+input, select, textarea, button {
+  font-size: 13.5px !important;
+}
+
+/* Simetría, alineación y orden en botones */
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+/* Contraste mejorado para el tema Kawaii (letras más oscuras sobre fondos claros/grises) */
+[data-game-theme="kawaii"] {
+  --game-text: #701c37 !important; /* Rosa oscuro frambuesa para alto contraste */
+  --game-text-bright: #9e1b3b !important; /* Fucsia/Cereza oscuro para títulos legibles */
+}
+
+/* Contraste mejorado para el tema Gaming (letras más brillantes sobre fondos oscuros) */
+[data-game-theme="gaming"] {
+  --game-text: #e0d0ff !important; /* Lila/Lavanda claro para legibilidad óptima */
+  --game-text-bright: #66fcf1 !important; /* Cyan neon */
+}
+
+/* Ajustes para el Consultor IA en móvil y escritorio (evita el scroll vertical completo de la pantalla) y centrado de chat */
+.ia-view-wrapper {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 720px) minmax(0, 1fr);
+  gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  align-items: flex-start;
+  box-sizing: border-box;
+}
+
+.ia-view-wrapper.has-emergency {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 720px) minmax(240px, 1fr);
+}
+
+.ia-chat-container {
+  grid-column: 2;
+  height: calc(100vh - 340px) !important;
+  max-height: 520px !important;
+  min-height: 320px !important;
+}
+
+@media (max-width: 950px) {
+  .ia-view-wrapper, .ia-view-wrapper.has-emergency {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .chat-spacer-left, .chat-spacer-right {
+    display: none !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .ia-chat-container {
+    height: calc(100svh - 240px) !important;
+    min-height: 280px !important;
+    max-height: none !important;
+  }
+  
+  /* Convertir el panel lateral de emergencias veterinarias en un modal flotante centrado en móvil */
+  .emergency-panel-responsive {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 90% !important;
+    max-width: 320px !important;
+    z-index: 9999 !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4) !important;
+    background: #ffebee !important;
+    color: #c62828 !important;
+    border: 2px solid #ef5350 !important;
+  }
+
+  /* Temas apilados en móvil (1, 1, 1) y centrados */
+  .theme-buttons-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .theme-button-item {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
+
+/* Animation for active voice recording button */
+@keyframes micPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    transform: scale(1);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+    transform: scale(1.05);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    transform: scale(1);
+  }
+}
+.mic-active-pulse {
+  animation: micPulse 1.2s infinite ease-in-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mic-active-pulse {
+    animation: none;
+  }
+}
+
