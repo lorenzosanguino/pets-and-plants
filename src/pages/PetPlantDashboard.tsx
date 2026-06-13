@@ -309,21 +309,23 @@ export const PetPlantDashboard: React.FC = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [experienceMode, activeTab, showScanner, showManualRegister]);
 
-  // Registrar el Service Worker al montar
+  // Limpieza agresiva de Service Workers y cachés antiguas para corregir fichas en móviles
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      // Forzar recarga automática al detectar nueva versión del service worker
-      let refreshing = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!refreshing) {
-          refreshing = true;
-          window.location.reload();
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister().then(() => {
+            console.log('Service Worker desregistrado para actualizar la aplicación.');
+          });
         }
       });
-
-      navigator.serviceWorker.register('/sw.js')
-        .then(() => console.log('Service Worker registrado correctamente'))
-        .catch(err => console.warn('Error al registrar Service Worker:', err));
+    }
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        Promise.all(names.map(name => caches.delete(name))).then(() => {
+          console.log('Caché del navegador vaciada con éxito.');
+        });
+      });
     }
   }, []);
 
