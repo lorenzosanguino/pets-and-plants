@@ -15,7 +15,7 @@ interface ExoticCardProps {
   onToggleExpand?: () => void;
 }
 
-export const ExoticCard: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpenScanner, isExpanded: propExpanded, onToggleExpand }) => {
+const ExoticCardComponent: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpenScanner, isExpanded: propExpanded, onToggleExpand }) => {
   const cuota = IAQuotaManager.obtenerEstadoCuota();
   const [localExpanded, setLocalExpanded] = useState(false);
   const isExpanded = propExpanded !== undefined ? propExpanded : localExpanded;
@@ -1256,3 +1256,5 @@ export const ExoticCard: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpe
     </div>
   );
 };
+
+export const ExoticCard = React.memo(ExoticCardComponent);

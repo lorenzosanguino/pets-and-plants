@@ -21,7 +21,7 @@ export class NotificationManager {
             icon,
             vibrate: [200, 100, 200],
             badge: icon
-          } as any);
+          } as NotificationOptions);
           return;
         }
       } catch (err) {

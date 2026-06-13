@@ -14,7 +14,7 @@ interface PlantCardProps {
   onToggleExpand?: () => void;
 }
 
-export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenScanner, isExpanded, onToggleExpand }) => {
+const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenScanner, isExpanded, onToggleExpand }) => {
   const cuota = IAQuotaManager.obtenerEstadoCuota();
   const [localExpanded, setLocalExpanded] = useState(false);
   const expanded = isExpanded !== undefined ? isExpanded : localExpanded;
@@ -1755,3 +1755,5 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
     </div>
   );
 };
+
+export const PlantCard = React.memo(PlantCardComponent);

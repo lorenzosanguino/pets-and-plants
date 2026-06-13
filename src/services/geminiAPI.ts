@@ -447,7 +447,7 @@ CRÍTICO - NAVEGACIÓN Y ACCESO A FICHAS: Si el usuario te pide abrir, ir, ver, 
           const esTextoMuyCortoPuroSaludo = text.trim().length < 15 &&
             (text.includes('hola') || text.includes('buenas') || text.includes('hey') || text.includes('buenos') || text === 'hi' || text === 'hello');
           if (esTextoMuyCortoPuroSaludo) {
-            let saludoMsg = "";
+            let saludoMsg: string;
             if (tipoConsultor === 'veterinario') {
               saludoMsg = "Hola. Como consultor de bienestar y medicina preventiva veterinaria, estoy aquí para resolver tus dudas de forma cercana y profesional. Puedes preguntarme sobre la dieta de tu mascota, su comportamiento, enriquecimiento ambiental, cuidados en casa o pautas preventivas generales. ¡Dime en qué te puedo ayudar hoy!";
             } else if (tipoConsultor === 'exoticos') {
@@ -544,7 +544,7 @@ CRÍTICO - NAVEGACIÓN Y ACCESO A FICHAS: Si el usuario te pide abrir, ir, ver, 
           }
 
           // 13. Pregunta genérica conversacional: respuesta contextual en lugar del saludo
-          let respuestaGenerica = "";
+          let respuestaGenerica: string;
           if (tipoConsultor === 'veterinario') {
             respuestaGenerica = `Entiendo tu consulta. Como especialista en medicina y bienestar animal, intentaré orientarte de la mejor manera posible.\n\nPara darte una respuesta más precisa y útil, necesitaría un poco más de contexto sobre lo que estás observando en tu mascota. Puedo ayudarte con temas como:\n\n• 🍽️ Dieta y alimentación específica por especie y edad\n• 💊 Medicamentos, desparasitación y calendario de vacunas\n• 🏠 Enriquecimiento ambiental y bienestar en el hogar\n• 🩺 Interpretación de síntomas y cuándo acudir a urgencias\n• ✂️ Castración, cirugías y postoperatorios\n• 👵 Cuidados de mascotas senior\n\n¿Me puedes contar con más detalle qué está pasando o qué te preocupa? Si tienes una foto del problema (herida, lesión, parásito), también puedes enviármela usando el botón 📷 de la barra inferior.`;
           } else if (tipoConsultor === 'exoticos') {
@@ -560,7 +560,7 @@ CRÍTICO - NAVEGACIÓN Y ACCESO A FICHAS: Si el usuario te pide abrir, ir, ver, 
         }
 
         // Si SÍ hay una imagen adjunta (o simulatedTemplateKey), usamos las respuestas clínicas por defecto (con tratamientos y alertas separados)
-        let key: any = 'vet_herida';
+        let key: any;
         if (simulatedTemplateKey) {
           key = simulatedTemplateKey;
         } else {

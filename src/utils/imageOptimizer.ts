@@ -53,8 +53,8 @@ export class ImageOptimizer {
             const blob = new Blob([u8arr], { type: mime });
             
             resolve({ blob, dataUrl });
-          } catch (err: any) {
-            reject(new Error("Fallo al optimizar y generar el Blob de la imagen: " + err.message));
+          } catch (err) {
+            reject(new Error("Fallo al optimizar y generar el Blob de la imagen: " + (err instanceof Error ? err.message : String(err))));
           }
         };
         img.onerror = () => reject(new Error("Error al cargar la imagen en memoria"));

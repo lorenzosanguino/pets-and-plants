@@ -1,10 +1,11 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
 import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { LocalDatabase } from '../database/db';
-import type { Mascota, Planta, AnimalExotico } from '../database/types';
+import type { Mascota, Planta, AnimalExotico, EventoCalendario } from '../database/types';
 import { initFirebase, getFirebaseCached } from '../database/firebaseLazy';
 import { WeatherService } from '../services/weatherService';
 import { MicrosoftSyncService } from '../services/microsoftSync';
+import { NotificationManager } from '../utils/notificationManager';
 
 
 // ── Lazy-loaded components (se descargan solo cuando se necesitan) ──────────
@@ -141,11 +142,22 @@ export const PetPlantDashboard: React.FC = () => {
     setLoadingGPS(true);
     setGpsSyncSuccess(null);
     try {
-      const coords = await WeatherService.getCoordenadasGPS();
-      const clima = await WeatherService.obtenerClimaEnVivo(coords.latitude, coords.longitude);
+      // Comprobar caché climática con TTL de 15 minutos (900.000 ms)
+      const cachedWeather = localStorage.getItem('petplant_last_gps_weather');
+      const cachedTime = Number(localStorage.getItem('petplant_last_gps_time') || 0);
       
-      // Guardar clima obtenido en caché local
-      localStorage.setItem('petplant_last_gps_weather', JSON.stringify(clima));
+      let clima;
+      if (cachedWeather && (Date.now() - cachedTime < 15 * 60 * 1000)) {
+        console.log("Reutilizando datos climáticos en caché (TTL activo).");
+        clima = JSON.parse(cachedWeather);
+      } else {
+        const coords = await WeatherService.getCoordenadasGPS();
+        clima = await WeatherService.obtenerClimaEnVivo(coords.latitude, coords.longitude);
+        
+        // Guardar clima obtenido en caché local con timestamp
+        localStorage.setItem('petplant_last_gps_weather', JSON.stringify(clima));
+        localStorage.setItem('petplant_last_gps_time', Date.now().toString());
+      }
 
       const listPlantas = await LocalDatabase.getPlantas();
       for (const p of listPlantas) {
@@ -172,8 +184,9 @@ export const PetPlantDashboard: React.FC = () => {
       try {
         const climaSimulado = await WeatherService.obtenerClimaEnVivo(40.4167, -3.7037);
         
-        // Guardar clima simulado obtenido en caché local
+        // Guardar clima simulado obtenido en caché local con timestamp
         localStorage.setItem('petplant_last_gps_weather', JSON.stringify(climaSimulado));
+        localStorage.setItem('petplant_last_gps_time', Date.now().toString());
 
         const listPlantas = await LocalDatabase.getPlantas();
         for (const p of listPlantas) {
@@ -244,6 +257,17 @@ export const PetPlantDashboard: React.FC = () => {
       window.removeEventListener('offline', goOffline);
     };
   }, []);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (showManualRegister) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [showManualRegister]);
 
   const handleInstallPWA = async () => {
     if (!deferredPrompt) return;
@@ -319,20 +343,13 @@ export const PetPlantDashboard: React.FC = () => {
     }
 
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then((registrations) => {
-        for (const registration of registrations) {
-          registration.unregister().then(() => {
-            console.log('Service Worker desregistrado para actualizar la aplicación.');
-          });
-        }
-      });
-    }
-    if ('caches' in window) {
-      caches.keys().then((names) => {
-        Promise.all(names.map(name => caches.delete(name))).then(() => {
-          console.log('Caché del navegador vaciada con éxito.');
+      navigator.serviceWorker.register('/sw.js')
+        .then((reg) => {
+          console.log('Service Worker registrado con éxito en scope:', reg.scope);
+        })
+        .catch((err) => {
+          console.error('Error al registrar Service Worker:', err);
         });
-      });
     }
   }, []);
 
@@ -340,11 +357,229 @@ export const PetPlantDashboard: React.FC = () => {
 
   // Estados para Grupo Hogar (Moved to top of component to prevent TDZ errors)
 
+  const renderConnectivityIndicator = () => {
+    let ledColor = '#757575'; // Gray
+    let text = 'Sin Conexión';
+    let isPulsing = false;
+    let titleTip = 'Estás en modo sin conexión. Los cambios se guardarán localmente.';
+
+    if (isOffline) {
+      ledColor = '#f44336'; // Red
+      text = 'Offline';
+      isPulsing = true;
+      titleTip = 'Sin conexión a internet. Funcionando en modo local.';
+    } else {
+      // Online
+      if (!hogarId) {
+        ledColor = '#2196f3'; // Blue (Online, local database only)
+        text = 'Online (Local)';
+        isPulsing = false;
+        titleTip = 'Conectado a internet. Datos guardados localmente. Configura la nube en Ajustes para sincronizar.';
+      } else {
+        // Connected to Cloud
+        if (syncStatus === 'synced') {
+          ledColor = '#4caf50'; // Green
+          text = 'Nube OK';
+          isPulsing = true;
+          titleTip = 'Sincronizado con la nube de forma segura.';
+        } else if (syncStatus === 'syncing') {
+          ledColor = '#ff9800'; // Amber/Orange
+          text = 'Sincronizando...';
+          isPulsing = true;
+          titleTip = 'Subiendo o descargando cambios en tiempo real...';
+        } else if (syncStatus === 'error') {
+          ledColor = '#f44336'; // Red
+          text = 'Error Nube';
+          isPulsing = true;
+          titleTip = 'Error al sincronizar con la nube. Se reintentará automáticamente.';
+        } else {
+          ledColor = '#4caf50'; // Green
+          text = 'Conectado';
+          isPulsing = false;
+          titleTip = 'Conectado al grupo hogar.';
+        }
+      }
+    }
+
+    return (
+      <div 
+        title={titleTip}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '4px 10px',
+          background: uiTheme === 'gaming' ? 'rgba(0,0,0,0.4)' : 'rgba(255, 255, 255, 0.7)',
+          border: uiTheme === 'gaming' ? '1px solid var(--game-border-color)' : '1px solid #eaeaea',
+          borderRadius: '20px',
+          fontSize: '11px',
+          fontWeight: 'bold',
+          color: 'var(--game-text-bright, #333)',
+          fontFamily: 'var(--game-font, sans-serif)',
+          cursor: 'help',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+          transition: 'all 0.3s ease',
+          margin: '4px 0'
+        }}
+      >
+        <span 
+          style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            backgroundColor: ledColor,
+            boxShadow: `0 0 8px ${ledColor}`,
+            display: 'inline-block',
+            animation: isPulsing ? 'ledPulse 1.5s infinite alternate' : 'none'
+          }} 
+        />
+        <span>{text}</span>
+      </div>
+    );
+  };
+
   const dispararLogroVisual = (texto: string, subtitulo: string, tipo: 'lvl_up' | 'victory') => {
     // No-op para desactivar mensajes de level up
     void texto;
     void subtitulo;
     void tipo;
+  };
+
+  const notificadosRef = useRef<Set<string>>(new Set());
+
+  const evaluarRecordatoriosMañana = async () => {
+    try {
+      const listEventos: EventoCalendario[] = await LocalDatabase.getEventosCalendario();
+      
+      // Obtener la fecha de mañana en formato YYYY-MM-DD local
+      const mañana = new Date();
+      mañana.setDate(mañana.getDate() + 1);
+      
+      // Formato YYYY-MM-DD local
+      const año = mañana.getFullYear();
+      const mes = String(mañana.getMonth() + 1).padStart(2, '0');
+      const dia = String(mañana.getDate()).padStart(2, '0');
+      const mañanaStr = `${año}-${mes}-${dia}`;
+
+      const eventosMañana = listEventos.filter(ev => 
+        ev.fecha === mañanaStr && 
+        !ev.completado && 
+        !notificadosRef.current.has(ev.id)
+      );
+
+      if (eventosMañana.length === 0) return;
+
+      const permisoConcedido = await NotificationManager.requestPermission();
+      if (!permisoConcedido) return;
+
+      for (const ev of eventosMañana) {
+        notificadosRef.current.add(ev.id);
+        
+        let prefijo = '📅 Recordatorio';
+        if (ev.categoria === 'veterinario') prefijo = '🐾 Veterinaria';
+        else if (ev.categoria === 'riego') prefijo = '💧 Riego';
+        else if (ev.categoria === 'medicacion') prefijo = '💊 Medicación';
+        else if (ev.categoria === 'abono') prefijo = '🌿 Abono';
+
+        await NotificationManager.sendNotification(
+          `${prefijo} para mañana`,
+          ev.texto
+        );
+      }
+    } catch (err) {
+      console.warn("Error al evaluar recordatorios de mañana:", err);
+    }
+  };
+
+  const exportarCopiaSeguridad = async () => {
+    try {
+      const listMascotas = await LocalDatabase.getMascotas();
+      const listPlantas = await LocalDatabase.getPlantas();
+      const listExoticos = await LocalDatabase.getExoticos();
+      const listEventos = await LocalDatabase.getEventosCalendario();
+      
+      const chats = [];
+      const consultantIds = ['veterinario', 'agronomo', 'exotico'];
+      for (const id of consultantIds) {
+        const chat = await LocalDatabase.getChatHistorial(id);
+        if (chat) chats.push(chat);
+      }
+
+      const backupData = {
+        mascotas: listMascotas,
+        plantas: listPlantas,
+        exoticos: listExoticos,
+        eventos: listEventos,
+        chats: chats,
+        exportadoEn: new Date().toISOString(),
+        version: 2
+      };
+
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const fechaStr = new Date().toISOString().slice(0, 10);
+      a.download = `copia-seguridad-ecosistema-${fechaStr}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      alert("Copia de seguridad exportada con éxito. Revisa tus descargas.");
+    } catch (err) {
+      console.error("Fallo al exportar copia de seguridad:", err);
+      alert("Error al exportar la copia de seguridad. Revisa la consola para más detalles.");
+    }
+  };
+
+  const importarCopiaSeguridad = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const confirmacion = window.confirm(
+      "ATENCIÓN: Importar esta copia de seguridad sobrescribirá todos tus datos locales de mascotas, plantas, exóticos, eventos de calendario y chats. ¿Seguro que deseas continuar?"
+    );
+    if (!confirmacion) {
+      e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const content = evt.target?.result as string;
+        const data = JSON.parse(content);
+
+        // Validación básica
+        if (!data || (!Array.isArray(data.mascotas) && !Array.isArray(data.plantas) && !Array.isArray(data.exoticos))) {
+          throw new Error("El archivo JSON no tiene un formato de copia de seguridad válido.");
+        }
+
+        const importMascotas = Array.isArray(data.mascotas) ? data.mascotas : [];
+        const importPlantas = Array.isArray(data.plantas) ? data.plantas : [];
+        const importExoticos = Array.isArray(data.exoticos) ? data.exoticos : [];
+        const importEventos = Array.isArray(data.eventos) ? data.eventos : [];
+        const importChats = Array.isArray(data.chats) ? data.chats : [];
+
+        await LocalDatabase.overwriteFullDatabase(
+          importMascotas,
+          importPlantas,
+          importExoticos,
+          importEventos,
+          importChats
+        );
+
+        await refreshData(true);
+        alert("¡Copia de seguridad importada correctamente!");
+      } catch (err: any) {
+        console.error("Error al importar copia de seguridad:", err);
+        alert(`Fallo al importar: ${err.message || 'Formato de archivo inválido'}`);
+      } finally {
+        e.target.value = '';
+      }
+    };
+    reader.readAsText(file);
   };
 
   const refreshData = async (isLocalEdit = true) => {
@@ -381,6 +616,9 @@ export const PetPlantDashboard: React.FC = () => {
             });
         }
       }
+
+      // Evaluar recordatorios de agenda para mañana de manera asíncrona
+      evaluarRecordatoriosMañana();
     } catch (err) {
       console.error("Fallo al refrescar IndexedDB:", err);
     }
@@ -1688,16 +1926,20 @@ export const PetPlantDashboard: React.FC = () => {
                     {experienceMode === 'pets' ? 'Ecosistema de Bienestar Animal' : experienceMode === 'exotics' ? 'Ecosistema de Animales Exóticos' : 'Ecosistema de Cultivo Botánico'}
                   </h1>
                 </div>
-                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
+                <p style={{ margin: '4px 0 8px 0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
                   {experienceMode === 'pets' ? 'Gestión preventiva de expedientes y nutrición' : experienceMode === 'exotics' ? 'Terrarios, mudas, humedad y control preventivo' : 'Control agronómico y catálogo biocomparativo'}
                 </p>
+                {renderConnectivityIndicator()}
               </div>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                 <span style={{ fontSize: '20px' }}>{experienceMode === 'pets' ? '🐾' : experienceMode === 'exotics' ? '🦎' : '🌿'}</span>
                 <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--game-text-bright, #1a1a1a)', fontFamily: 'var(--game-font, sans-serif)' }}>
                   {experienceMode === 'pets' ? 'Consultor de Mascotas' : experienceMode === 'exotics' ? 'Consultor de Exóticos' : 'Consultor de Plantas'}
                 </span>
+                <div style={{ marginLeft: '8px', display: 'inline-block' }}>
+                  {renderConnectivityIndicator()}
+                </div>
               </div>
             )}
             
@@ -2762,10 +3004,81 @@ export const PetPlantDashboard: React.FC = () => {
                       </p>
                     )}
                   </div>
-                </div>
-
               </div>
-            )}
+
+              {/* COPIA DE SEGURIDAD LOCAL */}
+              <div style={{
+                borderTop: 'var(--game-border, 1px solid #f0f0f0)',
+                paddingTop: '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px'
+              }}>
+                <div>
+                  <h3 style={{ 
+                    margin: '0 0 4px 0', 
+                    fontSize: '18px', 
+                    color: 'var(--game-text-bright, #1a1a1a)', 
+                    fontWeight: 'bold',
+                    fontFamily: 'var(--game-font, sans-serif)'
+                  }}>
+                    💾 Copia de Seguridad Local (Exportar/Importar)
+                  </h3>
+                  <p style={{ margin: '0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', lineHeight: '1.4' }}>
+                    Guarda una copia de respaldo completa de tu ecosistema (mascotas, plantas, exóticos, agenda y chats) en un archivo JSON en tu ordenador, o restaura tus datos desde un archivo guardado previamente.
+                  </p>
+                </div>
+                
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <button
+                    onClick={exportarCopiaSeguridad}
+                    style={{
+                      padding: '10px 20px',
+                      background: 'var(--game-accent, #2e7d32)',
+                      color: uiTheme === 'gaming' ? '#000' : '#fff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      fontFamily: 'var(--game-font, sans-serif)',
+                      boxShadow: '0 4px 12px rgba(46, 125, 50, 0.15)',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    Exportar Datos (JSON) 📤
+                  </button>
+                  
+                  <label
+                    style={{
+                      padding: '10px 20px',
+                      background: 'transparent',
+                      color: 'var(--game-text, #2e7d32)',
+                      border: '2px dashed var(--game-border-color, #2e7d32)',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      fontFamily: 'var(--game-font, sans-serif)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    Importar Datos (JSON) 📥
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={importarCopiaSeguridad}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                </div>
+              </div>
+
+            </div>
+          )}
 
           </div>
 

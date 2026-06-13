@@ -321,7 +321,12 @@ export class LocalDatabase {
     return new Promise((resolve, reject) => {
       const tx = db.transaction('chats_consultor', 'readwrite');
       const store = tx.objectStore('chats_consultor');
-      store.put(chat);
+      
+      // Limitar el array de mensajes a los últimos 20 para optimizar almacenamiento local
+      const mensajesLimitados = chat.mensajes.slice(-20);
+      const chatLimitado = { ...chat, mensajes: mensajesLimitados };
+
+      store.put(chatLimitado);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));

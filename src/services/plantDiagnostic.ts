@@ -9,6 +9,7 @@ export interface DiagnosticoPlanta {
 }
 
 export class PlantDiagnosticService {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   static diagnose(_imageBlob: Blob): Promise<DiagnosticoPlanta> {
     return new Promise((resolve) => {
       setTimeout(() => {
