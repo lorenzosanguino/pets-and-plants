@@ -244,9 +244,9 @@ export const ExoticCard: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpe
           font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
           color: #0f172a !important;
           background: #ffffff !important;
-          padding: 20px !important;
-          font-size: 11px !important;
-          line-height: 1.4 !important;
+          padding: 15px !important;
+          font-size: 10px !important;
+          line-height: 1.3 !important;
           width: 210mm !important;
           height: 297mm !important;
           max-height: 297mm !important;
@@ -264,28 +264,28 @@ export const ExoticCard: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpe
           color: #7c2d12 !important;
         }
         .print-container h1 {
-          font-size: 20px !important;
+          font-size: 17px !important;
           font-weight: 800 !important;
           border-bottom: 2px solid #ea580c !important;
-          padding-bottom: 6px !important;
-          margin-bottom: 15px !important;
+          padding-bottom: 4px !important;
+          margin-bottom: 8px !important;
           display: flex !important;
           justify-content: space-between !important;
           align-items: flex-end !important;
         }
         .print-container h1 span {
-          font-size: 10px !important;
+          font-size: 9px !important;
           font-weight: 500 !important;
           color: #64748b !important;
           text-transform: uppercase !important;
           letter-spacing: 0.05em !important;
         }
         .print-container h3 {
-          font-size: 12px !important;
+          font-size: 11px !important;
           font-weight: 700 !important;
           border-bottom: 1.5px solid #e2e8f0 !important;
-          padding-bottom: 4px !important;
-          margin-bottom: 8px !important;
+          padding-bottom: 3px !important;
+          margin-bottom: 6px !important;
           color: #7c2d12 !important;
           text-transform: uppercase !important;
           letter-spacing: 0.02em !important;
@@ -299,11 +299,12 @@ export const ExoticCard: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpe
         .print-container .left-col, .print-container .right-col {
           display: flex !important;
           flex-direction: column !important;
-          gap: 15px !important;
+          gap: 9px !important;
         }
         .print-container .photo-container {
           width: 100% !important;
-          height: 150px !important;
+          aspect-ratio: 1 / 1 !important;
+          max-height: 155px !important;
           border-radius: 8px !important;
           overflow: hidden !important;
           border: 1px solid #e2e8f0 !important;
@@ -311,11 +312,13 @@ export const ExoticCard: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpe
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
+          margin: 0 auto !important;
         }
         .print-container .photo-container img {
           width: 100% !important;
           height: 100% !important;
-          object-fit: cover !important;
+          object-fit: contain !important;
+          background: #f8fafc !important;
         }
         .print-container .photo-placeholder {
           font-size: 64px !important;
@@ -326,7 +329,7 @@ export const ExoticCard: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpe
         }
         .print-container .details-table th, .print-container .details-table td {
           text-align: left !important;
-          padding: 5px 0 !important;
+          padding: 4px 0 !important;
           border-bottom: 1px solid #f1f5f9 !important;
         }
         .print-container .details-table th {
@@ -341,10 +344,10 @@ export const ExoticCard: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpe
         .print-container .timeline {
           display: flex !important;
           flex-direction: column !important;
-          gap: 8px !important;
+          gap: 5px !important;
         }
         .print-container .timeline-item {
-          padding: 8px !important;
+          padding: 6px !important;
           background: #f8fafc !important;
           border-left: 3px solid #cbd5e1 !important;
           border-radius: 0 4px 4px 0 !important;
