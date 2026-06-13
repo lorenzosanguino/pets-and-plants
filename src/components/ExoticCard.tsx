@@ -248,12 +248,15 @@ export const ExoticCard: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpe
           font-size: 11px !important;
           line-height: 1.4 !important;
           width: 100% !important;
+          max-height: 297mm !important;
+          overflow: hidden !important;
           box-sizing: border-box !important;
         }
         .print-container * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
           box-sizing: border-box !important;
+          page-break-inside: avoid !important;
         }
         .print-container h1, .print-container h2, .print-container h3, .print-container h4 {
           margin: 0 !important;
@@ -299,7 +302,7 @@ export const ExoticCard: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpe
         }
         .print-container .photo-container {
           width: 100% !important;
-          height: 180px !important;
+          height: 150px !important;
           border-radius: 8px !important;
           overflow: hidden !important;
           border: 1px solid #e2e8f0 !important;
