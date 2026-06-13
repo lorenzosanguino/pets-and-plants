@@ -630,6 +630,50 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
             }} title={planta.nombreCientifico || ''}>
               {planta.nombreCientifico || 'Sin Taxonomía Científica'}
             </div>
+            
+            {/* Badges de Hidratación y Riego rápidos */}
+            <div style={{ display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
+              <span style={(() => {
+                const color = diasRestantes > 0 ? '#1976d2' : '#d32f2f';
+                const bg = diasRestantes > 0 ? 'rgba(25, 118, 210, 0.08)' : 'rgba(211, 47, 47, 0.08)';
+                return {
+                  fontSize: '10px',
+                  background: bg,
+                  color: color,
+                  border: `1.5px solid ${color}`,
+                  padding: '2px 8px',
+                  borderRadius: theme === 'kawaii' ? '12px' : '6px',
+                  fontWeight: 'bold',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontFamily: 'var(--game-font, sans-serif)'
+                };
+              })()}>
+                📅 {diasRestantes > 0 ? `Quedan ${diasRestantes} días` : '¡Toca regar hoy!'}
+              </span>
+
+              <span style={(() => {
+                const percent = Math.max(0, Math.min(100, Math.round((diasRestantes / planta.intervaloRiegoDias) * 100)));
+                const color = percent > 50 ? '#2e7d32' : (percent > 20 ? '#ef6c00' : '#c62828');
+                const bg = percent > 50 ? 'rgba(46, 125, 80, 0.08)' : (percent > 20 ? 'rgba(239, 108, 0, 0.08)' : 'rgba(198, 40, 40, 0.08)');
+                return {
+                  fontSize: '10px',
+                  background: bg,
+                  color: color,
+                  border: `1.5px solid ${color}`,
+                  padding: '2px 8px',
+                  borderRadius: theme === 'kawaii' ? '12px' : '6px',
+                  fontWeight: 'bold',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontFamily: 'var(--game-font, sans-serif)'
+                };
+              })()}>
+                💧 Hidratación: {Math.max(0, Math.min(100, Math.round((diasRestantes / planta.intervaloRiegoDias) * 100)))}%
+              </span>
+            </div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }} className="no-print">
