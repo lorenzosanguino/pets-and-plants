@@ -229,7 +229,8 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
           padding: 20px !important;
           font-size: 11px !important;
           line-height: 1.4 !important;
-          width: 100% !important;
+          width: 210mm !important;
+          height: 297mm !important;
           max-height: 297mm !important;
           overflow: hidden !important;
           box-sizing: border-box !important;
@@ -450,21 +451,40 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
       document.body.classList.add('printing-active');
       window.focus();
 
+      // Temporalmente ajustar el viewport meta para forzar maquetación de escritorio (evita responsive colapsado en impresión móvil)
+      const viewportMeta = document.querySelector('meta[name="viewport"]');
+      const originalViewport = viewportMeta ? viewportMeta.getAttribute('content') : null;
+      if (viewportMeta) {
+        viewportMeta.setAttribute('content', 'width=800, initial-scale=1.0, maximum-scale=1.0');
+      }
+
       let cleaned = false;
       const cleanup = () => {
         if (cleaned) return;
         cleaned = true;
-        document.title = originalTitle;
         document.body.classList.remove('printing-active');
         if (document.body.contains(printDiv)) {
           document.body.removeChild(printDiv);
         }
         window.removeEventListener('afterprint', cleanup);
+
+        // Restaurar el viewport meta original
+        if (viewportMeta && originalViewport) {
+          viewportMeta.setAttribute('content', originalViewport);
+        }
+
+        // Retrasar la restauración del título del documento para dar tiempo a que los navegadores móviles capturen el nombre personalizado del PDF
+        setTimeout(() => {
+          document.title = originalTitle;
+        }, 5000);
       };
 
       window.addEventListener('afterprint', cleanup);
 
-      window.print();
+      // Pequeña pausa para permitir que el navegador aplique los cambios del DOM (ocultar #root) en móviles
+      setTimeout(() => {
+        window.print();
+      }, 250);
     };
 
     if (totalImages === 0) {

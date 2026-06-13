@@ -310,7 +310,14 @@ export const PetPlantDashboard: React.FC = () => {
   }, [experienceMode, activeTab, showScanner, showManualRegister]);
 
   // Limpieza agresiva de Service Workers y cachés antiguas para corregir fichas en móviles
+  // Adicionalmente redirigimos si el usuario está en una URL de previsualización antigua de Vercel
   useEffect(() => {
+    const hostname = window.location.hostname;
+    if (hostname.endsWith('.vercel.app') && hostname !== 'pet-plant-app.vercel.app') {
+      window.location.replace('https://pet-plant-app.vercel.app' + window.location.pathname + window.location.search);
+      return;
+    }
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then((registrations) => {
         for (const registration of registrations) {
