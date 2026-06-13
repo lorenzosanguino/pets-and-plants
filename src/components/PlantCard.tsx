@@ -462,24 +462,28 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
       const cleanup = () => {
         if (cleaned) return;
         cleaned = true;
-        document.body.classList.remove('printing-active');
-        if (document.body.contains(printDiv)) {
-          document.body.removeChild(printDiv);
-        }
-        window.removeEventListener('afterprint', cleanup);
 
-        // Restaurar el viewport meta original
-        if (viewportMeta && originalViewport) {
-          viewportMeta.setAttribute('content', originalViewport);
-        }
-
-        // Retrasar la restauración del título del documento para dar tiempo a que los navegadores móviles capturen el nombre personalizado del PDF
+        // Retrasamos la limpieza real 6 segundos para que los navegadores móviles (donde afterprint se dispara prematuramente)
+        // tengan suficiente tiempo para renderizar el PDF de la ficha con el diseño y título correctos.
         setTimeout(() => {
+          document.body.classList.remove('printing-active');
+          if (document.body.contains(printDiv)) {
+            document.body.removeChild(printDiv);
+          }
+          // Restaurar el viewport meta original
+          if (viewportMeta && originalViewport) {
+            viewportMeta.setAttribute('content', originalViewport);
+          }
           document.title = originalTitle;
-        }, 5000);
+        }, 6000);
+
+        window.removeEventListener('afterprint', cleanup);
       };
 
       window.addEventListener('afterprint', cleanup);
+
+      // Forzar la limpieza de seguridad tras 2 segundos si afterprint nunca se disparase
+      setTimeout(cleanup, 2000);
 
       // Pequeña pausa para permitir que el navegador aplique los cambios del DOM (ocultar #root) en móviles
       setTimeout(() => {
