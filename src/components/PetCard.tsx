@@ -6,6 +6,7 @@ import { safeUUID } from '../utils/uuid';
 import { CardPhotoManager } from './CardPhotoManager';
 import { calcularEdadMascota } from '../utils/age';
 import { IAQuotaManager } from '../utils/iaQuota';
+import { escapeHTML } from '../utils/escape';
 
 
 interface PetCardProps {
@@ -204,9 +205,9 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
       <div class="timeline-item">
         <div class="timeline-meta">
           <span class="timeline-date">${formatDate(h.fecha)}</span>
-          <span class="timeline-type" style="background: ${h.color}15; color: ${h.color}; border: 1px solid ${h.color}30;">${h.tipo} - ${h.subtipo}</span>
+          <span class="timeline-type" style="background: ${h.color}15; color: ${h.color}; border: 1px solid ${h.color}30;">${escapeHTML(h.tipo)} - ${escapeHTML(h.subtipo)}</span>
         </div>
-        <div class="timeline-text">${h.texto}</div>
+        <div class="timeline-text">${escapeHTML(h.texto)}</div>
       </div>
     `).join('') || '<p style="font-style: italic; color: #64748b; margin: 0;">Sin notas clínicas registradas</p>';
 
@@ -404,22 +405,22 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
       </style>
       <h1>
         <span>Ficha de Cuidados Mascota</span>
-        ${mascota.nombre}
+        ${escapeHTML(mascota.nombre)}
       </h1>
       <div class="grid-container">
         <div class="left-col">
           <div class="photo-container">
-            ${mascota.fotoUrl ? `<img src="${mascota.fotoUrl}" alt="${mascota.nombre}" />` : `<div class="photo-placeholder">${mascota.especie === 'Felino' ? '🐱' : '🐶'}</div>`}
+            ${mascota.fotoUrl ? `<img src="${mascota.fotoUrl}" alt="${escapeHTML(mascota.nombre)}" />` : `<div class="photo-placeholder">${mascota.especie === 'Felino' ? '🐱' : '🐶'}</div>`}
           </div>
           <div>
             <h3>Datos Identificativos</h3>
             <table class="details-table">
-              <tr><th>Raza:</th><td>${mascota.raza || 'No especificada'}</td></tr>
-              <tr><th>Sexo:</th><td>${mascota.sexo || 'No especificado'}</td></tr>
+              <tr><th>Raza:</th><td>${escapeHTML(mascota.raza || 'No especificada')}</td></tr>
+              <tr><th>Sexo:</th><td>${escapeHTML(mascota.sexo || 'No especificado')}</td></tr>
               <tr><th>Edad:</th><td>${formatDate(mascota.fechaNacimiento)} (${calcularEdadMascota(mascota.fechaNacimiento)})</td></tr>
-              <tr><th>Chip N°:</th><td>${mascota.numeroChip || 'Sin microchip'}</td></tr>
+              <tr><th>Chip N°:</th><td>${escapeHTML(mascota.numeroChip || 'Sin microchip')}</td></tr>
               <tr><th>Castrado:</th><td><span class="badge-castrado" style="background: ${mascota.castrado ? '#e2fbe8; color: #1e7e34;' : '#fde8e8; color: #c82333;'}">${mascota.castrado ? 'Sí' : 'No'}</span></td></tr>
-              <tr><th>Actividad:</th><td>${mascota.actividad}</td></tr>
+              <tr><th>Actividad:</th><td>${escapeHTML(mascota.actividad)}</td></tr>
               ${mascota.porcionDiariaGramos ? `<tr><th>Porción diaria:</th><td>${mascota.porcionDiariaGramos}g</td></tr>` : ''}
             </table>
           </div>

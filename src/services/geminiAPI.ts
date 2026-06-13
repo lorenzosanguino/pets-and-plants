@@ -87,7 +87,7 @@ export class GeminiAPIService {
     return (typeof window !== 'undefined' ? localStorage.getItem('petplant_gemini_api_key') : null) ||
            (import.meta.env.VITE_GEMINI_API_KEY as string) ||
            (envProcess?.env?.GEMINI_API_KEY || '') ||
-           'AIzaSyACfoSHo-n4fuWLW1sSrz1qh1xb9jvDfSc'; // Clave API de fallback permanente
+           ''; // Sin clave de API fallback por motivos de seguridad
   }
 
   /**

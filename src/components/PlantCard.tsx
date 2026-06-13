@@ -4,6 +4,7 @@ import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
 import { CardPhotoManager } from './CardPhotoManager';
 import { IAQuotaManager } from '../utils/iaQuota';
+import { escapeHTML } from '../utils/escape';
 
 interface PlantCardProps {
   planta: Planta;
@@ -187,23 +188,23 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
         const parsed = parseIAReportePlanta(d.nota);
         content = `
           <div style="font-weight: 600; color: #16a34a; margin-bottom: 2px;">Diagnóstico Fitosanitario por IA:</div>
-          <div style="margin-bottom: 4px;">${parsed.diagnostico}</div>
+          <div style="margin-bottom: 4px;">${escapeHTML(parsed.diagnostico)}</div>
           <div style="font-weight: 600; color: #2563eb; margin-bottom: 2px;">Tratamiento sugerido:</div>
-          <div style="margin-bottom: 4px;">${parsed.tratamiento}</div>
+          <div style="margin-bottom: 4px;">${escapeHTML(parsed.tratamiento)}</div>
           ${parsed.aislamiento && parsed.aislamiento !== 'No sugerido' ? `
             <div style="font-weight: 600; color: #ea580c; margin-bottom: 2px;">Aislamiento:</div>
-            <div>${parsed.aislamiento}</div>
+            <div>${escapeHTML(parsed.aislamiento)}</div>
           ` : ''}
         `;
       } else {
-        content = d.nota;
+        content = escapeHTML(d.nota);
       }
 
       return `
         <div class="timeline-item" style="border-left-color: ${statusColor};">
           <div class="timeline-meta">
             <span class="timeline-date">${formatDate(d.fecha)}</span>
-            <span class="timeline-type" style="background: ${statusColor}15; color: ${statusColor}; border: 1.5px solid ${statusColor}30;">${d.estadoGeneral}</span>
+            <span class="timeline-type" style="background: ${statusColor}15; color: ${statusColor}; border: 1.5px solid ${statusColor}30;">${escapeHTML(d.estadoGeneral)}</span>
           </div>
           <div class="timeline-text">${content}</div>
         </div>
@@ -214,9 +215,9 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
       <div class="timeline-item" style="border-left-color: #d97706;">
         <div class="timeline-meta">
           <span class="timeline-date">${formatDate(h.fecha)}</span>
-          <span class="timeline-type" style="background: #d9770615; color: #d97706; border: 1.5px solid #d9770630;">${h.tipo}</span>
+          <span class="timeline-type" style="background: #d9770615; color: #d97706; border: 1.5px solid #d9770630;">${escapeHTML(h.tipo)}</span>
         </div>
-        <div class="timeline-text">${h.descripcion}</div>
+        <div class="timeline-text">${escapeHTML(h.descripcion)}</div>
       </div>
     `).join('') || '<p style="font-style: italic; color: #64748b; margin: 0;">Sin incidencias registradas</p>';
 
@@ -380,23 +381,23 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
       </style>
       <h1>
         <span>Ficha Botánica y de Cuidados</span>
-        ${planta.nombreComun}
+        ${escapeHTML(planta.nombreComun)}
       </h1>
       <div class="grid-container">
         <div class="left-col">
           <div class="photo-container">
-            ${planta.fotoUrl ? `<img src="${planta.fotoUrl}" alt="${planta.nombreComun}" />` : `<div class="photo-placeholder">🌿</div>`}
+            ${planta.fotoUrl ? `<img src="${planta.fotoUrl}" alt="${escapeHTML(planta.nombreComun)}" />` : `<div class="photo-placeholder">🌿</div>`}
           </div>
           <div>
             <h3>Detalles Botánicos</h3>
             <table class="details-table">
-              <tr><th>Nombre Científico:</th><td>${planta.nombreCientifico || 'No especificado'}</td></tr>
-              <tr><th>Ubicación:</th><td>${planta.ubicacionHabitacion}</td></tr>
-              <tr><th>Tipo de Riego:</th><td>${planta.tipoRiegoEspecifico}</td></tr>
+              <tr><th>Nombre Científico:</th><td>${escapeHTML(planta.nombreCientifico || 'No especificado')}</td></tr>
+              <tr><th>Ubicación:</th><td>${escapeHTML(planta.ubicacionHabitacion)}</td></tr>
+              <tr><th>Tipo de Riego:</th><td>${escapeHTML(planta.tipoRiegoEspecifico)}</td></tr>
               <tr><th>Intervalo Riego:</th><td>Cada ${planta.intervaloRiegoDias} días</td></tr>
               <tr><th>Último Riego:</th><td>${formatDate(planta.ultimaFechaRiego)}</td></tr>
               <tr><th>Próximo Riego:</th><td>${formatDate(planta.proximaFechaRiego)}</td></tr>
-              <tr><th>Grosor de Hoja:</th><td>${planta.grosorHoja}</td></tr>
+              <tr><th>Grosor de Hoja:</th><td>${escapeHTML(planta.grosorHoja)}</td></tr>
               <tr><th>Temp. Ideal:</th><td>${planta.temperaturaZona}°C</td></tr>
             </table>
           </div>
@@ -420,7 +421,7 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
               </div>
               ${planta.compuestosToxicos ? `
                 <div style="font-size: 9px; color: #dc2626; border-top: 1px dashed #e2e8f0; padding-top: 6px; margin-top: 2px;">
-                  <strong>Compuestos activos:</strong> ${planta.compuestosToxicos}
+                  <strong>Compuestos activos:</strong> ${escapeHTML(planta.compuestosToxicos)}
                 </div>
               ` : ''}
             </div>

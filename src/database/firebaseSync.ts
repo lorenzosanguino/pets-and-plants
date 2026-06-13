@@ -4,7 +4,7 @@ import { getAuth } from 'firebase/auth';
 import type { Mascota, Planta, AnimalExotico } from './types';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDGQWW8tVP8kk6Nss-GCutohfD6IouLzp0",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "plants-and-pets-app.firebaseapp.com",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "plants-and-pets-app",
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "plants-and-pets-app.firebasestorage.app",

@@ -4,6 +4,7 @@ import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
 import { CardPhotoManager } from './CardPhotoManager';
 import { IAQuotaManager } from '../utils/iaQuota';
+import { escapeHTML } from '../utils/escape';
 
 
 interface ExoticCardProps {
@@ -205,23 +206,23 @@ export const ExoticCard: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpe
         const parsed = parseIAReporteExotico(d.nota);
         content = `
           <div style="font-weight: 600; color: #2563eb; margin-bottom: 2px;">Diagnóstico Clínico por IA:</div>
-          <div style="margin-bottom: 4px;">${parsed.diagnostico}</div>
+          <div style="margin-bottom: 4px;">${escapeHTML(parsed.diagnostico)}</div>
           <div style="font-weight: 600; color: #16a34a; margin-bottom: 2px;">Tratamiento sugerido:</div>
-          <div style="margin-bottom: 4px;">${parsed.tratamiento}</div>
+          <div style="margin-bottom: 4px;">${escapeHTML(parsed.tratamiento)}</div>
           ${parsed.advertencia && parsed.advertencia !== 'Sin advertencias particulares' ? `
             <div style="font-weight: 600; color: #dc2626; margin-bottom: 2px;">Alerta:</div>
-            <div>${parsed.advertencia}</div>
+            <div>${escapeHTML(parsed.advertencia)}</div>
           ` : ''}
         `;
       } else {
-        content = d.nota;
+        content = escapeHTML(d.nota);
       }
 
       return `
         <div class="timeline-item" style="border-left-color: ${statusColor};">
           <div class="timeline-meta">
             <span class="timeline-date">${formatDate(d.fecha)}</span>
-            <span class="timeline-type" style="background: ${statusColor}15; color: ${statusColor}; border: 1.5px solid ${statusColor}30;">${d.categoria}</span>
+            <span class="timeline-type" style="background: ${statusColor}15; color: ${statusColor}; border: 1.5px solid ${statusColor}30;">${escapeHTML(d.categoria)}</span>
           </div>
           <div class="timeline-text">${content}</div>
         </div>
@@ -232,9 +233,9 @@ export const ExoticCard: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpe
       <div class="timeline-item" style="border-left-color: #d97706;">
         <div class="timeline-meta">
           <span class="timeline-date">${formatDate(h.fecha)}</span>
-          <span class="timeline-type" style="background: #d9770615; color: #d97706; border: 1.5px solid #d9770630;">${h.tipo}</span>
+          <span class="timeline-type" style="background: #d9770615; color: #d97706; border: 1.5px solid #d9770630;">${escapeHTML(h.tipo)}</span>
         </div>
-        <div class="timeline-text">${h.descripcion}</div>
+        <div class="timeline-text">${escapeHTML(h.descripcion)}</div>
       </div>
     `).join('') || '<p style="font-style: italic; color: #64748b; margin: 0;">Sin registros históricos</p>';
 
@@ -376,19 +377,19 @@ export const ExoticCard: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpe
       </style>
       <h1>
         <span>Ficha de Cuidados Exóticos</span>
-        ${exotico.nombre}
+        ${escapeHTML(exotico.nombre)}
       </h1>
       <div class="grid-container">
         <div class="left-col">
           <div class="photo-container">
-            ${exotico.fotoUrl ? `<img src="${exotico.fotoUrl}" alt="${exotico.nombre}" />` : `<div class="photo-placeholder">🦎</div>`}
+            ${exotico.fotoUrl ? `<img src="${exotico.fotoUrl}" alt="${escapeHTML(exotico.nombre)}" />` : `<div class="photo-placeholder">🦎</div>`}
           </div>
           <div>
             <h3>Parámetros Terrario</h3>
             <table class="details-table">
-              <tr><th>Especie:</th><td>${exotico.especie}</td></tr>
-              <tr><th>Tipo Específico:</th><td>${exotico.tipoEspecifico}</td></tr>
-              <tr><th>Chip/ID:</th><td>${exotico.chip || 'Sin Identificación'}</td></tr>
+              <tr><th>Especie:</th><td>${escapeHTML(exotico.especie)}</td></tr>
+              <tr><th>Tipo Específico:</th><td>${escapeHTML(exotico.tipoEspecifico)}</td></tr>
+              <tr><th>Chip/ID:</th><td>${escapeHTML(exotico.chip || 'Sin Identificación')}</td></tr>
               <tr><th>Temperatura Terrario:</th><td>${exotico.temperaturaTerrario}°C</td></tr>
               <tr><th>Humedad Terrario:</th><td>${exotico.humedadTerrario}%</td></tr>
               <tr><th>Última Alimentación:</th><td>${formatDate(exotico.ultimaAlimentacion)}</td></tr>
