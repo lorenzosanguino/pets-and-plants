@@ -236,6 +236,11 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
         <head>
           <title>Ficha Botánica: ${planta.nombreComun}</title>
           <style>
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              box-sizing: border-box;
+            }
             @page {
               size: A4;
               margin: 1.2cm;
@@ -452,15 +457,44 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
     `);
     doc.close();
 
-    // Esperar a que se carguen los recursos e imprimir
-    iframe.contentWindow?.focus();
-    setTimeout(() => {
+    // Esperar a que se carguen las imágenes y recursos antes de imprimir
+    const images = doc.querySelectorAll('img');
+    let loadedCount = 0;
+    const totalImages = images.length;
+
+    const triggerPrint = () => {
+      iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
-      // Eliminar iframe después de imprimir
       setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 1000);
-    }, 500);
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 1500);
+    };
+
+    if (totalImages === 0) {
+      triggerPrint();
+    } else {
+      images.forEach(img => {
+        if (img.complete) {
+          loadedCount++;
+          if (loadedCount === totalImages) triggerPrint();
+        } else {
+          img.onload = () => {
+            loadedCount++;
+            if (loadedCount === totalImages) triggerPrint();
+          };
+          img.onerror = () => {
+            loadedCount++;
+            if (loadedCount === totalImages) triggerPrint();
+          };
+        }
+      });
+      // Timeout de seguridad en caso de fallo de carga
+      setTimeout(() => {
+        if (loadedCount < totalImages) triggerPrint();
+      }, 2500);
+    }
   };
 
   const handleConfirmDelete = async () => {
