@@ -62,12 +62,12 @@ export class FirebaseSyncService {
   }
 
   /**
-   * Obtiene el hogar vinculado a un usuario desde la colección /users/{uid}
+   * Obtiene el hogar vinculado a un usuario desde la colección /hogares/user_hogar_{uid}
    */
   static async getUserHogar(uid: string): Promise<{ hogarId: string; hogarNombre: string } | null> {
     if (this.isCloudEnabled()) {
       try {
-        const docRef = doc(db, 'users', uid);
+        const docRef = doc(db, 'hogares', `user_hogar_${uid}`);
         const snap = await getDoc(docRef);
         if (snap.exists()) {
           const data = snap.data();
@@ -86,12 +86,12 @@ export class FirebaseSyncService {
   }
 
   /**
-   * Vincula un hogar a un usuario en la colección /users/{uid}
+   * Vincula un hogar a un usuario en la colección /hogares/user_hogar_{uid}
    */
   static async saveUserHogar(uid: string, hogarId: string, hogarNombre: string): Promise<void> {
     if (this.isCloudEnabled()) {
       try {
-        const docRef = doc(db, 'users', uid);
+        const docRef = doc(db, 'hogares', `user_hogar_${uid}`);
         await setDoc(docRef, {
           hogarId,
           hogarNombre,
@@ -104,12 +104,12 @@ export class FirebaseSyncService {
   }
 
   /**
-   * Elimina la vinculación de hogar de un usuario en la colección /users/{uid}
+   * Elimina la vinculación de hogar de un usuario en la colección /hogares/user_hogar_{uid}
    */
   static async deleteUserHogar(uid: string): Promise<void> {
     if (this.isCloudEnabled()) {
       try {
-        const docRef = doc(db, 'users', uid);
+        const docRef = doc(db, 'hogares', `user_hogar_${uid}`);
         await setDoc(docRef, {
           hogarId: "",
           hogarNombre: "",
