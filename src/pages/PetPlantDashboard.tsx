@@ -469,38 +469,51 @@ export const PetPlantDashboard: React.FC = () => {
               localStorage.setItem('petplant_user_session', JSON.stringify(u));
               localStorage.setItem('petplant_login_provider', 'google');
 
-              // Cargar hogar asociado en Firestore
+              // Cargar hogar asociado en Firestore e iniciar sincronización bidireccional inmediata
               if (FirebaseSyncService.isCloudEnabled()) {
                 try {
                   const userHogar = await FirebaseSyncService.getUserHogar(firebaseUser.uid);
+                  const listMascotas = await LocalDatabase.getMascotas();
+                  const listPlantas = await LocalDatabase.getPlantas();
+                  const listExoticos = await LocalDatabase.getExoticos();
+
                   if (userHogar) {
                     const { hogarId: cloudHogarId, hogarNombre: cloudHogarNombre } = userHogar;
                     const localHogarId = localStorage.getItem('petplant_hogar_id') || '';
 
-                    if (cloudHogarId && cloudHogarId !== localHogarId) {
-                      localStorage.setItem('petplant_hogar_id', cloudHogarId);
-                      localStorage.setItem('petplant_hogar_nombre', cloudHogarNombre);
-                      setHogarId(cloudHogarId);
-                      setHogarNombre(cloudHogarNombre);
+                    // Intentar recuperar los datos del hogar en la nube
+                    const data = await FirebaseSyncService.getHogarData(cloudHogarId);
 
-                      // Sobrescribir base de datos local con la del hogar remoto
-                      const data = await FirebaseSyncService.getHogarData(cloudHogarId);
-                      if (data) {
+                    if (data) {
+                      // Si el hogar en la nube tiene datos y estamos en un dispositivo diferente o vacío localmente, sincronizar
+                      if (cloudHogarId !== localHogarId) {
+                        localStorage.setItem('petplant_hogar_id', cloudHogarId);
+                        localStorage.setItem('petplant_hogar_nombre', cloudHogarNombre);
+                        setHogarId(cloudHogarId);
+                        setHogarNombre(cloudHogarNombre);
+
                         isRemoteSyncingRef.current = true;
                         await LocalDatabase.overwriteDatabase(data.mascotas || [], data.plantas || [], data.exoticos || []);
                         isRemoteSyncingRef.current = false;
                         await refreshData(false);
                       }
+                    } else {
+                      // Si no hay datos en la nube para este hogarId pero tenemos datos locales, los subimos de inmediato
+                      if (listMascotas.length > 0 || listPlantas.length > 0 || listExoticos.length > 0) {
+                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos);
+                      }
                     }
                   } else {
                     const localHogarId = localStorage.getItem('petplant_hogar_id') || '';
-                    const localHogarNombre = localStorage.getItem('petplant_hogar_nombre') || '';
+                    const localHogarNombre = localStorage.getItem('petplant_hogar_nombre') || 'Mi Hogar';
                     if (localHogarId) {
                       await FirebaseSyncService.saveUserHogar(firebaseUser.uid, localHogarId, localHogarNombre);
+                      // Subir los datos locales actuales para asegurar que el hogar en la nube esté creado
+                      await FirebaseSyncService.uploadChanges(localHogarId, localHogarNombre, listMascotas, listPlantas, listExoticos);
                     }
                   }
                 } catch (err) {
-                  console.error("Error al recuperar asociación de hogar:", err);
+                  console.error("Error al recuperar o sincronizar asociación de hogar:", err);
                 }
               }
             } else {
