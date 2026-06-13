@@ -29,6 +29,17 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
 
 
 
+  const [localUltimaFechaRiego, setLocalUltimaFechaRiego] = useState<string | null>(null);
+  const [localProximaFechaRiego, setLocalProximaFechaRiego] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLocalUltimaFechaRiego(null);
+    setLocalProximaFechaRiego(null);
+  }, [planta.ultimaFechaRiego, planta.proximaFechaRiego]);
+
+  const currentUltima = localUltimaFechaRiego || planta.ultimaFechaRiego;
+  const currentProxima = localProximaFechaRiego || planta.proximaFechaRiego;
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [nota, setNota] = useState('');
   const [estadoHoja, setEstadoHoja] = useState<'Excelente' | 'Normal' | 'Clorosis/Lesión'>('Normal');
@@ -88,8 +99,16 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
 
   const registrarRiego = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    const confirmar = window.confirm(`¿Vas a regar la planta "${planta.nombreComun}"?`);
+    if (!confirmar) return;
+
     const hoy = new Date().toISOString();
     const proximo = new Date(Date.now() + planta.intervaloRiegoDias * 24 * 3600 * 1000).toISOString();
+
+    // Actualización de estado local instantánea (optimista)
+    setLocalUltimaFechaRiego(hoy);
+    setLocalProximaFechaRiego(proximo);
 
     const plantaActualizada = {
       ...planta,
@@ -97,8 +116,16 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
       proximaFechaRiego: proximo
     };
 
-    await LocalDatabase.savePlanta(plantaActualizada);
-    onUpdate();
+    try {
+      await LocalDatabase.savePlanta(plantaActualizada);
+      localStorage.setItem('petplant_db_last_updated', Date.now().toString());
+      onUpdate();
+    } catch (err) {
+      console.error("Error al registrar riego:", err);
+      // Deshacer cambios locales en caso de error
+      setLocalUltimaFechaRiego(null);
+      setLocalProximaFechaRiego(null);
+    }
   };
 
   const exportarFichaBotanica = (e: React.MouseEvent) => {
@@ -527,8 +554,8 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
   };
 
   const calcularDiasRestantes = () => {
-    if (!planta.proximaFechaRiego) return 0;
-    const proximo = new Date(planta.proximaFechaRiego).getTime();
+    if (!currentProxima) return 0;
+    const proximo = new Date(currentProxima).getTime();
     if (isNaN(proximo)) return 0;
     const hoy = new Date().getTime();
     const diferenciaMs = proximo - hoy;
@@ -596,15 +623,15 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
             let label = '-';
             let color = '#888';
 
-            if (esMismoDia(d, planta.ultimaFechaRiego)) {
+            if (esMismoDia(d, currentUltima)) {
               status = esHoy ? 'watered-today' : 'watered';
               icon = '💧';
               label = esHoy ? 'Regada hoy' : 'Regada';
               color = '#1976d2';
             } else if (esHoy) {
-              const proxTime = new Date(planta.proximaFechaRiego).getTime();
+              const proxTime = new Date(currentProxima).getTime();
               const hoyTime = new Date().getTime();
-              if (proxTime <= hoyTime || esMismoDia(d, planta.proximaFechaRiego)) {
+              if (proxTime <= hoyTime || esMismoDia(d, currentProxima)) {
                 status = 'due';
                 icon = '⚠️';
                 label = 'Toca regar';
@@ -621,7 +648,7 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
               label = '-';
               color = '#bbb';
             } else { // Futuro
-              if (esMismoDia(d, planta.proximaFechaRiego)) {
+              if (esMismoDia(d, currentProxima)) {
                 status = 'scheduled';
                 icon = '📅';
                 label = 'Toca regar';
@@ -1053,7 +1080,7 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
             
             {/* Badge de Riego Rápido */}
             {(() => {
-              const regadaHoy = esMismoDia(new Date(), planta.ultimaFechaRiego);
+              const regadaHoy = esMismoDia(new Date(), currentUltima);
               let textoRiego = '';
               let colorRiego = '#1976d2';
               let bgRiego = 'rgba(25, 118, 210, 0.08)';
