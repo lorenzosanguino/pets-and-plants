@@ -100,6 +100,369 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
     onUpdate();
   };
 
+  const exportarFichaBotanica = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    // Crear iframe temporal
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      alert('No se pudo generar la previsualización de impresión.');
+      return;
+    }
+
+    const formatDate = (isoString?: string) => {
+      if (!isoString) return 'No especificada';
+      try {
+        const d = new Date(isoString);
+        if (isNaN(d.getTime())) return isoString.split('T')[0];
+        return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      } catch {
+        return isoString.split('T')[0] || 'No especificada';
+      }
+    };
+
+    const parseIAReportePlanta = (nota: string) => {
+      let diagnostico = '';
+      let tratamiento = '';
+      let aislamiento = '';
+
+      const diagKey = '[IA Diagnóstico Fitosanitario]:';
+      const tratKey = '| Tratamiento:';
+      const aisKey = '| Aislamiento sugerido:';
+
+      const diagIdx = nota.indexOf(diagKey);
+      const tratIdx = nota.indexOf(tratKey);
+      const aisIdx = nota.indexOf(aisKey);
+
+      if (diagIdx !== -1) {
+        const start = diagIdx + diagKey.length;
+        const end = tratIdx !== -1 ? tratIdx : (aisIdx !== -1 ? aisIdx : nota.length);
+        diagnostico = nota.substring(start, end).trim();
+      } else {
+        diagnostico = nota;
+      }
+
+      if (tratIdx !== -1) {
+        const start = tratIdx + tratKey.length;
+        const end = aisIdx !== -1 ? aisIdx : nota.length;
+        tratamiento = nota.substring(start, end).trim();
+      }
+
+      if (aisIdx !== -1) {
+        const start = aisIdx + aisKey.length;
+        aislamiento = nota.substring(start).trim();
+      }
+
+      return {
+        diagnostico: diagnostico || 'No especificado',
+        tratamiento: tratamiento || 'No especificado',
+        aislamiento: aislamiento || 'No sugerido'
+      };
+    };
+
+    const toxicityColor = (nivel?: string) => {
+      if (!nivel || nivel === 'Segura') return '#16a34a'; // Green
+      if (nivel.includes('leve')) return '#ea580c'; // Orange
+      return '#dc2626'; // Red
+    };
+
+    const toxicityBg = (nivel?: string) => {
+      if (!nivel || nivel === 'Segura') return '#f0fdf4';
+      if (nivel.includes('leve')) return '#fff7ed';
+      return '#fef2f2';
+    };
+
+    const toxicityBorder = (nivel?: string) => {
+      if (!nivel || nivel === 'Segura') return '#bbf7d0';
+      if (nivel.includes('leve')) return '#ffedd5';
+      return '#fecaca';
+    };
+
+    const foliarHtml = (planta.diarioFoliar || []).slice(0, 5).map(d => {
+      const esIAReporte = d.nota.startsWith('[IA');
+      let statusColor = '#475569';
+      if (d.estadoGeneral === 'Excelente') statusColor = '#16a34a';
+      else if (d.estadoGeneral === 'Clorosis/Lesión') statusColor = '#dc2626';
+
+      let content = '';
+      if (esIAReporte) {
+        const parsed = parseIAReportePlanta(d.nota);
+        content = `
+          <div style="font-weight: 600; color: #16a34a; margin-bottom: 2px;">Diagnóstico Fitosanitario por IA:</div>
+          <div style="margin-bottom: 4px;">${parsed.diagnostico}</div>
+          <div style="font-weight: 600; color: #2563eb; margin-bottom: 2px;">Tratamiento sugerido:</div>
+          <div style="margin-bottom: 4px;">${parsed.tratamiento}</div>
+          ${parsed.aislamiento && parsed.aislamiento !== 'No sugerido' ? `
+            <div style="font-weight: 600; color: #ea580c; margin-bottom: 2px;">Aislamiento:</div>
+            <div>${parsed.aislamiento}</div>
+          ` : ''}
+        `;
+      } else {
+        content = d.nota;
+      }
+
+      return `
+        <div class="timeline-item" style="border-left-color: ${statusColor};">
+          <div class="timeline-meta">
+            <span class="timeline-date">${formatDate(d.fecha)}</span>
+            <span class="timeline-type" style="background: ${statusColor}15; color: ${statusColor}; border: 1.5px solid ${statusColor}30;">${d.estadoGeneral}</span>
+          </div>
+          <div class="timeline-text">${content}</div>
+        </div>
+      `;
+    }).join('') || '<p style="font-style: italic; color: #64748b; margin: 0;">Sin registros foliares</p>';
+
+    const incidenciasHtml = (planta.historialPasado || []).slice(0, 5).map(h => `
+      <div class="timeline-item" style="border-left-color: #d97706;">
+        <div class="timeline-meta">
+          <span class="timeline-date">${formatDate(h.fecha)}</span>
+          <span class="timeline-type" style="background: #d9770615; color: #d97706; border: 1.5px solid #d9770630;">${h.tipo}</span>
+        </div>
+        <div class="timeline-text">${h.descripcion}</div>
+      </div>
+    `).join('') || '<p style="font-style: italic; color: #64748b; margin: 0;">Sin incidencias registradas</p>';
+
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Ficha Botánica: ${planta.nombreComun}</title>
+          <style>
+            @page {
+              size: A4;
+              margin: 1.2cm;
+            }
+            body {
+              font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+              color: #0f172a;
+              background: #ffffff;
+              margin: 0;
+              padding: 0;
+              font-size: 11px;
+              line-height: 1.4;
+            }
+            h1, h2, h3, h4 {
+              margin: 0;
+              color: #14532d;
+            }
+            h1 {
+              font-size: 20px;
+              font-weight: 800;
+              border-bottom: 2px solid #10b981;
+              padding-bottom: 6px;
+              margin-bottom: 15px;
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-end;
+            }
+            h1 span {
+              font-size: 10px;
+              font-weight: 500;
+              color: #64748b;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+            }
+            h3 {
+              font-size: 12px;
+              font-weight: 700;
+              border-bottom: 1.5px solid #e2e8f0;
+              padding-bottom: 4px;
+              margin-bottom: 8px;
+              color: #14532d;
+              text-transform: uppercase;
+              letter-spacing: 0.02em;
+            }
+            .grid-container {
+              display: grid;
+              grid-template-columns: 32% 64%;
+              gap: 4%;
+            }
+            .left-col, .right-col {
+              display: flex;
+              flex-direction: column;
+              gap: 15px;
+            }
+            .photo-container {
+              width: 100%;
+              height: 180px;
+              border-radius: 8px;
+              overflow: hidden;
+              border: 1px solid #e2e8f0;
+              background: #f8fafc;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .photo-container img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            }
+            .photo-placeholder {
+              font-size: 64px;
+            }
+            .details-table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            .details-table th, .details-table td {
+              text-align: left;
+              padding: 5px 0;
+              border-bottom: 1px solid #f1f5f9;
+            }
+            .details-table th {
+              font-weight: 600;
+              color: #64748b;
+              width: 45%;
+            }
+            .details-table td {
+              font-weight: 500;
+              color: #0f172a;
+            }
+            .timeline {
+              display: flex;
+              flex-direction: column;
+              gap: 8px;
+            }
+            .timeline-item {
+              padding: 8px;
+              background: #f8fafc;
+              border-left: 3px solid #cbd5e1;
+              border-radius: 0 4px 4px 0;
+            }
+            .timeline-meta {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 4px;
+            }
+            .timeline-date {
+              font-weight: 600;
+              color: #64748b;
+            }
+            .timeline-type {
+              font-size: 8px;
+              padding: 1px 4px;
+              border-radius: 4px;
+              font-weight: bold;
+              text-transform: uppercase;
+            }
+            .timeline-text {
+              color: #334155;
+              white-space: pre-wrap;
+            }
+            .toxic-badge {
+              font-size: 9px;
+              font-weight: bold;
+              padding: 2px 6px;
+              border-radius: 4px;
+              display: inline-block;
+              border: 1px solid;
+            }
+            .toxic-section {
+              background: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 6px;
+              padding: 8px 10px;
+              display: flex;
+              flex-direction: column;
+              gap: 6px;
+            }
+            .toxic-row {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>
+            <span>Ficha Botánica y de Cuidados</span>
+            ${planta.nombreComun}
+          </h1>
+          <div class="grid-container">
+            <div class="left-col">
+              <div class="photo-container">
+                ${planta.fotoUrl ? `<img src="${planta.fotoUrl}" alt="${planta.nombreComun}" />` : `<div class="photo-placeholder">🌿</div>`}
+              </div>
+              <div>
+                <h3>Detalles Botánicos</h3>
+                <table class="details-table">
+                  <tr><th>Nombre Científico:</th><td>${planta.nombreCientifico || 'No especificado'}</td></tr>
+                  <tr><th>Ubicación:</th><td>${planta.ubicacionHabitacion}</td></tr>
+                  <tr><th>Tipo de Riego:</th><td>${planta.tipoRiegoEspecifico}</td></tr>
+                  <tr><th>Intervalo Riego:</th><td>Cada ${planta.intervaloRiegoDias} días</td></tr>
+                  <tr><th>Último Riego:</th><td>${formatDate(planta.ultimaFechaRiego)}</td></tr>
+                  <tr><th>Próximo Riego:</th><td>${formatDate(planta.proximaFechaRiego)}</td></tr>
+                  <tr><th>Grosor de Hoja:</th><td>${planta.grosorHoja}</td></tr>
+                  <tr><th>Temp. Ideal:</th><td>${planta.temperaturaZona}°C</td></tr>
+                </table>
+              </div>
+            </div>
+            
+            <div class="right-col">
+              <div>
+                <h3>Seguridad y Toxicidad</h3>
+                <div class="toxic-section">
+                  <div class="toxic-row">
+                    <span style="font-weight: 600; color: #475569;">🐱 Toxicidad Felina:</span>
+                    <span class="toxic-badge" style="background: ${toxicityBg(planta.toxicidadFelina)}; color: ${toxicityColor(planta.toxicidadFelina)}; border-color: ${toxicityBorder(planta.toxicidadFelina)};">
+                      ${planta.toxicidadFelina}
+                    </span>
+                  </div>
+                  <div class="toxic-row">
+                    <span style="font-weight: 600; color: #475569;">🐶 Toxicidad Canina:</span>
+                    <span class="toxic-badge" style="background: ${toxicityBg(planta.toxicidadCanina)}; color: ${toxicityColor(planta.toxicidadCanina)}; border-color: ${toxicityBorder(planta.toxicidadCanina)};">
+                      ${planta.toxicidadCanina || 'Segura'}
+                    </span>
+                  </div>
+                  ${planta.compuestosToxicos ? `
+                    <div style="font-size: 9px; color: #dc2626; border-top: 1px dashed #e2e8f0; padding-top: 6px; margin-top: 2px;">
+                      <strong>Compuestos activos:</strong> ${planta.compuestosToxicos}
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+              
+              <div>
+                <h3>Diario Foliar (Últimos 5 registros)</h3>
+                <div class="timeline">
+                  ${foliarHtml}
+                </div>
+              </div>
+              
+              <div>
+                <h3>Historial de Incidencias (Últimos 5 registros)</h3>
+                <div class="timeline">
+                  ${incidenciasHtml}
+                </div>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    // Esperar a que se carguen los recursos e imprimir
+    iframe.contentWindow?.focus();
+    setTimeout(() => {
+      iframe.contentWindow?.print();
+      // Eliminar iframe después de imprimir
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
+    }, 500);
+  };
+
   const handleConfirmDelete = async () => {
     await LocalDatabase.deletePlanta(planta.id);
     onUpdate();
@@ -1098,6 +1461,27 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
                 })()
               )}
             </div>
+          </div>
+
+          {/* Botón de Acción: Exportar Ficha */}
+          <div style={{ display: 'flex', gap: '8px', marginTop: '8px', borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px' }}>
+            <button
+              onClick={exportarFichaBotanica}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                background: 'var(--game-accent, #4caf50)',
+                color: theme === 'gaming' ? '#000000' : '#fff',
+                border: 'var(--game-border, none)',
+                borderRadius: 'var(--game-radius, 8px)',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontFamily: 'var(--game-font, sans-serif)'
+              }}
+            >
+              Exportar Ficha 📄
+            </button>
           </div>
 
           {/* MODAL DE DOBLE CONFIRMACIÓN DE BORRADO */}

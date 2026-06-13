@@ -134,40 +134,321 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
 
   const exportarFichaClinica = (e: React.MouseEvent) => {
     e.stopPropagation(); // Evitar que se colapse al hacer clic en exportar
-    const style = document.createElement('style');
-    style.id = 'print-clinical-record-style';
-    style.innerHTML = `
-      @media print {
-        body * {
-          visibility: hidden;
-        }
-        .printable-clinical-record, .printable-clinical-record * {
-          visibility: visible;
-        }
-        .printable-clinical-record {
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 100%;
-          border: none !important;
-          box-shadow: none !important;
-          padding: 0 !important;
-        }
-        .no-print {
-          display: none !important;
-        }
-        .printable-only-qr {
-          display: flex !important;
-          visibility: visible !important;
-        }
+
+    // Crear iframe temporal
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      alert('No se pudo generar la previsualización de impresión.');
+      return;
+    }
+
+    const formatDate = (isoString?: string) => {
+      if (!isoString) return 'No especificada';
+      try {
+        const d = new Date(isoString);
+        if (isNaN(d.getTime())) return isoString.split('T')[0];
+        return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      } catch {
+        return isoString.split('T')[0] || 'No especificada';
       }
-    `;
-    document.head.appendChild(style);
-    window.print();
+    };
+
+    const allVaccines = mascota.especie === 'Felino'
+      ? ['Trivalente Felina', 'Leucemia Felina', 'Rabia', 'Desparasitación Interna', 'Desparasitación Externa']
+      : ['Parvovirus', 'Moquillo', 'Adenovirus', 'Rabia', 'Leptospirosis', 'Desparasitación Interna', 'Desparasitación Externa'];
+
+    const vaccineChecklistHtml = allVaccines.map(v => {
+      const isChecked = (mascota.vacunasChecklist || []).includes(v);
+      return `
+        <div class="checklist-item ${isChecked ? 'checked' : ''}">
+          <span class="checkbox">${isChecked ? '✓' : '✗'}</span>
+          <span class="label">${v}</span>
+        </div>
+      `;
+    }).join('');
+
+    const weightsHtml = (mascota.registroPeso || []).slice(-5).reverse().map(w => `
+      <tr>
+        <td>${formatDate(w.fecha)}</td>
+        <td><strong>${w.pesoKg} Kg</strong></td>
+      </tr>
+    `).join('') || '<tr><td colspan="2" style="text-align:center; color:#64748b;">Sin registros de peso</td></tr>';
+
+    const clinicHtml = unifiedHistory.slice(0, 5).map(h => `
+      <div class="timeline-item">
+        <div class="timeline-meta">
+          <span class="timeline-date">${formatDate(h.fecha)}</span>
+          <span class="timeline-type" style="background: ${h.color}15; color: ${h.color}; border: 1px solid ${h.color}30;">${h.tipo} - ${h.subtipo}</span>
+        </div>
+        <div class="timeline-text">${h.texto}</div>
+      </div>
+    `).join('') || '<p style="font-style: italic; color: #64748b; margin: 0;">Sin notas clínicas registradas</p>';
+
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Ficha Clínica: ${mascota.nombre}</title>
+          <style>
+            @page {
+              size: A4;
+              margin: 1.2cm;
+            }
+            body {
+              font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+              color: #0f172a;
+              background: #ffffff;
+              margin: 0;
+              padding: 0;
+              font-size: 11px;
+              line-height: 1.4;
+            }
+            h1, h2, h3, h4 {
+              margin: 0;
+              color: #1e3a8a;
+            }
+            h1 {
+              font-size: 20px;
+              font-weight: 800;
+              border-bottom: 2px solid #3b82f6;
+              padding-bottom: 6px;
+              margin-bottom: 15px;
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-end;
+            }
+            h1 span {
+              font-size: 10px;
+              font-weight: 500;
+              color: #64748b;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+            }
+            h3 {
+              font-size: 12px;
+              font-weight: 700;
+              border-bottom: 1.5px solid #e2e8f0;
+              padding-bottom: 4px;
+              margin-bottom: 8px;
+              color: #1e3a8a;
+              text-transform: uppercase;
+              letter-spacing: 0.02em;
+            }
+            .grid-container {
+              display: grid;
+              grid-template-columns: 32% 64%;
+              gap: 4%;
+            }
+            .left-col, .right-col {
+              display: flex;
+              flex-direction: column;
+              gap: 15px;
+            }
+            .photo-container {
+              width: 100%;
+              height: 180px;
+              border-radius: 8px;
+              overflow: hidden;
+              border: 1px solid #e2e8f0;
+              background: #f8fafc;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .photo-container img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            }
+            .photo-placeholder {
+              font-size: 64px;
+            }
+            .details-table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            .details-table th, .details-table td {
+              text-align: left;
+              padding: 5px 0;
+              border-bottom: 1px solid #f1f5f9;
+            }
+            .details-table th {
+              font-weight: 600;
+              color: #64748b;
+              width: 45%;
+            }
+            .details-table td {
+              font-weight: 500;
+              color: #0f172a;
+            }
+            .checklist-grid {
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 6px;
+            }
+            .checklist-item {
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              padding: 4px 6px;
+              border-radius: 4px;
+              background: #f8fafc;
+              border: 1px solid #f1f5f9;
+            }
+            .checklist-item.checked {
+              background: #f0fdf4;
+              border-color: #bbf7d0;
+            }
+            .checklist-item.checked .checkbox {
+              color: #16a34a;
+              font-weight: bold;
+            }
+            .checklist-item.checked .label {
+              color: #14532d;
+              font-weight: 500;
+            }
+            .checkbox {
+              font-size: 10px;
+              color: #94a3b8;
+              width: 12px;
+              text-align: center;
+            }
+            .label {
+              color: #475569;
+            }
+            .history-table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            .history-table th, .history-table td {
+              padding: 5px 8px;
+              text-align: left;
+              border-bottom: 1px solid #e2e8f0;
+            }
+            .history-table th {
+              background: #f8fafc;
+              color: #475569;
+              font-weight: 600;
+            }
+            .timeline {
+              display: flex;
+              flex-direction: column;
+              gap: 8px;
+            }
+            .timeline-item {
+              padding: 8px;
+              background: #f8fafc;
+              border-left: 3px solid #cbd5e1;
+              border-radius: 0 4px 4px 0;
+            }
+            .timeline-meta {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 4px;
+            }
+            .timeline-date {
+              font-weight: 600;
+              color: #64748b;
+            }
+            .timeline-type {
+              font-size: 8px;
+              padding: 1px 4px;
+              border-radius: 4px;
+              font-weight: bold;
+              text-transform: uppercase;
+            }
+            .timeline-text {
+              color: #334155;
+              white-space: pre-wrap;
+            }
+            .badge-castrado {
+              font-size: 9px;
+              font-weight: bold;
+              padding: 1px 4px;
+              border-radius: 4px;
+              display: inline-block;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>
+            <span>Ficha de Cuidados Mascota</span>
+            ${mascota.nombre}
+          </h1>
+          <div class="grid-container">
+            <div class="left-col">
+              <div class="photo-container">
+                ${mascota.fotoUrl ? `<img src="${mascota.fotoUrl}" alt="${mascota.nombre}" />` : `<div class="photo-placeholder">${mascota.especie === 'Felino' ? '🐱' : '🐶'}</div>`}
+              </div>
+              <div>
+                <h3>Datos Identificativos</h3>
+                <table class="details-table">
+                  <tr><th>Especie:</th><td>${mascota.especie}</td></tr>
+                  <tr><th>Raza:</th><td>${mascota.raza || 'No especificada'}</td></tr>
+                  <tr><th>Sexo:</th><td>${mascota.sexo || 'No especificado'}</td></tr>
+                  <tr><th>Nacimiento:</th><td>${formatDate(mascota.fechaNacimiento)}</td></tr>
+                  <tr><th>Chip N°:</th><td>${mascota.numeroChip || 'Sin microchip'}</td></tr>
+                  <tr><th>Castrado:</th><td><span class="badge-castrado" style="background: ${mascota.castrado ? '#e2fbe8; color: #1e7e34;' : '#fde8e8; color: #c82333;'}">${mascota.castrado ? 'Sí' : 'No'}</span></td></tr>
+                  <tr><th>Actividad:</th><td>${mascota.actividad}</td></tr>
+                  ${mascota.porcionDiariaGramos ? `<tr><th>Porción diaria:</th><td>${mascota.porcionDiariaGramos}g</td></tr>` : ''}
+                </table>
+              </div>
+            </div>
+            
+            <div class="right-col">
+              <div>
+                <h3>Control Preventivo</h3>
+                <div class="checklist-grid">
+                  ${vaccineChecklistHtml}
+                </div>
+              </div>
+              
+              <div>
+                <h3>Curva de Peso (Últimos 5 registros)</h3>
+                <table class="history-table">
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Peso</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${weightsHtml}
+                  </tbody>
+                </table>
+              </div>
+              
+              <div>
+                <h3>Historial Clínico (Últimos 5 registros)</h3>
+                <div class="timeline">
+                  ${clinicHtml}
+                </div>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    // Esperar a que se carguen los recursos e imprimir
+    iframe.contentWindow?.focus();
     setTimeout(() => {
-      const el = document.getElementById('print-clinical-record-style');
-      if (el) el.remove();
-    }, 1000);
+      iframe.contentWindow?.print();
+      // Eliminar iframe después de imprimir
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
+    }, 500);
   };
 
   const registrarPeso = async (e: React.FormEvent) => {

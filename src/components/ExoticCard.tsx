@@ -137,6 +137,304 @@ export const ExoticCard: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpe
     onUpdate();
   };
 
+  const exportarFichaExotico = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    // Crear iframe temporal
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      alert('No se pudo generar la previsualización de impresión.');
+      return;
+    }
+
+    const formatDate = (isoString?: string) => {
+      if (!isoString) return 'No especificada';
+      try {
+        const d = new Date(isoString);
+        if (isNaN(d.getTime())) return isoString.split('T')[0];
+        return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      } catch {
+        return isoString.split('T')[0] || 'No especificada';
+      }
+    };
+
+    const parseIAReporteExotico = (nota: string) => {
+      let diagnostico = '';
+      let tratamiento = '';
+      let advertencia = '';
+
+      const diagKey = '[IA Diagnóstico Exótico]:';
+      const tratKey = '| Tratamiento:';
+      const advKey = '| Alerta:';
+
+      const diagIdx = nota.indexOf(diagKey);
+      const tratIdx = nota.indexOf(tratKey);
+      const advIdx = nota.indexOf(advKey);
+
+      if (diagIdx !== -1) {
+        const start = diagIdx + diagKey.length;
+        const end = tratIdx !== -1 ? tratIdx : (advIdx !== -1 ? advIdx : nota.length);
+        diagnostico = nota.substring(start, end).trim();
+      } else {
+        diagnostico = nota;
+      }
+
+      if (tratIdx !== -1) {
+        const start = tratIdx + tratKey.length;
+        const end = advIdx !== -1 ? advIdx : nota.length;
+        tratamiento = nota.substring(start, end).trim();
+      }
+
+      if (advIdx !== -1) {
+        const start = advIdx + advKey.length;
+        advertencia = nota.substring(start).trim();
+      }
+
+      return {
+        diagnostico: diagnostico || 'No especificado',
+        tratamiento: tratamiento || 'No especificado',
+        advertencia: advertencia || 'Sin advertencias particulares'
+      };
+    };
+
+    const diaryHtml = (exotico.diarioExotico || []).slice(0, 5).map(d => {
+      const esIAReporte = d.nota.startsWith('[IA');
+      let statusColor = '#9c27b0'; // Purple for notes
+      if (esIAReporte) statusColor = '#2196f3'; // Blue for IA
+
+      let content = '';
+      if (esIAReporte) {
+        const parsed = parseIAReporteExotico(d.nota);
+        content = `
+          <div style="font-weight: 600; color: #2563eb; margin-bottom: 2px;">Diagnóstico Clínico por IA:</div>
+          <div style="margin-bottom: 4px;">${parsed.diagnostico}</div>
+          <div style="font-weight: 600; color: #16a34a; margin-bottom: 2px;">Tratamiento sugerido:</div>
+          <div style="margin-bottom: 4px;">${parsed.tratamiento}</div>
+          ${parsed.advertencia && parsed.advertencia !== 'Sin advertencias particulares' ? `
+            <div style="font-weight: 600; color: #dc2626; margin-bottom: 2px;">Alerta:</div>
+            <div>${parsed.advertencia}</div>
+          ` : ''}
+        `;
+      } else {
+        content = d.nota;
+      }
+
+      return `
+        <div class="timeline-item" style="border-left-color: ${statusColor};">
+          <div class="timeline-meta">
+            <span class="timeline-date">${formatDate(d.fecha)}</span>
+            <span class="timeline-type" style="background: ${statusColor}15; color: ${statusColor}; border: 1.5px solid ${statusColor}30;">${d.categoria}</span>
+          </div>
+          <div class="timeline-text">${content}</div>
+        </div>
+      `;
+    }).join('') || '<p style="font-style: italic; color: #64748b; margin: 0;">Sin registros en el diario</p>';
+
+    const incidenciasHtml = (exotico.historialPasado || []).slice(0, 5).map(h => `
+      <div class="timeline-item" style="border-left-color: #d97706;">
+        <div class="timeline-meta">
+          <span class="timeline-date">${formatDate(h.fecha)}</span>
+          <span class="timeline-type" style="background: #d9770615; color: #d97706; border: 1.5px solid #d9770630;">${h.tipo}</span>
+        </div>
+        <div class="timeline-text">${h.descripcion}</div>
+      </div>
+    `).join('') || '<p style="font-style: italic; color: #64748b; margin: 0;">Sin registros históricos</p>';
+
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Ficha de Cuidados Exóticos: ${exotico.nombre}</title>
+          <style>
+            @page {
+              size: A4;
+              margin: 1.2cm;
+            }
+            body {
+              font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+              color: #0f172a;
+              background: #ffffff;
+              margin: 0;
+              padding: 0;
+              font-size: 11px;
+              line-height: 1.4;
+            }
+            h1, h2, h3, h4 {
+              margin: 0;
+              color: #7c2d12;
+            }
+            h1 {
+              font-size: 20px;
+              font-weight: 800;
+              border-bottom: 2px solid #ea580c;
+              padding-bottom: 6px;
+              margin-bottom: 15px;
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-end;
+            }
+            h1 span {
+              font-size: 10px;
+              font-weight: 500;
+              color: #64748b;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+            }
+            h3 {
+              font-size: 12px;
+              font-weight: 700;
+              border-bottom: 1.5px solid #e2e8f0;
+              padding-bottom: 4px;
+              margin-bottom: 8px;
+              color: #7c2d12;
+              text-transform: uppercase;
+              letter-spacing: 0.02em;
+            }
+            .grid-container {
+              display: grid;
+              grid-template-columns: 32% 64%;
+              gap: 4%;
+            }
+            .left-col, .right-col {
+              display: flex;
+              flex-direction: column;
+              gap: 15px;
+            }
+            .photo-container {
+              width: 100%;
+              height: 180px;
+              border-radius: 8px;
+              overflow: hidden;
+              border: 1px solid #e2e8f0;
+              background: #f8fafc;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .photo-container img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            }
+            .photo-placeholder {
+              font-size: 64px;
+            }
+            .details-table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            .details-table th, .details-table td {
+              text-align: left;
+              padding: 5px 0;
+              border-bottom: 1px solid #f1f5f9;
+            }
+            .details-table th {
+              font-weight: 600;
+              color: #64748b;
+              width: 45%;
+            }
+            .details-table td {
+              font-weight: 500;
+              color: #0f172a;
+            }
+            .timeline {
+              display: flex;
+              flex-direction: column;
+              gap: 8px;
+            }
+            .timeline-item {
+              padding: 8px;
+              background: #f8fafc;
+              border-left: 3px solid #cbd5e1;
+              border-radius: 0 4px 4px 0;
+            }
+            .timeline-meta {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 4px;
+            }
+            .timeline-date {
+              font-weight: 600;
+              color: #64748b;
+            }
+            .timeline-type {
+              font-size: 8px;
+              padding: 1px 4px;
+              border-radius: 4px;
+              font-weight: bold;
+              text-transform: uppercase;
+            }
+            .timeline-text {
+              color: #334155;
+              white-space: pre-wrap;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>
+            <span>Ficha de Cuidados Exóticos</span>
+            ${exotico.nombre}
+          </h1>
+          <div class="grid-container">
+            <div class="left-col">
+              <div class="photo-container">
+                ${exotico.fotoUrl ? `<img src="${exotico.fotoUrl}" alt="${exotico.nombre}" />` : `<div class="photo-placeholder">🦎</div>`}
+              </div>
+              <div>
+                <h3>Parámetros Terrario</h3>
+                <table class="details-table">
+                  <tr><th>Especie:</th><td>${exotico.especie}</td></tr>
+                  <tr><th>Tipo Específico:</th><td>${exotico.tipoEspecifico}</td></tr>
+                  <tr><th>Chip/ID:</th><td>${exotico.chip || 'Sin Identificación'}</td></tr>
+                  <tr><th>Temperatura Terrario:</th><td>${exotico.temperaturaTerrario}°C</td></tr>
+                  <tr><th>Humedad Terrario:</th><td>${exotico.humedadTerrario}%</td></tr>
+                  <tr><th>Última Alimentación:</th><td>${formatDate(exotico.ultimaAlimentacion)}</td></tr>
+                  <tr><th>Frecuencia Alim.:</th><td>Cada ${exotico.intervaloAlimentacionDias} días</td></tr>
+                </table>
+              </div>
+            </div>
+            
+            <div class="right-col">
+              <div>
+                <h3>Diario de Cuidados y Clínico (Últimos 5 registros)</h3>
+                <div class="timeline">
+                  ${diaryHtml}
+                </div>
+              </div>
+              
+              <div>
+                <h3>Historial de Eventos (Últimos 5 registros)</h3>
+                <div class="timeline">
+                  ${incidenciasHtml}
+                </div>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    // Esperar a que se carguen los recursos e imprimir
+    iframe.contentWindow?.focus();
+    setTimeout(() => {
+      iframe.contentWindow?.print();
+      // Eliminar iframe después de imprimir
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
+    }, 500);
+  };
+
   // Cálculo de días desde última alimentación
   const msDiff = Date.now() - new Date(exotico.ultimaAlimentacion).getTime();
   const diasDesdeAlimentacion = Math.floor(msDiff / (1000 * 60 * 60 * 24));
@@ -683,6 +981,23 @@ export const ExoticCard: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpe
 
           {/* Botones de acción inferior */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #eee', paddingTop: '12px' }}>
+            <button
+              onClick={exportarFichaExotico}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                background: 'var(--game-accent, #4caf50)',
+                color: theme === 'gaming' ? '#000000' : '#fff',
+                border: 'var(--game-border, none)',
+                borderRadius: 'var(--game-radius, 6px)',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontFamily: 'var(--game-font, sans-serif)'
+              }}
+            >
+              Exportar Ficha 📄
+            </button>
             <button 
               onClick={() => onOpenScanner && onOpenScanner('salud_exotico', exotico.id)}
               disabled={!cuota.esIlimitado && cuota.restantes === 0}
