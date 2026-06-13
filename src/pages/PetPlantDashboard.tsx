@@ -850,6 +850,65 @@ export const PetPlantDashboard: React.FC = () => {
     dispararLogroVisual("DESVINCULADO", "Revertido a base de datos local.", 'lvl_up');
   };
 
+  const forzarSubidaNube = async () => {
+    if (!hogarId) return;
+    const confirmacion = window.confirm("¿Estás seguro de que quieres subir tus datos locales a tu cuenta? Esto sobrescribirá lo que haya en la nube con las mascotas y plantas de este dispositivo.");
+    if (!confirmacion) return;
+    
+    setSyncStatus('syncing');
+    try {
+      const listMascotas = await LocalDatabase.getMascotas();
+      const listPlantas = await LocalDatabase.getPlantas();
+      const listExoticos = await LocalDatabase.getExoticos();
+      
+      const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Mi Hogar";
+      const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
+      await fbSync.uploadChanges(hogarId, activeNombre, listMascotas, listPlantas, listExoticos, uiTheme);
+      
+      localStorage.setItem('petplant_db_last_updated', Date.now().toString());
+      setSyncStatus('synced');
+      alert("¡Datos subidos con éxito! Ahora tus mascotas y plantas están guardadas en tu cuenta de Google.");
+    } catch (err) {
+      console.error(err);
+      setSyncStatus('error');
+      alert("Error al subir datos.");
+    }
+  };
+
+  const forzarDescargaNube = async () => {
+    if (!hogarId) return;
+    const confirmacion = window.confirm("¿Estás seguro de que quieres descargar los datos de tu cuenta? Esto reemplazará las mascotas y plantas de este dispositivo con las de la nube.");
+    if (!confirmacion) return;
+
+    setSyncStatus('syncing');
+    try {
+      const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
+      const data = await fbSync.getHogarData(hogarId);
+      if (data) {
+        isRemoteSyncingRef.current = true;
+        await LocalDatabase.overwriteDatabase(data.mascotas || [], data.plantas || [], data.exoticos || []);
+        isRemoteSyncingRef.current = false;
+        
+        if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii')) {
+          lastSyncedThemeRef.current = data.theme || null;
+          setUiTheme(data.theme);
+        }
+
+        localStorage.setItem('petplant_db_last_updated', data.updatedAt.toString());
+        await refreshData(false);
+        setSyncStatus('synced');
+        alert("¡Datos descargados con éxito! Se han aplicado las mascotas, plantas y tema visual de tu cuenta.");
+      } else {
+        alert("No se encontraron datos en la nube para este hogar.");
+        setSyncStatus('error');
+      }
+    } catch (err) {
+      console.error(err);
+      setSyncStatus('error');
+      alert("Error al descargar datos.");
+    }
+  };
+
   useEffect(() => {
     if (uiTheme !== 'gaming' || experienceMode === 'landing') return;
 
@@ -2260,6 +2319,57 @@ export const PetPlantDashboard: React.FC = () => {
                         >
                           Copiar Código
                         </button>
+                      </div>
+
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                        padding: '12px',
+                        background: 'rgba(25, 118, 210, 0.05)',
+                        border: '1px dashed rgba(25, 118, 210, 0.3)',
+                        borderRadius: 'var(--game-radius, 8px)'
+                      }}>
+                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-accent, #1976d2)', fontFamily: 'var(--game-font, monospace)' }}>
+                          Sincronización Manual Forzada
+                        </span>
+                        <p style={{ margin: '0', fontSize: '11px', color: 'var(--game-text, #666)' }}>
+                          Si la sincronización automática tarda o quieres resolver conflictos, usa estos botones:
+                        </p>
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '4px' }}>
+                          <button
+                            onClick={forzarSubidaNube}
+                            style={{
+                              padding: '8px 14px',
+                              background: '#1976d2',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: uiTheme === 'gaming' ? '0px' : '6px',
+                              fontSize: '11px',
+                              fontWeight: 'bold',
+                              cursor: 'pointer',
+                              fontFamily: 'var(--game-font, sans-serif)'
+                            }}
+                          >
+                            Subir Datos a la Cuenta ⬆️
+                          </button>
+                          <button
+                            onClick={forzarDescargaNube}
+                            style={{
+                              padding: '8px 14px',
+                              background: '#2e7d32',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: uiTheme === 'gaming' ? '0px' : '6px',
+                              fontSize: '11px',
+                              fontWeight: 'bold',
+                              cursor: 'pointer',
+                              fontFamily: 'var(--game-font, sans-serif)'
+                            }}
+                          >
+                            Descargar Datos de la Cuenta ⬇️
+                          </button>
+                        </div>
                       </div>
 
                       <button
