@@ -451,8 +451,11 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
     const totalImages = images.length;
 
     const triggerPrint = () => {
+      const originalTitle = document.title;
+      document.title = `Ficha ${mascota.nombre}`;
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
+      document.title = originalTitle;
       setTimeout(() => {
         if (document.body.contains(iframe)) {
           document.body.removeChild(iframe);

@@ -463,8 +463,11 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
     const totalImages = images.length;
 
     const triggerPrint = () => {
+      const originalTitle = document.title;
+      document.title = `Ficha ${planta.nombreComun}`;
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
+      document.title = originalTitle;
       setTimeout(() => {
         if (document.body.contains(iframe)) {
           document.body.removeChild(iframe);
