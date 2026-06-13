@@ -25,9 +25,10 @@ export const CareTimeline: React.FC<CareTimelineProps> = ({ plantas, mascotas, o
   const obtenerTareasSemanales = (): TaskItem[] => {
     const tareas: TaskItem[] = [];
     const hoy = new Date();
-    const limite = new Date(Date.now() + 7 * 24 * 3600 * 1000);
+    // const limite = new Date(Date.now() + 7 * 24 * 3600 * 1000);
 
-    // 1. Tareas de plantas (Riegos calculados)
+    // 1. Tareas de plantas (Riegos calculados) - (Deshabilitado: el usuario prefiere gestionarlo a mano)
+    /*
     plantas.forEach(p => {
       const fechaRiego = new Date(p.proximaFechaRiego);
       if (fechaRiego <= limite) {
@@ -43,6 +44,7 @@ export const CareTimeline: React.FC<CareTimelineProps> = ({ plantas, mascotas, o
         });
       }
     });
+    */
 
     // 2. Tareas de mascotas (Dosis de vacunas y pesajes semanales sugeridos)
     mascotas.forEach(m => {
@@ -65,7 +67,8 @@ export const CareTimeline: React.FC<CareTimelineProps> = ({ plantas, mascotas, o
         });
       }
 
-      // Vacunas/Desparasitaciones pendientes
+      // Vacunas/Desparasitaciones pendientes - (Deshabilitado: el usuario prefiere gestionarlo a mano)
+      /*
       if (m.especie === 'Felino' || m.especie === 'Canino') {
         const checklistRequerido = m.especie === 'Felino'
           ? ['Trivalente Felina', 'Leucemia Felina', 'Rabia', 'Desparasitación Interna', 'Desparasitación Externa']
@@ -87,6 +90,7 @@ export const CareTimeline: React.FC<CareTimelineProps> = ({ plantas, mascotas, o
           });
         });
       }
+      */
     });
 
     // Ordenar por fecha cronológica

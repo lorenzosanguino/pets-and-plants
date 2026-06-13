@@ -28,7 +28,8 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
   const obtenerTareasAutomaticas = (dateStr: string) => {
     const tareas: { type: string; title: string; detail: string; emoji: string; color: string; targetId: string }[] = [];
     
-    // 1. Riegos programados de plantas
+    // 1. Riegos programados de plantas (Deshabilitado por solicitud del usuario: prefiere añadir riegos a mano)
+    /*
     plantas.forEach(p => {
       if (p.proximaFechaRiego) {
         const fechaRiego = p.proximaFechaRiego.split('T')[0];
@@ -44,6 +45,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
         }
       }
     });
+    */
 
     // 2. Tareas sugeridas de hoy (vacunas y pesajes)
     const hoy = new Date();
@@ -69,7 +71,8 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
         }
       });
 
-      // Vacunas / Desparasitaciones pendientes
+      // Vacunas / Desparasitaciones pendientes (Deshabilitado por solicitud del usuario: prefiere añadir vacunas a mano)
+      /*
       mascotas.forEach(m => {
         if (m.especie === 'Felino' || m.especie === 'Canino') {
           const checklistRequerido = m.especie === 'Felino'
@@ -91,6 +94,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
           });
         }
       });
+      */
     }
 
     return tareas;

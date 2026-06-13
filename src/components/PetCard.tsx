@@ -151,11 +151,30 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
       }
     };
 
-    const allVaccines = mascota.especie === 'Felino'
-      ? ['Trivalente Felina', 'Leucemia Felina', 'Rabia', 'Desparasitación Interna', 'Desparasitación Externa']
-      : ['Parvovirus', 'Moquillo', 'Adenovirus', 'Rabia', 'Leptospirosis', 'Desparasitación Interna', 'Desparasitación Externa'];
+    const vaccines = mascota.especie === 'Felino'
+      ? ['Trivalente Felina', 'Leucemia Felina', 'Rabia']
+      : ['Parvovirus', 'Moquillo', 'Adenovirus', 'Rabia', 'Leptospirosis'];
 
-    const vaccineChecklistHtml = allVaccines.map(v => {
+    const getDewormingLastDateStr = (vName: string) => {
+      const checklist = mascota.vacunasChecklist || [];
+      const dates = checklist
+        .filter(item => item.startsWith(`${vName}_`))
+        .map(item => item.split('_')[1])
+        .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+      if (dates.length > 0) {
+        const parts = dates[0].split('-');
+        return parts.length === 3 ? `${parts[2]}/${parts[1]}` : dates[0];
+      }
+      if (checklist.includes(vName)) {
+        return 'Sí';
+      }
+      return null;
+    };
+
+    const lastIntVal = getDewormingLastDateStr('Desparasitación Interna');
+    const lastExtVal = getDewormingLastDateStr('Desparasitación Externa');
+
+    const vaccineChecklistHtml = vaccines.map(v => {
       const isChecked = (mascota.vacunasChecklist || []).includes(v);
       return `
         <div class="checklist-item ${isChecked ? 'checked' : ''}">
@@ -163,7 +182,16 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
           <span class="label">${v}</span>
         </div>
       `;
-    }).join('');
+    }).join('') + `
+      <div class="checklist-item ${lastIntVal ? 'checked' : ''}">
+        <span class="checkbox">${lastIntVal ? '✓' : '✗'}</span>
+        <span class="label" style="font-size: 10px;">Desp. Interna ${lastIntVal ? `(${lastIntVal})` : ''}</span>
+      </div>
+      <div class="checklist-item ${lastExtVal ? 'checked' : ''}">
+        <span class="checkbox">${lastExtVal ? '✓' : '✗'}</span>
+        <span class="label" style="font-size: 10px;">Desp. Externa ${lastExtVal ? `(${lastExtVal})` : ''}</span>
+      </div>
+    `;
 
     const weightsHtml = (mascota.registroPeso || []).slice(-5).reverse().map(w => `
       <tr>
@@ -386,10 +414,9 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
           <div>
             <h3>Datos Identificativos</h3>
             <table class="details-table">
-              <tr><th>Especie:</th><td>${mascota.especie}</td></tr>
               <tr><th>Raza:</th><td>${mascota.raza || 'No especificada'}</td></tr>
               <tr><th>Sexo:</th><td>${mascota.sexo || 'No especificado'}</td></tr>
-              <tr><th>Nacimiento:</th><td>${formatDate(mascota.fechaNacimiento)}</td></tr>
+              <tr><th>Edad:</th><td>${formatDate(mascota.fechaNacimiento)} (${calcularEdadMascota(mascota.fechaNacimiento)})</td></tr>
               <tr><th>Chip N°:</th><td>${mascota.numeroChip || 'Sin microchip'}</td></tr>
               <tr><th>Castrado:</th><td><span class="badge-castrado" style="background: ${mascota.castrado ? '#e2fbe8; color: #1e7e34;' : '#fde8e8; color: #c82333;'}">${mascota.castrado ? 'Sí' : 'No'}</span></td></tr>
               <tr><th>Actividad:</th><td>${mascota.actividad}</td></tr>
@@ -634,6 +661,94 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
 
     const updated = [...current, vName];
     const mascotaActualizada: Mascota = { ...mascota, vacunasChecklist: updated };
+    await LocalDatabase.saveMascota(mascotaActualizada);
+    onUpdate();
+  };
+
+  const getDewormingInfo = (vName: 'Desparasitación Interna' | 'Desparasitación Externa') => {
+    const checklist = mascota.vacunasChecklist || [];
+    const dates = checklist
+      .filter(item => item.startsWith(`${vName}_`))
+      .map(item => item.split('_')[1])
+      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+    
+    const intervalMonths = vName === 'Desparasitación Interna' ? 3 : 1;
+    
+    if (dates.length > 0) {
+      const lastDateStr = dates[0];
+      const lastDate = new Date(lastDateStr);
+      const nextDate = new Date(lastDate);
+      nextDate.setMonth(nextDate.getMonth() + intervalMonths);
+      
+      const nextDateStr = nextDate.toISOString().split('T')[0];
+      
+      const todayStr = new Date().toISOString().split('T')[0];
+      const isOverdue = todayStr > nextDateStr;
+      
+      return {
+        hasDoses: true,
+        lastDate: lastDateStr,
+        nextDate: nextDateStr,
+        isOverdue,
+        status: isOverdue ? 'Vencida' : 'Al día',
+        allDoses: dates
+      };
+    }
+    
+    if (checklist.includes(vName)) {
+      return {
+        hasDoses: true,
+        lastDate: 'Registro legacy',
+        nextDate: 'Pendiente',
+        isOverdue: true,
+        status: 'Vencida',
+        allDoses: []
+      };
+    }
+    
+    return {
+      hasDoses: false,
+      lastDate: null,
+      nextDate: 'Pendiente',
+      isOverdue: true,
+      status: 'Pendiente',
+      allDoses: []
+    };
+  };
+
+  const formatearFechaSimple = (dateStr: string | null) => {
+    if (!dateStr) return 'Nunca';
+    if (dateStr === 'Registro legacy') return 'Sí (fecha desconocida)';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return dateStr;
+  };
+
+  const registrarTomaDeworming = async (vName: 'Desparasitación Interna' | 'Desparasitación Externa') => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const hoyFormateado = formatearFechaSimple(todayStr);
+    const confirmar = window.confirm(`¿Quieres registrar una nueva toma de ${vName} hoy (${hoyFormateado})?`);
+    if (!confirmar) return;
+
+    const current = mascota.vacunasChecklist || [];
+    const cleanCurrent = current.filter(item => item !== vName && !item.startsWith(`${vName}_`));
+    const updated = [...cleanCurrent, `${vName}_${todayStr}`];
+
+    const nuevoEvento = {
+      id: safeUUID(),
+      fecha: todayStr,
+      tipo: 'Tratamiento' as const,
+      descripcion: `Administrada ${vName}`
+    };
+
+    const mascotaActualizada: Mascota = {
+      ...mascota,
+      vacunasChecklist: updated,
+      historialPasado: [...(mascota.historialPasado || []), nuevoEvento]
+    };
+
     await LocalDatabase.saveMascota(mascotaActualizada);
     onUpdate();
   };
@@ -1121,17 +1236,23 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
             }}
           />
 
-          {/* Especie y Raza en Detalles */}
+          {/* Raza en Detalles */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', background: 'var(--game-card-bg, #fafafa)', padding: '8px 12px', borderRadius: 'var(--game-radius, 8px)', border: '1px solid var(--game-border-color, #eee)', color: 'var(--game-text-bright)' }}>
-            <span style={{ fontWeight: 'bold' }}>🐾 Especie y Raza:</span>
-            <span>{mascota.especie}{mascota.raza ? ` (${mascota.raza})` : ''}</span>
+            <span style={{ fontWeight: 'bold' }}>🐾 Raza:</span>
+            <span>{mascota.raza || 'Sin especificar'}</span>
           </div>
 
           {/* Fecha de Nacimiento y Edad en Detalles */}
           {mascota.fechaNacimiento && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', background: 'var(--game-card-bg, #fafafa)', padding: '8px 12px', borderRadius: 'var(--game-radius, 8px)', border: '1px solid var(--game-border-color, #eee)', color: 'var(--game-text-bright)' }}>
-              <span style={{ fontWeight: 'bold' }}>🎂 Edad y Nacimiento:</span>
-              <span>{mascota.fechaNacimiento} ({calcularEdadMascota(mascota.fechaNacimiento)})</span>
+              <span style={{ fontWeight: 'bold' }}>🎂 Edad:</span>
+              <span>
+                {(() => {
+                  const parts = mascota.fechaNacimiento.split('-');
+                  const fechaFormateada = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : mascota.fechaNacimiento;
+                  return `${fechaFormateada} (${calcularEdadMascota(mascota.fechaNacimiento)})`;
+                })()}
+              </span>
             </div>
           )}
 
@@ -1202,12 +1323,12 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
           {(mascota.especie === 'Felino' || mascota.especie === 'Canino') && (
             <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px' }}>
               <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>
-                💉 Control Preventivo (Vacunación y Desparasitación):
+                💉 Control Preventivo: Vacunación colocada
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
                 {(mascota.especie === 'Felino' 
-                  ? ['Trivalente Felina', 'Leucemia Felina', 'Rabia', 'Desparasitación Interna', 'Desparasitación Externa'] 
-                  : ['Parvovirus', 'Moquillo', 'Adenovirus', 'Rabia', 'Leptospirosis', 'Desparasitación Interna', 'Desparasitación Externa']
+                  ? ['Trivalente Felina', 'Leucemia Felina', 'Rabia'] 
+                  : ['Parvovirus', 'Moquillo', 'Adenovirus', 'Rabia', 'Leptospirosis']
                 ).map(vName => {
                   const isChecked = (mascota.vacunasChecklist || []).includes(vName);
                   return (
@@ -1223,6 +1344,64 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
                         {vName}
                       </span>
                     </label>
+                  );
+                })}
+              </div>
+
+              <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>
+                💊 Desparasitación Periódica
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {(['Desparasitación Interna', 'Desparasitación Externa'] as const).map(vName => {
+                  const info = getDewormingInfo(vName);
+                  return (
+                    <div key={vName} style={{
+                      background: 'var(--game-card-bg, #fafafa)',
+                      padding: '10px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--game-border-color, #eee)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: 'bold', fontSize: '12px', color: 'var(--game-text-bright)' }}>
+                          {vName === 'Desparasitación Interna' ? '💊 Interna (cada 3 meses)' : '🛡️ Externa (cada mes)'}
+                        </span>
+                        <span style={{
+                          fontSize: '10px',
+                          fontWeight: 'bold',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          background: info.status === 'Al día' ? '#e2fbe8' : '#fde8e8',
+                          color: info.status === 'Al día' ? '#1e7e34' : '#c82333'
+                        }}>
+                          {info.status}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--game-text)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <div><strong>Última toma:</strong> {formatearFechaSimple(info.lastDate)}</div>
+                        <div><strong>Próxima toma:</strong> {formatearFechaSimple(info.nextDate)}</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => registrarTomaDeworming(vName)}
+                        style={{
+                          alignSelf: 'flex-start',
+                          padding: '4px 8px',
+                          background: 'var(--game-accent, #1976d2)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          marginTop: '2px'
+                        }}
+                      >
+                        Registrar Toma
+                      </button>
+                    </div>
                   );
                 })}
               </div>
