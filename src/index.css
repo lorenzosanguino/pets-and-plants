@@ -368,8 +368,11 @@ button {
   }
 }
 
-/* Soporte de Impresión por Swapping */
 @media print {
+  @page {
+    size: A4;
+    margin: 0 !important;
+  }
   body.printing-active #root {
     display: none !important;
   }

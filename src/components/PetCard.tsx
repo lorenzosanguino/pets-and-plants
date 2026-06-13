@@ -188,9 +188,9 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
           font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
           color: #0f172a !important;
           background: #ffffff !important;
-          padding: 15px !important;
-          font-size: 10px !important;
-          line-height: 1.3 !important;
+          padding: 20px !important;
+          font-size: 11.5px !important;
+          line-height: 1.4 !important;
           width: 210mm !important;
           height: 297mm !important;
           max-height: 297mm !important; /* Limitar estrictamente al alto A4 */
@@ -208,28 +208,28 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
           color: #1e3a8a !important;
         }
         .print-container h1 {
-          font-size: 17px !important;
+          font-size: 20px !important;
           font-weight: 800 !important;
           border-bottom: 2px solid #3b82f6 !important;
-          padding-bottom: 4px !important;
-          margin-bottom: 8px !important;
+          padding-bottom: 5px !important;
+          margin-bottom: 10px !important;
           display: flex !important;
           justify-content: space-between !important;
           align-items: flex-end !important;
         }
         .print-container h1 span {
-          font-size: 9px !important;
+          font-size: 10px !important;
           font-weight: 500 !important;
           color: #64748b !important;
           text-transform: uppercase !important;
           letter-spacing: 0.05em !important;
         }
         .print-container h3 {
-          font-size: 11px !important;
+          font-size: 12.5px !important;
           font-weight: 700 !important;
           border-bottom: 1.5px solid #e2e8f0 !important;
-          padding-bottom: 3px !important;
-          margin-bottom: 6px !important;
+          padding-bottom: 4px !important;
+          margin-bottom: 7px !important;
           color: #1e3a8a !important;
           text-transform: uppercase !important;
           letter-spacing: 0.02em !important;
@@ -243,12 +243,12 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
         .print-container .left-col, .print-container .right-col {
           display: flex !important;
           flex-direction: column !important;
-          gap: 9px !important;
+          gap: 12px !important;
         }
         .print-container .photo-container {
           width: 100% !important;
           aspect-ratio: 1 / 1 !important;
-          max-height: 155px !important;
+          max-height: 180px !important;
           border-radius: 8px !important;
           overflow: hidden !important;
           border: 1px solid #e2e8f0 !important;
@@ -273,7 +273,7 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
         }
         .print-container .details-table th, .print-container .details-table td {
           text-align: left !important;
-          padding: 4px 0 !important;
+          padding: 5px 0 !important;
           border-bottom: 1px solid #f1f5f9 !important;
         }
         .print-container .details-table th {
@@ -288,13 +288,13 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
         .print-container .checklist-grid {
           display: grid !important;
           grid-template-columns: repeat(2, 1fr) !important;
-          gap: 4px !important;
+          gap: 5px !important;
         }
         .print-container .checklist-item {
           display: flex !important;
           align-items: center !important;
-          gap: 4px !important;
-          padding: 3px 5px !important;
+          gap: 5px !important;
+          padding: 4px 6px !important;
           border-radius: 4px !important;
           background: #f8fafc !important;
           border: 1px solid #f1f5f9 !important;
@@ -325,7 +325,7 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
           border-collapse: collapse !important;
         }
         .print-container .history-table th, .print-container .history-table td {
-          padding: 4px 6px !important;
+          padding: 5px 8px !important;
           text-align: left !important;
           border-bottom: 1px solid #e2e8f0 !important;
         }
@@ -337,10 +337,10 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
         .print-container .timeline {
           display: flex !important;
           flex-direction: column !important;
-          gap: 5px !important;
+          gap: 6px !important;
         }
         .print-container .timeline-item {
-          padding: 6px !important;
+          padding: 7px !important;
           background: #f8fafc !important;
           border-left: 3px solid #cbd5e1 !important;
           border-radius: 0 4px 4px 0 !important;
