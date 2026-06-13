@@ -378,16 +378,17 @@ button {
     position: absolute;
     left: 0;
     top: 0;
-    width: 100%;
-    height: auto;
-    margin: 0;
-    padding: 0;
+    width: 210mm !important; /* Forzar el ancho físico A4 en render */
+    height: 297mm !important; /* Forzar el alto físico A4 en render */
+    margin: 0 !important;
+    padding: 0 !important;
     background: #ffffff !important;
   }
   /* Evitar páginas adicionales vacías */
   html, body {
-    height: 100%;
-    overflow: hidden;
+    width: 210mm !important;
+    height: 297mm !important;
+    overflow: hidden !important;
     background: #ffffff !important;
   }
 }

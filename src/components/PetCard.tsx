@@ -185,185 +185,186 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
     printDiv.innerHTML = `
       <style>
         .print-container {
-          font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-          color: #0f172a;
+          font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+          color: #0f172a !important;
           background: #ffffff !important;
-          padding: 20px;
-          font-size: 11px;
-          line-height: 1.4;
-          width: 100%;
-          box-sizing: border-box;
+          padding: 20px !important;
+          font-size: 11px !important;
+          line-height: 1.4 !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
         }
         .print-container * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
-          box-sizing: border-box;
+          box-sizing: border-box !important;
         }
         .print-container h1, .print-container h2, .print-container h3, .print-container h4 {
-          margin: 0;
-          color: #1e3a8a;
+          margin: 0 !important;
+          color: #1e3a8a !important;
         }
         .print-container h1 {
-          font-size: 20px;
-          font-weight: 800;
-          border-bottom: 2px solid #3b82f6;
-          padding-bottom: 6px;
-          margin-bottom: 15px;
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-end;
+          font-size: 20px !important;
+          font-weight: 800 !important;
+          border-bottom: 2px solid #3b82f6 !important;
+          padding-bottom: 6px !important;
+          margin-bottom: 15px !important;
+          display: flex !important;
+          justify-content: space-between !important;
+          align-items: flex-end !important;
         }
         .print-container h1 span {
-          font-size: 10px;
-          font-weight: 500;
-          color: #64748b;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
+          font-size: 10px !important;
+          font-weight: 500 !important;
+          color: #64748b !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.05em !important;
         }
         .print-container h3 {
-          font-size: 12px;
-          font-weight: 700;
-          border-bottom: 1.5px solid #e2e8f0;
-          padding-bottom: 4px;
-          margin-bottom: 8px;
-          color: #1e3a8a;
-          text-transform: uppercase;
-          letter-spacing: 0.02em;
+          font-size: 12px !important;
+          font-weight: 700 !important;
+          border-bottom: 1.5px solid #e2e8f0 !important;
+          padding-bottom: 4px !important;
+          margin-bottom: 8px !important;
+          color: #1e3a8a !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.02em !important;
         }
         .print-container .grid-container {
-          display: grid;
-          grid-template-columns: 32% 64%;
-          gap: 4%;
+          display: grid !important;
+          grid-template-columns: 32% 64% !important;
+          gap: 4% !important;
+          width: 100% !important;
         }
         .print-container .left-col, .print-container .right-col {
-          display: flex;
-          flex-direction: column;
-          gap: 15px;
+          display: flex !important;
+          flex-direction: column !important;
+          gap: 15px !important;
         }
         .print-container .photo-container {
-          width: 100%;
-          height: 180px;
-          border-radius: 8px;
-          overflow: hidden;
-          border: 1px solid #e2e8f0;
-          background: #f8fafc;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          width: 100% !important;
+          height: 180px !important;
+          border-radius: 8px !important;
+          overflow: hidden !important;
+          border: 1px solid #e2e8f0 !important;
+          background: #f8fafc !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
         }
         .print-container .photo-container img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: cover !important;
         }
         .print-container .photo-placeholder {
-          font-size: 64px;
+          font-size: 64px !important;
         }
         .print-container .details-table {
-          width: 100%;
-          border-collapse: collapse;
+          width: 100% !important;
+          border-collapse: collapse !important;
         }
         .print-container .details-table th, .print-container .details-table td {
-          text-align: left;
-          padding: 5px 0;
-          border-bottom: 1px solid #f1f5f9;
+          text-align: left !important;
+          padding: 5px 0 !important;
+          border-bottom: 1px solid #f1f5f9 !important;
         }
         .print-container .details-table th {
-          font-weight: 600;
-          color: #64748b;
-          width: 45%;
+          font-weight: 600 !important;
+          color: #64748b !important;
+          width: 45% !important;
         }
         .print-container .details-table td {
-          font-weight: 500;
-          color: #0f172a;
+          font-weight: 500 !important;
+          color: #0f172a !important;
         }
         .print-container .checklist-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 6px;
+          display: grid !important;
+          grid-template-columns: repeat(2, 1fr) !important;
+          gap: 6px !important;
         }
         .print-container .checklist-item {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 4px 6px;
-          border-radius: 4px;
-          background: #f8fafc;
-          border: 1px solid #f1f5f9;
+          display: flex !important;
+          align-items: center !important;
+          gap: 6px !important;
+          padding: 4px 6px !important;
+          border-radius: 4px !important;
+          background: #f8fafc !important;
+          border: 1px solid #f1f5f9 !important;
         }
         .print-container .checklist-item.checked {
-          background: #f0fdf4;
-          border-color: #bbf7d0;
+          background: #f0fdf4 !important;
+          border-color: #bbf7d0 !important;
         }
         .print-container .checklist-item.checked .checkbox {
-          color: #16a34a;
-          font-weight: bold;
+          color: #16a34a !important;
+          font-weight: bold !important;
         }
         .print-container .checklist-item.checked .label {
-          color: #14532d;
-          font-weight: 500;
+          color: #14532d !important;
+          font-weight: 500 !important;
         }
         .print-container .checkbox {
-          font-size: 10px;
-          color: #94a3b8;
-          width: 12px;
-          text-align: center;
+          font-size: 10px !important;
+          color: #94a3b8 !important;
+          width: 12px !important;
+          text-align: center !important;
         }
         .print-container .label {
-          color: #475569;
+          color: #475569 !important;
         }
         .print-container .history-table {
-          width: 100%;
-          border-collapse: collapse;
+          width: 100% !important;
+          border-collapse: collapse !important;
         }
         .print-container .history-table th, .print-container .history-table td {
-          padding: 5px 8px;
-          text-align: left;
-          border-bottom: 1px solid #e2e8f0;
+          padding: 5px 8px !important;
+          text-align: left !important;
+          border-bottom: 1px solid #e2e8f0 !important;
         }
         .print-container .history-table th {
-          background: #f8fafc;
-          color: #475569;
-          font-weight: 600;
+          background: #f8fafc !important;
+          color: #475569 !important;
+          font-weight: 600 !important;
         }
         .print-container .timeline {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
+          display: flex !important;
+          flex-direction: column !important;
+          gap: 8px !important;
         }
         .print-container .timeline-item {
-          padding: 8px;
-          background: #f8fafc;
-          border-left: 3px solid #cbd5e1;
-          border-radius: 0 4px 4px 0;
+          padding: 8px !important;
+          background: #f8fafc !important;
+          border-left: 3px solid #cbd5e1 !important;
+          border-radius: 0 4px 4px 0 !important;
         }
         .print-container .timeline-meta {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 4px;
+          display: flex !important;
+          justify-content: space-between !important;
+          align-items: center !important;
+          margin-bottom: 4px !important;
         }
         .print-container .timeline-date {
-          font-weight: 600;
-          color: #64748b;
+          font-weight: 600 !important;
+          color: #64748b !important;
         }
         .print-container .timeline-type {
-          font-size: 8px;
-          padding: 1px 4px;
-          border-radius: 4px;
-          font-weight: bold;
-          text-transform: uppercase;
+          font-size: 8px !important;
+          padding: 1px 4px !important;
+          border-radius: 4px !important;
+          font-weight: bold !important;
+          text-transform: uppercase !important;
         }
         .print-container .timeline-text {
-          color: #334155;
-          white-space: pre-wrap;
+          color: #334155 !important;
+          white-space: pre-wrap !important;
         }
         .print-container .badge-castrado {
-          font-size: 9px;
-          font-weight: bold;
-          padding: 1px 4px;
-          border-radius: 4px;
-          display: inline-block;
+          font-size: 9px !important;
+          font-weight: bold !important;
+          padding: 1px 4px !important;
+          border-radius: 4px !important;
+          display: inline-block !important;
         }
       </style>
       <h1>
@@ -444,11 +445,9 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
           document.body.removeChild(printDiv);
         }
         window.removeEventListener('afterprint', cleanup);
-        window.removeEventListener('focus', cleanup);
       };
 
       window.addEventListener('afterprint', cleanup);
-      window.addEventListener('focus', cleanup);
 
       window.print();
     };
