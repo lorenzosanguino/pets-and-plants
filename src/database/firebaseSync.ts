@@ -50,6 +50,7 @@ export interface HogarCloudData {
   exoticos: AnimalExotico[];
   updatedAt: number;
   lastUpdatedBy: string; // Tab/Device unique ID
+  theme?: string; // Soportar sincronización del tema visual
 }
 
 // Device/Session ID to prevent feedback loops
@@ -133,7 +134,7 @@ export class FirebaseSyncService {
   /**
    * Crea un nuevo Hogar en la nube (o mock local)
    */
-  static async createHogar(nombre: string, mascotas: Mascota[], plantas: Planta[], exoticos: AnimalExotico[]): Promise<string> {
+  static async createHogar(nombre: string, mascotas: Mascota[], plantas: Planta[], exoticos: AnimalExotico[], theme?: string): Promise<string> {
     const code = this.generateHogarCode();
     const data: HogarCloudData = {
       nombre,
@@ -141,7 +142,8 @@ export class FirebaseSyncService {
       plantas,
       exoticos,
       updatedAt: Date.now(),
-      lastUpdatedBy: deviceSessionId
+      lastUpdatedBy: deviceSessionId,
+      theme
     };
 
     if (this.isCloudEnabled()) {
@@ -179,14 +181,15 @@ export class FirebaseSyncService {
   /**
    * Sube cambios al hogar activo
    */
-  static async uploadChanges(code: string, nombre: string, mascotas: Mascota[], plantas: Planta[], exoticos: AnimalExotico[]): Promise<void> {
+  static async uploadChanges(code: string, nombre: string, mascotas: Mascota[], plantas: Planta[], exoticos: AnimalExotico[], theme?: string): Promise<void> {
     const data: HogarCloudData = {
       nombre,
       mascotas,
       plantas,
       exoticos,
       updatedAt: Date.now(),
-      lastUpdatedBy: deviceSessionId
+      lastUpdatedBy: deviceSessionId,
+      theme
     };
 
     if (this.isCloudEnabled()) {

@@ -247,8 +247,26 @@ export const PetPlantDashboard: React.FC = () => {
       : 'nature';
   });
 
+  const lastSyncedThemeRef = useRef<string | null>(null);
+  const isInitialThemeMount = useRef(true);
+
   useEffect(() => {
     localStorage.setItem('petplant_game_theme', uiTheme);
+
+    if (isInitialThemeMount.current) {
+      isInitialThemeMount.current = false;
+      return;
+    }
+
+    if (lastSyncedThemeRef.current === uiTheme) {
+      lastSyncedThemeRef.current = null;
+      return;
+    }
+
+    const activeHogar = localStorage.getItem('petplant_hogar_id');
+    if (activeHogar && localStorage.getItem('petplant_login_provider') === 'google') {
+      refreshData(true);
+    }
   }, [uiTheme]);
 
   const [customApiKey, setCustomApiKey] = useState<string>(() => localStorage.getItem('petplant_gemini_api_key') || '');
@@ -331,7 +349,7 @@ export const PetPlantDashboard: React.FC = () => {
       if (activeHogar && !isRemoteSyncingRef.current && localStorage.getItem('petplant_login_provider') === 'google') {
         const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Hogar Sincronizado";
         setSyncStatus('syncing');
-        const uploadPromise = getFirebaseCached()?.FirebaseSyncService.uploadChanges(activeHogar, activeNombre, listMascotas, listPlantas, listExoticos);
+        const uploadPromise = getFirebaseCached()?.FirebaseSyncService.uploadChanges(activeHogar, activeNombre, listMascotas, listPlantas, listExoticos, uiTheme);
         if (uploadPromise) {
           uploadPromise
             .then(() => setSyncStatus('synced'))
@@ -497,10 +515,16 @@ export const PetPlantDashboard: React.FC = () => {
                         isRemoteSyncingRef.current = false;
                         await refreshData(false);
                       }
+
+                      // Aplicar tema de la nube si existe y es válido
+                      if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii')) {
+                        lastSyncedThemeRef.current = data.theme || null;
+                        setUiTheme(data.theme);
+                      }
                     } else {
                       // Si no hay datos en la nube para este hogarId pero tenemos datos locales, los subimos de inmediato
                       if (listMascotas.length > 0 || listPlantas.length > 0 || listExoticos.length > 0) {
-                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos);
+                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme);
                       }
                     }
                   } else {
@@ -509,7 +533,15 @@ export const PetPlantDashboard: React.FC = () => {
                     if (localHogarId) {
                       await FirebaseSyncService.saveUserHogar(firebaseUser.uid, localHogarId, localHogarNombre);
                       // Subir los datos locales actuales para asegurar que el hogar en la nube esté creado
-                      await FirebaseSyncService.uploadChanges(localHogarId, localHogarNombre, listMascotas, listPlantas, listExoticos);
+                      await FirebaseSyncService.uploadChanges(localHogarId, localHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme);
+                    } else {
+                      // Crear automáticamente un hogar nuevo si el usuario no tiene ninguno local ni remoto
+                      const nuevoCodigo = await FirebaseSyncService.createHogar("Mi Hogar", listMascotas, listPlantas, listExoticos, uiTheme);
+                      localStorage.setItem('petplant_hogar_id', nuevoCodigo);
+                      localStorage.setItem('petplant_hogar_nombre', "Mi Hogar");
+                      setHogarId(nuevoCodigo);
+                      setHogarNombre("Mi Hogar");
+                      await FirebaseSyncService.saveUserHogar(firebaseUser.uid, nuevoCodigo, "Mi Hogar");
                     }
                   }
                 } catch (err) {
@@ -686,6 +718,17 @@ export const PetPlantDashboard: React.FC = () => {
           isRemoteSyncingRef.current = false;
         }
       }
+
+      // Aplicar el tema visual de la nube si existe y es diferente
+      if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii')) {
+        setUiTheme(prevTheme => {
+          if (prevTheme !== data.theme) {
+            lastSyncedThemeRef.current = data.theme || null;
+            return data.theme as 'nature' | 'gaming' | 'kawaii';
+          }
+          return prevTheme;
+        });
+      }
     });
 
     return () => { unsubscribe?.(); };
@@ -697,7 +740,7 @@ export const PetPlantDashboard: React.FC = () => {
     if (!nuevoHogarNombre.trim()) return;
     setSyncStatus('syncing');
     try {
-      const code = await (getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService).createHogar(nuevoHogarNombre.trim(), mascotas, plantas, exoticos);
+      const code = await (getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService).createHogar(nuevoHogarNombre.trim(), mascotas, plantas, exoticos, uiTheme);
       setHogarId(code);
       setHogarNombre(nuevoHogarNombre.trim());
       localStorage.setItem('petplant_hogar_id', code);
@@ -739,6 +782,12 @@ export const PetPlantDashboard: React.FC = () => {
         isRemoteSyncingRef.current = true;
         await LocalDatabase.overwriteDatabase(data.mascotas || [], data.plantas || [], data.exoticos || []);
         isRemoteSyncingRef.current = false;
+
+        // Aplicar el tema visual si está presente en el hogar al que nos unimos
+        if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii')) {
+          lastSyncedThemeRef.current = data.theme || null;
+          setUiTheme(data.theme);
+        }
         
         setJoinHogarId('');
         setSyncStatus('synced');
