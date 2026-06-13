@@ -368,3 +368,32 @@ button {
   }
 }
 
+/* Soporte de Impresión por Swapping */
+@media print {
+  body.printing-active #root {
+    display: none !important;
+  }
+  body.printing-active .print-container {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    background: #ffffff !important;
+  }
+  /* Evitar páginas adicionales vacías */
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: #ffffff !important;
+  }
+}
+@media screen {
+  .print-container {
+    display: none !important;
+  }
+}
+
