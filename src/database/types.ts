@@ -41,7 +41,6 @@ export interface Mascota {
   actividad: NivelActividad;
   porcionDiariaGramos?: number; // Calculado por la fórmula metabólica
   diarioClinico: EntradaDiarioClinico[];
-  avatarUrl?: string; // URL de avatar (Base64 optimizado)
   fotoUrl?: string; // Foto real de la mascota (Base64 optimizado)
   fotos?: string[]; // Colección de fotos (Base64 optimizado)
   vacunasChecklist?: string[]; // Checklist de vacunas colocadas

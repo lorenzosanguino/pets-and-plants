@@ -481,4 +481,46 @@ export class LocalDatabase {
       tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
     });
   }
+
+  static async overwriteFullDatabase(
+    mascotas: Mascota[],
+    plantas: Planta[],
+    exoticos: AnimalExotico[],
+    eventos: EventoCalendario[] = [],
+    chats: ChatHistorial[] = []
+  ): Promise<void> {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(['mascotas', 'plantas', 'exoticos', 'eventos_calendario', 'chats_consultor'], 'readwrite');
+      const petStore = tx.objectStore('mascotas');
+      const plantStore = tx.objectStore('plantas');
+      const exoticStore = tx.objectStore('exoticos');
+      const eventStore = tx.objectStore('eventos_calendario');
+      const chatStore = tx.objectStore('chats_consultor');
+
+      petStore.clear();
+      plantStore.clear();
+      exoticStore.clear();
+      eventStore.clear();
+      chatStore.clear();
+
+      mascotas.forEach(m => petStore.put(m));
+      plantas.forEach(p => plantStore.put(p));
+      exoticos.forEach(e => exoticStore.put(e));
+      eventos.forEach(ev => eventStore.put(ev));
+      chats.forEach(ch => chatStore.put(ch));
+
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
+    });
+  }
+
+  static async resetToDemo(): Promise<void> {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('petplant_seed_done');
+    }
+    await this.clear();
+    await this.seedInitialData();
+  }
 }

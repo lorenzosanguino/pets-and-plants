@@ -4,10 +4,12 @@ import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
 
 interface EcosystemCalendarProps {
+  plantas: any[];
+  mascotas: any[];
   onUpdate: () => void;
 }
 
-export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ onUpdate }) => {
+export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = [], mascotas = [], onUpdate }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [eventos, setEventos] = useState<EventoCalendario[]>([]);
   const [selectedDayStr, setSelectedDayStr] = useState<string | null>(() => {
@@ -22,6 +24,77 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ onUpdate }
   // Form states
   const [newTexto, setNewTexto] = useState('');
   const [newCategoria, setNewCategoria] = useState<EventoCalendario['categoria']>('riego');
+
+  const obtenerTareasAutomaticas = (dateStr: string) => {
+    const tareas: { type: string; title: string; detail: string; emoji: string; color: string; targetId: string }[] = [];
+    
+    // 1. Riegos programados de plantas
+    plantas.forEach(p => {
+      if (p.proximaFechaRiego) {
+        const fechaRiego = p.proximaFechaRiego.split('T')[0];
+        if (fechaRiego === dateStr) {
+          tareas.push({
+            type: 'riego',
+            title: `Regar ${p.nombreComun}`,
+            detail: `Usar: ${p.tipoRiegoEspecifico || 'agua'}`,
+            emoji: '💧',
+            color: '#2196f3',
+            targetId: p.id
+          });
+        }
+      }
+    });
+
+    // 2. Tareas sugeridas de hoy (vacunas y pesajes)
+    const hoy = new Date();
+    const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+    
+    if (dateStr === hoyStr) {
+      // Pesaje sugerido
+      mascotas.forEach(m => {
+        const ultimoPeso = m.registroPeso && m.registroPeso[m.registroPeso.length - 1];
+        const fechaUltimoPeso = ultimoPeso ? new Date(ultimoPeso.fecha) : new Date(0);
+        const diferenciaMs = hoy.getTime() - fechaUltimoPeso.getTime();
+        const diasDesdePeso = Math.floor(diferenciaMs / (1000 * 60 * 60 * 24));
+
+        if (diasDesdePeso >= 7 || !ultimoPeso) {
+          tareas.push({
+            type: 'peso',
+            title: `Pesar a ${m.nombre}`,
+            detail: "Mantener actualizada la curva de peso",
+            emoji: '⚖️',
+            color: '#9c27b0',
+            targetId: m.id
+          });
+        }
+      });
+
+      // Vacunas / Desparasitaciones pendientes
+      mascotas.forEach(m => {
+        if (m.especie === 'Felino' || m.especie === 'Canino') {
+          const checklistRequerido = m.especie === 'Felino'
+            ? ['Trivalente Felina', 'Leucemia Felina', 'Rabia', 'Desparasitación Interna', 'Desparasitación Externa']
+            : ['Parvovirus', 'Moquillo', 'Adenovirus', 'Rabia', 'Leptospirosis', 'Desparasitación Interna', 'Desparasitación Externa'];
+
+          const marcados = m.vacunasChecklist || [];
+          const pendientes = checklistRequerido.filter(v => !marcados.includes(v));
+
+          pendientes.forEach(v => {
+            tareas.push({
+              type: 'vacuna',
+              title: `Vacunar ${v} a ${m.nombre}`,
+              detail: `Medicina preventiva pendiente para ${m.nombre}`,
+              emoji: v.includes('Desparasitación') ? '💊' : '💉',
+              color: '#f59e0b',
+              targetId: m.id
+            });
+          });
+        }
+      });
+    }
+
+    return tareas;
+  };
 
   useEffect(() => {
     loadEvents();
@@ -204,9 +277,10 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ onUpdate }
           const paddedDay = String(dayNum).padStart(2, '0');
           const dateStr = `${year}-${paddedMonth}-${paddedDay}`;
           const isSelected = selectedDayStr === dateStr;
-
           // Day events check
           const dayEvents = eventos.filter(ev => ev.fecha === dateStr);
+          const autoTareas = obtenerTareasAutomaticas(dateStr);
+          const totalEventosEnDia = dayEvents.length + autoTareas.length;
 
           const today = new Date();
           const isToday = today.getDate() === dayNum && today.getMonth() === month && today.getFullYear() === year;
@@ -250,7 +324,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ onUpdate }
               }}>{dayNum}</span>
               
               {/* Category Dots */}
-              {dayEvents.length > 0 && (
+              {totalEventosEnDia > 0 && (
                 <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '100%' }}>
                   {dayEvents.slice(0, 3).map(ev => (
                     <span
@@ -265,7 +339,21 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ onUpdate }
                       title={getCategoryLabel(ev.categoria)}
                     />
                   ))}
-                  {dayEvents.length > 3 && <span style={{ fontSize: '7px', fontWeight: 'bold', lineHeight: '1' }}>+</span>}
+                  {autoTareas.slice(0, Math.max(0, 3 - dayEvents.length)).map((t, idx) => (
+                    <span
+                      key={`auto-${idx}`}
+                      style={{
+                        width: '5px',
+                        height: '5px',
+                        borderRadius: '50%',
+                        background: t.color,
+                        display: 'inline-block',
+                        border: '1.5px solid rgba(255,255,255,0.7)'
+                      }}
+                      title={t.title}
+                    />
+                  ))}
+                  {totalEventosEnDia > 3 && <span style={{ fontSize: '7px', fontWeight: 'bold', lineHeight: '1' }}>+</span>}
                 </div>
               )}
             </div>
@@ -357,9 +445,87 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ onUpdate }
           )}
 
           {/* Day events list */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
-            {selectedDayEvents.length === 0 ? (
-              <p style={{ margin: '0', fontSize: '12px', color: '#888', fontStyle: 'italic' }}>Sin recordatorios ni notas registradas.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+            {/* Tareas Automáticas del Ecosistema */}
+            {obtenerTareasAutomaticas(selectedDayStr).map((t, idx) => (
+              <div
+                key={`auto-task-${idx}`}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #e0e0e0',
+                  borderLeft: `5px solid ${t.color}`,
+                  background: 'rgba(255, 152, 0, 0.03)',
+                  fontSize: '12px'
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
+                  <span style={{ fontSize: '9px', fontWeight: 'bold', color: t.color, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {t.emoji} Tarea del Ecosistema • {t.type.toUpperCase()}
+                  </span>
+                  <span style={{ color: 'var(--game-text-bright, #333)', fontWeight: 'bold' }}>{t.title}</span>
+                  <span style={{ fontSize: '10px', color: '#666' }}>{t.detail}</span>
+                </div>
+                
+                {(t.type === 'riego' || t.type === 'vacuna') && (
+                  <button
+                    onClick={async () => {
+                      if (t.type === 'riego') {
+                        const p = plantas.find(item => item.id === t.targetId);
+                        if (p) {
+                          const hoyStr = new Date().toISOString();
+                          const proxStr = new Date(Date.now() + p.intervaloRiegoDias * 24 * 3600 * 1000).toISOString();
+                          await LocalDatabase.savePlanta({
+                            ...p,
+                            ultimaFechaRiego: hoyStr,
+                            proximaFechaRiego: proxStr
+                          });
+                        }
+                      } else if (t.type === 'vacuna') {
+                        const m = mascotas.find(item => item.id === t.targetId);
+                        if (m) {
+                          // Extraemos la vacuna removiendo "Vacunar " y " a NombreMascota"
+                          const cleanTitle = t.title.replace('Vacunar ', '');
+                          const vName = cleanTitle.split(` a ${m.nombre}`)[0];
+                          const confirmar = window.confirm(`¿Estás seguro/a de marcar "${vName}" para ${m.nombre} como colocada/realizada? Esta acción no se puede deshacer.`);
+                          if (!confirmar) return;
+
+                          const current = m.vacunasChecklist || [];
+                          if (!current.includes(vName)) {
+                            const updated = [...current, vName];
+                            await LocalDatabase.saveMascota({
+                              ...m,
+                              vacunasChecklist: updated
+                            });
+                          }
+                        }
+                      }
+                      onUpdate();
+                      await loadEvents();
+                    }}
+                    style={{
+                      padding: '4px 8px',
+                      background: '#e8f5e9',
+                      color: '#2e7d32',
+                      border: '1px solid #c8e6c9',
+                      borderRadius: '4px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      flexShrink: 0
+                    }}
+                  >
+                    Completar ✓
+                  </button>
+                )}
+              </div>
+            ))}
+
+            {selectedDayEvents.length === 0 && obtenerTareasAutomaticas(selectedDayStr).length === 0 ? (
+              <p style={{ margin: '0', fontSize: '12px', color: '#888', fontStyle: 'italic', textAlign: 'center' }}>Sin recordatorios ni notas registradas.</p>
             ) : (
               selectedDayEvents.map(ev => (
                 <div

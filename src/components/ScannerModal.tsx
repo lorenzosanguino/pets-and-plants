@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { CameraScanner } from './CameraScanner';
-import { AvatarGeneratorService } from '../services/avatarGenerator';
 import { GeminiAPIService } from '../services/geminiAPI';
 import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
 import type { Mascota, Planta, AnimalExotico } from '../database/types';
+import { IAQuotaManager } from '../utils/iaQuota';
 
 interface ScannerModalProps {
   onClose: () => void;
@@ -19,10 +19,10 @@ interface ScannerModalProps {
 type ScanMode = 'registrar_mascota' | 'salud_mascota' | 'registrar_planta' | 'enfermedad_planta' | 'registrar_exotico' | 'salud_exotico';
 
 export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, plantas, exoticos, onUpdate, forcedMode, forcedAssetId }) => {
+  const cuota = IAQuotaManager.obtenerEstadoCuota();
   const [mode, setMode] = useState<ScanMode>(forcedMode || 'registrar_mascota');
   const [loading, setLoading] = useState(false);
   const [capturedDataUrl, setCapturedDataUrl] = useState<string | null>(null);
-  const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
   const [capturedImages, setCapturedImages] = useState<{ blob: Blob; dataUrl: string }[]>([]);
   const [customQuery, setCustomQuery] = useState('');
   
@@ -38,9 +38,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
   const [petActividad, setPetActividad] = useState<'Baja' | 'Moderada' | 'Alta'>('Moderada');
   const [petSexo, setPetSexo] = useState<'Macho' | 'Hembra'>('Macho');
   const [petCastrado, setPetCastrado] = useState<boolean>(false);
-  const [generatedAvatarUrl, setGeneratedAvatarUrl] = useState<string | null>(null);
-  const [avatarStatus, setAvatarStatus] = useState('');
-  const [estilo, setEstilo] = useState<'Óleo Clásico' | 'Cómic Hiperrealista' | 'Renderizado 3D' | 'Retrato Minimalista Claro'>('Retrato Minimalista Claro');
+  const [petFechaNacimiento, setPetFechaNacimiento] = useState(() => new Date().toISOString().split('T')[0]);
 
   // Estados de edición del formulario de planta escaneada
   const [plantNombreComun, setPlantNombreComun] = useState('');
@@ -70,7 +68,6 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
     setCapturedImages(imageList);
     const primaryImage = imageList[0];
     setCapturedDataUrl(primaryImage.dataUrl);
-    setCapturedBlob(primaryImage.blob);
     setLoading(true);
     setErrorMsg('');
 
@@ -130,31 +127,9 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
     }
   };
 
-  const handleGenerateAvatar = async () => {
-    if (!capturedBlob) return;
-    setAvatarStatus('Iniciando generación de avatar retro...');
-    try {
-      const imagesForAvatar = capturedImages.length > 0 
-        ? capturedImages.map(img => img.blob)
-        : [capturedBlob];
-      const paddedImages = [...imagesForAvatar];
-      while (paddedImages.length < 5) {
-        paddedImages.push(imagesForAvatar[paddedImages.length % imagesForAvatar.length]);
-      }
-
-      const avatar = await AvatarGeneratorService.generate(paddedImages, estilo, (status, percent) => {
-        setAvatarStatus(`Progreso: ${percent}% - ${status}`);
-      });
-      setGeneratedAvatarUrl(avatar);
-      setAvatarStatus('¡Avatar generado con éxito!');
-    } catch (err: any) {
-      setAvatarStatus(`Error al generar avatar: ${err.message}`);
-    }
-  };
 
   const seleccionarFotoPrincipal = async (image: { blob: Blob; dataUrl: string }) => {
     setCapturedDataUrl(image.dataUrl);
-    setCapturedBlob(image.blob);
     setLoading(true);
     setErrorMsg('');
 
@@ -240,14 +215,13 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
       id: safeUUID(),
       nombre: petNombre.trim(),
       especie: petEspecie,
-      fechaNacimiento: new Date().toISOString().split('T')[0],
+      fechaNacimiento: petFechaNacimiento,
       registroPeso: [{ fecha: new Date().toISOString(), pesoKg: pesoNum }],
       historialVacunas: [],
       actividad: petActividad,
       porcionDiariaGramos: porcionSugerida,
       diarioClinico: [],
       fotoUrl: capturedDataUrl, // Foto obligatoria
-      avatarUrl: generatedAvatarUrl || undefined,
       fotos: capturedImages.length > 0 ? capturedImages.map(img => img.dataUrl) : [capturedDataUrl],
       raza: petRaza.trim() || undefined,
       sexo: petSexo,
@@ -432,12 +406,9 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
 
   const resetScanner = () => {
     setCapturedDataUrl(null);
-    setCapturedBlob(null);
     setCapturedImages([]);
     setScanResult(null);
-    setGeneratedAvatarUrl(null);
     setErrorMsg('');
-    setAvatarStatus('');
     // Reset pet form
     setPetNombre('');
     setPetEspecie('Felino');
@@ -446,6 +417,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
     setPetActividad('Moderada');
     setPetSexo('Macho');
     setPetCastrado(false);
+    setPetFechaNacimiento(new Date().toISOString().split('T')[0]);
     // Reset plant form
     setPlantNombreComun('');
     setPlantNombreCientifico('');
@@ -510,6 +482,28 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
           🔍 Escáner Clínico Inteligente
         </h2>
 
+        <div style={{
+          background: (!cuota.esIlimitado && cuota.restantes === 0) ? 'rgba(244,67,54,0.1)' : 'rgba(25, 118, 210, 0.08)',
+          border: '1px solid ' + ((!cuota.esIlimitado && cuota.restantes === 0) ? '#f44336' : 'var(--game-border-color, #1976d2)'),
+          padding: '10px 14px',
+          borderRadius: '8px',
+          fontSize: '12px',
+          color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#c62828' : 'var(--game-text-bright)',
+          marginBottom: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontWeight: '500'
+        }}>
+          <span>
+            {cuota.esIlimitado 
+              ? '⚡ Modo Premium: Análisis ilimitados con tu clave API.' 
+              : cuota.restantes === 0 
+                ? '❌ Límite diario de análisis alcanzado. Ingresa tu API Key en Ajustes ⚙️ para tener análisis ilimitados.' 
+                : `🔑 Te quedan ${cuota.restantes} análisis de IA disponibles hoy.`}
+          </span>
+        </div>
+
         {/* 1. Panel de selección de Modos */}
         {!capturedDataUrl && !forcedMode && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', margin: '16px 0' }}>
@@ -568,7 +562,24 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
 
         {/* 2. Captura / Vídeo */}
         {!capturedDataUrl ? (
-          <CameraScanner mode={(mode === 'registrar_mascota' || mode === 'salud_mascota' || mode === 'registrar_exotico' || mode === 'salud_exotico') ? 'mascota' : 'planta'} onCapture={handleCapture} />
+          (!cuota.esIlimitado && cuota.restantes === 0) ? (
+            <div style={{
+              padding: '40px 20px',
+              textAlign: 'center',
+              background: 'rgba(244,67,54,0.05)',
+              border: '1.5px dashed #f44336',
+              borderRadius: '12px',
+              color: 'var(--game-text-bright)'
+            }}>
+              <span style={{ fontSize: '48px', display: 'block', marginBottom: '16px' }}>⚠️</span>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#c62828', fontWeight: 'bold' }}>Escáner Deshabilitado</h3>
+              <p style={{ fontSize: '13px', margin: '0 0 16px 0', color: 'var(--game-text)' }}>
+                Has alcanzado tu límite diario de análisis clínicos. Para poder seguir analizando, introduce tu clave API en la sección de Ajustes ⚙️.
+              </p>
+            </div>
+          ) : (
+            <CameraScanner mode={(mode === 'registrar_mascota' || mode === 'salud_mascota' || mode === 'registrar_exotico' || mode === 'salud_exotico') ? 'mascota' : 'planta'} onCapture={handleCapture} />
+          )
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{
@@ -719,6 +730,16 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
                       <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Nombre Mascota:</label>
                       <input type="text" placeholder="Ponle un nombre..." value={petNombre} onChange={(e) => setPetNombre(e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
                     </div>
+                    <div>
+                      <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Fecha de Nacimiento:</label>
+                      <input 
+                        type="date" 
+                        value={petFechaNacimiento} 
+                        onChange={(e) => setPetFechaNacimiento(e.target.value)} 
+                        max={new Date().toISOString().split('T')[0]}
+                        style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)', fontSize: '12px', boxSizing: 'border-box' }} 
+                      />
+                    </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                       <div>
                         <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Peso Estimado (kg):</label>
@@ -751,27 +772,6 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
                       </div>
                     </div>
 
-                    {/* Generador de Avatar Opcional */}
-                    <div style={{ borderTop: '1px solid #eee', paddingTop: '10px', marginTop: '10px' }}>
-                      <h4 style={{ margin: '0 0 8px 0', fontSize: '13px' }}>Avatar Retro de Videojuego (Opcional):</h4>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <select value={estilo} onChange={(e) => setEstilo(e.target.value as any)} style={{ flex: 1, padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)', fontSize: '12px' }}>
-                          <option value="Óleo Clásico">Óleo Clásico 🎨</option>
-                          <option value="Cómic Hiperrealista">Cómic Hiperrealista ⚡</option>
-                          <option value="Renderizado 3D">Renderizado 3D 🧊</option>
-                          <option value="Retrato Minimalista Claro">Retrato Minimalista Claro ☀️</option>
-                        </select>
-                        <button onClick={handleGenerateAvatar} style={{ padding: '8px 12px', background: 'var(--game-accent, #1976d2)', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
-                          Generar
-                        </button>
-                      </div>
-                      {avatarStatus && <p style={{ fontSize: '11px', margin: '4px 0 0 0', color: '#1976d2' }}>{avatarStatus}</p>}
-                      {generatedAvatarUrl && (
-                        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
-                          <img src={generatedAvatarUrl} alt="Avatar retro" style={{ width: '70px', height: '70px', borderRadius: '50%', border: '2px solid var(--game-border-color)' }} />
-                        </div>
-                      )}
-                    </div>
 
                     <button onClick={guardarMascotaEscaneada} disabled={!petNombre.trim()} style={{ padding: '12px', background: '#2e7d32', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: petNombre.trim() ? 'pointer' : 'not-allowed', marginTop: '10px', opacity: petNombre.trim() ? 1 : 0.6 }}>
                       Registrar Mascota 💾

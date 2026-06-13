@@ -1,8 +1,10 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
 import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { LocalDatabase } from '../database/db';
 import type { Mascota, Planta, AnimalExotico } from '../database/types';
 import { initFirebase, getFirebaseCached } from '../database/firebaseLazy';
 import { WeatherService } from '../services/weatherService';
+import { MicrosoftSyncService } from '../services/microsoftSync';
 
 
 // ── Lazy-loaded components (se descargan solo cuando se necesitan) ──────────
@@ -38,6 +40,21 @@ const ChunkLoader: React.FC<{ height?: string }> = ({ height = '120px' }) => (
 
 
 export const PetPlantDashboard: React.FC = () => {
+  const isRemoteSyncingRef = useRef(false);
+  const msSyncTimeoutRef = useRef<any>(null);
+
+  // Estados para Grupo Hogar
+  const [hogarId, setHogarId] = useState<string>(() => localStorage.getItem('petplant_hogar_id') || '');
+  const [hogarNombre, setHogarNombre] = useState<string>(() => localStorage.getItem('petplant_hogar_nombre') || '');
+  const [nuevoHogarNombre, setNuevoHogarNombre] = useState('');
+  const [joinHogarId, setJoinHogarId] = useState('');
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
+  const [isCloudEnabled] = useState(() => {
+    // Comprobación rápida sin cargar Firebase — si la config existe asumimos que está habilitado
+    const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDGQWW8tVP8kk6Nss-GCutohfD6IouLzp0";
+    return !!apiKey && !apiKey.includes('dummy') && localStorage.getItem('petplant_mock_auth') !== 'true';
+  });
+
   const [mascotas, setMascotas] = useState<Mascota[]>([]);
   const [plantas, setPlantas] = useState<Planta[]>([]);
   const [exoticos, setExoticos] = useState<AnimalExotico[]>([]);
@@ -56,132 +73,8 @@ export const PetPlantDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isFading, setIsFading] = useState(false);
   
-  // Google Sign-in session state real
+  // Google Sign-in / Microsoft session state unified
   const [user, setUser] = useState<{ name: string; email: string; photoURL?: string } | null>(null);
-
-  useEffect(() => {
-    // Inicializar Firebase de forma lazy — solo descarga el SDK cuando se necesita
-    initFirebase().then(({ auth, FirebaseSyncService, onAuthStateChanged }) => {
-      if (!auth) {
-        // Fallback local sin Firebase
-        const saved = localStorage.getItem('petplant_user_session');
-        if (saved) {
-          setUser(JSON.parse(saved));
-        }
-        return;
-      }
-
-      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: any) => {
-        if (firebaseUser) {
-          setUser({
-            name: firebaseUser.displayName || "Usuario de Google",
-            email: firebaseUser.email || "",
-            photoURL: firebaseUser.photoURL || undefined
-          });
-
-          // Cargar hogar asociado en Firestore
-          if (FirebaseSyncService.isCloudEnabled()) {
-            try {
-              const userHogar = await FirebaseSyncService.getUserHogar(firebaseUser.uid);
-              if (userHogar) {
-                const { hogarId: cloudHogarId, hogarNombre: cloudHogarNombre } = userHogar;
-                const localHogarId = localStorage.getItem('petplant_hogar_id') || '';
-
-                if (cloudHogarId && cloudHogarId !== localHogarId) {
-                  localStorage.setItem('petplant_hogar_id', cloudHogarId);
-                  localStorage.setItem('petplant_hogar_nombre', cloudHogarNombre);
-                  setHogarId(cloudHogarId);
-                  setHogarNombre(cloudHogarNombre);
-
-                  // Sobrescribir base de datos local con la del hogar remoto
-                  const data = await FirebaseSyncService.getHogarData(cloudHogarId);
-                  if (data) {
-                    isRemoteSyncingRef.current = true;
-                    await LocalDatabase.overwriteDatabase(data.mascotas || [], data.plantas || [], data.exoticos || []);
-                    isRemoteSyncingRef.current = false;
-                    await refreshData(false);
-                    dispararLogroVisual("HOGAR VINCULADO", `Sesión iniciada. Cargado el hogar ${cloudHogarNombre}.`, 'victory');
-                  }
-                }
-              } else {
-                // El usuario no tiene hogar en la nube. Si tiene uno local activo, lo vinculamos.
-                const localHogarId = localStorage.getItem('petplant_hogar_id') || '';
-                const localHogarNombre = localStorage.getItem('petplant_hogar_nombre') || '';
-                if (localHogarId) {
-                  await FirebaseSyncService.saveUserHogar(firebaseUser.uid, localHogarId, localHogarNombre);
-                }
-              }
-            } catch (err) {
-              console.error("Error al recuperar asociación de hogar:", err);
-            }
-          }
-        } else {
-          setUser(null);
-          setIsLoading(true);
-          setIsFading(false);
-        }
-      });
-
-      // Guardar unsubscribe para limpieza
-      return () => unsubscribe();
-    });
-  }, []);
-
-
-  const handleGoogleSignIn = async () => {
-    const { auth, GoogleAuthProvider, signInWithPopup } = await initFirebase();
-    if (auth) {
-      try {
-        const provider = new GoogleAuthProvider();
-        await signInWithPopup(auth, provider);
-      } catch (err: any) {
-        console.error("Error al iniciar sesión con Google:", err);
-        alert("Error al iniciar sesión con Google: " + err.message);
-      }
-    } else {
-      const simulatedUser = {
-        name: "Lorenzo Sanguino (Simulado)",
-        email: "lorenzo@sanguino.com"
-      };
-      localStorage.setItem('petplant_user_session', JSON.stringify(simulatedUser));
-      setUser(simulatedUser);
-    }
-  };
-
-  const handleLogout = async () => {
-    const cached = getFirebaseCached();
-    if (cached?.auth) {
-      try {
-        const { signOut } = await import('firebase/auth');
-        await signOut(cached.auth);
-      } catch (err) {
-        console.error("Error al cerrar sesión:", err);
-      }
-    }
-    // Limpiar toda la información local de sesión e IndexedDB para evitar fugas
-    localStorage.removeItem('petplant_user_session');
-    localStorage.removeItem('petplant_hogar_id');
-    localStorage.removeItem('petplant_hogar_nombre');
-    localStorage.removeItem('petplant_last_gps_weather');
-    localStorage.removeItem('petplant_db_recordatorios');
-    localStorage.removeItem('petplant_seed_done');
-
-    try {
-      await LocalDatabase.clear();
-      await LocalDatabase.seedInitialData();
-    } catch (dbErr) {
-      console.error("Error al limpiar IndexedDB en logout:", dbErr);
-    }
-
-    setHogarId('');
-    setHogarNombre('');
-    setMascotas([]);
-    setPlantas([]);
-    setExoticos([]);
-    setUser(null);
-    setIsLoading(true);
-    setIsFading(false);
-  };
 
   const handleContinue = () => {
     setIsFading(true);
@@ -289,6 +182,7 @@ export const PetPlantDashboard: React.FC = () => {
         await refreshData(true);
         setGpsSyncSuccess(`¡Sincronizado con éxito! (Clima simulado): ${Math.round(climaSimulado.temperatura)}°C, HR: ${climaSimulado.humedad}%`);
       } catch (innerErr) {
+        console.warn("No se pudo realizar la sincronización climática GPS:", innerErr);
         alert("No se pudo realizar la sincronización climática GPS.");
       }
     } finally {
@@ -404,18 +298,7 @@ export const PetPlantDashboard: React.FC = () => {
 
 
 
-  // Estados para Grupo Hogar
-  const [hogarId, setHogarId] = useState<string>(() => localStorage.getItem('petplant_hogar_id') || '');
-  const [hogarNombre, setHogarNombre] = useState<string>(() => localStorage.getItem('petplant_hogar_nombre') || '');
-  const [nuevoHogarNombre, setNuevoHogarNombre] = useState('');
-  const [joinHogarId, setJoinHogarId] = useState('');
-  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
-  const [isCloudEnabled] = useState(() => {
-    // Comprobación rápida sin cargar Firebase — si la config existe asumimos que está habilitado
-    const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDGQWW8tVP8kk6Nss-GCutohfD6IouLzp0";
-    return !!apiKey && !apiKey.includes('dummy') && localStorage.getItem('petplant_mock_auth') !== 'true';
-  });
-  const isRemoteSyncingRef = useRef(false);
+  // Estados para Grupo Hogar (Moved to top of component to prevent TDZ errors)
 
   const dispararLogroVisual = (texto: string, subtitulo: string, tipo: 'lvl_up' | 'victory') => {
     // No-op para desactivar mensajes de level up
@@ -438,9 +321,14 @@ export const PetPlantDashboard: React.FC = () => {
       setPlantas(listPlantas);
       setExoticos(listExoticos);
 
-      // Sincronización automática tras cambios locales
+      // Sincronización automática tras cambios locales con Microsoft OneDrive
+      if (isLocalEdit && localStorage.getItem('petplant_login_provider') === 'microsoft') {
+        queueOneDriveSync();
+      }
+
+      // Sincronización automática tras cambios locales con Firebase
       const activeHogar = localStorage.getItem('petplant_hogar_id');
-      if (activeHogar && !isRemoteSyncingRef.current) {
+      if (activeHogar && !isRemoteSyncingRef.current && localStorage.getItem('petplant_login_provider') === 'google') {
         const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Hogar Sincronizado";
         setSyncStatus('syncing');
         const uploadPromise = getFirebaseCached()?.FirebaseSyncService.uploadChanges(activeHogar, activeNombre, listMascotas, listPlantas, listExoticos);
@@ -456,6 +344,286 @@ export const PetPlantDashboard: React.FC = () => {
     } catch (err) {
       console.error("Fallo al refrescar IndexedDB:", err);
     }
+  };
+
+  // ── Microsoft & Google Cloud Sync & Auth Helpers ───────────────────────────
+  const syncFromOneDrive = async () => {
+    setSyncStatus('syncing');
+    try {
+      const backup = await MicrosoftSyncService.downloadBackup();
+      if (backup) {
+        isRemoteSyncingRef.current = true;
+        await LocalDatabase.overwriteFullDatabase(
+          backup.mascotas || [],
+          backup.plantas || [],
+          backup.exoticos || [],
+          backup.eventos || [],
+          backup.chats || []
+        );
+        isRemoteSyncingRef.current = false;
+        await refreshData(false);
+        setSyncStatus('synced');
+      } else {
+        // No backup found -> first time user for MS account
+        // Clear local database and seed only demo cards
+        isRemoteSyncingRef.current = true;
+        await LocalDatabase.resetToDemo();
+        isRemoteSyncingRef.current = false;
+        await refreshData(false);
+        // Upload initial demo cards to OneDrive to create backup file
+        await triggerOneDriveSyncDirect();
+      }
+    } catch (err) {
+      console.error("Error al descargar copia de seguridad de OneDrive:", err);
+      setSyncStatus('error');
+    }
+  };
+
+  const triggerOneDriveSyncDirect = async () => {
+    try {
+      const activeMsUser = await MicrosoftSyncService.getActiveUser();
+      if (!activeMsUser) return;
+
+      setSyncStatus('syncing');
+      const listMascotas = await LocalDatabase.getMascotas();
+      const listPlantas = await LocalDatabase.getPlantas();
+      const listExoticos = await LocalDatabase.getExoticos();
+      const listEventos = await LocalDatabase.getEventosCalendario();
+      
+      const chats = [];
+      const consultantIds = ['veterinario', 'agronomo', 'exotico'];
+      for (const id of consultantIds) {
+        const chat = await LocalDatabase.getChatHistorial(id);
+        if (chat) chats.push(chat);
+      }
+
+      await MicrosoftSyncService.uploadBackup({
+        mascotas: listMascotas,
+        plantas: listPlantas,
+        exoticos: listExoticos,
+        eventos: listEventos,
+        chats: chats,
+        updatedAt: Date.now()
+      });
+      setSyncStatus('synced');
+    } catch (err) {
+      console.error("Error al subir copia a OneDrive:", err);
+      setSyncStatus('error');
+    }
+  };
+
+  const queueOneDriveSync = () => {
+    if (msSyncTimeoutRef.current) {
+      clearTimeout(msSyncTimeoutRef.current);
+    }
+    msSyncTimeoutRef.current = setTimeout(() => {
+      triggerOneDriveSyncDirect();
+    }, 3000); // 3 seconds debounce
+  };
+
+  useEffect(() => {
+    const initSessions = async () => {
+      const provider = localStorage.getItem('petplant_login_provider');
+
+      if (provider === 'microsoft') {
+        try {
+          await MicrosoftSyncService.init();
+          const activeMsUser = await MicrosoftSyncService.getActiveUser();
+          if (activeMsUser) {
+            setUser({
+              name: activeMsUser.name,
+              email: activeMsUser.email,
+              photoURL: activeMsUser.avatarUrl
+            });
+            await syncFromOneDrive();
+          } else {
+            // MSAL session expired or not found
+            setUser(null);
+            localStorage.removeItem('petplant_login_provider');
+            localStorage.removeItem('petplant_user_session');
+            await LocalDatabase.resetToDemo();
+            await refreshData(false);
+          }
+        } catch (err) {
+          console.error("Error al inicializar sesión de Microsoft:", err);
+        }
+      } else {
+        // Google/Firebase session initialization
+        initFirebase().then(({ auth, FirebaseSyncService, onAuthStateChanged }) => {
+          if (!auth) {
+            const saved = localStorage.getItem('petplant_user_session');
+            if (saved) {
+              setUser(JSON.parse(saved));
+            }
+            return;
+          }
+
+          const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: any) => {
+            if (firebaseUser) {
+              const u = {
+                name: firebaseUser.displayName || "Usuario de Google",
+                email: firebaseUser.email || "",
+                photoURL: firebaseUser.photoURL || undefined
+              };
+              setUser(u);
+              localStorage.setItem('petplant_user_session', JSON.stringify(u));
+              localStorage.setItem('petplant_login_provider', 'google');
+
+              // Cargar hogar asociado en Firestore
+              if (FirebaseSyncService.isCloudEnabled()) {
+                try {
+                  const userHogar = await FirebaseSyncService.getUserHogar(firebaseUser.uid);
+                  if (userHogar) {
+                    const { hogarId: cloudHogarId, hogarNombre: cloudHogarNombre } = userHogar;
+                    const localHogarId = localStorage.getItem('petplant_hogar_id') || '';
+
+                    if (cloudHogarId && cloudHogarId !== localHogarId) {
+                      localStorage.setItem('petplant_hogar_id', cloudHogarId);
+                      localStorage.setItem('petplant_hogar_nombre', cloudHogarNombre);
+                      setHogarId(cloudHogarId);
+                      setHogarNombre(cloudHogarNombre);
+
+                      // Sobrescribir base de datos local con la del hogar remoto
+                      const data = await FirebaseSyncService.getHogarData(cloudHogarId);
+                      if (data) {
+                        isRemoteSyncingRef.current = true;
+                        await LocalDatabase.overwriteDatabase(data.mascotas || [], data.plantas || [], data.exoticos || []);
+                        isRemoteSyncingRef.current = false;
+                        await refreshData(false);
+                      }
+                    }
+                  } else {
+                    const localHogarId = localStorage.getItem('petplant_hogar_id') || '';
+                    const localHogarNombre = localStorage.getItem('petplant_hogar_nombre') || '';
+                    if (localHogarId) {
+                      await FirebaseSyncService.saveUserHogar(firebaseUser.uid, localHogarId, localHogarNombre);
+                    }
+                  }
+                } catch (err) {
+                  console.error("Error al recuperar asociación de hogar:", err);
+                }
+              }
+            } else {
+              if (localStorage.getItem('petplant_login_provider') === 'google') {
+                setUser(null);
+                localStorage.removeItem('petplant_login_provider');
+                localStorage.removeItem('petplant_user_session');
+              }
+            }
+          });
+
+          return () => unsubscribe();
+        });
+      }
+    };
+
+    initSessions();
+  }, []);
+
+  const handleGoogleSignIn = async () => {
+    localStorage.setItem('petplant_login_provider', 'google');
+    const { auth, GoogleAuthProvider, signInWithPopup } = await initFirebase();
+    if (auth) {
+      try {
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+      } catch (err: any) {
+        console.error("Error al iniciar sesión con Google:", err);
+        alert("Error al iniciar sesión con Google: " + err.message);
+      }
+    } else {
+      const simulatedUser = {
+        name: "Lorenzo Sanguino (Simulado)",
+        email: "lorenzo@sanguino.com"
+      };
+      localStorage.setItem('petplant_user_session', JSON.stringify(simulatedUser));
+      setUser(simulatedUser);
+    }
+  };
+
+  const handleMicrosoftSignIn = async () => {
+    localStorage.setItem('petplant_login_provider', 'microsoft');
+    try {
+      const loggedUser = await MicrosoftSyncService.login();
+      setUser({
+        name: loggedUser.name,
+        email: loggedUser.email,
+        photoURL: loggedUser.avatarUrl
+      });
+      await syncFromOneDrive();
+    } catch (err: any) {
+      console.error("Error al iniciar sesión con Microsoft:", err);
+      alert("Error al iniciar sesión con Microsoft.");
+    }
+  };
+
+  const handleMicrosoftLogout = async () => {
+    try {
+      await MicrosoftSyncService.logout();
+    } catch (err) {
+      console.error("Error al cerrar sesión de Microsoft:", err);
+    }
+    setUser(null);
+    localStorage.removeItem('petplant_ms_session');
+    localStorage.removeItem('petplant_login_provider');
+    localStorage.removeItem('petplant_user_session');
+
+    try {
+      await LocalDatabase.resetToDemo();
+      await refreshData(false);
+    } catch (err) {
+      console.error("Error al limpiar IndexedDB en logout:", err);
+    }
+
+    setHogarId('');
+    setHogarNombre('');
+    setMascotas([]);
+    setPlantas([]);
+    setExoticos([]);
+    setIsLoading(true);
+    setIsFading(false);
+  };
+
+  const handleLogout = async () => {
+    const provider = localStorage.getItem('petplant_login_provider');
+    if (provider === 'microsoft') {
+      await handleMicrosoftLogout();
+      return;
+    }
+
+    const cached = getFirebaseCached();
+    if (cached?.auth) {
+      try {
+        const { signOut } = await import('firebase/auth');
+        await signOut(cached.auth);
+      } catch (err) {
+        console.error("Error al cerrar sesión de Google:", err);
+      }
+    }
+    // Limpiar toda la información local de sesión e IndexedDB para evitar fugas
+    localStorage.removeItem('petplant_user_session');
+    localStorage.removeItem('petplant_login_provider');
+    localStorage.removeItem('petplant_hogar_id');
+    localStorage.removeItem('petplant_hogar_nombre');
+    localStorage.removeItem('petplant_last_gps_weather');
+    localStorage.removeItem('petplant_db_recordatorios');
+    localStorage.removeItem('petplant_seed_done');
+
+    try {
+      await LocalDatabase.clear();
+      await LocalDatabase.seedInitialData();
+    } catch (dbErr) {
+      console.error("Error al limpiar IndexedDB en logout:", dbErr);
+    }
+
+    setHogarId('');
+    setHogarNombre('');
+    setMascotas([]);
+    setPlantas([]);
+    setExoticos([]);
+    setUser(null);
+    setIsLoading(true);
+    setIsFading(false);
   };
 
   useEffect(() => {
@@ -764,7 +932,9 @@ export const PetPlantDashboard: React.FC = () => {
                 textShadow: 'none',
                 boxSizing: 'border-box'
               }}>
-                <span style={{ fontSize: '9px', color: uiTheme === 'gaming' ? '#66fcf1' : '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Sesión Detectada</span>
+                <span style={{ fontSize: '9px', color: uiTheme === 'gaming' ? '#66fcf1' : '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Sesión Detectada ({localStorage.getItem('petplant_login_provider') === 'microsoft' ? 'Microsoft / Hotmail' : 'Google'})
+                </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', borderBottom: uiTheme === 'gaming' ? '1px solid #2e3b4e' : '1px solid #eee', paddingBottom: '4px' }}>
                   {user.photoURL ? (
                     <img src={user.photoURL} alt="Foto de perfil" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--game-border-color, #1976d2)', objectFit: 'cover' }} />
@@ -877,7 +1047,7 @@ export const PetPlantDashboard: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', width: '100%' }}>
                 <button
                   onClick={handleGoogleSignIn}
                   style={{
@@ -894,7 +1064,10 @@ export const PetPlantDashboard: React.FC = () => {
                     gap: '10px',
                     boxShadow: '0 4px 20px rgba(66, 133, 244, 0.35)',
                     fontFamily: 'var(--game-font, sans-serif)',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.2s',
+                    width: '100%',
+                    maxWidth: '320px',
+                    justifyContent: 'center'
                   }}
                 >
                   <svg width="20" height="20" viewBox="0 0 18 18" fill="none" style={{ background: '#fff', borderRadius: '50%', padding: '2px', flexShrink: 0 }}>
@@ -904,6 +1077,37 @@ export const PetPlantDashboard: React.FC = () => {
                     <path d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.1C13.46.7 11.43 0 9 0 5.48 0 2.4 2.04.92 5.04l3.04 2.3c.7-2.13 2.69-3.76 5.04-3.76z" fill="#EA4335"/>
                   </svg>
                   Iniciar Sesión con Google
+                </button>
+
+                <button
+                  onClick={handleMicrosoftSignIn}
+                  style={{
+                    padding: '14px 28px',
+                    background: '#2F2F2F',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '30px',
+                    fontSize: '15px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+                    fontFamily: 'var(--game-font, sans-serif)',
+                    transition: 'all 0.2s',
+                    width: '100%',
+                    maxWidth: '320px',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 23 23" style={{ flexShrink: 0 }}>
+                    <rect x="0" y="0" width="10.5" height="10.5" fill="#f25022"/>
+                    <rect x="11.5" y="0" width="10.5" height="10.5" fill="#7fba00"/>
+                    <rect x="0" y="11.5" width="10.5" height="10.5" fill="#00a4ef"/>
+                    <rect x="11.5" y="11.5" width="10.5" height="10.5" fill="#ffb900"/>
+                  </svg>
+                  Iniciar Sesión con Microsoft / Hotmail
                 </button>
 
                 <button
@@ -1645,6 +1849,8 @@ export const PetPlantDashboard: React.FC = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
                   <Suspense fallback={<ChunkLoader height="160px" />}>
                     <EcosystemCalendar 
+                      plantas={plantas}
+                      mascotas={mascotas}
                       onUpdate={refreshData} 
                     />
                   </Suspense>
@@ -2198,7 +2404,7 @@ export const PetPlantDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                {/* SESIÓN DE USUARIO GOOGLE */}
+                {/* SESIÓN DE USUARIO EN LA NUBE */}
                 <div style={{
                   borderTop: 'var(--game-border, 1px solid #f0f0f0)',
                   paddingTop: '24px',
@@ -2214,15 +2420,15 @@ export const PetPlantDashboard: React.FC = () => {
                       fontWeight: 'bold',
                       fontFamily: 'var(--game-font, sans-serif)'
                     }}>
-                      🔑 Sesión de Google
+                      🔑 Sesión en la Nube
                     </h3>
                     {user ? (
                       <p style={{ margin: '0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)' }}>
-                        Conectado como <strong>{user.name}</strong> ({user.email})
+                        Conectado con cuenta de {localStorage.getItem('petplant_login_provider') === 'microsoft' ? 'Microsoft / Hotmail' : 'Google'} como <strong>{user.name}</strong> ({user.email})
                       </p>
                     ) : (
                       <p style={{ margin: '0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)' }}>
-                        No has iniciado sesión con Google.
+                        No has iniciado sesión. Tus datos se guardan de forma local en tu navegador. Inicia sesión para guardar tus datos de forma segura en la nube.
                       </p>
                     )}
                   </div>
@@ -2242,30 +2448,57 @@ export const PetPlantDashboard: React.FC = () => {
                         fontFamily: 'var(--game-font, sans-serif)'
                       }}
                     >
-                      Cerrar Sesión de Google 🚪
+                      Cerrar Sesión 🚪
                     </button>
                   ) : (
-                    <button
-                      onClick={handleGoogleSignIn}
-                      style={{
-                        alignSelf: 'flex-start',
-                        padding: '10px 20px',
-                        background: '#4285F4',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '13px',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        fontFamily: 'var(--game-font, sans-serif)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        boxShadow: '0 4px 10px rgba(66, 133, 244, 0.2)'
-                      }}
-                    >
-                      Iniciar Sesión con Google 🔑
-                    </button>
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={handleGoogleSignIn}
+                        style={{
+                          padding: '10px 20px',
+                          background: '#4285F4',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          fontFamily: 'var(--game-font, sans-serif)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          boxShadow: '0 4px 10px rgba(66, 133, 244, 0.2)'
+                        }}
+                      >
+                        Iniciar Sesión con Google 🔑
+                      </button>
+                      <button
+                        onClick={handleMicrosoftSignIn}
+                        style={{
+                          padding: '10px 20px',
+                          background: '#2F2F2F',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          fontFamily: 'var(--game-font, sans-serif)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15)'
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 23 23" style={{ flexShrink: 0 }}>
+                          <rect x="0" y="0" width="10.5" height="10.5" fill="#f25022"/>
+                          <rect x="11.5" y="0" width="10.5" height="10.5" fill="#7fba00"/>
+                          <rect x="0" y="11.5" width="10.5" height="10.5" fill="#00a4ef"/>
+                          <rect x="11.5" y="11.5" width="10.5" height="10.5" fill="#ffb900"/>
+                        </svg>
+                        Iniciar Sesión con Microsoft / Hotmail 🔑
+                      </button>
+                    </div>
                   )}
                 </div>
 

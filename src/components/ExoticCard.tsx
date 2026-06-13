@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { AnimalExotico, EventoPasado, EntradaDiarioClinico } from '../database/types';
 import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
 import { CardPhotoManager } from './CardPhotoManager';
+import { IAQuotaManager } from '../utils/iaQuota';
 
 
 interface ExoticCardProps {
@@ -14,6 +15,7 @@ interface ExoticCardProps {
 }
 
 export const ExoticCard: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpenScanner, isExpanded: propExpanded, onToggleExpand }) => {
+  const cuota = IAQuotaManager.obtenerEstadoCuota();
   const [localExpanded, setLocalExpanded] = useState(false);
   const isExpanded = propExpanded !== undefined ? propExpanded : localExpanded;
 
@@ -25,16 +27,16 @@ export const ExoticCard: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpe
     }
   };
 
-  useEffect(() => {
-    if (isExpanded) {
-      const element = document.getElementById(`card-${exotico.id}`);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-  }, [isExpanded, exotico.id]);
+
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [iaReporteModal, setIaReporteModal] = useState<{
+    fecha: string;
+    diagnostico: string;
+    tratamiento: string;
+    advertencia: string;
+    subtipo: string;
+  } | null>(null);
   const [editingChip, setEditingChip] = useState(false);
   const [chipValue, setChipValue] = useState(exotico.chip || '');
   const theme = localStorage.getItem('petplant_game_theme') || 'nature';
@@ -580,39 +582,131 @@ export const ExoticCard: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpe
               {exotico.diarioExotico.length === 0 ? (
                 <p style={{ margin: '0', fontSize: '11px', color: '#888', fontStyle: 'italic' }}>El diario está vacío.</p>
               ) : (
-                exotico.diarioExotico.map(entry => (
-                  <div key={entry.id} style={{ display: 'flex', flexDirection: 'column', padding: '8px', background: '#fafafa', borderRadius: '8px', border: '1px solid #eee', fontSize: '11px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span style={{ fontWeight: 'bold', color: '#e65100' }}>{entry.categoria}</span>
-                      <span style={{ color: '#888', fontSize: '10px' }}>
-                        {new Date(entry.fecha).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <span>{entry.nota}</span>
-                  </div>
-                ))
+                (() => {
+                  const parseIAReporteExotico = (nota: string) => {
+                    let diagnostico = '';
+                    let tratamiento = '';
+                    let advertencia = '';
+
+                    const diagKey = '[IA Diagnóstico Exótico]:';
+                    const tratKey = '| Tratamiento:';
+                    const advKey = '| Alerta:';
+
+                    const diagIdx = nota.indexOf(diagKey);
+                    const tratIdx = nota.indexOf(tratKey);
+                    const advIdx = nota.indexOf(advKey);
+
+                    if (diagIdx !== -1) {
+                      const start = diagIdx + diagKey.length;
+                      const end = tratIdx !== -1 ? tratIdx : (advIdx !== -1 ? advIdx : nota.length);
+                      diagnostico = nota.substring(start, end).trim();
+                    } else {
+                      diagnostico = nota;
+                    }
+
+                    if (tratIdx !== -1) {
+                      const start = tratIdx + tratKey.length;
+                      const end = advIdx !== -1 ? advIdx : nota.length;
+                      tratamiento = nota.substring(start, end).trim();
+                    }
+
+                    if (advIdx !== -1) {
+                      const start = advIdx + advKey.length;
+                      advertencia = nota.substring(start).trim();
+                    }
+
+                    return {
+                      diagnostico: diagnostico || 'No especificado',
+                      tratamiento: tratamiento || 'No especificado',
+                      advertencia: advertencia || 'Sin advertencias particulares'
+                    };
+                  };
+
+                  return exotico.diarioExotico.map(entry => {
+                    const esIAReporte = entry.nota.startsWith('[IA');
+                    const fechaFmt = new Date(entry.fecha).toLocaleDateString();
+                    const textoMostrar = esIAReporte 
+                      ? `análisis de salud - (${fechaFmt})`
+                      : entry.nota;
+
+                    return (
+                      <div 
+                        key={entry.id} 
+                        onClick={() => {
+                          if (esIAReporte) {
+                            const parsed = parseIAReporteExotico(entry.nota);
+                            setIaReporteModal({
+                              fecha: fechaFmt,
+                              diagnostico: parsed.diagnostico,
+                              tratamiento: parsed.tratamiento,
+                              advertencia: parsed.advertencia,
+                              subtipo: entry.categoria
+                            });
+                          }
+                        }}
+                        style={{ 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          padding: '8px', 
+                          background: '#fafafa', 
+                          borderRadius: '8px', 
+                          border: '1px solid #eee', 
+                          fontSize: '11px',
+                          cursor: esIAReporte ? 'pointer' : 'default',
+                          transition: 'background 0.2s',
+                          userSelect: 'none'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                          <span style={{ fontWeight: 'bold', color: esIAReporte ? '#1976d2' : '#e65100' }}>
+                            {entry.categoria} {esIAReporte && '🔍 Click para ver análisis'}
+                          </span>
+                          <span style={{ color: '#888', fontSize: '10px' }}>
+                            {fechaFmt}
+                          </span>
+                        </div>
+                        <span style={{ 
+                          color: 'var(--game-text-bright, #333)', 
+                          fontFamily: 'var(--game-font, sans-serif)',
+                          textDecoration: esIAReporte ? 'underline' : 'none',
+                          fontWeight: esIAReporte ? '500' : 'normal'
+                        }}>
+                          {textoMostrar}
+                        </span>
+                      </div>
+                    );
+                  });
+                })()
               )}
             </div>
           </div>
 
           {/* Botones de acción inferior */}
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', borderTop: '1px solid #eee', paddingTop: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #eee', paddingTop: '12px' }}>
             <button 
               onClick={() => onOpenScanner && onOpenScanner('salud_exotico', exotico.id)}
+              disabled={!cuota.esIlimitado && cuota.restantes === 0}
               style={{
-                flex: 1,
-                padding: '6px 12px',
-                background: '#e3f2fd',
-                color: '#1976d2',
-                border: '1px solid #bbdefb',
+                width: '100%',
+                padding: '8px 12px',
+                background: (!cuota.esIlimitado && cuota.restantes === 0) ? '#e0e0e0' : '#e3f2fd',
+                color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#9e9e9e' : '#1976d2',
+                border: '1px solid ' + ((!cuota.esIlimitado && cuota.restantes === 0) ? '#ccc' : '#bbdefb'),
                 borderRadius: '6px',
                 fontSize: '11px',
                 fontWeight: 'bold',
-                cursor: 'pointer'
+                cursor: (!cuota.esIlimitado && cuota.restantes === 0) ? 'not-allowed' : 'pointer'
               }}
             >
               Escanear Salud 🩺
             </button>
+            <span style={{ fontSize: '10px', color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#c62828' : 'var(--game-text, #666)', textAlign: 'center', display: 'block', fontWeight: '500' }}>
+              {cuota.esIlimitado 
+                ? '⚡ Modo Premium: Análisis ilimitados' 
+                : cuota.restantes === 0 
+                  ? '❌ Límite diario de IA alcanzado (Ingresa tu API Key en Ajustes)' 
+                  : `🔑 Te quedan ${cuota.restantes} análisis de IA hoy`}
+            </span>
           </div>
         </div>
       )}
@@ -677,6 +771,113 @@ export const ExoticCard: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpe
                 Eliminar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* VENTANA EMERGENTE (MODAL) PARA REPORTE DE IA */}
+      {iaReporteModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          backdropFilter: 'blur(6px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px',
+          boxSizing: 'border-box'
+        }} onClick={() => setIaReporteModal(null)}>
+          <div style={{
+            background: 'var(--game-card-bg, #ffffff)',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '500px',
+            width: '100%',
+            maxHeight: '85vh',
+            overflowY: 'auto',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            border: '1px solid var(--game-border-color, #eaeaea)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }} onClick={(e) => e.stopPropagation()}>
+            
+            {/* Cabecera */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--game-border-color, #f0f0f0)', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  🩺 Diagnóstico Exótico por IA
+                </h3>
+                <span style={{ fontSize: '11px', color: '#666', marginTop: '2px', fontWeight: '500' }}>
+                  Categoría: {iaReporteModal.subtipo} • Fecha: {iaReporteModal.fecha}
+                </span>
+              </div>
+              <button 
+                onClick={() => setIaReporteModal(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '20px',
+                  cursor: 'pointer',
+                  color: 'var(--game-text, #999)',
+                  padding: '4px',
+                  lineHeight: '1'
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Contenido */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px', color: 'var(--game-text-bright, #333)', textAlign: 'left' }}>
+              
+              <div style={{ background: 'rgba(33, 150, 243, 0.06)', borderLeft: '4px solid #2196f3', padding: '12px', borderRadius: '4px' }}>
+                <h4 style={{ margin: '0 0 6px 0', fontSize: '12px', fontWeight: 'bold', color: '#1976d2', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  📋 Diagnóstico de Salud
+                </h4>
+                <p style={{ margin: 0, lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{iaReporteModal.diagnostico}</p>
+              </div>
+
+              <div style={{ background: 'rgba(76, 175, 80, 0.06)', borderLeft: '4px solid #4caf50', padding: '12px', borderRadius: '4px' }}>
+                <h4 style={{ margin: '0 0 6px 0', fontSize: '12px', fontWeight: 'bold', color: '#388e3c', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  💊 Tratamiento Sugerido
+                </h4>
+                <p style={{ margin: 0, lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{iaReporteModal.tratamiento}</p>
+              </div>
+
+              <div style={{ background: 'rgba(255, 152, 0, 0.06)', borderLeft: '4px solid #ff9800', padding: '12px', borderRadius: '4px' }}>
+                <h4 style={{ margin: '0 0 6px 0', fontSize: '12px', fontWeight: 'bold', color: '#f57c00', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  ⚠️ Alerta / Notas
+                </h4>
+                <p style={{ margin: 0, lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{iaReporteModal.advertencia}</p>
+              </div>
+
+            </div>
+
+            {/* Botón inferior de cerrar */}
+            <button
+              onClick={() => setIaReporteModal(null)}
+              style={{
+                padding: '10px 16px',
+                background: 'var(--game-accent, #1a1a1a)',
+                color: theme === 'gaming' ? '#000' : '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '12px',
+                alignSelf: 'flex-end',
+                marginTop: '8px',
+                fontFamily: 'var(--game-font, sans-serif)'
+              }}
+            >
+              Cerrar
+            </button>
           </div>
         </div>
       )}

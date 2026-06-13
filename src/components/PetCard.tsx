@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import type { Mascota } from '../database/types';
+/* eslint-disable react-hooks/set-state-in-effect */
+import React, { useState } from 'react';
+import type { Mascota, EspecieMascota } from '../database/types';
 import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
 import { CardPhotoManager } from './CardPhotoManager';
+import { calcularEdadMascota } from '../utils/age';
+import { IAQuotaManager } from '../utils/iaQuota';
 
 
 interface PetCardProps {
@@ -14,6 +17,7 @@ interface PetCardProps {
 }
 
 export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScanner, isExpanded, onToggleExpand }) => {
+  const cuota = IAQuotaManager.obtenerEstadoCuota();
   const [localExpanded, setLocalExpanded] = useState(false);
   const expanded = isExpanded !== undefined ? isExpanded : localExpanded;
 
@@ -27,18 +31,9 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
 
   const [nuevoPeso, setNuevoPeso] = useState('');
 
-  useEffect(() => {
-    if (isExpanded) {
-      const element = document.getElementById(`card-${mascota.id}`);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-  }, [isExpanded, mascota.id]);
+
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [nota, setNota] = useState('');
-  const [categoria, setCategoria] = useState<'Nutrición' | 'Comportamiento' | 'Observación general'>('Observación general');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   
   const theme = localStorage.getItem('petplant_game_theme') || 'nature';
@@ -201,36 +196,52 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
     setShowDeleteConfirm(false);
   };
 
-  const agregarNotaClinica = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!nota.trim()) return;
 
-    const nuevaNota = {
-      id: safeUUID(),
-      fecha: new Date().toISOString(),
-      nota: nota,
-      categoria: categoria
-    };
 
-    const mascotaActualizada: Mascota = {
-      ...mascota,
-      diarioClinico: [nuevaNota, ...(mascota.diarioClinico || [])]
-    };
-
-    await LocalDatabase.saveMascota(mascotaActualizada);
-    setNota('');
-    onUpdate();
-  };
-
-  const eliminarNotaClinica = async (notaId: string) => {
-    const diarioFiltrado = (mascota.diarioClinico || []).filter(d => d.id !== notaId);
-    const mascotaActualizada: Mascota = {
-      ...mascota,
-      diarioClinico: diarioFiltrado
-    };
-    await LocalDatabase.saveMascota(mascotaActualizada);
-    setDeleteConfirmId(null);
-    onUpdate();
+  const getEdadBadgeStyle = () => {
+    if (theme === 'gaming') {
+      return {
+        fontSize: '10px',
+        background: 'rgba(124, 58, 237, 0.15)',
+        color: '#a78bfa',
+        border: '1px solid rgba(167, 139, 250, 0.4)',
+        padding: '1px 6px',
+        borderRadius: '4px',
+        fontWeight: 'bold' as const,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '2px',
+        textShadow: '0 0 4px rgba(167, 139, 250, 0.4)',
+      };
+    } else if (theme === 'kawaii') {
+      return {
+        fontSize: '10px',
+        background: '#f5e6ff',
+        color: '#7c3aed',
+        border: '1.5px dashed #a78bfa',
+        padding: '2px 8px',
+        borderRadius: '12px',
+        fontWeight: 'bold' as const,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '2px',
+        textShadow: 'none',
+      };
+    } else {
+      return {
+        fontSize: '10px',
+        background: '#faf5ff',
+        color: '#6d28d9',
+        border: '1px solid #e9d5ff',
+        padding: '1px 6px',
+        borderRadius: '6px',
+        fontWeight: 'bold' as const,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '2px',
+        textShadow: 'none',
+      };
+    }
   };
 
   const [editChip, setEditChip] = useState(false);
@@ -238,6 +249,13 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
   const [histFecha, setHistFecha] = useState('');
   const [histTipo, setHistTipo] = useState<'Enfermedad' | 'Parásito' | 'Tratamiento' | 'Otro'>('Enfermedad');
   const [histDesc, setHistDesc] = useState('');
+  const [iaReporteModal, setIaReporteModal] = useState<{
+    fecha: string;
+    diagnostico: string;
+    tratamiento: string;
+    advertencia: string;
+    subtipo: string;
+  } | null>(null);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editNombre, setEditNombre] = useState(mascota.nombre);
@@ -246,6 +264,7 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
   const [editSexo, setEditSexo] = useState<'Macho' | 'Hembra'>(mascota.sexo || 'Macho');
   const [editCastrado, setEditCastrado] = useState<boolean>(mascota.castrado || false);
   const [editEsMamifero, setEditEsMamifero] = useState<boolean>(mascota.sexo !== undefined || mascota.castrado !== undefined);
+  const [editFechaNacimiento, setEditFechaNacimiento] = useState(mascota.fechaNacimiento || '');
 
   React.useEffect(() => {
     setChipVal(mascota.numeroChip || '');
@@ -258,6 +277,7 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
     setEditCastrado(mascota.castrado || false);
     setEditEsMamifero(mascota.sexo !== undefined || mascota.castrado !== undefined);
     setEditRaza(mascota.raza || '');
+    setEditFechaNacimiento(mascota.fechaNacimiento || '');
   }, [mascota]);
 
   const guardarChip = async () => {
@@ -269,9 +289,13 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
 
   const toggleVacunaCheck = async (vName: string) => {
     const current = mascota.vacunasChecklist || [];
-    const updated = current.includes(vName) 
-      ? current.filter(x => x !== vName) 
-      : [...current, vName];
+    if (current.includes(vName)) {
+      return;
+    }
+    const confirmar = window.confirm(`¿Estás seguro/a de marcar "${vName}" como colocada/realizada? Esta acción no se puede deshacer.`);
+    if (!confirmar) return;
+
+    const updated = [...current, vName];
     const mascotaActualizada: Mascota = { ...mascota, vacunasChecklist: updated };
     await LocalDatabase.saveMascota(mascotaActualizada);
     onUpdate();
@@ -306,14 +330,9 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
     const pesos = registros.map(r => r.pesoKg);
     const maxPeso = Math.max(...pesos);
     const minPeso = Math.min(...pesos);
-    const totalVacunas = (mascota.historialVacunas || []).length;
 
     return (
       <div style={{ padding: '10px 14px', background: 'var(--game-accent-light, rgba(0,0,0,0.02))', borderRadius: '8px', border: '1px solid var(--game-border-color, #eaeaea)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--game-text, #666)' }}>
-          <span>Exp Clínico (Vacunas)</span>
-          <span style={{ fontWeight: 'bold', color: 'var(--game-text-bright)' }}>{totalVacunas} Dosis aplicadas</span>
-        </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--game-text, #666)' }}>
           <span>Curva Peso</span>
           <span style={{ fontWeight: 'bold', color: 'var(--game-text-bright)' }}>Min: {minPeso}kg / Max: {maxPeso}kg</span>
@@ -322,35 +341,6 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
     );
   };
 
-  const renderCorazonesVacunas = () => {
-    const total = 5;
-    const alDia = (mascota.historialVacunas || []).length;
-    const hearts = Math.min(total, alDia);
-    return (
-      <div style={{ display: 'flex', gap: '4px', fontSize: '18px' }}>
-        {Array.from({ length: total }).map((_, i) => (
-          <span key={i}>{i < hearts ? '❤️' : '🖤'}</span>
-        ))}
-      </div>
-    );
-  };
-
-  const renderVacunasNormal = () => {
-    const total = 5;
-    const alDia = (mascota.historialVacunas || []).length;
-    const percent = Math.min(100, Math.round((alDia / total) * 100));
-    return (
-      <div style={{ fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
-          <span>Inmunidad preventiva</span>
-          <span>{percent}%</span>
-        </div>
-        <div style={{ width: '100%', height: '8px', background: 'rgba(0,0,0,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-          <div style={{ width: `${percent}%`, height: '100%', background: 'var(--game-border-color, #1976d2)' }} />
-        </div>
-      </div>
-    );
-  };
 
   const esMamifero = (esp: string) => {
     return ['Felino', 'Canino', 'Hamster', 'Conejo', 'Cobaya'].includes(esp) || (esp === 'Otro' && (mascota.sexo !== undefined || mascota.castrado !== undefined));
@@ -391,7 +381,7 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
               <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Especie:</label>
               <select 
                 value={editEspecie} 
-                onChange={(e) => setEditEspecie(e.target.value as any)}
+                onChange={(e) => setEditEspecie(e.target.value as EspecieMascota)}
                 style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: '#fff', color: '#000', fontSize: '13px' }}
               >
                 <option value="Felino">Felino 🐱</option>
@@ -430,13 +420,24 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
             />
           </div>
 
+          <div>
+            <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Fecha de Nacimiento:</label>
+            <input 
+              type="date" 
+              value={editFechaNacimiento} 
+              onChange={(e) => setEditFechaNacimiento(e.target.value)} 
+              max={new Date().toISOString().split('T')[0]}
+              style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: '#fff', color: '#000', fontSize: '13px', boxSizing: 'border-box' }}
+            />
+          </div>
+
           {(['Felino', 'Canino', 'Hamster', 'Conejo', 'Cobaya'].includes(editEspecie) || (editEspecie === 'Otro' && editEsMamifero)) && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div>
                 <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Sexo:</label>
                 <select 
                   value={editSexo} 
-                  onChange={(e) => setEditSexo(e.target.value as any)}
+                  onChange={(e) => setEditSexo(e.target.value as 'Macho' | 'Hembra')}
                   style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: '#fff', color: '#000', fontSize: '13px' }}
                 >
                   <option value="Macho">Macho ♂</option>
@@ -475,6 +476,7 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
                 ...mascota,
                 nombre: editNombre.trim(),
                 especie: editEspecie,
+                fechaNacimiento: editFechaNacimiento,
                 raza: editRaza.trim() || undefined,
                 sexo: esMamiferoActivo ? editSexo : undefined,
                 castrado: esMamiferoActivo ? editCastrado : undefined
@@ -491,6 +493,66 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
       </div>
     );
   }
+
+  const parseIAReporte = (nota: string) => {
+    let diagnostico = '';
+    let tratamiento = '';
+    let advertencia = '';
+
+    const diagKey = '[IA Diagnóstico de Salud]:';
+    const tratKey = '| Tratamiento:';
+    const advKey = '| Advertencia:';
+
+    const diagIdx = nota.indexOf(diagKey);
+    const tratIdx = nota.indexOf(tratKey);
+    const advIdx = nota.indexOf(advKey);
+
+    if (diagIdx !== -1) {
+      const start = diagIdx + diagKey.length;
+      const end = tratIdx !== -1 ? tratIdx : (advIdx !== -1 ? advIdx : nota.length);
+      diagnostico = nota.substring(start, end).trim();
+    } else {
+      diagnostico = nota;
+    }
+
+    if (tratIdx !== -1) {
+      const start = tratIdx + tratKey.length;
+      const end = advIdx !== -1 ? advIdx : nota.length;
+      tratamiento = nota.substring(start, end).trim();
+    }
+
+    if (advIdx !== -1) {
+      const start = advIdx + advKey.length;
+      advertencia = nota.substring(start).trim();
+    }
+
+    return {
+      diagnostico: diagnostico || 'No especificado',
+      tratamiento: tratamiento || 'No especificado',
+      advertencia: advertencia || 'Sin advertencias particulares'
+    };
+  };
+
+  const unifiedHistory = [
+    ...(mascota.historialPasado || []).map(h => ({
+      id: h.id,
+      fecha: h.fecha,
+      tipo: 'Incidencia',
+      subtipo: h.tipo,
+      texto: h.descripcion,
+      color: '#ff9800'
+    })),
+    ...(mascota.diarioClinico || []).map(d => ({
+      id: d.id,
+      fecha: d.fecha.includes('T') ? d.fecha.split('T')[0] : d.fecha,
+      tipo: d.nota.startsWith('[IA') ? 'IA Reporte' : 'Nota',
+      subtipo: d.categoria,
+      texto: d.nota,
+      color: d.nota.startsWith('[IA') ? '#2196f3' : '#9c27b0'
+    }))
+  ];
+
+  unifiedHistory.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
 
   return (
     <div id={`card-${mascota.id}`} className="printable-clinical-record" style={{
@@ -596,39 +658,10 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
                       objectFit: 'cover'
                     }}
                   />
-                ) : mascota.avatarUrl ? (
-                  <img
-                    src={mascota.avatarUrl}
-                    alt={mascota.nombre}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                  />
                 ) : (
                   mascota.especie === 'Felino' ? '🐱' : '🐶'
                 )}
               </div>
-              {mascota.avatarUrl && mascota.fotoUrl && (
-                <img 
-                  src={mascota.avatarUrl} 
-                  alt="Avatar retro" 
-                  style={{
-                    position: 'absolute',
-                    bottom: '-4px',
-                    right: '-4px',
-                    width: '22px',
-                    height: '22px',
-                    borderRadius: '50%',
-                    border: '1px solid var(--game-border-color, #1976d2)',
-                    background: '#fff',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    zIndex: 2
-                  }}
-                  title="Avatar de videojuego generado"
-                />
-              )}
             </div>
           )}
           <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
@@ -664,6 +697,11 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
               {esMamifero(mascota.especie) && mascota.castrado !== undefined && (
                 <span style={{ ...getCastradoBadgeStyle(), margin: 0, fontSize: '11px', padding: '2px 6px' }}>
                   {mascota.castrado ? '✂️ Castrado/a' : '🥚 Sin castrar'}
+                </span>
+              )}
+              {mascota.fechaNacimiento && (
+                <span style={{ ...getEdadBadgeStyle(), margin: 0, fontSize: '11px', padding: '2px 6px' }}>
+                  🎂 {calcularEdadMascota(mascota.fechaNacimiento)}
                 </span>
               )}
             </div>
@@ -732,7 +770,7 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
         <>
           {/* Gestor de Fotos Múltiples */}
           <CardPhotoManager
-            currentPhotoUrl={mascota.fotoUrl || mascota.avatarUrl}
+            currentPhotoUrl={mascota.fotoUrl}
             photos={mascota.fotos || []}
             theme={theme}
             onPhotosChange={async (updatedPhotos, newPrimaryUrl) => {
@@ -751,6 +789,14 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
             <span style={{ fontWeight: 'bold' }}>🐾 Especie y Raza:</span>
             <span>{mascota.especie}{mascota.raza ? ` (${mascota.raza})` : ''}</span>
           </div>
+
+          {/* Fecha de Nacimiento y Edad en Detalles */}
+          {mascota.fechaNacimiento && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', background: 'var(--game-card-bg, #fafafa)', padding: '8px 12px', borderRadius: 'var(--game-radius, 8px)', border: '1px solid var(--game-border-color, #eee)', color: 'var(--game-text-bright)' }}>
+              <span style={{ fontWeight: 'bold' }}>🎂 Edad y Nacimiento:</span>
+              <span>{mascota.fechaNacimiento} ({calcularEdadMascota(mascota.fechaNacimiento)})</span>
+            </div>
+          )}
 
           {/* Formulario/Editor de Chip */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', background: 'var(--game-card-bg, #fafafa)', padding: '8px 12px', borderRadius: 'var(--game-radius, 8px)', border: '1px solid var(--game-border-color, #eee)', color: 'var(--game-text-bright)' }}>
@@ -815,44 +861,78 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
             </button>
           </form>
 
-          {/* Control de Vacunación Temática */}
-          <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px' }}>
-            <p style={{ margin: '0 0 8px 0', fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text-bright, #555)', fontFamily: 'var(--game-font, sans-serif)' }}>
-              {theme === 'gaming' ? 'HEALTH BAR (VACUNAS)' : 'CONTROL DE VACUNAS'}
-            </p>
-            {theme === 'gaming' ? renderCorazonesVacunas() : renderVacunasNormal()}
-          </div>
-
-          {/* Checklist de Vacunas Colocadas */}
-          <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px' }}>
-            <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>
-              💉 Checklist de Vacunación Específica:
-            </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 12px' }}>
-              {['Rabia', 'Parvovirus', 'Moquillo', 'Trivalente', 'Leucemia', 'Otras'].map(vName => {
-                const isChecked = (mascota.vacunasChecklist || []).includes(vName);
-                return (
-                  <label key={vName} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer', fontFamily: 'var(--game-font, sans-serif)', color: 'var(--game-text)' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={isChecked} 
-                      onChange={() => toggleVacunaCheck(vName)}
-                      style={{ cursor: 'pointer' }}
-                    />
-                    {vName}
-                  </label>
-                );
-              })}
+          {/* Checklist de Vacunas y Desparasitaciones */}
+          {(mascota.especie === 'Felino' || mascota.especie === 'Canino') && (
+            <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px' }}>
+              <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>
+                💉 Control Preventivo (Vacunación y Desparasitación):
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {(mascota.especie === 'Felino' 
+                  ? ['Trivalente Felina', 'Leucemia Felina', 'Rabia', 'Desparasitación Interna', 'Desparasitación Externa'] 
+                  : ['Parvovirus', 'Moquillo', 'Adenovirus', 'Rabia', 'Leptospirosis', 'Desparasitación Interna', 'Desparasitación Externa']
+                ).map(vName => {
+                  const isChecked = (mascota.vacunasChecklist || []).includes(vName);
+                  return (
+                    <label key={vName} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', cursor: isChecked ? 'default' : 'pointer', fontFamily: 'var(--game-font, sans-serif)', color: isChecked ? 'var(--game-text-bright)' : 'var(--game-text)' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={isChecked} 
+                        disabled={isChecked}
+                        onChange={() => toggleVacunaCheck(vName)}
+                        style={{ cursor: isChecked ? 'default' : 'pointer' }}
+                      />
+                      <span style={{ textDecoration: isChecked ? 'line-through' : 'none', opacity: isChecked ? 0.6 : 1 }}>
+                        {vName}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Historial de Enfermedades e Incidencias Pasadas */}
-          <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px' }}>
-            <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>
-              🏥 Historial de Incidencias / Afecciones Pasadas
+          {/* Historial Clínico e Incidencias Unificado */}
+          <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <p style={{ margin: '0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>
+              🏥 Historial Clínico e Incidencias
             </p>
             
-            <form onSubmit={agregarIncidenciaPasada} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }} className="no-print">
+            {onOpenScanner && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%', marginBottom: '10px' }} className="no-print">
+                <button 
+                  type="button" 
+                  onClick={() => onOpenScanner('salud_mascota', mascota.id)} 
+                  disabled={!cuota.esIlimitado && cuota.restantes === 0}
+                  style={{ 
+                    width: '100%',
+                    padding: '8px', 
+                    background: (!cuota.esIlimitado && cuota.restantes === 0) ? '#e0e0e0' : 'var(--game-accent-light, rgba(25, 118, 210, 0.1))', 
+                    color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#9e9e9e' : 'var(--game-text-bright, #1976d2)', 
+                    border: '1.5px solid ' + ((!cuota.esIlimitado && cuota.restantes === 0) ? '#ccc' : 'var(--game-border-color, #1976d2)'), 
+                    borderRadius: 'var(--game-radius, 6px)', 
+                    fontSize: '12px', 
+                    fontWeight: 'bold', 
+                    cursor: (!cuota.esIlimitado && cuota.restantes === 0) ? 'not-allowed' : 'pointer',
+                    fontFamily: 'var(--game-font, sans-serif)',
+                    transition: 'transform 0.2s',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  Analizar Salud por IA 🩺 📷
+                </button>
+                <span style={{ fontSize: '10px', color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#c62828' : 'var(--game-text, #666)', textAlign: 'center', display: 'block', fontWeight: '500' }}>
+                  {cuota.esIlimitado 
+                    ? '⚡ Modo Premium: Análisis ilimitados' 
+                    : cuota.restantes === 0 
+                      ? '❌ Límite diario de IA alcanzado (Ingresa tu API Key en Ajustes)' 
+                      : `🔑 Te quedan ${cuota.restantes} análisis de IA hoy`}
+                </span>
+              </div>
+            )}
+
+            <form onSubmit={agregarIncidenciaPasada} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '4px' }} className="no-print">
+              <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--game-text, #666)' }}>Registrar incidencia médica manualmente:</span>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
                 <input 
                   type="date" 
@@ -863,7 +943,7 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
                 />
                 <select 
                   value={histTipo} 
-                  onChange={(e) => setHistTipo(e.target.value as any)}
+                  onChange={(e) => setHistTipo(e.target.value as 'Enfermedad' | 'Parásito' | 'Tratamiento' | 'Otro')}
                   style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
                 >
                   <option value="Enfermedad">Enfermedad</option>
@@ -879,7 +959,7 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
                   value={histDesc} 
                   onChange={(e) => setHistDesc(e.target.value)} 
                   required
-                  style={{ flex: 1, padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
+                  style={{ flex: 1, minWidth: 0, padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
                 />
                 <button type="submit" style={{ padding: '6px 12px', background: '#1a1a1a', color: theme === 'gaming' ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
                   Añadir
@@ -887,125 +967,100 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
               </div>
             </form>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '120px', overflowY: 'auto' }}>
-              {(mascota.historialPasado || []).length === 0 ? (
-                <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>Sin incidencias pasadas registradas.</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '220px', overflowY: 'auto' }}>
+              {unifiedHistory.length === 0 ? (
+                <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>Sin registros clínicos ni incidencias.</span>
               ) : (
-                (mascota.historialPasado || []).map(h => (
-                  <div key={h.id} style={{ padding: '6px 8px', background: 'var(--game-accent-light, #fafafa)', borderRadius: '4px', borderLeft: '3px solid #ff9800', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <span style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', display: 'block' }}>{h.tipo.toUpperCase()} • {h.fecha}</span>
-                      <span style={{ color: 'var(--game-text-bright)' }}>{h.descripcion}</span>
-                    </div>
-                    <button 
-                      type="button"
-                      onClick={async () => {
-                        const filtrado = (mascota.historialPasado || []).filter(x => x.id !== h.id);
-                        const mascotaAct = { ...mascota, historialPasado: filtrado };
-                        await LocalDatabase.saveMascota(mascotaAct);
-                        onUpdate();
+                unifiedHistory.map(item => {
+                  const esIAReporte = item.tipo === 'IA Reporte';
+                  const textoMostrar = esIAReporte 
+                    ? `${item.subtipo.toLowerCase()} - (${item.fecha})` 
+                    : item.texto;
+                  
+                  return (
+                    <div 
+                      key={item.id} 
+                      onClick={() => {
+                        if (esIAReporte) {
+                          const parsed = parseIAReporte(item.texto);
+                          setIaReporteModal({
+                            fecha: item.fecha,
+                            diagnostico: parsed.diagnostico,
+                            tratamiento: parsed.tratamiento,
+                            advertencia: parsed.advertencia,
+                            subtipo: item.subtipo
+                          });
+                        }
                       }}
-                      style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', padding: '0 4px' }}
+                      style={{ 
+                        padding: '8px', 
+                        background: 'var(--game-accent-light, #fafafa)', 
+                        borderRadius: 'var(--game-radius, 4px)', 
+                        borderLeft: `3px solid ${item.color}`, 
+                        fontSize: '11px', 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        cursor: esIAReporte ? 'pointer' : 'default',
+                        transition: 'background 0.2s',
+                        userSelect: 'none'
+                      }}
+                      className={esIAReporte ? "hover-ia-report" : ""}
                     >
-                      🗑️
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Diario Clínico de la Mascota */}
-          <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <h4 style={{ margin: '0', fontSize: '13px', color: 'var(--game-text-bright, #333)', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)' }}>
-              📓 Diario Clínico y Notas
-            </h4>
-            <form onSubmit={agregarNotaClinica} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }} className="no-print">
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <select 
-                  value={categoria} 
-                  onChange={(e) => setCategoria(e.target.value as any)}
-                  style={{ padding: '6px', border: 'var(--game-border, 1px solid #eaeaea)', borderRadius: 'var(--game-radius, 6px)', fontSize: '12px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
-                >
-                  <option value="Observación general">Observación</option>
-                  <option value="Nutrición">Nutrición</option>
-                  <option value="Comportamiento">Comportamiento</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder="Nueva nota de salud/dieta..."
-                  value={nota}
-                  onChange={(e) => setNota(e.target.value)}
-                  style={{ flex: 1, minWidth: 0, padding: '8px 12px', border: 'var(--game-border, 1px solid #eaeaea)', borderRadius: 'var(--game-radius, 6px)', fontSize: '13px', background: 'var(--game-bg)', color: 'var(--game-text-bright)', outline: 'none' }}
-                />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <button type="submit" style={{ padding: '8px', background: 'var(--game-accent, #1a1a1a)', color: theme === 'gaming' ? '#000' : '#fff', border: 'none', borderRadius: 'var(--game-radius, 6px)', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'var(--game-font, sans-serif)' }}>
-                  Registrar Nota
-                </button>
-                {onOpenScanner && (
-                  <button 
-                    type="button" 
-                    onClick={() => onOpenScanner('salud_mascota', mascota.id)} 
-                    style={{ 
-                      padding: '8px', 
-                      background: 'var(--game-accent-light, rgba(25, 118, 210, 0.1))', 
-                      color: 'var(--game-text-bright, #1976d2)', 
-                      border: '1.5px solid var(--game-border-color, #1976d2)', 
-                      borderRadius: 'var(--game-radius, 6px)', 
-                      fontSize: '13px', 
-                      fontWeight: 'bold', 
-                      cursor: 'pointer',
-                      fontFamily: 'var(--game-font, sans-serif)',
-                      transition: 'transform 0.2s'
-                    }}
-                  >
-                    Analizar Salud por IA 🩺 📷
-                  </button>
-                )}
-              </div>
-            </form>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '160px', overflowY: 'auto' }}>
-              {(mascota.diarioClinico || []).length === 0 ? (
-                <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>Sin notas en el historial.</span>
-              ) : (
-                (mascota.diarioClinico || []).map(d => (
-                  <div key={d.id} style={{ padding: '8px', borderLeft: `3px solid ${d.categoria === 'Nutrición' ? '#4caf50' : d.categoria === 'Comportamiento' ? '#2196f3' : '#9c27b0'}`, background: 'var(--game-accent-light, #fafafa)', fontSize: '11px', borderRadius: 'var(--game-radius, 4px)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--game-text, #888)', marginBottom: '2px', fontSize: '9px', alignItems: 'center' }}>
-                      <span>{d.categoria.toUpperCase()} • {new Date(d.fecha).toLocaleDateString()}</span>
-                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                        {deleteConfirmId === d.id ? (
-                          <>
+                      <div style={{ flex: 1, marginRight: '8px' }}>
+                        <span style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', display: 'block' }}>
+                          {item.tipo.toUpperCase()} • {item.subtipo.toUpperCase()} • {item.fecha} {esIAReporte && '🔍 Click para ver análisis'}
+                        </span>
+                        <span style={{ 
+                          color: 'var(--game-text-bright, #333)', 
+                          fontFamily: 'var(--game-font, sans-serif)',
+                          textDecoration: esIAReporte ? 'underline' : 'none',
+                          fontWeight: esIAReporte ? '500' : 'normal'
+                        }}>
+                          {textoMostrar}
+                        </span>
+                      </div>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        {deleteConfirmId === item.id ? (
+                          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                             <button 
                               type="button"
-                              onClick={() => eliminarNotaClinica(d.id)}
-                              style={{ background: '#d32f2f', color: '#fff', border: 'none', borderRadius: '3px', padding: '1px 4px', fontSize: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+                              onClick={async () => {
+                                if (item.tipo === 'Incidencia') {
+                                  const filtrado = (mascota.historialPasado || []).filter(x => x.id !== item.id);
+                                  await LocalDatabase.saveMascota({ ...mascota, historialPasado: filtrado });
+                                } else {
+                                  const filtrado = (mascota.diarioClinico || []).filter(x => x.id !== item.id);
+                                  await LocalDatabase.saveMascota({ ...mascota, diarioClinico: filtrado });
+                                }
+                                setDeleteConfirmId(null);
+                                onUpdate();
+                              }}
+                              style={{ background: '#d32f2f', color: '#fff', border: 'none', borderRadius: '3px', padding: '2px 6px', fontSize: '9px', fontWeight: 'bold', cursor: 'pointer' }}
                             >
                               Sí
                             </button>
                             <button 
                               type="button"
                               onClick={() => setDeleteConfirmId(null)}
-                              style={{ background: '#ccc', color: '#333', border: 'none', borderRadius: '3px', padding: '1px 3px', fontSize: '8px', cursor: 'pointer' }}
+                              style={{ background: '#ccc', color: '#333', border: 'none', borderRadius: '3px', padding: '2px 4px', fontSize: '9px', cursor: 'pointer' }}
                             >
                               No
                             </button>
-                          </>
+                          </div>
                         ) : (
                           <button 
                             type="button"
-                            onClick={() => setDeleteConfirmId(d.id)}
-                            style={{ background: 'transparent', color: 'var(--game-text, #888)', border: 'none', fontSize: '10px', cursor: 'pointer', padding: '0 4px' }}
+                            onClick={() => setDeleteConfirmId(item.id)}
+                            style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', padding: '0 4px' }}
                           >
                             🗑️
                           </button>
                         )}
                       </div>
                     </div>
-                    <span style={{ color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>{d.nota}</span>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
@@ -1112,6 +1167,113 @@ export const PetCard: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScann
                     Sí, eliminar 🗑️
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* VENTANA EMERGENTE (MODAL) PARA REPORTE DE IA */}
+          {iaReporteModal && (
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.65)',
+              backdropFilter: 'blur(6px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+              padding: '20px',
+              boxSizing: 'border-box'
+            }} onClick={() => setIaReporteModal(null)}>
+              <div style={{
+                background: 'var(--game-card-bg, #ffffff)',
+                borderRadius: '16px',
+                padding: '24px',
+                maxWidth: '500px',
+                width: '100%',
+                maxHeight: '85vh',
+                overflowY: 'auto',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                border: '1px solid var(--game-border-color, #eaeaea)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px'
+              }} onClick={(e) => e.stopPropagation()}>
+                
+                {/* Cabecera */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--game-border-color, #f0f0f0)', paddingBottom: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      🩺 Reporte de Salud por IA
+                    </h3>
+                    <span style={{ fontSize: '11px', color: '#666', marginTop: '2px', fontWeight: '500' }}>
+                      Categoría: {iaReporteModal.subtipo} • Fecha: {iaReporteModal.fecha}
+                    </span>
+                  </div>
+                  <button 
+                    onClick={() => setIaReporteModal(null)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      fontSize: '20px',
+                      cursor: 'pointer',
+                      color: 'var(--game-text, #999)',
+                      padding: '4px',
+                      lineHeight: '1'
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {/* Contenido */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px', color: 'var(--game-text-bright, #333)', textAlign: 'left' }}>
+                  
+                  <div style={{ background: 'rgba(33, 150, 243, 0.06)', borderLeft: '4px solid #2196f3', padding: '12px', borderRadius: '4px' }}>
+                    <h4 style={{ margin: '0 0 6px 0', fontSize: '12px', fontWeight: 'bold', color: '#1976d2', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      📋 Diagnóstico de Salud
+                    </h4>
+                    <p style={{ margin: 0, lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{iaReporteModal.diagnostico}</p>
+                  </div>
+
+                  <div style={{ background: 'rgba(76, 175, 80, 0.06)', borderLeft: '4px solid #4caf50', padding: '12px', borderRadius: '4px' }}>
+                    <h4 style={{ margin: '0 0 6px 0', fontSize: '12px', fontWeight: 'bold', color: '#388e3c', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      💊 Tratamiento Sugerido
+                    </h4>
+                    <p style={{ margin: 0, lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{iaReporteModal.tratamiento}</p>
+                  </div>
+
+                  <div style={{ background: 'rgba(255, 152, 0, 0.06)', borderLeft: '4px solid #ff9800', padding: '12px', borderRadius: '4px' }}>
+                    <h4 style={{ margin: '0 0 6px 0', fontSize: '12px', fontWeight: 'bold', color: '#f57c00', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      ⚠️ Advertencia / Notas
+                    </h4>
+                    <p style={{ margin: 0, lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{iaReporteModal.advertencia}</p>
+                  </div>
+
+                </div>
+
+                {/* Botón inferior de cerrar */}
+                <button
+                  onClick={() => setIaReporteModal(null)}
+                  style={{
+                    padding: '10px 16px',
+                    background: 'var(--game-accent, #1a1a1a)',
+                    color: theme === 'gaming' ? '#000' : '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    fontSize: '12px',
+                    alignSelf: 'flex-end',
+                    marginTop: '8px',
+                    fontFamily: 'var(--game-font, sans-serif)'
+                  }}
+                >
+                  Cerrar
+                </button>
               </div>
             </div>
           )}

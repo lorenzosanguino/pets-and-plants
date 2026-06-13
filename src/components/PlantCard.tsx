@@ -3,6 +3,7 @@ import type { Planta, NivelToxicidadFelina, NivelToxicidadCanina } from '../data
 import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
 import { CardPhotoManager } from './CardPhotoManager';
+import { IAQuotaManager } from '../utils/iaQuota';
 
 interface PlantCardProps {
   planta: Planta;
@@ -13,6 +14,7 @@ interface PlantCardProps {
 }
 
 export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenScanner, isExpanded, onToggleExpand }) => {
+  const cuota = IAQuotaManager.obtenerEstadoCuota();
   const [localExpanded, setLocalExpanded] = useState(false);
   const expanded = isExpanded !== undefined ? isExpanded : localExpanded;
 
@@ -24,19 +26,18 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
     }
   };
 
-  useEffect(() => {
-    if (isExpanded) {
-      const element = document.getElementById(`card-${planta.id}`);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-  }, [isExpanded, planta.id]);
+
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [nota, setNota] = useState('');
   const [estadoHoja, setEstadoHoja] = useState<'Excelente' | 'Normal' | 'Clorosis/Lesión'>('Normal');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [iaReporteModal, setIaReporteModal] = useState<{
+    fecha: string;
+    diagnostico: string;
+    tratamiento: string;
+    aislamiento: string;
+  } | null>(null);
 
   const [histFecha, setHistFecha] = useState('');
   const [histTipo, setHistTipo] = useState<'Enfermedad' | 'Parásito' | 'Poda' | 'Tratamiento' | 'Muda' | 'Otro'>('Poda');
@@ -899,24 +900,35 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
                   Registrar Nota
                 </button>
                 {onOpenScanner && (
-                  <button 
-                    type="button" 
-                    onClick={() => onOpenScanner('enfermedad_planta', planta.id)} 
-                    style={{ 
-                      padding: '8px', 
-                      background: 'var(--game-accent-light, rgba(46, 125, 50, 0.1))', 
-                      color: 'var(--game-text-bright, #2e7d32)', 
-                      border: '1.5px solid var(--game-border-color, #2e7d32)', 
-                      borderRadius: 'var(--game-radius, 6px)', 
-                      fontSize: '13px', 
-                      fontWeight: 'bold', 
-                      cursor: 'pointer',
-                      fontFamily: 'var(--game-font, sans-serif)',
-                      transition: 'transform 0.2s'
-                    }}
-                  >
-                    Analizar Enfermedad Foliar por IA 🍂 📷
-                  </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
+                    <button 
+                      type="button" 
+                      onClick={() => onOpenScanner('enfermedad_planta', planta.id)} 
+                      disabled={!cuota.esIlimitado && cuota.restantes === 0}
+                      style={{ 
+                        width: '100%',
+                        padding: '8px', 
+                        background: (!cuota.esIlimitado && cuota.restantes === 0) ? '#e0e0e0' : 'var(--game-accent-light, rgba(46, 125, 50, 0.1))', 
+                        color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#9e9e9e' : 'var(--game-text-bright, #2e7d32)', 
+                        border: '1.5px solid ' + ((!cuota.esIlimitado && cuota.restantes === 0) ? '#ccc' : 'var(--game-border-color, #2e7d32)'), 
+                        borderRadius: 'var(--game-radius, 6px)', 
+                        fontSize: '13px', 
+                        fontWeight: 'bold', 
+                        cursor: (!cuota.esIlimitado && cuota.restantes === 0) ? 'not-allowed' : 'pointer',
+                        fontFamily: 'var(--game-font, sans-serif)',
+                        transition: 'transform 0.2s'
+                      }}
+                    >
+                      Analizar Enfermedad Foliar por IA 🍂 📷
+                    </button>
+                    <span style={{ fontSize: '10px', color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#c62828' : 'var(--game-text, #666)', textAlign: 'center', display: 'block', fontWeight: '500' }}>
+                      {cuota.esIlimitado 
+                        ? '⚡ Modo Premium: Análisis ilimitados' 
+                        : cuota.restantes === 0 
+                          ? '❌ Límite diario de IA alcanzado (Ingresa tu API Key en Ajustes)' 
+                          : `🔑 Te quedan ${cuota.restantes} análisis de IA hoy`}
+                    </span>
+                  </div>
                 )}
               </div>
             </form>
@@ -925,42 +937,123 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
               {(planta.diarioFoliar || []).length === 0 ? (
                 <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>Sin notas en el diario foliar.</span>
               ) : (
-                (planta.diarioFoliar || []).map(d => (
-                  <div key={d.id} style={{ padding: '8px', borderLeft: `3px solid ${d.estadoGeneral === 'Excelente' ? '#4caf50' : d.estadoGeneral === 'Normal' ? '#2196f3' : '#ff9800'}`, background: 'var(--game-accent-light, #fafafa)', fontSize: '11px', borderRadius: 'var(--game-radius, 4px)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--game-text, #888)', marginBottom: '2px', fontSize: '9px', alignItems: 'center' }}>
-                      <span>ESTADO: {d.estadoGeneral.toUpperCase()} • {new Date(d.fecha).toLocaleDateString()}</span>
-                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                        {deleteConfirmId === d.id ? (
-                          <>
-                            <button 
-                              type="button"
-                              onClick={() => eliminarNotaFoliar(d.id)}
-                              style={{ background: '#d32f2f', color: '#fff', border: 'none', borderRadius: '3px', padding: '1px 4px', fontSize: '8px', fontWeight: 'bold', cursor: 'pointer' }}
-                            >
-                              Sí
-                            </button>
-                            <button 
-                              type="button"
-                              onClick={() => setDeleteConfirmId(null)}
-                              style={{ background: '#ccc', color: '#333', border: 'none', borderRadius: '3px', padding: '1px 3px', fontSize: '8px', cursor: 'pointer' }}
-                            >
-                              No
-                            </button>
-                          </>
-                        ) : (
-                          <button 
-                            type="button"
-                            onClick={() => setDeleteConfirmId(d.id)}
-                            style={{ background: 'transparent', color: 'var(--game-text, #888)', border: 'none', fontSize: '10px', cursor: 'pointer', padding: '0 4px' }}
-                          >
-                            🗑️
-                          </button>
-                        )}
+                (() => {
+                  const parseIAReportePlanta = (nota: string) => {
+                    let diagnostico = '';
+                    let tratamiento = '';
+                    let aislamiento = '';
+
+                    const diagKey = '[IA Diagnóstico Fitosanitario]:';
+                    const tratKey = '| Tratamiento:';
+                    const aisKey = '| Aislamiento sugerido:';
+
+                    const diagIdx = nota.indexOf(diagKey);
+                    const tratIdx = nota.indexOf(tratKey);
+                    const aisIdx = nota.indexOf(aisKey);
+
+                    if (diagIdx !== -1) {
+                      const start = diagIdx + diagKey.length;
+                      const end = tratIdx !== -1 ? tratIdx : (aisIdx !== -1 ? aisIdx : nota.length);
+                      diagnostico = nota.substring(start, end).trim();
+                    } else {
+                      diagnostico = nota;
+                    }
+
+                    if (tratIdx !== -1) {
+                      const start = tratIdx + tratKey.length;
+                      const end = aisIdx !== -1 ? aisIdx : nota.length;
+                      tratamiento = nota.substring(start, end).trim();
+                    }
+
+                    if (aisIdx !== -1) {
+                      const start = aisIdx + aisKey.length;
+                      aislamiento = nota.substring(start).trim();
+                    }
+
+                    return {
+                      diagnostico: diagnostico || 'No especificado',
+                      tratamiento: tratamiento || 'No especificado',
+                      aislamiento: aislamiento || 'No sugerido'
+                    };
+                  };
+
+                  return (planta.diarioFoliar || []).map(d => {
+                    const esIAReporte = d.nota.startsWith('[IA');
+                    const fechaFmt = new Date(d.fecha).toLocaleDateString();
+                    const textoMostrar = esIAReporte 
+                      ? `análisis fitosanitario - (${fechaFmt})`
+                      : d.nota;
+
+                    return (
+                      <div 
+                        key={d.id} 
+                        onClick={() => {
+                          if (esIAReporte) {
+                            const parsed = parseIAReportePlanta(d.nota);
+                            setIaReporteModal({
+                              fecha: fechaFmt,
+                              diagnostico: parsed.diagnostico,
+                              tratamiento: parsed.tratamiento,
+                              aislamiento: parsed.aislamiento
+                            });
+                          }
+                        }}
+                        style={{ 
+                          padding: '8px', 
+                          borderLeft: `3px solid ${d.estadoGeneral === 'Excelente' ? '#4caf50' : d.estadoGeneral === 'Normal' ? '#2196f3' : '#ff9800'}`, 
+                          background: 'var(--game-accent-light, #fafafa)', 
+                          fontSize: '11px', 
+                          borderRadius: 'var(--game-radius, 4px)',
+                          cursor: esIAReporte ? 'pointer' : 'default',
+                          transition: 'background 0.2s',
+                          userSelect: 'none'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--game-text, #888)', marginBottom: '2px', fontSize: '9px', alignItems: 'center' }}>
+                          <span>
+                            ESTADO: {d.estadoGeneral.toUpperCase()} • {fechaFmt} {esIAReporte && '🔍 Click para ver análisis'}
+                          </span>
+                          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
+                            {deleteConfirmId === d.id ? (
+                              <>
+                                <button 
+                                  type="button"
+                                  onClick={() => eliminarNotaFoliar(d.id)}
+                                  style={{ background: '#d32f2f', color: '#fff', border: 'none', borderRadius: '3px', padding: '1px 4px', fontSize: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+                                >
+                                  Sí
+                                </button>
+                                <button 
+                                  type="button"
+                                  onClick={() => setDeleteConfirmId(null)}
+                                  style={{ background: '#ccc', color: '#333', border: 'none', borderRadius: '3px', padding: '1px 3px', fontSize: '8px', cursor: 'pointer' }}
+                                >
+                                  No
+                                </button>
+                              </>
+                            ) : (
+                              <button 
+                                type="button"
+                                onClick={() => setDeleteConfirmId(d.id)}
+                                style={{ background: 'transparent', color: 'var(--game-text, #888)', border: 'none', fontSize: '10px', cursor: 'pointer', padding: '0 4px' }}
+                              >
+                                🗑️
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <span style={{ 
+                          color: 'var(--game-text-bright, #333)', 
+                          fontFamily: 'var(--game-font, sans-serif)',
+                          textDecoration: esIAReporte ? 'underline' : 'none',
+                          fontWeight: esIAReporte ? '500' : 'normal'
+                        }}>
+                          {textoMostrar}
+                        </span>
                       </div>
-                    </div>
-                    <span style={{ color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>{d.nota}</span>
-                  </div>
-                ))
+                    );
+                  });
+                })()
               )}
             </div>
           </div>
@@ -1037,6 +1130,113 @@ export const PlantCard: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenSc
                     Sí, eliminar 🗑️
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* VENTANA EMERGENTE (MODAL) PARA REPORTE DE IA */}
+          {iaReporteModal && (
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.65)',
+              backdropFilter: 'blur(6px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+              padding: '20px',
+              boxSizing: 'border-box'
+            }} onClick={() => setIaReporteModal(null)}>
+              <div style={{
+                background: 'var(--game-card-bg, #ffffff)',
+                borderRadius: '16px',
+                padding: '24px',
+                maxWidth: '500px',
+                width: '100%',
+                maxHeight: '85vh',
+                overflowY: 'auto',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                border: '1px solid var(--game-border-color, #eaeaea)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px'
+              }} onClick={(e) => e.stopPropagation()}>
+                
+                {/* Cabecera */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--game-border-color, #f0f0f0)', paddingBottom: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      🍂 Diagnóstico Fitosanitario por IA
+                    </h3>
+                    <span style={{ fontSize: '11px', color: '#666', marginTop: '2px', fontWeight: '500' }}>
+                      Fecha: {iaReporteModal.fecha}
+                    </span>
+                  </div>
+                  <button 
+                    onClick={() => setIaReporteModal(null)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      fontSize: '20px',
+                      cursor: 'pointer',
+                      color: 'var(--game-text, #999)',
+                      padding: '4px',
+                      lineHeight: '1'
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {/* Contenido */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px', color: 'var(--game-text-bright, #333)', textAlign: 'left' }}>
+                  
+                  <div style={{ background: 'rgba(76, 175, 80, 0.06)', borderLeft: '4px solid #4caf50', padding: '12px', borderRadius: '4px' }}>
+                    <h4 style={{ margin: '0 0 6px 0', fontSize: '12px', fontWeight: 'bold', color: '#388e3c', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      📋 Diagnóstico Fitosanitario
+                    </h4>
+                    <p style={{ margin: 0, lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{iaReporteModal.diagnostico}</p>
+                  </div>
+
+                  <div style={{ background: 'rgba(33, 150, 243, 0.06)', borderLeft: '4px solid #2196f3', padding: '12px', borderRadius: '4px' }}>
+                    <h4 style={{ margin: '0 0 6px 0', fontSize: '12px', fontWeight: 'bold', color: '#1976d2', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      💊 Tratamiento Sugerido
+                    </h4>
+                    <p style={{ margin: 0, lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{iaReporteModal.tratamiento}</p>
+                  </div>
+
+                  <div style={{ background: 'rgba(255, 152, 0, 0.06)', borderLeft: '4px solid #ff9800', padding: '12px', borderRadius: '4px' }}>
+                    <h4 style={{ margin: '0 0 6px 0', fontSize: '12px', fontWeight: 'bold', color: '#f57c00', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      🛡️ Aislamiento Sugerido
+                    </h4>
+                    <p style={{ margin: 0, lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{iaReporteModal.aislamiento}</p>
+                  </div>
+
+                </div>
+
+                {/* Botón inferior de cerrar */}
+                <button
+                  onClick={() => setIaReporteModal(null)}
+                  style={{
+                    padding: '10px 16px',
+                    background: 'var(--game-accent, #1a1a1a)',
+                    color: theme === 'gaming' ? '#000' : '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    fontSize: '12px',
+                    alignSelf: 'flex-end',
+                    marginTop: '8px',
+                    fontFamily: 'var(--game-font, sans-serif)'
+                  }}
+                >
+                  Cerrar
+                </button>
               </div>
             </div>
           )}

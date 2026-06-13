@@ -1,5 +1,6 @@
 import type { Mascota, Planta, AnimalExotico } from '../database/types';
 import type { DatosClimaticos } from './weatherService';
+import { IAQuotaManager } from '../utils/iaQuota';
 
 export interface AnalisisMultimodalResult {
   diagnostico: string;
@@ -101,7 +102,13 @@ export class GeminiAPIService {
     gpsCoords?: DatosClimaticos,
     historial?: { sender: 'user' | 'ia'; text: string }[]
   ): Promise<AnalisisMultimodalResult> {
-    
+    if (!simulatedTemplateKey) {
+      const cuota = IAQuotaManager.obtenerEstadoCuota();
+      if (!cuota.esIlimitado && cuota.restantes <= 0) {
+        throw new Error("Límite diario de análisis de IA alcanzado. Por favor, introduce tu propia API Key en Ajustes ⚙️.");
+      }
+    }
+
     const apiKey = this.getApiKey();
 
     if (apiKey) {
@@ -243,6 +250,9 @@ CRÍTICO - NAVEGACIÓN Y ACCESO A FICHAS: Si el usuario te pide abrir, ir, ver, 
           const responseText = resData.candidates?.[0]?.content?.parts?.[0]?.text;
           if (responseText) {
             const parsed = cleanAndParseJSON(responseText);
+            if (!simulatedTemplateKey) {
+              IAQuotaManager.registrarUso();
+            }
             return {
               diagnostico: parsed.diagnostico || "No se pudo extraer el diagnóstico detallado.",
               tratamiento: parsed.tratamiento || "No se especificó tratamiento.",
@@ -256,6 +266,9 @@ CRÍTICO - NAVEGACIÓN Y ACCESO A FICHAS: Si el usuario te pide abrir, ir, ver, 
           throw new Error(`HTTP ${response.status}: ${errText}`);
         }
       } catch (err: any) {
+        if (err.message && err.message.includes("Límite diario")) {
+          throw err;
+        }
         console.error("Fallo en llamada a API de Gemini en analizarImagen, desviando a simulado:", err);
       }
     }
@@ -581,6 +594,11 @@ CRÍTICO - NAVEGACIÓN Y ACCESO A FICHAS: Si el usuario te pide abrir, ir, ver, 
     mode: 'registrar_mascota' | 'salud_mascota' | 'registrar_planta' | 'enfermedad_planta' | 'registrar_exotico' | 'salud_exotico',
     promptTexto?: string
   ): Promise<any> {
+    const cuota = IAQuotaManager.obtenerEstadoCuota();
+    if (!cuota.esIlimitado && cuota.restantes <= 0) {
+      throw new Error("Límite diario de análisis de IA alcanzado. Por favor, introduce tu propia API Key en Ajustes ⚙️.");
+    }
+
     const apiKey = this.getApiKey();
 
     if (apiKey && imageBlob) {
@@ -670,6 +688,7 @@ CRÍTICO - NAVEGACIÓN Y ACCESO A FICHAS: Si el usuario te pide abrir, ir, ver, 
           const resData = await response.json();
           const responseText = resData.candidates?.[0]?.content?.parts?.[0]?.text;
           if (responseText) {
+            IAQuotaManager.registrarUso();
             return cleanAndParseJSON(responseText);
           }
         } else if (response) {
@@ -677,6 +696,9 @@ CRÍTICO - NAVEGACIÓN Y ACCESO A FICHAS: Si el usuario te pide abrir, ir, ver, 
           throw new Error(`HTTP ${response.status}: ${errText}`);
         }
       } catch (err: any) {
+        if (err.message && err.message.includes("Límite diario")) {
+          throw err;
+        }
         console.error("Fallo en llamada a API Gemini en analizarSmartScanner, desviando a simulado:", err);
         const mockRes = this.obtenerResultadoSimuladoSmartScanner(mode, promptTexto);
         return {

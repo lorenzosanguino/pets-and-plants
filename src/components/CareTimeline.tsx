@@ -64,6 +64,29 @@ export const CareTimeline: React.FC<CareTimelineProps> = ({ plantas, mascotas, o
           emoji: '⚖️'
         });
       }
+
+      // Vacunas/Desparasitaciones pendientes
+      if (m.especie === 'Felino' || m.especie === 'Canino') {
+        const checklistRequerido = m.especie === 'Felino'
+          ? ['Trivalente Felina', 'Leucemia Felina', 'Rabia', 'Desparasitación Interna', 'Desparasitación Externa']
+          : ['Parvovirus', 'Moquillo', 'Adenovirus', 'Rabia', 'Leptospirosis', 'Desparasitación Interna', 'Desparasitación Externa'];
+
+        const marcados = m.vacunasChecklist || [];
+        const pendientes = checklistRequerido.filter(v => !marcados.includes(v));
+
+        pendientes.forEach(v => {
+          tareas.push({
+            id: `vacuna-pendiente-${m.id}-${v}`,
+            targetId: m.id,
+            type: 'vacuna',
+            title: `Vacunar ${v} a ${m.nombre}`,
+            detail: `Pendiente en el plan de medicina preventiva de ${m.nombre}`,
+            date: hoy,
+            color: '#f59e0b',
+            emoji: v.includes('Desparasitación') ? '💊' : '💉'
+          });
+        });
+      }
     });
 
     // Ordenar por fecha cronológica
@@ -81,6 +104,22 @@ export const CareTimeline: React.FC<CareTimelineProps> = ({ plantas, mascotas, o
           ultimaFechaRiego: hoyStr,
           proximaFechaRiego: proxStr
         });
+      }
+    } else if (tarea.type === 'vacuna') {
+      const m = mascotas.find(item => item.id === tarea.targetId);
+      if (m) {
+        const vName = tarea.id.replace(`vacuna-pendiente-${m.id}-`, '');
+        const confirmar = window.confirm(`¿Estás seguro/a de marcar "${vName}" para ${m.nombre} como colocada/realizada? Esta acción no se puede deshacer.`);
+        if (!confirmar) return;
+
+        const current = m.vacunasChecklist || [];
+        if (!current.includes(vName)) {
+          const updated = [...current, vName];
+          await LocalDatabase.saveMascota({
+            ...m,
+            vacunasChecklist: updated
+          });
+        }
       }
     }
     onUpdate();
@@ -133,7 +172,7 @@ export const CareTimeline: React.FC<CareTimelineProps> = ({ plantas, mascotas, o
                 </div>
                 <p style={{ margin: '2px 0 6px 0', fontSize: '11px', color: '#666' }}>{t.detail}</p>
                 
-                {t.type === 'riego' && (
+                {(t.type === 'riego' || t.type === 'vacuna') && (
                   <button 
                     onClick={() => completarTarea(t)}
                     style={{ padding: '4px 8px', background: '#e8f5e9', color: '#2e7d32', border: '1px solid #c8e6c9', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}

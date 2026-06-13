@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { CATALOGO_MASCOTAS, CATALOGO_ASPCA, LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
 import { ImageOptimizer } from '../utils/imageOptimizer';
-import { AvatarGeneratorService } from '../services/avatarGenerator';
 import type { Mascota, Planta, EspecieMascota, NivelActividad, TipoRiego, NivelToxicidadFelina, NivelToxicidadCanina } from '../database/types';
 
 interface FormProps {
@@ -20,10 +19,8 @@ export const ManualPetForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
   const [castrado, setCastrado] = useState<boolean>(false);
   const [esOtroMamifero, setEsOtroMamifero] = useState<boolean>(false);
   const [fotoUrl, setFotoUrl] = useState<string | null>(null);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [avatarStatus, setAvatarStatus] = useState('');
-  const [estilo, setEstilo] = useState<'Óleo Clásico' | 'Cómic Hiperrealista' | 'Renderizado 3D' | 'Retrato Minimalista Claro'>('Retrato Minimalista Claro');
   
+  const [fechaNacimiento, setFechaNacimiento] = useState(() => new Date().toISOString().split('T')[0]);
   const [optimizing, setOptimizing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -69,24 +66,6 @@ export const ManualPetForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
     }
   };
 
-  const handleGenerateAvatar = async () => {
-    if (!fotoUrl) return;
-    setAvatarStatus('Generando...');
-    try {
-      // Convertir base64 a Blob para el generador
-      const response = await fetch(fotoUrl);
-      const blob = await response.blob();
-      
-      const fakeImages = Array(5).fill(blob);
-      const avatar = await AvatarGeneratorService.generate(fakeImages, estilo, (_, percent) => {
-        setAvatarStatus(`${percent}%`);
-      });
-      setAvatarUrl(avatar);
-      setAvatarStatus('¡Avatar Creado!');
-    } catch (err: any) {
-      setAvatarStatus(`Fallo: ${err.message}`);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,14 +86,13 @@ export const ManualPetForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
       id: safeUUID(),
       nombre: nombre.trim(),
       especie,
-      fechaNacimiento: new Date().toISOString().split('T')[0],
+      fechaNacimiento,
       registroPeso: [{ fecha: new Date().toISOString(), pesoKg: pesoNum }],
       historialVacunas: [],
       actividad,
       porcionDiariaGramos: porcionSugerida,
       diarioClinico: [],
       fotoUrl, // Foto real obligatoria
-      avatarUrl: avatarUrl || undefined,
       raza: raza.trim() || undefined,
       sexo: esMamiferoActivo ? sexo : undefined,
       castrado: esMamiferoActivo ? castrado : undefined
@@ -161,6 +139,18 @@ export const ManualPetForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
           onChange={(e) => setNombre(e.target.value)} 
           required 
           placeholder="Nombre del animal"
+          style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
+        />
+      </div>
+
+      <div>
+        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Fecha de Nacimiento:</label>
+        <input 
+          type="date" 
+          value={fechaNacimiento} 
+          onChange={(e) => setFechaNacimiento(e.target.value)} 
+          required 
+          max={new Date().toISOString().split('T')[0]}
           style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
         />
       </div>
@@ -276,29 +266,7 @@ export const ManualPetForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
         )}
       </div>
 
-      {/* Avatares Retro Opcionales */}
-      {fotoUrl && (
-        <div style={{ border: '1px solid #eee', borderRadius: '8px', padding: '10px', background: 'rgba(0,0,0,0.02)' }}>
-          <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>¿Generar avatar retro pixelado?</label>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <select value={estilo} onChange={(e) => setEstilo(e.target.value as any)} style={{ flex: 1, padding: '4px', fontSize: '11px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}>
-              <option value="Óleo Clásico">Óleo Clásico</option>
-              <option value="Cómic Hiperrealista">Cómic Hiperrealista</option>
-              <option value="Renderizado 3D">Renderizado 3D</option>
-              <option value="Retrato Minimalista Claro">Retrato Minimalista Claro</option>
-            </select>
-            <button type="button" onClick={handleGenerateAvatar} style={{ padding: '6px 12px', background: 'var(--game-accent, #1976d2)', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>
-              Generar
-            </button>
-          </div>
-          {avatarStatus && <span style={{ fontSize: '10px', display: 'block', marginTop: '4px' }}>{avatarStatus}</span>}
-          {avatarUrl && (
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '8px' }}>
-              <img src={avatarUrl} alt="Avatar generado" style={{ width: '50px', height: '50px', borderRadius: '50%', border: '1.5px solid var(--game-border-color)' }} />
-            </div>
-          )}
-        </div>
-      )}
+
 
       <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
         <button type="button" onClick={onClose} style={{ flex: 1, padding: '10px', border: '1px solid var(--game-border-color)', borderRadius: '8px', background: 'none', color: 'var(--game-text)', cursor: 'pointer', fontWeight: 'bold' }}>
