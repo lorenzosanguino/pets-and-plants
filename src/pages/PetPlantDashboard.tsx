@@ -39,6 +39,19 @@ const ChunkLoader: React.FC<{ height?: string }> = ({ height = '120px' }) => (
 );
 
 
+const isDatabaseDefaultDemo = (mascotas: Mascota[], plantas: Planta[], exoticos: AnimalExotico[]) => {
+  if (mascotas.length > 1 || plantas.length > 1 || exoticos.length > 0) {
+    return false;
+  }
+  if (mascotas.length === 1 && mascotas[0].id !== 'mascota-luna-id') {
+    return false;
+  }
+  if (plantas.length === 1 && plantas[0].id !== 'planta-fern-id') {
+    return false;
+  }
+  return true;
+};
+
 export const PetPlantDashboard: React.FC = () => {
   const isRemoteSyncingRef = useRef(false);
   const msSyncTimeoutRef = useRef<any>(null);
@@ -505,15 +518,29 @@ export const PetPlantDashboard: React.FC = () => {
                     if (data) {
                       // Si el hogar en la nube tiene datos y estamos en un dispositivo diferente o vacío localmente, sincronizar
                       if (cloudHogarId !== localHogarId) {
-                        localStorage.setItem('petplant_hogar_id', cloudHogarId);
-                        localStorage.setItem('petplant_hogar_nombre', cloudHogarNombre);
-                        setHogarId(cloudHogarId);
-                        setHogarNombre(cloudHogarNombre);
+                        const isLocalDemo = isDatabaseDefaultDemo(listMascotas, listPlantas, listExoticos);
+                        const isCloudDemo = isDatabaseDefaultDemo(data.mascotas || [], data.plantas || [], data.exoticos || []);
 
-                        isRemoteSyncingRef.current = true;
-                        await LocalDatabase.overwriteDatabase(data.mascotas || [], data.plantas || [], data.exoticos || []);
-                        isRemoteSyncingRef.current = false;
-                        await refreshData(false);
+                        if (!isLocalDemo && isCloudDemo) {
+                          // El dispositivo local tiene datos reales, pero la nube solo tiene datos demo.
+                          // Subimos los datos locales reales a la nube para no perderlos y propagarlos.
+                          localStorage.setItem('petplant_hogar_id', cloudHogarId);
+                          localStorage.setItem('petplant_hogar_nombre', cloudHogarNombre);
+                          setHogarId(cloudHogarId);
+                          setHogarNombre(cloudHogarNombre);
+                          await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme);
+                        } else {
+                          // En cualquier otro caso (el local es demo, o ambos son reales/la nube es la fuente oficial), descargamos
+                          localStorage.setItem('petplant_hogar_id', cloudHogarId);
+                          localStorage.setItem('petplant_hogar_nombre', cloudHogarNombre);
+                          setHogarId(cloudHogarId);
+                          setHogarNombre(cloudHogarNombre);
+
+                          isRemoteSyncingRef.current = true;
+                          await LocalDatabase.overwriteDatabase(data.mascotas || [], data.plantas || [], data.exoticos || []);
+                          isRemoteSyncingRef.current = false;
+                          await refreshData(false);
+                        }
                       }
 
                       // Aplicar tema de la nube si existe y es válido
@@ -702,8 +729,11 @@ export const PetPlantDashboard: React.FC = () => {
       const localExoticos = await LocalDatabase.getExoticos();
       const isLocalEmpty = localMascotas.length === 0 && localPlantas.length === 0 && localExoticos.length === 0;
 
-      // Solo sobreescribir si la actualización remota es estrictamente más nueva o si local está vacío
-      if (data.updatedAt > localLastUpdated || isLocalEmpty) {
+      const isLocalDemo = isDatabaseDefaultDemo(localMascotas, localPlantas, localExoticos);
+      const isCloudDemo = isDatabaseDefaultDemo(data.mascotas || [], data.plantas || [], data.exoticos || []);
+
+      // Solo sobreescribir si la actualización remota es estrictamente más nueva, si local está vacío, o si local es demo y la nube es real
+      if (data.updatedAt > localLastUpdated || isLocalEmpty || (isLocalDemo && !isCloudDemo)) {
         setSyncStatus('syncing');
         try {
           isRemoteSyncingRef.current = true;
