@@ -8,6 +8,7 @@ import { CardPhotoManager } from './CardPhotoManager';
 import { calcularEdadMascota } from '../utils/age';
 import { IAQuotaManager } from '../utils/iaQuota';
 import { ReportGeneratorModal } from './ReportGeneratorModal';
+import { BiometricChart } from './BiometricChart';
 
 
 interface PetCardProps {
@@ -486,183 +487,23 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
   };
 
   const renderGraficaPeso = () => {
-    // Ordenar y tomar los últimos 7 registros
-    const registros = [...(mascota.registroPeso || [])]
-      .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
-      .slice(-7);
+    const chartData = (mascota.registroPeso || []).map(r => ({
+      fecha: r.fecha,
+      valor: r.pesoKg
+    }));
 
-    if (registros.length === 0) return null;
-
-    const pesos = registros.map(r => r.pesoKg);
-    const maxPeso = Math.max(...pesos);
-    const minPeso = Math.min(...pesos);
-
-    // Configuración de dimensiones
-    const width = 350;
-    const height = 120;
-    const paddingLeft = 35;
-    const paddingRight = 15;
-    const paddingTop = 15;
-    const paddingBottom = 20;
-    const chartWidth = width - paddingLeft - paddingRight;
-    const chartHeight = height - paddingTop - paddingBottom;
-
-    // Calcular escala Y con márgenes
-    let minScale = minPeso;
-    let maxScale = maxPeso;
-    if (maxPeso === minPeso) {
-      minScale = minPeso - 1;
-      maxScale = maxPeso + 1;
-    } else {
-      const margin = (maxPeso - minPeso) * 0.15;
-      minScale = minPeso - margin;
-      maxScale = maxPeso + margin;
-    }
-
-    const getY = (w: number) => {
-      return paddingTop + chartHeight - ((w - minScale) / (maxScale - minScale)) * chartHeight;
-    };
-
-    const getX = (index: number) => {
-      if (registros.length <= 1) {
-        return paddingLeft + chartWidth / 2;
-      }
-      return paddingLeft + (index * chartWidth) / (registros.length - 1);
-    };
-
-    // Formatear etiquetas de fecha
-    const formatFecha = (isoStr: string) => {
-      try {
-        const d = new Date(isoStr);
-        if (isNaN(d.getTime())) return '';
-        const day = String(d.getDate()).padStart(2, '0');
-        const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-        return `${day} ${months[d.getMonth()]}`;
-      } catch {
-        return '';
-      }
-    };
-
-    const points = registros.map((r, i) => ({ x: getX(i), y: getY(r.pesoKg), label: `${r.pesoKg}kg`, date: formatFecha(r.fecha) }));
-
-    // Crear línea de curva (M x1 y1 L x2 y2 ...)
-    const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-
-    // Crear área sombreada bajo la línea
-    const areaPath = points.length > 0 
-      ? `${linePath} L ${points[points.length - 1].x} ${paddingTop + chartHeight} L ${points[0].x} ${paddingTop + chartHeight} Z`
-      : '';
-
-    // Estilos basados en el tema
-    let strokeColor = '#2e7d32'; // Nature default
-    let stopColorStart = '#81c784';
-    let stopColorEnd = '#e8f5e9';
-    let dotFill = '#ffffff';
-    let dotStroke = '#2e7d32';
-    let gridStroke = 'rgba(46, 125, 50, 0.1)';
-    let textFill = '#2e7d32';
-    let fontFamily = 'var(--game-font, sans-serif)';
-
-    if (theme === 'gaming') {
-      strokeColor = '#66fcf1';
-      stopColorStart = 'rgba(102, 252, 241, 0.4)';
-      stopColorEnd = 'rgba(11, 12, 16, 0.0)';
-      dotFill = '#0b0c10';
-      dotStroke = '#66fcf1';
-      gridStroke = 'rgba(102, 252, 241, 0.15)';
-      textFill = '#c5a1ff';
-      fontFamily = 'var(--game-font, monospace)';
-    } else if (theme === 'kawaii') {
-      strokeColor = '#ff6b8b';
-      stopColorStart = 'rgba(255, 182, 193, 0.5)';
-      stopColorEnd = 'rgba(255, 245, 247, 0.0)';
-      dotFill = '#ffffff';
-      dotStroke = '#ff6b8b';
-      gridStroke = 'rgba(255, 182, 193, 0.25)';
-      textFill = '#b05273';
-      fontFamily = 'var(--game-font, sans-serif)';
-    }
+    let accentColor = '#1976d2';
+    if (theme === 'nature') accentColor = '#2e7d32';
+    else if (theme === 'kawaii') accentColor = '#ff6b8b';
+    else if (theme === 'gaming') accentColor = '#66fcf1';
 
     return (
-      <div style={{ 
-        padding: '12px 14px', 
-        background: 'var(--game-accent-light, rgba(0,0,0,0.02))', 
-        borderRadius: '8px', 
-        border: '1px solid var(--game-border-color, #eaeaea)', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        gap: '8px',
-        boxSizing: 'border-box',
-        width: '100%'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--game-text, #666)', fontFamily: fontFamily, fontWeight: 'bold' }}>
-          <span>📈 Curva de Peso (Últimos {registros.length} registros)</span>
-          <span style={{ color: 'var(--game-text-bright)' }}>Mín: {minPeso.toFixed(1)}kg / Máx: {maxPeso.toFixed(1)}kg</span>
-        </div>
-
-        <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-          <svg viewBox={`0 0 ${width} ${height}`} width="100%" height={height} style={{ display: 'block', overflow: 'visible' }}>
-            <defs>
-              <linearGradient id={`weightGradient-${mascota.id}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={stopColorStart} stopOpacity="0.8"/>
-                <stop offset="100%" stopColor={stopColorEnd} stopOpacity="0.0"/>
-              </linearGradient>
-            </defs>
-
-            {/* Rejilla Horizontal (Mínimo y Máximo) */}
-            {maxPeso !== minPeso && (
-              <>
-                <line x1={paddingLeft} y1={getY(maxPeso)} x2={width - paddingRight} y2={getY(maxPeso)} stroke={gridStroke} strokeDasharray="3,3" />
-                <text x={paddingLeft - 6} y={getY(maxPeso) + 3} textAnchor="end" style={{ fontSize: '9px', fill: textFill, fontFamily: fontFamily }}>
-                  {maxPeso.toFixed(1)}k
-                </text>
-
-                <line x1={paddingLeft} y1={getY(minPeso)} x2={width - paddingRight} y2={getY(minPeso)} stroke={gridStroke} strokeDasharray="3,3" />
-                <text x={paddingLeft - 6} y={getY(minPeso) + 3} textAnchor="end" style={{ fontSize: '9px', fill: textFill, fontFamily: fontFamily }}>
-                  {minPeso.toFixed(1)}k
-                </text>
-              </>
-            )}
-
-            {maxPeso === minPeso && (
-              <>
-                <line x1={paddingLeft} y1={getY(minPeso)} x2={width - paddingRight} y2={getY(minPeso)} stroke={gridStroke} strokeDasharray="3,3" />
-                <text x={paddingLeft - 6} y={getY(minPeso) + 3} textAnchor="end" style={{ fontSize: '9px', fill: textFill, fontFamily: fontFamily }}>
-                  {minPeso.toFixed(1)}k
-                </text>
-              </>
-            )}
-
-            {/* Eje X (Línea base) */}
-            <line x1={paddingLeft} y1={paddingTop + chartHeight} x2={width - paddingRight} y2={paddingTop + chartHeight} stroke={gridStroke} strokeWidth="1" />
-
-            {/* Relleno bajo la curva */}
-            {points.length > 1 && (
-              <path d={areaPath} fill={`url(#weightGradient-${mascota.id})`} />
-            )}
-
-            {/* Línea de la curva */}
-            {points.length > 1 && (
-              <path d={linePath} fill="none" stroke={strokeColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            )}
-
-            {/* Puntos y etiquetas */}
-            {points.map((p, i) => (
-              <g key={i}>
-                <circle cx={p.x} cy={p.y} r="4.5" fill={dotFill} stroke={dotStroke} strokeWidth="2" />
-                {/* Valor de peso por encima del punto */}
-                <text x={p.x} y={p.y - 8} textAnchor="middle" style={{ fontSize: '9px', fontWeight: 'bold', fill: textFill, fontFamily: fontFamily }}>
-                  {p.label}
-                </text>
-                {/* Fecha en el eje X */}
-                <text x={p.x} y={paddingTop + chartHeight + 14} textAnchor="middle" style={{ fontSize: '8px', fill: 'var(--game-text, #888)', fontFamily: fontFamily }}>
-                  {p.date}
-                </text>
-              </g>
-            ))}
-          </svg>
-        </div>
-      </div>
+      <BiometricChart
+        data={chartData}
+        yLabel="Peso (kg)"
+        color={accentColor}
+        theme={theme as any}
+      />
     );
   };
 

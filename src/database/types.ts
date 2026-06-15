@@ -6,6 +6,11 @@ export interface RegistroPeso {
   pesoKg: number;
 }
 
+export interface RegistroCrecimiento {
+  fecha: string; // ISO Date
+  alturaCm: number;
+}
+
 export interface RegistroVacuna {
   fecha: string; // ISO Date
   vacuna: 'Trivalente' | 'Leucemia' | 'Rabia' | 'Otras';
@@ -90,6 +95,7 @@ export interface Planta {
   fotos?: string[]; // Colección de fotos (Base64 optimizado)
   historialPasado?: EventoPasado[]; // Historial de enfermedades/parásitos/podas
   diagnosticosIA?: RegistroDiagnosticoIA[]; // Historial de diagnósticos IA
+  registroCrecimiento?: RegistroCrecimiento[]; // Registro de evolución de altura
 }
 
 export interface AnimalExotico {
@@ -107,6 +113,8 @@ export interface AnimalExotico {
   chip?: string; // Microchip del animal exótico
   historialPasado: EventoPasado[]; // Historial de enfermedades/muda/parásitos
   diagnosticosIA?: RegistroDiagnosticoIA[]; // Historial de diagnósticos IA
+  registroCrecimiento?: RegistroCrecimiento[]; // Registro de evolución de altura/longitud
+  registroPeso?: RegistroPeso[]; // Registro de evolución de peso
 }
 
 export interface EventoCalendario {

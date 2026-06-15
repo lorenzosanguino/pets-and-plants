@@ -6,6 +6,7 @@ import { safeUUID } from '../utils/uuid';
 import { CardPhotoManager } from './CardPhotoManager';
 import { IAQuotaManager } from '../utils/iaQuota';
 import { ReportGeneratorModal } from './ReportGeneratorModal';
+import { BiometricChart } from './BiometricChart';
 
 interface PlantCardProps {
   planta: Planta;
@@ -23,6 +24,27 @@ const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpen
 
   // Luxometer states
   const [showLuxmeter, setShowLuxmeter] = useState(false);
+  const [nuevoCrecimiento, setNuevoCrecimiento] = useState('');
+
+  const registrarCrecimiento = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const alturaCm = parseFloat(nuevoCrecimiento);
+    if (isNaN(alturaCm) || alturaCm <= 0) return;
+
+    const nuevoRegistro = {
+      fecha: new Date().toISOString(),
+      alturaCm
+    };
+
+    const plantaActualizada = {
+      ...planta,
+      registroCrecimiento: [...(planta.registroCrecimiento || []), nuevoRegistro]
+    };
+
+    await LocalDatabase.savePlanta(plantaActualizada);
+    setNuevoCrecimiento('');
+    onUpdate();
+  };
   const [luxValue, setLuxValue] = useState(3000);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -1055,6 +1077,72 @@ const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpen
                 ))
               )}
             </div>
+          </div>
+
+          {/* Crecimiento de la Planta */}
+          <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <h4 style={{ margin: '0', fontSize: '13px', color: 'var(--game-text-bright, #333)', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)' }}>
+              📈 Historial de Crecimiento (Altura)
+            </h4>
+            {(() => {
+              const chartData = (planta.registroCrecimiento || []).map(r => ({
+                fecha: r.fecha,
+                valor: r.alturaCm
+              }));
+
+              let accentColor = '#2e7d32'; // nature
+              if (theme === 'kawaii') accentColor = '#ff6b8b';
+              else if (theme === 'gaming') accentColor = '#66fcf1';
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <BiometricChart
+                    data={chartData}
+                    yLabel="Altura (cm)"
+                    color={accentColor}
+                    theme={theme as any}
+                  />
+                  <form onSubmit={registrarCrecimiento} style={{ display: 'flex', gap: '8px', margin: '4px 0' }} className="no-print">
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="Nueva altura (cm)"
+                      value={nuevoCrecimiento}
+                      onChange={(e) => setNuevoCrecimiento(e.target.value)}
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        padding: '8px 12px',
+                        background: 'var(--game-bg, #ffffff)',
+                        color: 'var(--game-text-bright, #333)',
+                        border: 'var(--game-border, 1px solid #eaeaea)',
+                        borderRadius: 'var(--game-radius, 8px)',
+                        fontSize: '13px',
+                        fontFamily: 'var(--game-font, sans-serif)',
+                        outline: 'none'
+                      }}
+                    />
+                    <button
+                      type="submit"
+                      style={{
+                        padding: '8px 16px',
+                        background: 'var(--game-accent, #2e7d32)',
+                        color: theme === 'gaming' ? '#000000' : 'var(--game-text-bright, #fff)',
+                        border: 'var(--game-border, none)',
+                        borderRadius: 'var(--game-radius, 8px)',
+                        fontSize: '13px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--game-font, sans-serif)',
+                        flexShrink: 0
+                      }}
+                    >
+                      Medir 📏
+                    </button>
+                  </form>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Diario Foliar de la Planta */}

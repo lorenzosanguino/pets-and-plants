@@ -6,6 +6,7 @@ import { safeUUID } from '../utils/uuid';
 import { CardPhotoManager } from './CardPhotoManager';
 import { IAQuotaManager } from '../utils/iaQuota';
 import { ReportGeneratorModal } from './ReportGeneratorModal';
+import { BiometricChart } from './BiometricChart';
 
 
 interface ExoticCardProps {
@@ -63,6 +64,48 @@ const ExoticCardComponent: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onO
   const [newPastDate, setNewPastDate] = useState('');
   const [newPastType, setNewPastType] = useState<'Enfermedad' | 'Parásito' | 'Muda' | 'Tratamiento' | 'Otro'>('Otro');
   const [newPastDesc, setNewPastDesc] = useState('');
+  const [nuevoPeso, setNuevoPeso] = useState('');
+  const [nuevoCrecimiento, setNuevoCrecimiento] = useState('');
+
+  const registrarPeso = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const pesoKg = parseFloat(nuevoPeso); // Representa gramos para exóticos
+    if (isNaN(pesoKg) || pesoKg <= 0) return;
+
+    const nuevoRegistro = {
+      fecha: new Date().toISOString(),
+      pesoKg
+    };
+
+    const exoticoActualizado = {
+      ...exotico,
+      registroPeso: [...(exotico.registroPeso || []), nuevoRegistro]
+    };
+
+    await LocalDatabase.saveExotico(exoticoActualizado);
+    setNuevoPeso('');
+    onUpdate();
+  };
+
+  const registrarCrecimiento = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const alturaCm = parseFloat(nuevoCrecimiento);
+    if (isNaN(alturaCm) || alturaCm <= 0) return;
+
+    const nuevoRegistro = {
+      fecha: new Date().toISOString(),
+      alturaCm
+    };
+
+    const exoticoActualizado = {
+      ...exotico,
+      registroCrecimiento: [...(exotico.registroCrecimiento || []), nuevoRegistro]
+    };
+
+    await LocalDatabase.saveExotico(exoticoActualizado);
+    setNuevoCrecimiento('');
+    onUpdate();
+  };
 
   const handleDelete = async () => {
     try {
@@ -556,6 +599,75 @@ const ExoticCardComponent: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onO
                 Registrar Incidencia Pasada 💾
               </button>
             </form>
+          </div>
+
+          {/* Evolución Biométrica (Peso y Longitud) */}
+          <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <h4 style={{ margin: '0', fontSize: '13px', color: 'var(--game-text-bright, #333)', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)' }}>
+              📈 Evolución Biométrica (Peso y Longitud)
+            </h4>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+              {/* Weight chart & form */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text)' }}>Historial de Peso (g)</span>
+                {(() => {
+                  const chartData = (exotico.registroPeso || []).map(r => ({
+                    fecha: r.fecha,
+                    valor: r.pesoKg
+                  }));
+                  let accentColor = '#ff8f00'; // exotics orange
+                  if (theme === 'kawaii') accentColor = '#ff6b8b';
+                  else if (theme === 'gaming') accentColor = '#66fcf1';
+                  return (
+                    <>
+                      <BiometricChart data={chartData} yLabel="Peso (g)" color={accentColor} theme={theme as any} />
+                      <form onSubmit={registrarPeso} style={{ display: 'flex', gap: '6px', margin: '4px 0' }} className="no-print">
+                        <input
+                          type="number"
+                          step="0.1"
+                          placeholder="Peso (g)"
+                          value={nuevoPeso}
+                          onChange={(e) => setNuevoPeso(e.target.value)}
+                          style={{ flex: 1, minWidth: 0, padding: '6px 10px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '12px', background: '#fff', color: '#000' }}
+                        />
+                        <button type="submit" style={{ padding: '6px 12px', background: 'var(--game-accent, #ff8f00)', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>✓</button>
+                      </form>
+                    </>
+                  );
+                })()}
+              </div>
+
+              {/* Length chart & form */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text)' }}>Historial de Longitud (cm)</span>
+                {(() => {
+                  const chartData = (exotico.registroCrecimiento || []).map(r => ({
+                    fecha: r.fecha,
+                    valor: r.alturaCm
+                  }));
+                  let accentColor = '#ff8f00';
+                  if (theme === 'kawaii') accentColor = '#ff6b8b';
+                  else if (theme === 'gaming') accentColor = '#66fcf1';
+                  return (
+                    <>
+                      <BiometricChart data={chartData} yLabel="Longitud (cm)" color={accentColor} theme={theme as any} />
+                      <form onSubmit={registrarCrecimiento} style={{ display: 'flex', gap: '6px', margin: '4px 0' }} className="no-print">
+                        <input
+                          type="number"
+                          step="0.1"
+                          placeholder="Longitud (cm)"
+                          value={nuevoCrecimiento}
+                          onChange={(e) => setNuevoCrecimiento(e.target.value)}
+                          style={{ flex: 1, minWidth: 0, padding: '6px 10px', border: '1px solid #ccc', borderRadius: '6px', fontSize: '12px', background: '#fff', color: '#000' }}
+                        />
+                        <button type="submit" style={{ padding: '6px 12px', background: 'var(--game-accent, #ff8f00)', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>✓</button>
+                      </form>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
           </div>
 
           {/* Diario del Terrario */}

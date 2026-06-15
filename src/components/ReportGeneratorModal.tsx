@@ -322,6 +322,129 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
           </div>
         </div>
       `;
+    } else if (isPlant && includeWeightChart && plantItem.registroCrecimiento && plantItem.registroCrecimiento.length > 0) {
+      const cSorted = [...plantItem.registroCrecimiento]
+        .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
+        .slice(-10);
+
+      const paddingX = 40;
+      const paddingY = 25;
+      const width = 500;
+      const height = 150;
+      const chartWidth = width - paddingX * 2;
+      const chartHeight = height - paddingY * 2;
+
+      const values = cSorted.map(c => c.alturaCm);
+      const maxW = Math.max(...values, 1);
+      const minW = Math.min(...values, 0);
+      const rangeW = maxW - minW || 1;
+
+      const dates = cSorted.map(c => new Date(c.fecha).getTime());
+      const maxD = Math.max(...dates);
+      const minD = Math.min(...dates);
+      const rangeD = maxD - minD || 1;
+
+      const points = cSorted.map((c) => {
+        const x = paddingX + (cSorted.length > 1 
+          ? ((new Date(c.fecha).getTime() - minD) / rangeD) * chartWidth
+          : chartWidth / 2);
+        const y = height - paddingY - ((c.alturaCm - minW) / rangeW) * chartHeight;
+        return { 
+          x, 
+          y, 
+          label: `${c.alturaCm} cm`, 
+          date: new Date(c.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }) 
+        };
+      });
+
+      const pathD = points.length > 0 ? points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') : '';
+
+      let svgPointsHtml = '';
+      points.forEach(p => {
+        svgPointsHtml += `
+          <circle cx="${p.x}" cy="${p.y}" r="5" fill="#ffffff" stroke="${colors.secondary}" stroke-width="3" />
+          <text x="${p.x}" y="${p.y - 12}" text-anchor="middle" font-size="10" font-weight="bold" fill="${colors.primary}">${p.label}</text>
+          <text x="${p.x}" y="${height - paddingY + 16}" text-anchor="middle" font-size="9" fill="#64748b">${p.date}</text>
+        `;
+      });
+
+      weightSectionHtml = `
+        <div class="report-section">
+          <h3>Curva de Crecimiento (Altura)</h3>
+          <div style="background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; padding: 12px; margin-top: 8px;">
+            <svg viewBox="0 0 500 150" style="width: 100%; height: auto; display: block;">
+              <line x1="${paddingX}" y1="${height - paddingY}" x2="${width - paddingX}" y2="${height - paddingY}" stroke="#e2e8f0" stroke-width="1" />
+              <line x1="${paddingX}" y1="${paddingY}" x2="${width - paddingX}" y2="${paddingY}" stroke="#f1f5f9" stroke-width="1" />
+              ${pathD ? `<path d="${pathD}" fill="none" stroke="${colors.secondary}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />` : ''}
+              ${svgPointsHtml}
+            </svg>
+          </div>
+        </div>
+      `;
+    } else if (isExotic && includeWeightChart && ((exoticItem.registroPeso && exoticItem.registroPeso.length > 0) || (exoticItem.registroCrecimiento && exoticItem.registroCrecimiento.length > 0))) {
+      const hasLength = exoticItem.registroCrecimiento && exoticItem.registroCrecimiento.length > 0;
+      const dataPoints = hasLength 
+        ? [...(exoticItem.registroCrecimiento || [])].map(d => ({ fecha: d.fecha, valor: d.alturaCm, unit: 'cm' }))
+        : [...(exoticItem.registroPeso || [])].map(d => ({ fecha: d.fecha, valor: d.pesoKg, unit: 'g' }));
+
+      const sortedData = dataPoints
+        .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
+        .slice(-10);
+
+      const paddingX = 40;
+      const paddingY = 25;
+      const width = 500;
+      const height = 150;
+      const chartWidth = width - paddingX * 2;
+      const chartHeight = height - paddingY * 2;
+
+      const values = sortedData.map(c => c.valor);
+      const maxW = Math.max(...values, 1);
+      const minW = Math.min(...values, 0);
+      const rangeW = maxW - minW || 1;
+
+      const dates = sortedData.map(c => new Date(c.fecha).getTime());
+      const maxD = Math.max(...dates);
+      const minD = Math.min(...dates);
+      const rangeD = maxD - minD || 1;
+
+      const points = sortedData.map((c) => {
+        const x = paddingX + (sortedData.length > 1 
+          ? ((new Date(c.fecha).getTime() - minD) / rangeD) * chartWidth
+          : chartWidth / 2);
+        const y = height - paddingY - ((c.valor - minW) / rangeW) * chartHeight;
+        return { 
+          x, 
+          y, 
+          label: `${c.valor} ${c.unit}`, 
+          date: new Date(c.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }) 
+        };
+      });
+
+      const pathD = points.length > 0 ? points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') : '';
+
+      let svgPointsHtml = '';
+      points.forEach(p => {
+        svgPointsHtml += `
+          <circle cx="${p.x}" cy="${p.y}" r="5" fill="#ffffff" stroke="${colors.secondary}" stroke-width="3" />
+          <text x="${p.x}" y="${p.y - 12}" text-anchor="middle" font-size="10" font-weight="bold" fill="${colors.primary}">${p.label}</text>
+          <text x="${p.x}" y="${height - paddingY + 16}" text-anchor="middle" font-size="9" fill="#64748b">${p.date}</text>
+        `;
+      });
+
+      weightSectionHtml = `
+        <div class="report-section">
+          <h3>Curva de Historial Biométrico (${hasLength ? 'Longitud' : 'Peso'})</h3>
+          <div style="background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; padding: 12px; margin-top: 8px;">
+            <svg viewBox="0 0 500 150" style="width: 100%; height: auto; display: block;">
+              <line x1="${paddingX}" y1="${height - paddingY}" x2="${width - paddingX}" y2="${height - paddingY}" stroke="#e2e8f0" stroke-width="1" />
+              <line x1="${paddingX}" y1="${paddingY}" x2="${width - paddingX}" y2="${paddingY}" stroke="#f1f5f9" stroke-width="1" />
+              ${pathD ? `<path d="${pathD}" fill="none" stroke="${colors.secondary}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />` : ''}
+              ${svgPointsHtml}
+            </svg>
+          </div>
+        </div>
+      `;
     }
 
     // Diagnóstico IA

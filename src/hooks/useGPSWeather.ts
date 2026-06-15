@@ -1,6 +1,35 @@
 import { useState } from 'react';
 import { LocalDatabase } from '../database/db';
 import { WeatherService } from '../services/weatherService';
+import { NotificationManager } from '../utils/notificationManager';
+
+const evaluarYNotificarClimaExtremo = (c: any) => {
+  if (!c) return;
+  const temp = c.temperatura;
+  const hum = c.humedad;
+
+  if (temp > 32) {
+    NotificationManager.sendNotification(
+      "🔥 Alerta de Calor Extremo",
+      `La temperatura actual es de ${Math.round(temp)}°C. Mantén a tus mascotas hidratadas y protege tus plantas del sol directo.`
+    );
+  } else if (temp < 10) {
+    NotificationManager.sendNotification(
+      "❄️ Alerta de Frío Extremo",
+      `La temperatura actual es de ${Math.round(temp)}°C. Resguarda tus plantas sensibles y cobija a tus mascotas en el interior.`
+    );
+  } else if (hum < 30) {
+    NotificationManager.sendNotification(
+      "🏜️ Alerta de Sequedad Ambiental",
+      `La humedad relativa es muy baja (${Math.round(hum)}%). Comprueba el sustrato de tus plantas por si requiere riego extra.`
+    );
+  } else if (hum > 85) {
+    NotificationManager.sendNotification(
+      "🌧️ Alerta de Humedad Saturada",
+      `Humedad ambiental del ${Math.round(hum)}%. Alto riesgo de hongos. Evita regar plantas crasas/suculentas hoy.`
+    );
+  }
+};
 
 export const useGPSWeather = (refreshData: (force?: boolean) => Promise<void>) => {
   const [loadingGPS, setLoadingGPS] = useState<boolean>(false);
@@ -33,6 +62,9 @@ export const useGPSWeather = (refreshData: (force?: boolean) => Promise<void>) =
         localStorage.setItem('petplant_last_gps_time', Date.now().toString());
       }
 
+      // Evaluar y notificar clima extremo
+      evaluarYNotificarClimaExtremo(clima);
+
       const listPlantas = await LocalDatabase.getPlantas();
       for (const p of listPlantas) {
         const baseIntervalo = p.intervaloRiegoDias || 7;
@@ -63,6 +95,9 @@ export const useGPSWeather = (refreshData: (force?: boolean) => Promise<void>) =
         // Guardar clima simulado obtenido en caché local con timestamp
         localStorage.setItem('petplant_last_gps_weather', JSON.stringify(climaSimulado));
         localStorage.setItem('petplant_last_gps_time', Date.now().toString());
+
+        // Evaluar y notificar clima extremo (simulado)
+        evaluarYNotificarClimaExtremo(climaSimulado);
 
         const listPlantas = await LocalDatabase.getPlantas();
         for (const p of listPlantas) {

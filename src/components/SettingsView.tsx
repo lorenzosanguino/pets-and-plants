@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useTranslations } from '../utils/i18n';
 import { LocalDatabase } from '../database/db';
 import { SyncQueueService } from '../services/syncQueue';
-import type { AccionSincronizacion } from '../database/types';
+import type { AccionSincronizacion, Mascota, Planta, AnimalExotico } from '../database/types';
+import { initFirebase, getFirebaseCached } from '../database/firebaseLazy';
 
 interface SettingsViewProps {
   uiTheme: 'gaming' | 'nature' | 'kawaii';
@@ -93,6 +94,171 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     return false;
   });
   const [accionesPendientes, setAccionesPendientes] = useState<AccionSincronizacion[]>([]);
+
+  // Conflict resolution states
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const [conflictLoading, setConflictLoading] = useState(false);
+  const [localDataInfo, setLocalDataInfo] = useState<any>(null);
+  const [remoteDataInfo, setRemoteDataInfo] = useState<any>(null);
+  const [localPayload, setLocalPayload] = useState<any>(null);
+  const [remotePayload, setRemotePayload] = useState<any>(null);
+
+  const checkConflicts = async () => {
+    if (!hogarId) {
+      alert("Debes estar conectado a un Hogar para resolver conflictos.");
+      return;
+    }
+    setConflictLoading(true);
+    try {
+      const localM = await LocalDatabase.getMascotas();
+      const localP = await LocalDatabase.getPlantas();
+      const localE = await LocalDatabase.getExoticos();
+      const localTime = localStorage.getItem('petplant_db_last_updated') || '0';
+
+      const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
+      const remote = await fbSync.getHogarData(hogarId);
+
+      setLocalDataInfo({
+        timestamp: parseInt(localTime, 10),
+        mascotasCount: localM.length,
+        plantasCount: localP.length,
+        exoticosCount: localE.length,
+        mascotasNames: localM.map(m => m.nombre).join(', '),
+        plantasNames: localP.map(p => p.nombreComun).join(', '),
+        exoticosNames: localE.map(e => e.nombre).join(', ')
+      });
+      setLocalPayload({ mascotas: localM, plantas: localP, exoticos: localE });
+
+      if (remote) {
+        setRemoteDataInfo({
+          timestamp: remote.updatedAt || 0,
+          mascotasCount: (remote.mascotas || []).length,
+          plantasCount: (remote.plantas || []).length,
+          exoticosCount: (remote.exoticos || []).length,
+          mascotasNames: (remote.mascotas || []).map(m => m.nombre).join(', '),
+          plantasNames: (remote.plantas || []).map(p => p.nombreComun).join(', '),
+          exoticosNames: (remote.exoticos || []).map(e => e.nombre).join(', ')
+        });
+        setRemotePayload({ mascotas: remote.mascotas || [], plantas: remote.plantas || [], exoticos: remote.exoticos || [] });
+      } else {
+        setRemoteDataInfo({
+          timestamp: 0,
+          mascotasCount: 0,
+          plantasCount: 0,
+          exoticosCount: 0,
+          mascotasNames: 'Ninguno',
+          plantasNames: 'Ninguno',
+          exoticosNames: 'Ninguno'
+        });
+        setRemotePayload({ mascotas: [], plantas: [], exoticos: [] });
+      }
+      setShowConflictModal(true);
+    } catch (err) {
+      console.error(err);
+      alert("Error al cargar datos para comparación.");
+    } finally {
+      setConflictLoading(false);
+    }
+  };
+
+  const resolverConLocal = async () => {
+    if (!hogarId || !localPayload) return;
+    try {
+      setConflictLoading(true);
+      const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
+      await fbSync.uploadChanges(hogarId, hogarNombre, localPayload.mascotas, localPayload.plantas, localPayload.exoticos, uiTheme);
+      localStorage.setItem('petplant_db_last_updated', Date.now().toString());
+      setShowConflictModal(false);
+      dispararLogroVisual("CONFLICTO RESUELTO", "Se han subido tus datos locales a la nube.", "victory");
+    } catch (err) {
+      console.error(err);
+      alert("Error al sincronizar con datos locales.");
+    } finally {
+      setConflictLoading(false);
+    }
+  };
+
+  const resolverConNube = async () => {
+    if (!hogarId || !remotePayload) return;
+    try {
+      setConflictLoading(true);
+      await LocalDatabase.overwriteDatabase(remotePayload.mascotas, remotePayload.plantas, remotePayload.exoticos);
+      localStorage.setItem('petplant_db_last_updated', (remoteDataInfo.timestamp || Date.now()).toString());
+      setShowConflictModal(false);
+      dispararLogroVisual("CONFLICTO RESUELTO", "Se han descargado los datos de la nube.", "victory");
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (err) {
+      console.error(err);
+      alert("Error al sincronizar con datos de la nube.");
+    } finally {
+      setConflictLoading(false);
+    }
+  };
+
+  const resolverConFusion = async () => {
+    if (!hogarId || !localPayload || !remotePayload) return;
+    try {
+      setConflictLoading(true);
+      
+      const mergedM = mergeList(localPayload.mascotas, remotePayload.mascotas, (a: Mascota, b: Mascota) => {
+        const localW = a.registroPeso?.length || 0;
+        const remoteW = b.registroPeso?.length || 0;
+        if (localW !== remoteW) return localW > remoteW ? a : b;
+        const localD = a.diarioClinico?.length || 0;
+        const remoteD = b.diarioClinico?.length || 0;
+        return localD >= remoteD ? a : b;
+      });
+
+      const mergedP = mergeList(localPayload.plantas, remotePayload.plantas, (a: Planta, b: Planta) => {
+        const localD = a.diarioFoliar?.length || 0;
+        const remoteD = b.diarioFoliar?.length || 0;
+        if (localD !== remoteD) return localD > remoteD ? a : b;
+        const localC = a.registroCrecimiento?.length || 0;
+        const remoteC = b.registroCrecimiento?.length || 0;
+        return localC >= remoteC ? a : b;
+      });
+
+      const mergedE = mergeList(localPayload.exoticos, remotePayload.exoticos, (a: AnimalExotico, b: AnimalExotico) => {
+        const localD = a.diarioExotico?.length || 0;
+        const remoteD = b.diarioExotico?.length || 0;
+        if (localD !== remoteD) return localD > remoteD ? a : b;
+        const localW = a.registroPeso?.length || 0;
+        const remoteW = b.registroPeso?.length || 0;
+        return localW >= remoteW ? a : b;
+      });
+
+      await LocalDatabase.overwriteDatabase(mergedM, mergedP, mergedE);
+      
+      const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
+      const now = Date.now();
+      await fbSync.uploadChanges(hogarId, hogarNombre, mergedM, mergedP, mergedE, uiTheme);
+      localStorage.setItem('petplant_db_last_updated', now.toString());
+
+      setShowConflictModal(false);
+      dispararLogroVisual("FUSIÓN COMPLETADA 🤝", "Datos locales y remotos unidos con éxito.", "victory");
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (err) {
+      console.error(err);
+      alert("Error al realizar la fusión de datos.");
+    } finally {
+      setConflictLoading(false);
+    }
+  };
+
+  const mergeList = <T extends { id: string }>(localList: T[], remoteList: T[], resolveConflict: (a: T, b: T) => T): T[] => {
+    const map = new Map<string, T>();
+    localList.forEach(item => map.set(item.id, item));
+    remoteList.forEach(remoteItem => {
+      const localItem = map.get(remoteItem.id);
+      if (localItem) {
+        const resolved = resolveConflict(localItem, remoteItem);
+        map.set(remoteItem.id, resolved);
+      } else {
+        map.set(remoteItem.id, remoteItem);
+      }
+    });
+    return Array.from(map.values());
+  };
 
   const [isPushSubscribed, setIsPushSubscribed] = useState<boolean>(() => {
     return localStorage.getItem('petplant_push_subscribed') === 'true';
@@ -704,6 +870,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   }}
                 >
                   Descargar Datos de la Cuenta ⬇️
+                </button>
+                <button
+                  type="button"
+                  onClick={checkConflicts}
+                  disabled={conflictLoading}
+                  style={{
+                    padding: '8px 14px',
+                    background: 'var(--game-accent-light, rgba(25, 118, 210, 0.15))',
+                    color: 'var(--game-text-bright, #1976d2)',
+                    border: '1.5px solid var(--game-border-color, #1976d2)',
+                    borderRadius: uiTheme === 'gaming' ? '0px' : '6px',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--game-font, sans-serif)'
+                  }}
+                >
+                  {conflictLoading ? 'Comprobando...' : 'Resolver Conflictos 🔄'}
                 </button>
               </div>
             </div>
@@ -1621,6 +1805,143 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* MODAL DE RESOLUCIÓN DE CONFLICTOS */}
+      {showConflictModal && localDataInfo && remoteDataInfo && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.65)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 99999,
+          padding: '20px',
+        }}>
+          <div style={{
+            background: 'var(--game-card-bg, #ffffff)',
+            borderRadius: uiTheme === 'gaming' ? '0px' : '16px',
+            border: 'var(--game-border, 1px solid #eaeaea)',
+            padding: '24px',
+            maxWidth: '650px',
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            boxShadow: 'var(--shadow, 0 10px 30px rgba(0,0,0,0.15))',
+            textAlign: 'left'
+          }}>
+            <div>
+              <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', color: 'var(--game-text-bright, #1a1a1a)', fontWeight: 'bold' }}>
+                🔄 Resolutor de Conflictos de Sincronización
+              </h3>
+              <p style={{ margin: 0, fontSize: '12px', color: 'var(--game-text, #666)' }}>
+                Se han comparado los datos del dispositivo local y el servidor de la nube. Por favor selecciona cómo deseas resolver las diferencias.
+              </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginTop: '4px' }}>
+              {/* Local Column */}
+              <div style={{ padding: '12px', background: 'rgba(25, 118, 210, 0.03)', border: '1px solid rgba(25, 118, 210, 0.2)', borderRadius: '8px' }}>
+                <strong style={{ fontSize: '13px', color: '#1976d2', display: 'block', marginBottom: '8px' }}>💻 Datos Locales (Dispositivo)</strong>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Última Sincro:</strong> {localDataInfo.timestamp > 0 ? new Date(localDataInfo.timestamp).toLocaleString() : 'Nunca (Modo Local)'}</p>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Mascotas ({localDataInfo.mascotasCount}):</strong> {localDataInfo.mascotasNames || 'Ninguna'}</p>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Plantas ({localDataInfo.plantasCount}):</strong> {localDataInfo.plantasNames || 'Ninguna'}</p>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Exóticos ({localDataInfo.exoticosCount}):</strong> {localDataInfo.exoticosNames || 'Ninguno'}</p>
+              </div>
+
+              {/* Remote Column */}
+              <div style={{ padding: '12px', background: 'rgba(76, 175, 80, 0.03)', border: '1px solid rgba(76, 175, 80, 0.2)', borderRadius: '8px' }}>
+                <strong style={{ fontSize: '13px', color: '#2e7d32', display: 'block', marginBottom: '8px' }}>☁️ Datos Remotos (Nube)</strong>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Última Sincro:</strong> {remoteDataInfo.timestamp > 0 ? new Date(remoteDataInfo.timestamp).toLocaleString() : 'Sin datos'}</p>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Mascotas ({remoteDataInfo.mascotasCount}):</strong> {remoteDataInfo.mascotasNames || 'Ninguna'}</p>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Plantas ({remoteDataInfo.plantasCount}):</strong> {remoteDataInfo.plantasNames || 'Ninguna'}</p>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Exóticos ({remoteDataInfo.exoticosCount}):</strong> {remoteDataInfo.exoticosNames || 'Ninguno'}</p>
+              </div>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              borderTop: '1px solid rgba(0,0,0,0.08)',
+              paddingTop: '16px',
+              marginTop: '8px'
+            }}>
+              <button
+                type="button"
+                onClick={resolverConFusion}
+                style={{
+                  padding: '10px 16px',
+                  background: 'linear-gradient(135deg, #16a34a 0%, #2e7d32 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: uiTheme === 'gaming' ? '0px' : '8px',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  textAlign: 'center'
+                }}
+              >
+                🤝 Fusionar Ambos Conjuntos (Fusión Inteligente sin pérdidas)
+              </button>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={resolverConLocal}
+                  style={{
+                    padding: '8px 12px',
+                    background: '#1976d2',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: uiTheme === 'gaming' ? '0px' : '6px',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  💻 Conservar Local
+                </button>
+                <button
+                  type="button"
+                  onClick={resolverConNube}
+                  style={{
+                    padding: '8px 12px',
+                    background: 'transparent',
+                    border: '1.5px solid #2e7d32',
+                    color: '#2e7d32',
+                    borderRadius: uiTheme === 'gaming' ? '0px' : '6px',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ☁️ Conservar Nube
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowConflictModal(false)}
+                style={{
+                  padding: '6px 12px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--game-text)',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  marginTop: '4px'
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
