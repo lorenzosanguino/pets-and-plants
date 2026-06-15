@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { GeminiAPIService } from '../services/geminiAPI';
 
 interface VacationAdviceProps {
-  mode: 'plants' | 'pets' | 'exotics';
+  mode: 'plants' | 'pets' | 'exotics' | 'travels';
 }
 
 export const VacationAdvice: React.FC<VacationAdviceProps> = ({ mode }) => {
@@ -19,7 +19,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({ mode }) => {
 
   if (mode !== prevMode) {
     setPrevMode(mode);
-    setActiveTab(mode === 'plants' ? 'plants' : mode === 'pets' ? 'cats' : 'exotics');
+    setActiveTab(mode === 'plants' ? 'plants' : mode === 'pets' ? 'cats' : mode === 'exotics' ? 'exotics' : 'plants');
     setChatMessages([]);
     setQuery('');
   }
@@ -100,34 +100,61 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({ mode }) => {
           {mode === 'plants' && 'Encuentra consejos expertos e ideas para mantener tus plantas seguras durante tus ausencias.'}
           {mode === 'pets' && 'Directrices y checklist para el cuidado de tus perros y gatos cuando te vas de viaje.'}
           {mode === 'exotics' && 'Información crítica sobre soporte vital y cuidado de animales exóticos durante tus vacaciones.'}
+          {mode === 'travels' && 'Selecciona una categoría para ver consejos expertos e ideas para tus ausencias de vacaciones.'}
         </p>
       </div>
 
-      {/* Tabs - Only show tabs if mode is pets */}
-      {mode === 'pets' && (
-        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
+      {/* Tabs - Only show tabs if mode is pets or travels */}
+      {(mode === 'pets' || mode === 'travels') && (
+        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #eee', paddingBottom: '8px', flexWrap: 'wrap' }}>
+          {mode === 'travels' && (
+            <button
+              onClick={() => { setActiveTab('plants'); setChatMessages([]); }}
+              style={{
+                flex: 1, padding: '10px', background: activeTab === 'plants' ? 'var(--game-accent-light, #e8f5e9)' : 'transparent',
+                color: activeTab === 'plants' ? '#2e7d32' : '#666', border: 'none',
+                borderBottom: activeTab === 'plants' ? '3px solid #2e7d32' : '3px solid transparent',
+                fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap'
+              }}
+            >
+              🌿 Plantas
+            </button>
+          )}
           <button
             onClick={() => { setActiveTab('cats'); setChatMessages([]); }}
             style={{
-              flex: 1, padding: '10px', background: activeTab === 'cats' ? '#e3f2fd' : 'transparent',
+              flex: 1, padding: '10px', background: activeTab === 'cats' ? 'var(--game-accent-light, #e3f2fd)' : 'transparent',
               color: activeTab === 'cats' ? '#1976d2' : '#666', border: 'none',
               borderBottom: activeTab === 'cats' ? '3px solid #1976d2' : '3px solid transparent',
-              fontWeight: 'bold', cursor: 'pointer', fontSize: '13px'
+              fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap'
             }}
           >
-            🐱 Gatos (En Casa)
+            🐱 Gatos
           </button>
           <button
             onClick={() => { setActiveTab('dogs'); setChatMessages([]); }}
             style={{
-              flex: 1, padding: '10px', background: activeTab === 'dogs' ? '#fff3e0' : 'transparent',
+              flex: 1, padding: '10px', background: activeTab === 'dogs' ? 'var(--game-accent-light, #fff3e0)' : 'transparent',
               color: activeTab === 'dogs' ? '#e65100' : '#666', border: 'none',
               borderBottom: activeTab === 'dogs' ? '3px solid #e65100' : '3px solid transparent',
-              fontWeight: 'bold', cursor: 'pointer', fontSize: '13px'
+              fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap'
             }}
           >
-            🐶 Perros (Viajan Contigo)
+            🐶 Perros
           </button>
+          {mode === 'travels' && (
+            <button
+              onClick={() => { setActiveTab('exotics'); setChatMessages([]); }}
+              style={{
+                flex: 1, padding: '10px', background: activeTab === 'exotics' ? 'var(--game-accent-light, #f3e5f5)' : 'transparent',
+                color: activeTab === 'exotics' ? '#7b1fa2' : '#666', border: 'none',
+                borderBottom: activeTab === 'exotics' ? '3px solid #7b1fa2' : '3px solid transparent',
+                fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap'
+              }}
+            >
+              🦎 Exóticos
+            </button>
+          )}
         </div>
       )}
 

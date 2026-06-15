@@ -25,6 +25,7 @@ const translations: Record<Language, TranslationDictionary> = {
     btnPets: "Mascotas 🐾",
     btnPlants: "Plantas 🌿",
     btnExotics: "Exóticos 🦎",
+    btnTravels: "Guía de Viajes ✈️",
 
     // General Actions
     close: "Cerrar",
@@ -85,6 +86,7 @@ const translations: Record<Language, TranslationDictionary> = {
     btnPets: "Pets 🐾",
     btnPlants: "Plants 🌿",
     btnExotics: "Exotics 🦎",
+    btnTravels: "Travel Guide ✈️",
 
     // General Actions
     close: "Close",

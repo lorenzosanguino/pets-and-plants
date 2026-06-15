@@ -112,6 +112,7 @@ export const PetPlantDashboard: React.FC = () => {
   const getAccentColor = () => {
     if (experienceMode === 'pets') return '#1976d2';
     if (experienceMode === 'exotics') return '#ff8f00';
+    if (experienceMode === 'travels') return '#0284c7';
     return '#2e7d32'; // plants
   };
 
@@ -160,8 +161,8 @@ export const PetPlantDashboard: React.FC = () => {
     sincronizarTodasLasPlantasPorGPS
   } = useGPSWeather(refreshData);
 
-  // Modo de Experiencia: 'landing', 'pets', 'plants', 'exotics'
-  const [experienceMode, setExperienceMode] = useState<'landing' | 'pets' | 'plants' | 'exotics'>('landing');
+  // Modo de Experiencia: 'landing', 'pets', 'plants', 'exotics', 'travels'
+  const [experienceMode, setExperienceMode] = useState<'landing' | 'pets' | 'plants' | 'exotics' | 'travels'>('landing');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'consultants' | 'settings'>('dashboard');
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
 
@@ -1931,21 +1932,21 @@ export const PetPlantDashboard: React.FC = () => {
             {activeTab !== 'consultants' ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                  <span style={{ fontSize: '24px' }}>{experienceMode === 'pets' ? '🐾' : experienceMode === 'exotics' ? '🦎' : '🌿'}</span>
+                  <span style={{ fontSize: '24px' }}>{experienceMode === 'pets' ? '🐾' : experienceMode === 'exotics' ? '🦎' : experienceMode === 'travels' ? '✈️' : '🌿'}</span>
                   <h1 style={{ margin: '0', fontSize: '20px', color: 'var(--game-text-bright, #1a1a1a)', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
-                    {experienceMode === 'pets' ? t('appTitlePets') : experienceMode === 'exotics' ? t('appTitleExotics') : t('appTitlePlants')}
+                    {experienceMode === 'pets' ? t('appTitlePets') : experienceMode === 'exotics' ? t('appTitleExotics') : experienceMode === 'travels' ? 'Guía de Viajes y Vacaciones' : t('appTitlePlants')}
                   </h1>
                 </div>
                 <p style={{ margin: '4px 0 8px 0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
-                  {experienceMode === 'pets' ? t('appSubtitlePets') : experienceMode === 'exotics' ? t('appSubtitleExotics') : t('appSubtitlePlants')}
+                  {experienceMode === 'pets' ? t('appSubtitlePets') : experienceMode === 'exotics' ? t('appSubtitleExotics') : experienceMode === 'travels' ? 'Consulta guías y agentes inteligentes para tu viaje' : t('appSubtitlePlants')}
                 </p>
                 {renderConnectivityIndicator()}
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '20px' }}>{experienceMode === 'pets' ? '🐾' : experienceMode === 'exotics' ? '🦎' : '🌿'}</span>
+                <span style={{ fontSize: '20px' }}>{experienceMode === 'pets' ? '🐾' : experienceMode === 'exotics' ? '🦎' : experienceMode === 'travels' ? '✈️' : '🌿'}</span>
                 <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--game-text-bright, #1a1a1a)', fontFamily: 'var(--game-font, sans-serif)' }}>
-                  {experienceMode === 'pets' ? t('advisorPets') : experienceMode === 'exotics' ? t('advisorExotics') : t('advisorPlants')}
+                  {experienceMode === 'pets' ? t('advisorPets') : experienceMode === 'exotics' ? t('advisorExotics') : experienceMode === 'travels' ? 'Consultores de Viajes' : t('advisorPlants')}
                 </span>
                 <div style={{ marginLeft: '8px', display: 'inline-block' }}>
                   {renderConnectivityIndicator()}
@@ -1953,57 +1954,99 @@ export const PetPlantDashboard: React.FC = () => {
               </div>
             )}
             
-            <div className="ecosystem-buttons-responsive" style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', width: activeTab === 'consultants' ? 'auto' : '100%' }}>
+            <div className="ecosystem-buttons-responsive" style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              width: activeTab === 'consultants' ? 'auto' : '100%',
+              alignItems: 'center'
+            }}>
+              <div style={{
+                display: 'flex',
+                gap: '8px',
+                width: '100%',
+                justifyContent: 'center',
+                flexWrap: 'wrap'
+              }}>
+                <button 
+                  disabled={experienceMode === 'pets'}
+                  onClick={() => { setExperienceMode('pets'); setActiveTab('dashboard'); }}
+                  style={{
+                    flex: 1,
+                    minWidth: '80px',
+                    padding: '6px 12px',
+                    background: experienceMode === 'pets' ? 'var(--game-accent-light, #e3f2fd)' : '#f5f5f5',
+                    color: experienceMode === 'pets' ? '#1976d2' : '#666',
+                    border: '1px solid #eaeaea',
+                    borderRadius: '12px',
+                    fontSize: '11.5px',
+                    fontWeight: 'bold',
+                    cursor: experienceMode === 'pets' ? 'default' : 'pointer',
+                    opacity: experienceMode === 'pets' ? 0.9 : 1
+                  }}
+                >
+                  {t('btnPets')}
+                </button>
+                <button 
+                  disabled={experienceMode === 'plants'}
+                  onClick={() => { setExperienceMode('plants'); setActiveTab('dashboard'); }}
+                  style={{
+                    flex: 1,
+                    minWidth: '80px',
+                    padding: '6px 12px',
+                    background: experienceMode === 'plants' ? 'var(--game-accent-light, #e8f5e9)' : '#f5f5f5',
+                    color: experienceMode === 'plants' ? '#2e7d32' : '#666',
+                    border: '1px solid #eaeaea',
+                    borderRadius: '12px',
+                    fontSize: '11.5px',
+                    fontWeight: 'bold',
+                    cursor: experienceMode === 'plants' ? 'default' : 'pointer',
+                    opacity: experienceMode === 'plants' ? 0.9 : 1
+                  }}
+                >
+                  {t('btnPlants')}
+                </button>
+                <button 
+                  disabled={experienceMode === 'exotics'}
+                  onClick={() => { setExperienceMode('exotics'); setActiveTab('dashboard'); }}
+                  style={{
+                    flex: 1,
+                    minWidth: '80px',
+                    padding: '6px 12px',
+                    background: experienceMode === 'exotics' ? 'var(--game-accent-light, #fff8e1)' : '#f5f5f5',
+                    color: experienceMode === 'exotics' ? '#ff8f00' : '#666',
+                    border: '1px solid #eaeaea',
+                    borderRadius: '12px',
+                    fontSize: '11.5px',
+                    fontWeight: 'bold',
+                    cursor: experienceMode === 'exotics' ? 'default' : 'pointer',
+                    opacity: experienceMode === 'exotics' ? 0.9 : 1
+                  }}
+                >
+                  {t('btnExotics')}
+                </button>
+              </div>
               <button 
-                disabled={experienceMode === 'pets'}
-                onClick={() => { setExperienceMode('pets'); setActiveTab('dashboard'); }}
+                disabled={experienceMode === 'travels'}
+                onClick={() => { setExperienceMode('travels'); setActiveTab('dashboard'); }}
                 style={{
-                  padding: '6px 12px',
-                  background: experienceMode === 'pets' ? 'var(--game-accent-light, #e3f2fd)' : '#f5f5f5',
-                  color: experienceMode === 'pets' ? '#1976d2' : '#666',
+                  width: '100%',
+                  padding: '8px 12px',
+                  background: experienceMode === 'travels' ? 'var(--game-accent-light, #e0f2fe)' : '#f5f5f5',
+                  color: experienceMode === 'travels' ? '#0284c7' : '#666',
                   border: '1px solid #eaeaea',
                   borderRadius: '12px',
                   fontSize: '11.5px',
                   fontWeight: 'bold',
-                  cursor: experienceMode === 'pets' ? 'default' : 'pointer',
-                  opacity: experienceMode === 'pets' ? 0.9 : 1
+                  cursor: experienceMode === 'travels' ? 'default' : 'pointer',
+                  opacity: experienceMode === 'travels' ? 0.9 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
                 }}
               >
-                {t('btnPets')}
-              </button>
-              <button 
-                disabled={experienceMode === 'plants'}
-                onClick={() => { setExperienceMode('plants'); setActiveTab('dashboard'); }}
-                style={{
-                  padding: '6px 12px',
-                  background: experienceMode === 'plants' ? 'var(--game-accent-light, #e8f5e9)' : '#f5f5f5',
-                  color: experienceMode === 'plants' ? '#2e7d32' : '#666',
-                  border: '1px solid #eaeaea',
-                  borderRadius: '12px',
-                  fontSize: '11.5px',
-                  fontWeight: 'bold',
-                  cursor: experienceMode === 'plants' ? 'default' : 'pointer',
-                  opacity: experienceMode === 'plants' ? 0.9 : 1
-                }}
-              >
-                {t('btnPlants')}
-              </button>
-              <button 
-                disabled={experienceMode === 'exotics'}
-                onClick={() => { setExperienceMode('exotics'); setActiveTab('dashboard'); }}
-                style={{
-                  padding: '6px 12px',
-                  background: experienceMode === 'exotics' ? 'var(--game-accent-light, #fff8e1)' : '#f5f5f5',
-                  color: experienceMode === 'exotics' ? '#ff8f00' : '#666',
-                  border: '1px solid #eaeaea',
-                  borderRadius: '12px',
-                  fontSize: '11.5px',
-                  fontWeight: 'bold',
-                  cursor: experienceMode === 'exotics' ? 'default' : 'pointer',
-                  opacity: experienceMode === 'exotics' ? 0.9 : 1
-                }}
-              >
-                {t('btnExotics')}
+                {t('btnTravels')}
               </button>
             </div>
           </div>
@@ -2038,23 +2081,25 @@ export const PetPlantDashboard: React.FC = () => {
 
 
 
-            <button
-              onClick={() => setActiveTab('consultants')}
-              style={{
-                padding: '12px 16px',
-                background: 'none',
-                border: 'none',
-                borderBottom: activeTab === 'consultants' ? `3px solid ${getAccentColor()}` : '3px solid transparent',
-                color: activeTab === 'consultants' ? getAccentColor() : '#666',
-                fontWeight: activeTab === 'consultants' ? 'bold' : 'normal',
-                cursor: 'pointer',
-                fontSize: '14px',
-                transition: 'all 0.2s',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {t('tabConsultants')}
-            </button>
+            {experienceMode !== 'travels' && (
+              <button
+                onClick={() => setActiveTab('consultants')}
+                style={{
+                  padding: '12px 16px',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: activeTab === 'consultants' ? `3px solid ${getAccentColor()}` : '3px solid transparent',
+                  color: activeTab === 'consultants' ? getAccentColor() : '#666',
+                  fontWeight: activeTab === 'consultants' ? 'bold' : 'normal',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  transition: 'all 0.2s',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {t('tabConsultants')}
+              </button>
+            )}
             
             <button
               onClick={() => setActiveTab('settings')}
@@ -2077,7 +2122,7 @@ export const PetPlantDashboard: React.FC = () => {
 
           {/* Contenido Dinámico de las Pestañas según el Ecosistema */}
           <div style={{ width: '100%' }}>
-            {activeTab === 'dashboard' && (
+            {activeTab === 'dashboard' && experienceMode !== 'travels' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 
                 <ExtremeWeatherPanel
@@ -2272,8 +2317,8 @@ export const PetPlantDashboard: React.FC = () => {
 
                 </div>
 
-                {/* Calendario e Información de Viaje */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+                {/* Calendario */}
+                <div style={{ display: 'block', width: '100%' }}>
                   <Suspense fallback={<ChunkLoader height="160px" />}>
                     <EcosystemCalendar 
                       plantas={plantas}
@@ -2281,12 +2326,28 @@ export const PetPlantDashboard: React.FC = () => {
                       onUpdate={refreshData} 
                     />
                   </Suspense>
-
-                  <Suspense fallback={<ChunkLoader height="160px" />}>
-                    <VacationAdvice mode={experienceMode} />
-                  </Suspense>
                 </div>
 
+              </div>
+            )}
+
+            {activeTab === 'dashboard' && experienceMode === 'travels' && (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))',
+                gap: '24px',
+                width: '100%',
+                boxSizing: 'border-box'
+              }}>
+                <Suspense fallback={<ChunkLoader height="300px" />}>
+                  <VacationAdvice mode="travels" />
+                </Suspense>
+                <Suspense fallback={<ChunkLoader height="300px" />}>
+                  <IAConsultantsView 
+                    hideSelector={false} 
+                    onNavigateToAsset={handleNavigateToAsset} 
+                  />
+                </Suspense>
               </div>
             )}
 
