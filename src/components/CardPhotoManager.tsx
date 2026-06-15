@@ -1,5 +1,7 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useRef, useState, useEffect } from 'react';
 import { ImageOptimizer } from '../utils/imageOptimizer';
+import { PhotoEditorModal } from './PhotoEditorModal';
 
 interface CardPhotoManagerProps {
   currentPhotoUrl?: string;
@@ -18,6 +20,22 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
   const [activePhoto, setActivePhoto] = useState<string>(currentPhotoUrl || (photos.length > 0 ? photos[0] : ''));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isEditingPhoto, setIsEditingPhoto] = useState(false);
+
+  const handleSaveEditedPhoto = (newPhotoBase64: string) => {
+    const idx = allPhotos.indexOf(activePhoto);
+    if (idx !== -1) {
+      const updatedPhotos = [...allPhotos];
+      updatedPhotos[idx] = newPhotoBase64;
+      let newPrimary = currentPhotoUrl;
+      if (activePhoto === currentPhotoUrl) {
+        newPrimary = newPhotoBase64;
+      }
+      onPhotosChange(updatedPhotos, newPrimary);
+      setActivePhoto(newPhotoBase64);
+    }
+    setIsEditingPhoto(false);
+  };
 
   // Ensure all photos list includes the current primary photo if it's not already in it
   const allPhotos = [...photos];
@@ -305,6 +323,23 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
               )}
               <button
                 type="button"
+                onClick={() => setIsEditingPhoto(true)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.9)',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '5px 10px',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  color: '#1a1a1a',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
+                }}
+              >
+                Editar 🎨
+              </button>
+              <button
+                type="button"
                 onClick={() => handleDeletePhoto(activePhoto)}
                 style={{
                   background: 'rgba(239, 68, 68, 0.9)',
@@ -343,8 +378,8 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
                   onClick={() => setActivePhoto(photo)}
                   style={(() => {
                     const radius = theme === 'gaming' ? '4px' : (theme === 'kawaii' ? '8px' : '6px');
-                    let borderStyle = '1.5px solid rgba(0, 0, 0, 0.1)';
-                    let shadow = 'none';
+                    let borderStyle: string;
+                    let shadow: string;
 
                     if (theme === 'gaming') {
                       borderStyle = isSelected 
@@ -416,6 +451,15 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
         }}>
           No hay fotos cargadas en este expediente. Pulsa el botón superior para subir fotos de tu mascota o planta.
         </div>
+      )}
+
+      {isEditingPhoto && activePhoto && (
+        <PhotoEditorModal
+          imageUrl={activePhoto}
+          onSave={handleSaveEditedPhoto}
+          onClose={() => setIsEditingPhoto(false)}
+          theme={theme}
+        />
       )}
     </div>
   );

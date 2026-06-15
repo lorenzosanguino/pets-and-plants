@@ -20,6 +20,16 @@ export interface EntradaDiarioClinico {
   categoria: 'Nutrición' | 'Comportamiento' | 'Observación general';
 }
 
+export interface RegistroDiagnosticoIA {
+  id: string; // UUID
+  fecha: string; // ISO Date
+  diagnostico: string;
+  tratamiento: string;
+  advertencia: string;
+  esUrgente: boolean;
+  fotoUrl?: string; // Foto opcional que originó el diagnóstico
+}
+
 export interface EventoPasado {
   id: string;
   fecha: string; // YYYY-MM-DD
@@ -45,6 +55,8 @@ export interface Mascota {
   fotos?: string[]; // Colección de fotos (Base64 optimizado)
   vacunasChecklist?: string[]; // Checklist de vacunas colocadas
   historialPasado?: EventoPasado[]; // Historial de enfermedades/parásitos
+  diagnosticosIA?: RegistroDiagnosticoIA[]; // Historial de diagnósticos IA
+  adiestramientoProgress?: Record<string, number>; // Progreso de adiestramiento (truco -> porcentaje)
 }
 
 export type TipoRiego = 'Agua del grifo reposada' | 'Agua blanda reposada' | 'Agua destilada' | 'Agua de lluvia';
@@ -77,6 +89,7 @@ export interface Planta {
   fotoUrl?: string; // Foto de la planta (Base64 optimizado)
   fotos?: string[]; // Colección de fotos (Base64 optimizado)
   historialPasado?: EventoPasado[]; // Historial de enfermedades/parásitos/podas
+  diagnosticosIA?: RegistroDiagnosticoIA[]; // Historial de diagnósticos IA
 }
 
 export interface AnimalExotico {
@@ -93,6 +106,7 @@ export interface AnimalExotico {
   fotos?: string[]; // Colección de fotos (Base64 optimizado)
   chip?: string; // Microchip del animal exótico
   historialPasado: EventoPasado[]; // Historial de enfermedades/muda/parásitos
+  diagnosticosIA?: RegistroDiagnosticoIA[]; // Historial de diagnósticos IA
 }
 
 export interface EventoCalendario {
@@ -126,5 +140,19 @@ export interface CatalogoPlanta {
   tipoRiego: TipoRiego;
   ubicacionSugerida?: 'Interior' | 'Exterior';
   descripcion: string;
+}
+
+export interface AccionSincronizacion {
+  id: string; // UUID de la acción
+  timestamp: number;
+  tipoAccion: 'save_mascota' | 'delete_mascota' | 'save_planta' | 'delete_planta' | 'save_exotico' | 'delete_exotico' | 'save_evento' | 'delete_evento';
+  payload: any; // El objeto completo (Mascota, Planta, etc.) o ID del elemento a eliminar
+}
+
+export interface NotificacionProgramada {
+  id: string;
+  titulo: string;
+  cuerpo: string;
+  timestamp: number;
 }
 

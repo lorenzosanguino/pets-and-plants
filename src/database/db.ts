@@ -1,7 +1,7 @@
-import type { Mascota, Planta, CatalogoPlanta, AnimalExotico, EventoCalendario, ChatHistorial } from './types';
+import type { Mascota, Planta, CatalogoPlanta, AnimalExotico, EventoCalendario, ChatHistorial, AccionSincronizacion, NotificacionProgramada } from './types';
 
 const DB_NAME = 'PetPlantDB';
-const DB_VERSION = 2;
+const DB_VERSION = 4;
 
 export interface CatalogoMascota {
   raza: string;
@@ -158,6 +158,12 @@ function openDB(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains('chats_consultor')) {
         db.createObjectStore('chats_consultor', { keyPath: 'id' });
       }
+      if (!db.objectStoreNames.contains('cola_sincronizacion')) {
+        db.createObjectStore('cola_sincronizacion', { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains('notificaciones_programadas')) {
+        db.createObjectStore('notificaciones_programadas', { keyPath: 'id' });
+      }
     };
 
     request.onsuccess = () => {
@@ -200,7 +206,12 @@ export class LocalDatabase {
       const store = tx.objectStore('mascotas');
       store.put(mascota);
 
-      tx.oncomplete = () => resolve();
+      tx.oncomplete = () => {
+        import('../services/syncQueue').then(({ SyncQueueService }) => {
+          SyncQueueService.enqueue('save_mascota', mascota).catch(err => console.error(err));
+        });
+        resolve();
+      };
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
     });
@@ -226,7 +237,12 @@ export class LocalDatabase {
       const store = tx.objectStore('plantas');
       store.put(planta);
 
-      tx.oncomplete = () => resolve();
+      tx.oncomplete = () => {
+        import('../services/syncQueue').then(({ SyncQueueService }) => {
+          SyncQueueService.enqueue('save_planta', planta).catch(err => console.error(err));
+        });
+        resolve();
+      };
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
     });
@@ -250,7 +266,12 @@ export class LocalDatabase {
       const tx = db.transaction('exoticos', 'readwrite');
       const store = tx.objectStore('exoticos');
       store.put(exotico);
-      tx.oncomplete = () => resolve();
+      tx.oncomplete = () => {
+        import('../services/syncQueue').then(({ SyncQueueService }) => {
+          SyncQueueService.enqueue('save_exotico', exotico).catch(err => console.error(err));
+        });
+        resolve();
+      };
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
     });
@@ -262,7 +283,12 @@ export class LocalDatabase {
       const tx = db.transaction('exoticos', 'readwrite');
       const store = tx.objectStore('exoticos');
       store.delete(id);
-      tx.oncomplete = () => resolve();
+      tx.oncomplete = () => {
+        import('../services/syncQueue').then(({ SyncQueueService }) => {
+          SyncQueueService.enqueue('delete_exotico', id).catch(err => console.error(err));
+        });
+        resolve();
+      };
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
     });
@@ -286,7 +312,12 @@ export class LocalDatabase {
       const tx = db.transaction('eventos_calendario', 'readwrite');
       const store = tx.objectStore('eventos_calendario');
       store.put(evento);
-      tx.oncomplete = () => resolve();
+      tx.oncomplete = () => {
+        import('../services/syncQueue').then(({ SyncQueueService }) => {
+          SyncQueueService.enqueue('save_evento', evento).catch(err => console.error(err));
+        });
+        resolve();
+      };
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
     });
@@ -298,7 +329,12 @@ export class LocalDatabase {
       const tx = db.transaction('eventos_calendario', 'readwrite');
       const store = tx.objectStore('eventos_calendario');
       store.delete(id);
-      tx.oncomplete = () => resolve();
+      tx.oncomplete = () => {
+        import('../services/syncQueue').then(({ SyncQueueService }) => {
+          SyncQueueService.enqueue('delete_evento', id).catch(err => console.error(err));
+        });
+        resolve();
+      };
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
     });
@@ -327,6 +363,42 @@ export class LocalDatabase {
       const chatLimitado = { ...chat, mensajes: mensajesLimitados };
 
       store.put(chatLimitado);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
+    });
+  }
+
+  static async getAccionesSincronizacion(): Promise<AccionSincronizacion[]> {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('cola_sincronizacion', 'readonly');
+      const store = tx.objectStore('cola_sincronizacion');
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
+    });
+  }
+
+  static async saveAccionSincronizacion(accion: AccionSincronizacion): Promise<void> {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('cola_sincronizacion', 'readwrite');
+      const store = tx.objectStore('cola_sincronizacion');
+      store.put(accion);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
+    });
+  }
+
+  static async deleteAccionSincronizacion(id: string): Promise<void> {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('cola_sincronizacion', 'readwrite');
+      const store = tx.objectStore('cola_sincronizacion');
+      store.delete(id);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
@@ -446,7 +518,12 @@ export class LocalDatabase {
       const store = tx.objectStore('mascotas');
       store.delete(id);
 
-      tx.oncomplete = () => resolve();
+      tx.oncomplete = () => {
+        import('../services/syncQueue').then(({ SyncQueueService }) => {
+          SyncQueueService.enqueue('delete_mascota', id).catch(err => console.error(err));
+        });
+        resolve();
+      };
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
     });
@@ -459,7 +536,12 @@ export class LocalDatabase {
       const store = tx.objectStore('plantas');
       store.delete(id);
 
-      tx.oncomplete = () => resolve();
+      tx.oncomplete = () => {
+        import('../services/syncQueue').then(({ SyncQueueService }) => {
+          SyncQueueService.enqueue('delete_planta', id).catch(err => console.error(err));
+        });
+        resolve();
+      };
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
     });
@@ -518,6 +600,39 @@ export class LocalDatabase {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
+    });
+  }
+
+  static async getNotificacionesProgramadas(): Promise<NotificacionProgramada[]> {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction('notificaciones_programadas', 'readonly');
+      const store = transaction.objectStore('notificaciones_programadas');
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  static async saveNotificacionProgramada(notif: NotificacionProgramada): Promise<void> {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction('notificaciones_programadas', 'readwrite');
+      const store = transaction.objectStore('notificaciones_programadas');
+      const request = store.put(notif);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  static async deleteNotificacionProgramada(id: string): Promise<void> {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction('notificaciones_programadas', 'readwrite');
+      const store = transaction.objectStore('notificaciones_programadas');
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
     });
   }
 

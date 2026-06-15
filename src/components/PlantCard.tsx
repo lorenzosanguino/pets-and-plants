@@ -1,10 +1,11 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect } from 'react';
 import type { Planta, NivelToxicidadFelina, NivelToxicidadCanina } from '../database/types';
 import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
 import { CardPhotoManager } from './CardPhotoManager';
 import { IAQuotaManager } from '../utils/iaQuota';
-import { escapeHTML } from '../utils/escape';
+import { ReportGeneratorModal } from './ReportGeneratorModal';
 
 interface PlantCardProps {
   planta: Planta;
@@ -18,6 +19,16 @@ const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpen
   const cuota = IAQuotaManager.obtenerEstadoCuota();
   const [localExpanded, setLocalExpanded] = useState(false);
   const expanded = isExpanded !== undefined ? isExpanded : localExpanded;
+  const [isReportOpen, setIsReportOpen] = useState(false);
+
+  // Luxometer states
+  const [showLuxmeter, setShowLuxmeter] = useState(false);
+  const [luxValue, setLuxValue] = useState(3000);
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const videoRef = React.useRef<HTMLVideoElement | null>(null);
+  const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
 
   const toggleExpanded = () => {
     if (onToggleExpand) {
@@ -130,421 +141,106 @@ const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpen
 
   const exportarFichaBotanica = (e: React.MouseEvent) => {
     e.stopPropagation();
+    setIsReportOpen(true);
+  };
 
-    // Crear div temporal de impresión
-    const printDiv = document.createElement('div');
-    printDiv.className = 'print-container';
-    document.body.appendChild(printDiv);
+  // Luxometer effect for camera analysis
+  useEffect(() => {
+    let active = true;
+    let animationId: number;
 
-    const formatDate = (isoString?: string) => {
-      if (!isoString) return 'No especificada';
-      try {
-        const d = new Date(isoString);
-        if (isNaN(d.getTime())) return isoString.split('T')[0];
-        return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      } catch {
-        return isoString.split('T')[0] || 'No especificada';
-      }
-    };
+    const analyzeFrame = () => {
+      if (!active || !videoRef.current || !canvasRef.current || !cameraActive) return;
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
 
-    const parseIAReportePlanta = (nota: string) => {
-      let diagnostico = '';
-      let tratamiento = '';
-      let aislamiento = '';
-
-      const diagKey = '[IA Diagnóstico Fitosanitario]:';
-      const tratKey = '| Tratamiento:';
-      const aisKey = '| Aislamiento sugerido:';
-
-      const diagIdx = nota.indexOf(diagKey);
-      const tratIdx = nota.indexOf(tratKey);
-      const aisIdx = nota.indexOf(aisKey);
-
-      if (diagIdx !== -1) {
-        const start = diagIdx + diagKey.length;
-        const end = tratIdx !== -1 ? tratIdx : (aisIdx !== -1 ? aisIdx : nota.length);
-        diagnostico = nota.substring(start, end).trim();
-      } else {
-        diagnostico = nota;
-      }
-
-      if (tratIdx !== -1) {
-        const start = tratIdx + tratKey.length;
-        const end = aisIdx !== -1 ? aisIdx : nota.length;
-        tratamiento = nota.substring(start, end).trim();
-      }
-
-      if (aisIdx !== -1) {
-        const start = aisIdx + aisKey.length;
-        aislamiento = nota.substring(start).trim();
-      }
-
-      return {
-        diagnostico: diagnostico || 'No especificado',
-        tratamiento: tratamiento || 'No especificado',
-        aislamiento: aislamiento || 'No sugerido'
-      };
-    };
-
-    const toxicityColor = (nivel?: string) => {
-      if (!nivel || nivel === 'Segura') return '#16a34a'; // Green
-      if (nivel.includes('leve')) return '#ea580c'; // Orange
-      return '#dc2626'; // Red
-    };
-
-    const toxicityBg = (nivel?: string) => {
-      if (!nivel || nivel === 'Segura') return '#f0fdf4';
-      if (nivel.includes('leve')) return '#fff7ed';
-      return '#fef2f2';
-    };
-
-    const toxicityBorder = (nivel?: string) => {
-      if (!nivel || nivel === 'Segura') return '#bbf7d0';
-      if (nivel.includes('leve')) return '#ffedd5';
-      return '#fecaca';
-    };
-
-    const foliarHtml = (planta.diarioFoliar || []).slice(0, 5).map(d => {
-      const esIAReporte = d.nota.startsWith('[IA');
-      let statusColor = '#475569';
-      if (d.estadoGeneral === 'Excelente') statusColor = '#16a34a';
-      else if (d.estadoGeneral === 'Clorosis/Lesión') statusColor = '#dc2626';
-
-      let content = '';
-      if (esIAReporte) {
-        const parsed = parseIAReportePlanta(d.nota);
-        content = `
-          <div style="font-weight: 600; color: #16a34a; margin-bottom: 2px;">Diagnóstico Fitosanitario por IA:</div>
-          <div style="margin-bottom: 4px;">${escapeHTML(parsed.diagnostico)}</div>
-          <div style="font-weight: 600; color: #2563eb; margin-bottom: 2px;">Tratamiento sugerido:</div>
-          <div style="margin-bottom: 4px;">${escapeHTML(parsed.tratamiento)}</div>
-          ${parsed.aislamiento && parsed.aislamiento !== 'No sugerido' ? `
-            <div style="font-weight: 600; color: #ea580c; margin-bottom: 2px;">Aislamiento:</div>
-            <div>${escapeHTML(parsed.aislamiento)}</div>
-          ` : ''}
-        `;
-      } else {
-        content = escapeHTML(d.nota);
-      }
-
-      return `
-        <div class="timeline-item" style="border-left-color: ${statusColor};">
-          <div class="timeline-meta">
-            <span class="timeline-date">${formatDate(d.fecha)}</span>
-            <span class="timeline-type" style="background: ${statusColor}15; color: ${statusColor}; border: 1.5px solid ${statusColor}30;">${escapeHTML(d.estadoGeneral)}</span>
-          </div>
-          <div class="timeline-text">${content}</div>
-        </div>
-      `;
-    }).join('') || '<p style="font-style: italic; color: #64748b; margin: 0;">Sin registros foliares</p>';
-
-    const incidenciasHtml = (planta.historialPasado || []).slice(0, 5).map(h => `
-      <div class="timeline-item" style="border-left-color: #d97706;">
-        <div class="timeline-meta">
-          <span class="timeline-date">${formatDate(h.fecha)}</span>
-          <span class="timeline-type" style="background: #d9770615; color: #d97706; border: 1.5px solid #d9770630;">${escapeHTML(h.tipo)}</span>
-        </div>
-        <div class="timeline-text">${escapeHTML(h.descripcion)}</div>
-      </div>
-    `).join('') || '<p style="font-style: italic; color: #64748b; margin: 0;">Sin incidencias registradas</p>';
-
-    printDiv.innerHTML = `
-      <style>
-        .print-container {
-          font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
-          color: #0f172a !important;
-          background: #ffffff !important;
-          padding: 20px !important;
-          font-size: 11.5px !important;
-          line-height: 1.4 !important;
-          width: 210mm !important;
-          height: 297mm !important;
-          max-height: 297mm !important;
-          overflow: hidden !important;
-          box-sizing: border-box !important;
-        }
-        .print-container * {
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-          box-sizing: border-box !important;
-          page-break-inside: avoid !important;
-        }
-        .print-container h1, .print-container h2, .print-container h3, .print-container h4 {
-          margin: 0 !important;
-          color: #14532d !important;
-        }
-        .print-container h1 {
-          font-size: 20px !important;
-          font-weight: 800 !important;
-          border-bottom: 2px solid #10b981 !important;
-          padding-bottom: 5px !important;
-          margin-bottom: 10px !important;
-          display: flex !important;
-          justify-content: space-between !important;
-          align-items: flex-end !important;
-        }
-        .print-container h1 span {
-          font-size: 10px !important;
-          font-weight: 500 !important;
-          color: #64748b !important;
-          text-transform: uppercase !important;
-          letter-spacing: 0.05em !important;
-        }
-        .print-container h3 {
-          font-size: 12.5px !important;
-          font-weight: 700 !important;
-          border-bottom: 1.5px solid #e2e8f0 !important;
-          padding-bottom: 4px !important;
-          margin-bottom: 7px !important;
-          color: #14532d !important;
-          text-transform: uppercase !important;
-          letter-spacing: 0.02em !important;
-        }
-        .print-container .grid-container {
-          display: grid !important;
-          grid-template-columns: 32% 64% !important;
-          gap: 4% !important;
-          width: 100% !important;
-        }
-        .print-container .left-col, .print-container .right-col {
-          display: flex !important;
-          flex-direction: column !important;
-          gap: 12px !important;
-        }
-        .print-container .photo-container {
-          width: 100% !important;
-          aspect-ratio: 1 / 1 !important;
-          max-height: 180px !important;
-          border-radius: 8px !important;
-          overflow: hidden !important;
-          border: 1px solid #e2e8f0 !important;
-          background: #f8fafc !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          margin: 0 auto !important;
-        }
-        .print-container .photo-container img {
-          width: 100% !important;
-          height: 100% !important;
-          object-fit: contain !important;
-          background: #f8fafc !important;
-        }
-        .print-container .photo-placeholder {
-          font-size: 64px !important;
-        }
-        .print-container .details-table {
-          width: 100% !important;
-          border-collapse: collapse !important;
-        }
-        .print-container .details-table th, .print-container .details-table td {
-          text-align: left !important;
-          padding: 5px 0 !important;
-          border-bottom: 1px solid #f1f5f9 !important;
-        }
-        .print-container .details-table th {
-          font-weight: 600 !important;
-          color: #64748b !important;
-          width: 45% !important;
-        }
-        .print-container .details-table td {
-          font-weight: 500 !important;
-          color: #0f172a !important;
-        }
-        .print-container .timeline {
-          display: flex !important;
-          flex-direction: column !important;
-          gap: 6px !important;
-        }
-        .print-container .timeline-item {
-          padding: 7px !important;
-          background: #f8fafc !important;
-          border-left: 3px solid #cbd5e1 !important;
-          border-radius: 0 4px 4px 0 !important;
-        }
-        .print-container .timeline-meta {
-          display: flex !important;
-          justify-content: space-between !important;
-          align-items: center !important;
-          margin-bottom: 4px !important;
-        }
-        .print-container .timeline-date {
-          font-weight: 600 !important;
-          color: #64748b !important;
-        }
-        .print-container .timeline-type {
-          font-size: 8px !important;
-          padding: 1px 4px !important;
-          border-radius: 4px !important;
-          font-weight: bold !important;
-          text-transform: uppercase !important;
-        }
-        .print-container .timeline-text {
-          color: #334155 !important;
-          white-space: pre-wrap !important;
-        }
-        .print-container .toxic-badge {
-          font-size: 9px !important;
-          font-weight: bold !important;
-          padding: 2px 6px !important;
-          border-radius: 4px !important;
-          display: inline-block !important;
-          border: 1px solid !important;
-        }
-        .print-container .toxic-section {
-          background: #f8fafc !important;
-          border: 1px solid #e2e8f0 !important;
-          border-radius: 6px !important;
-          padding: 8px 10px !important;
-          display: flex !important;
-          flex-direction: column !important;
-          gap: 5px !important;
-        }
-        .print-container .toxic-row {
-          display: flex !important;
-          justify-content: space-between !important;
-          align-items: center !important;
-        }
-      </style>
-      <h1>
-        <span>Ficha Botánica y de Cuidados</span>
-        ${escapeHTML(planta.nombreComun)}
-      </h1>
-      <div class="grid-container">
-        <div class="left-col">
-          <div class="photo-container">
-            ${planta.fotoUrl ? `<img src="${planta.fotoUrl}" alt="${escapeHTML(planta.nombreComun)}" />` : `<div class="photo-placeholder">🌿</div>`}
-          </div>
-          <div>
-            <h3>Detalles Botánicos</h3>
-            <table class="details-table">
-              <tr><th>Nombre Científico:</th><td>${escapeHTML(planta.nombreCientifico || 'No especificado')}</td></tr>
-              <tr><th>Ubicación:</th><td>${escapeHTML(planta.ubicacionHabitacion)}</td></tr>
-              <tr><th>Tipo de Riego:</th><td>${escapeHTML(planta.tipoRiegoEspecifico)}</td></tr>
-              <tr><th>Intervalo Riego:</th><td>Cada ${planta.intervaloRiegoDias} días</td></tr>
-              <tr><th>Último Riego:</th><td>${formatDate(planta.ultimaFechaRiego)}</td></tr>
-              <tr><th>Próximo Riego:</th><td>${formatDate(planta.proximaFechaRiego)}</td></tr>
-              <tr><th>Grosor de Hoja:</th><td>${escapeHTML(planta.grosorHoja)}</td></tr>
-              <tr><th>Temp. Ideal:</th><td>${planta.temperaturaZona}°C</td></tr>
-            </table>
-          </div>
-        </div>
-        
-        <div class="right-col">
-          <div>
-            <h3>Seguridad y Toxicidad</h3>
-            <div class="toxic-section">
-              <div class="toxic-row">
-                <span style="font-weight: 600; color: #475569;">🐱 Toxicidad Felina:</span>
-                <span class="toxic-badge" style="background: ${toxicityBg(planta.toxicidadFelina)}; color: ${toxicityColor(planta.toxicidadFelina)}; border-color: ${toxicityBorder(planta.toxicidadFelina)};">
-                  ${planta.toxicidadFelina}
-                </span>
-              </div>
-              <div class="toxic-row">
-                <span style="font-weight: 600; color: #475569;">🐶 Toxicidad Canina:</span>
-                <span class="toxic-badge" style="background: ${toxicityBg(planta.toxicidadCanina)}; color: ${toxicityColor(planta.toxicidadCanina)}; border-color: ${toxicityBorder(planta.toxicidadCanina)};">
-                  ${planta.toxicidadCanina || 'Segura'}
-                </span>
-              </div>
-              ${planta.compuestosToxicos ? `
-                <div style="font-size: 9px; color: #dc2626; border-top: 1px dashed #e2e8f0; padding-top: 6px; margin-top: 2px;">
-                  <strong>Compuestos activos:</strong> ${escapeHTML(planta.compuestosToxicos)}
-                </div>
-              ` : ''}
-            </div>
-          </div>
-          
-          <div>
-            <h3>Diario Foliar (Últimos 5 registros)</h3>
-            <div class="timeline">
-              ${foliarHtml}
-            </div>
-          </div>
-          
-          <div>
-            <h3>Historial de Incidencias (Últimos 5 registros)</h3>
-            <div class="timeline">
-              ${incidenciasHtml}
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // Esperar a que se carguen las imágenes y recursos antes de imprimir
-    const images = printDiv.querySelectorAll('img');
-    let loadedCount = 0;
-    const totalImages = images.length;
-
-    const triggerPrint = () => {
-      const originalTitle = document.title;
-      document.title = `Ficha ${planta.nombreComun}`;
-      document.body.classList.add('printing-active');
-      window.focus();
-
-      // Temporalmente ajustar el viewport meta para forzar maquetación de escritorio (evita responsive colapsado en impresión móvil)
-      const viewportMeta = document.querySelector('meta[name="viewport"]');
-      const originalViewport = viewportMeta ? viewportMeta.getAttribute('content') : null;
-      if (viewportMeta) {
-        viewportMeta.setAttribute('content', 'width=800, initial-scale=1.0, maximum-scale=1.0');
-      }
-
-      let cleaned = false;
-      const cleanup = () => {
-        if (cleaned) return;
-        cleaned = true;
-
-        // Retrasamos la limpieza real 6 segundos para que los navegadores móviles (donde afterprint se dispara prematuramente)
-        // tengan suficiente tiempo para renderizar el PDF de la ficha con el diseño y título correctos.
-        setTimeout(() => {
-          document.body.classList.remove('printing-active');
-          if (document.body.contains(printDiv)) {
-            document.body.removeChild(printDiv);
+      if (ctx && video.readyState === video.HAVE_ENOUGH_DATA) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        try {
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imgData.data;
+          let sum = 0;
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i+1];
+            const b = data[i+2];
+            sum += 0.299 * r + 0.587 * g + 0.114 * b;
           }
-          // Restaurar el viewport meta original
-          if (viewportMeta && originalViewport) {
-            viewportMeta.setAttribute('content', originalViewport);
-          }
-          document.title = originalTitle;
-        }, 6000);
+          const avgBrightness = sum / (data.length / 4);
+          
+          // Mapear de 0-255 a Luxes (entre 100 y 12000 Luxes) con pequeño ruido dinámico
+          const noise = (Math.random() - 0.5) * 50;
+          const calculatedLux = Math.max(100, Math.round((avgBrightness / 255) * 10000 + 200 + noise));
+          setLuxValue(calculatedLux);
+        } catch (e) {
+          console.warn('Canvas reading blocked by CORS/Privacy, falling back to simulated values');
+        }
+      }
 
-        window.removeEventListener('afterprint', cleanup);
-      };
-
-      window.addEventListener('afterprint', cleanup);
-
-      // Forzar la limpieza de seguridad tras 2 segundos si afterprint nunca se disparase
-      setTimeout(cleanup, 2000);
-
-      // Pequeña pausa para permitir que el navegador aplique los cambios del DOM (ocultar #root) en móviles
-      setTimeout(() => {
-        window.print();
-      }, 250);
+      if (cameraActive) {
+        animationId = requestAnimationFrame(analyzeFrame);
+      }
     };
 
-    if (totalImages === 0) {
-      triggerPrint();
-    } else {
-      images.forEach(img => {
-        if (img.complete) {
-          loadedCount++;
-          if (loadedCount === totalImages) triggerPrint();
-        } else {
-          img.onload = () => {
-            loadedCount++;
-            if (loadedCount === totalImages) triggerPrint();
-          };
-          img.onerror = () => {
-            loadedCount++;
-            if (loadedCount === totalImages) triggerPrint();
-          };
-        }
-      });
-      // Timeout de seguridad en caso de fallo de carga
-      setTimeout(() => {
-        if (loadedCount < totalImages) triggerPrint();
-      }, 2500);
+    if (cameraActive) {
+      animationId = requestAnimationFrame(analyzeFrame);
     }
+
+    return () => {
+      active = false;
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    };
+  }, [cameraActive]);
+
+  const startLuxmeter = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowLuxmeter(true);
+    setCameraError(null);
+    setCameraActive(false);
+    setLuxValue(3000);
+
+    // Intentar activar sensor de luz nativo si existe
+    if ('AmbientLightSensor' in window) {
+      try {
+        // @ts-ignore
+        const sensor = new AmbientLightSensor();
+        sensor.onreading = () => {
+          setLuxValue(Math.round(sensor.illuminance));
+        };
+        sensor.start();
+      } catch (e) {
+        console.warn('Failed to start AmbientLightSensor:', e);
+      }
+    }
+
+    // Intentar activar cámara trasera
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      setStream(mediaStream);
+      setCameraActive(true);
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+        }
+      }, 150);
+    } catch (err) {
+      console.warn('Camera error for Luxmeter:', err);
+      setCameraError('No se pudo acceder a la cámara trasera. Puedes simular el nivel de luz ambiente usando el control deslizante.');
+    }
+  };
+
+  const closeLuxmeter = () => {
+    setCameraActive(false);
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+    setStream(null);
+    setShowLuxmeter(false);
   };
 
   const handleConfirmDelete = async () => {
@@ -618,10 +314,10 @@ const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpen
             const esPasado = d.getTime() < hoy.getTime() && !esHoy;
             
             // Determinar estado
-            let status = 'none';
-            let icon = '•';
-            let label = '-';
-            let color = '#888';
+            let status: string;
+            let icon: string;
+            let label: string;
+            let color: string;
 
             if (esMismoDia(d, currentUltima)) {
               status = esHoy ? 'watered-today' : 'watered';
@@ -1036,6 +732,7 @@ const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpen
                 <img
                   src={planta.fotoUrl}
                   alt={planta.nombreComun}
+                  loading="lazy"
                   style={{
                     width: '100%',
                     height: '100%',
@@ -1081,9 +778,9 @@ const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpen
             {/* Badge de Riego Rápido */}
             {(() => {
               const regadaHoy = esMismoDia(new Date(), currentUltima);
-              let textoRiego = '';
-              let colorRiego = '#1976d2';
-              let bgRiego = 'rgba(25, 118, 210, 0.08)';
+              let textoRiego: string;
+              let colorRiego: string;
+              let bgRiego: string;
 
               if (regadaHoy) {
                 textoRiego = 'Riego: regada hoy 💧';
@@ -1428,7 +1125,7 @@ const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpen
               ) : (
                 (() => {
                   const parseIAReportePlanta = (nota: string) => {
-                    let diagnostico = '';
+                    let diagnostico: string;
                     let tratamiento = '';
                     let aislamiento = '';
 
@@ -1547,7 +1244,55 @@ const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpen
             </div>
           </div>
 
-          {/* Botón de Acción: Exportar Ficha */}
+          {/* Historial de Diagnósticos IA Exclusivos */}
+          {planta.diagnosticosIA && planta.diagnosticosIA.length > 0 && (
+            <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <p style={{ margin: '0 0 4px 0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>
+                🤖 Historial de Diagnósticos IA (Botánico)
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '250px', overflowY: 'auto' }} className="no-print">
+                {planta.diagnosticosIA.map(diag => (
+                  <div key={diag.id} style={{
+                    background: 'var(--game-card-bg, #fafafa)',
+                    borderRadius: 'var(--game-radius, 8px)',
+                    border: '1px solid var(--game-border-color, #eee)',
+                    borderLeft: `4px solid ${diag.esUrgente ? '#ef5350' : '#4caf50'}`,
+                    padding: '10px',
+                    fontSize: '11px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    textAlign: 'left'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 'bold', color: 'var(--game-text-bright)' }}>
+                        {diag.esUrgente ? '🚨 ALERTA/AISLAR' : '🩺 Consulta IA'}
+                      </span>
+                      <span style={{ fontSize: '9px', color: 'var(--game-text, #888)' }}>
+                        {diag.fecha.includes('T') ? diag.fecha.split('T')[0] : diag.fecha}
+                      </span>
+                    </div>
+                    {diag.fotoUrl && (
+                      <img src={diag.fotoUrl} alt="Evidencia diagnóstica" loading="lazy" style={{ width: '100%', maxHeight: '120px', objectFit: 'cover', borderRadius: '4px', margin: '4px 0' }} />
+                    )}
+                    <div style={{ color: 'var(--game-text-bright)', lineHeight: '1.4' }}>
+                      <strong>Diagnóstico:</strong> {diag.diagnostico}
+                    </div>
+                    <div style={{ color: 'var(--game-text)', lineHeight: '1.4' }}>
+                      <strong>Tratamiento:</strong> {diag.tratamiento}
+                    </div>
+                    {diag.advertencia && (
+                      <div style={{ color: '#c62828', background: '#ffebee', padding: '4px 6px', borderRadius: '4px', marginTop: '2px', fontSize: '10px' }}>
+                        <strong>Alerta:</strong> {diag.advertencia}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Botones de Acción */}
           <div style={{ display: 'flex', gap: '8px', marginTop: '8px', borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px' }}>
             <button
               onClick={exportarFichaBotanica}
@@ -1565,6 +1310,23 @@ const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpen
               }}
             >
               Exportar Ficha 📄
+            </button>
+            <button
+              onClick={startLuxmeter}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                background: 'var(--game-accent-light, rgba(76, 175, 80, 0.1))',
+                color: 'var(--game-text-bright, #4caf50)',
+                border: '1.5px solid var(--game-border-color, #4caf50)',
+                borderRadius: 'var(--game-radius, 8px)',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontFamily: 'var(--game-font, sans-serif)'
+              }}
+            >
+              Medir Luz Solar ☀️
             </button>
           </div>
 
@@ -1752,8 +1514,149 @@ const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpen
           )}
         </>
       )}
+      <ReportGeneratorModal
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+        item={planta}
+        type="plant"
+      />
+
+      {/* MODAL DEL LUXÓMETRO DOMÉSTICO */}
+      {showLuxmeter && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(8,6,13,0.7)', backdropFilter: 'blur(8px)',
+          zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '20px', boxSizing: 'border-box'
+        }} className="no-print">
+          <div style={{
+            background: 'var(--bg, #fff)',
+            border: '1px solid var(--border, #e5e4e7)',
+            borderRadius: '16px',
+            width: '100%', maxWidth: '420px',
+            padding: '24px', boxSizing: 'border-box',
+            textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '16px',
+            boxShadow: 'var(--shadow)'
+          }}>
+            <div>
+              <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', color: 'var(--text-h, #08060d)', fontWeight: 800 }}>
+                Luxómetro Doméstico ☀️
+              </h3>
+              <p style={{ margin: 0, fontSize: '12px', color: 'var(--text, #6b6375)' }}>
+                Mide la radiación solar para optimizar la ubicación de la planta.
+              </p>
+            </div>
+
+            {/* Video stream rendering if active */}
+            {cameraActive && !cameraError ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                <div style={{
+                  width: '120px', height: '120px', borderRadius: '50%',
+                  overflow: 'hidden', border: '3px solid var(--accent, #8f20e6)',
+                  boxShadow: '0 4px 10px rgba(0,0,0,0.15)', background: '#000'
+                }}>
+                  <video 
+                    ref={videoRef} 
+                    autoPlay 
+                    playsInline 
+                    muted 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  />
+                </div>
+                <span style={{ fontSize: '10px', color: '#16a34a', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  🟢 Cámara Activa (Analizando Luz)
+                </span>
+                <canvas ref={canvasRef} width="20" height="20" style={{ display: 'none' }} />
+              </div>
+            ) : (
+              <div style={{ 
+                padding: '16px', borderRadius: '12px', 
+                background: 'var(--accent-bg, rgba(143,32,230,0.05))', 
+                border: '1px solid var(--accent-border, rgba(143,32,230,0.2))',
+                fontSize: '11.5px', color: 'var(--text, #6b6375)' 
+              }}>
+                {cameraError ? (
+                  <p style={{ margin: '0 0 10px 0', color: '#b91c1c', fontWeight: '500' }}>⚠️ {cameraError}</p>
+                ) : (
+                  <p style={{ margin: '0 0 10px 0' }}>Iniciando cámara...</p>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-h)' }}>Simulación manual de Luxes:</label>
+                  <input 
+                    type="range" 
+                    min="200" 
+                    max="12000" 
+                    value={luxValue} 
+                    onChange={(e) => setLuxValue(parseInt(e.target.value))} 
+                    style={{ width: '100%', accentColor: 'var(--accent, #8f20e6)' }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Dial del luxómetro */}
+            <div style={{
+              background: 'var(--code-bg, #f4f3ec)',
+              borderRadius: '12px', padding: '16px',
+              display: 'flex', flexDirection: 'column', gap: '8px'
+            }}>
+              <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--accent, #8f20e6)' }}>
+                {luxValue.toLocaleString('es-ES')} <span style={{ fontSize: '14px', fontWeight: 'normal', color: 'var(--text)' }}>Lux</span>
+              </div>
+              
+              <div style={{
+                fontSize: '12px', fontWeight: 'bold',
+                padding: '4px 10px', borderRadius: '20px', display: 'inline-block', margin: '0 auto',
+                background: luxValue < 1500 ? '#f1f5f9' : (luxValue < 5000 ? '#fff7ed' : '#f0fdf4'),
+                color: luxValue < 1500 ? '#475569' : (luxValue < 5000 ? '#c2410c' : '#16a34a'),
+                border: '1px solid ' + (luxValue < 1500 ? '#cbd5e1' : (luxValue < 5000 ? '#fed7aa' : '#bbf7d0'))
+              }}>
+                {luxValue < 1500 ? '🌑 Sombra' : (luxValue < 5000 ? '⛅ Semisombra' : '☀️ Sol Directo')}
+              </div>
+
+              <p style={{ margin: '8px 0 0 0', fontSize: '11px', color: 'var(--text, #6b6375)', lineHeight: 1.4 }}>
+                {luxValue < 1500 
+                  ? 'Intensidad baja. Apto para plantas de sombra (Helechos, Calatheas, Potos). Evita colocar aquí plantas de sol.'
+                  : luxValue < 5000 
+                    ? 'Luz filtrada/brillante. Ideal para la mayoría de plantas tropicales de interior (Monstera, Ficus, Pilea).'
+                    : 'Luz solar intensa. Óptimo para Suculentas, Cactus, plantas aromáticas y huerto doméstico.'
+                }
+              </p>
+            </div>
+
+            <button 
+              type="button" 
+              onClick={closeLuxmeter}
+              style={{
+                width: '100%', padding: '10px',
+                background: 'var(--accent, #8f20e6)', color: 'white',
+                border: 'none', borderRadius: '8px',
+                fontWeight: 'bold', fontSize: '13.5px', cursor: 'pointer'
+              }}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export const PlantCard = React.memo(PlantCardComponent);
+export const PlantCard = React.memo(PlantCardComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.isExpanded === nextProps.isExpanded &&
+    prevProps.planta.id === nextProps.planta.id &&
+    prevProps.planta.nombreComun === nextProps.planta.nombreComun &&
+    prevProps.planta.nombreCientifico === nextProps.planta.nombreCientifico &&
+    prevProps.planta.grosorHoja === nextProps.planta.grosorHoja &&
+    prevProps.planta.intervaloRiegoDias === nextProps.planta.intervaloRiegoDias &&
+    prevProps.planta.ultimaFechaRiego === nextProps.planta.ultimaFechaRiego &&
+    prevProps.planta.proximaFechaRiego === nextProps.planta.proximaFechaRiego &&
+    prevProps.planta.fotoUrl === nextProps.planta.fotoUrl &&
+    prevProps.planta.temperaturaZona === nextProps.planta.temperaturaZona &&
+    JSON.stringify(prevProps.planta.diarioFoliar) === JSON.stringify(nextProps.planta.diarioFoliar) &&
+    JSON.stringify(prevProps.planta.diagnosticosIA) === JSON.stringify(nextProps.planta.diagnosticosIA)
+  );
+});

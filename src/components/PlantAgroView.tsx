@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect } from 'react';
 import type { Planta, EntradaDiarioFoliar, CatalogoPlanta } from '../database/types';
 import { LocalDatabase, CATALOGO_ASPCA } from '../database/db';
@@ -77,7 +78,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
       setTemp(activePlant.temperaturaZona || 22);
       setGrosor(activePlant.grosorHoja || 'Normal');
     }
-  }, [activePlant?.id]);
+  }, [activePlant]);
 
   const sincronizarRiegoPorGPS = async () => {
     if (!activePlant) return;

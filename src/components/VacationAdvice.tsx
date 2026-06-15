@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { GeminiAPIService } from '../services/geminiAPI';
 
 interface VacationAdviceProps {
@@ -6,22 +6,23 @@ interface VacationAdviceProps {
 }
 
 export const VacationAdvice: React.FC<VacationAdviceProps> = ({ mode }) => {
-  const [activeTab, setActiveTab] = useState<'plants' | 'cats' | 'dogs' | 'exotics'>('plants');
+  const [prevMode, setPrevMode] = useState(mode);
+  const [activeTab, setActiveTab] = useState<'plants' | 'cats' | 'dogs' | 'exotics'>(() => {
+    if (mode === 'plants') return 'plants';
+    if (mode === 'pets') return 'cats';
+    if (mode === 'exotics') return 'exotics';
+    return 'plants';
+  });
   const [query, setQuery] = useState('');
   const [chatMessages, setChatMessages] = useState<{ sender: 'user' | 'ia'; text: string }[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (mode === 'plants') {
-      setActiveTab('plants');
-    } else if (mode === 'pets') {
-      setActiveTab('cats');
-    } else if (mode === 'exotics') {
-      setActiveTab('exotics');
-    }
+  if (mode !== prevMode) {
+    setPrevMode(mode);
+    setActiveTab(mode === 'plants' ? 'plants' : mode === 'pets' ? 'cats' : 'exotics');
     setChatMessages([]);
     setQuery('');
-  }, [mode]);
+  }
 
   const handleAIQuery = async (e: React.FormEvent) => {
     e.preventDefault();

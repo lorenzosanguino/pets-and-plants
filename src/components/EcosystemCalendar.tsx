@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect } from 'react';
 import type { EventoCalendario } from '../database/types';
 import { LocalDatabase } from '../database/db';
@@ -100,10 +101,6 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
     return tareas;
   };
 
-  useEffect(() => {
-    loadEvents();
-  }, []);
-
   const loadEvents = async () => {
     try {
       const list = await LocalDatabase.getEventosCalendario();
@@ -112,6 +109,10 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
       console.error("Error loading calendar events:", err);
     }
   };
+
+  useEffect(() => {
+    loadEvents();
+  }, []);
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));

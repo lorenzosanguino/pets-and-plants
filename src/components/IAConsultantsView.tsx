@@ -36,7 +36,6 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
   );
   const [inputText, setInputText] = useState('');
   const [isListening, setIsListening] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
   
   const [attachedImage, setAttachedImage] = useState<{ blob: Blob; dataUrl: string } | null>(null);
@@ -144,7 +143,6 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
 
@@ -161,7 +159,6 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
       setIsListening(false);
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rec.onresult = (event: any) => {
       const transcript = event.results[0]?.[0]?.transcript;
       if (transcript) {
@@ -169,7 +166,6 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
       }
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rec.onerror = (event: any) => {
       console.error("Speech recognition error:", event.error);
       setIsListening(false);
@@ -230,6 +226,36 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
 
 
 
+  const borrarHistorial = async () => {
+    if (!window.confirm("¿Estás seguro de que deseas vaciar el historial de chat de este consultor?")) {
+      return;
+    }
+    try {
+      await LocalDatabase.saveChatHistorial({
+        id: activeConsultant,
+        mensajes: [],
+        ultimaActualizacion: new Date().toISOString()
+      });
+      
+      let defaultText = '';
+      if (activeConsultant === 'veterinario') {
+        defaultText = 'Hola. Soy tu consultor de bienestar animal y prevención veterinaria. ¿En qué puedo asesorarte hoy con respecto al enriquecimiento del hogar o control clínico? Puedes adjuntar una foto de tu mascota o usar una plantilla rápida para analizar heridas o parásitos de forma preventiva.';
+      } else if (activeConsultant === 'agronomo') {
+        defaultText = 'Hola. Soy tu consultor agrónomo y paisajista. Estoy aquí para resolver dudas sobre microclimas domésticos, sustratos y requerimientos de cultivo. Puedes adjuntar una foto de tus plantas o usar una plantilla rápida para diagnosticar hojas marrones o plagas foliares.';
+      } else {
+        defaultText = 'Hola. Soy tu consultor especialista en animales exóticos. Puedo ayudarte con las condiciones ideales de temperatura y humedad para tu terrario, frecuencia de alimentación de reptiles y artrópodos, o control de mudas de piel. ¿Qué especie exótica tienes hoy?';
+      }
+      setMessages([{
+        id: '1',
+        sender: 'ia',
+        text: defaultText,
+        timestamp: new Date()
+      }]);
+    } catch (err) {
+      console.error("Error clearing chat history:", err);
+    }
+  };
+
   const procesarMensaje = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() && !attachedImage) return;
@@ -274,10 +300,20 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
         }
       }
 
-      const historyForAPI = messages.map(m => ({
-        sender: m.sender,
-        text: m.text
-      }));
+      const cleanHistoryForAPI: { sender: 'user' | 'ia'; text: string }[] = [];
+      let expectedSender: 'user' | 'ia' = 'user';
+      for (const m of messages) {
+        if (m.sender === expectedSender) {
+          cleanHistoryForAPI.push({
+            sender: m.sender,
+            text: m.text
+          });
+          expectedSender = expectedSender === 'user' ? 'ia' : 'user';
+        }
+      }
+      if (cleanHistoryForAPI.length > 0 && cleanHistoryForAPI[cleanHistoryForAPI.length - 1].sender === 'user') {
+        cleanHistoryForAPI.pop();
+      }
 
       const res = await GeminiAPIService.analizarImagen(
         currentImage ? currentImage.blob : null,
@@ -286,7 +322,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
         currentTemplate,
         { mascotas, plantas, exoticos },
         gpsCoords,
-        historyForAPI
+        cleanHistoryForAPI
       );
 
 
@@ -690,6 +726,28 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
           )}
 
           {/* API Key configuration removed (resolved automatically from environment variables) */}
+          <button
+            type="button"
+            onClick={borrarHistorial}
+            style={{
+              padding: '6px 12px',
+              background: 'transparent',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
+              borderRadius: theme === 'arcade' ? '0px' : '6px',
+              color: '#ef4444',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontFamily: 'var(--game-font, sans-serif)',
+              transition: 'all 0.2s'
+            }}
+            title="Borrar todo el historial de chat para este consultor"
+          >
+            🗑️ Limpiar Chat
+          </button>
         </div>
 
         {/* MGS Codec Panel when in Adventure theme */}
@@ -782,7 +840,6 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
 
             {/* Microphone voice dictation button */}
             {typeof window !== 'undefined' && 
-             // eslint-disable-next-line @typescript-eslint/no-explicit-any
              ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition) && (
               <button
                 type="button"

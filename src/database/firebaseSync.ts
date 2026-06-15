@@ -21,8 +21,11 @@ if (typeof window !== 'undefined' && window.localStorage && window.localStorage.
   isFirebaseEnabled = false;
 }
 
-let db: any = null;
-export let auth: any = null;
+import type { Firestore } from 'firebase/firestore';
+import type { Auth } from 'firebase/auth';
+
+let db: Firestore | null = null;
+export let auth: Auth | null = null;
 
 if (isFirebaseEnabled) {
   try {
@@ -65,7 +68,7 @@ export class FirebaseSyncService {
    * Obtiene el hogar vinculado a un usuario desde la colección /hogares/user_hogar_{uid}
    */
   static async getUserHogar(uid: string): Promise<{ hogarId: string; hogarNombre: string } | null> {
-    if (this.isCloudEnabled()) {
+    if (this.isCloudEnabled() && db) {
       try {
         const docRef = doc(db, 'hogares', `user_hogar_${uid}`);
         const snap = await getDoc(docRef);
@@ -89,7 +92,7 @@ export class FirebaseSyncService {
    * Vincula un hogar a un usuario en la colección /hogares/user_hogar_{uid}
    */
   static async saveUserHogar(uid: string, hogarId: string, hogarNombre: string): Promise<void> {
-    if (this.isCloudEnabled()) {
+    if (this.isCloudEnabled() && db) {
       try {
         const docRef = doc(db, 'hogares', `user_hogar_${uid}`);
         await setDoc(docRef, {
@@ -107,7 +110,7 @@ export class FirebaseSyncService {
    * Elimina la vinculación de hogar de un usuario en la colección /hogares/user_hogar_{uid}
    */
   static async deleteUserHogar(uid: string): Promise<void> {
-    if (this.isCloudEnabled()) {
+    if (this.isCloudEnabled() && db) {
       try {
         const docRef = doc(db, 'hogares', `user_hogar_${uid}`);
         await setDoc(docRef, {
@@ -146,7 +149,7 @@ export class FirebaseSyncService {
       theme
     };
 
-    if (this.isCloudEnabled()) {
+    if (this.isCloudEnabled() && db) {
       const docRef = doc(db, 'hogares', code);
       await setDoc(docRef, data);
     } else {
@@ -161,7 +164,7 @@ export class FirebaseSyncService {
    * Obtiene los datos de un hogar por código
    */
   static async getHogarData(code: string): Promise<HogarCloudData | null> {
-    if (this.isCloudEnabled()) {
+    if (this.isCloudEnabled() && db) {
       try {
         const docRef = doc(db, 'hogares', code);
         const snap = await getDoc(docRef);
@@ -192,7 +195,7 @@ export class FirebaseSyncService {
       theme
     };
 
-    if (this.isCloudEnabled()) {
+    if (this.isCloudEnabled() && db) {
       try {
         const docRef = doc(db, 'hogares', code);
         await setDoc(docRef, data, { merge: true });
@@ -219,7 +222,7 @@ export class FirebaseSyncService {
     code: string, 
     callback: (data: HogarCloudData) => void
   ): () => void {
-    if (this.isCloudEnabled()) {
+    if (this.isCloudEnabled() && db) {
       const docRef = doc(db, 'hogares', code);
       const unsubscribe = onSnapshot(docRef, (snapshot) => {
         if (snapshot.exists()) {

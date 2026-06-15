@@ -78,6 +78,74 @@ function cleanAndParseJSON(text: string): any {
   return JSON.parse(cleanText);
 }
 
+const ANALISIS_MULTIMODAL_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    diagnostico: { type: 'STRING' },
+    tratamiento: { type: 'STRING' },
+    advertencia: { type: 'STRING' },
+    esUrgente: { type: 'BOOLEAN' },
+    abrirFicha: {
+      type: 'OBJECT',
+      properties: {
+        tipo: { type: 'STRING', enum: ['mascota', 'planta', 'exotico'] },
+        id: { type: 'STRING' }
+      },
+      required: ['tipo', 'id']
+    }
+  },
+  required: ['diagnostico', 'tratamiento', 'advertencia', 'esUrgente']
+};
+
+const REGISTRAR_MASCOTA_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    especie: { type: 'STRING', enum: ['Felino', 'Canino'] },
+    raza: { type: 'STRING' },
+    nombreSugerido: { type: 'STRING' },
+    pesoEstimadoKg: { type: 'NUMBER' },
+    actividadSugerida: { type: 'STRING', enum: ['Baja', 'Moderada', 'Alta'] }
+  },
+  required: ['especie', 'raza', 'nombreSugerido', 'pesoEstimadoKg', 'actividadSugerida']
+};
+
+const SALUD_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    diagnostico: { type: 'STRING' },
+    tratamiento: { type: 'STRING' },
+    advertencia: { type: 'STRING' },
+    esUrgente: { type: 'BOOLEAN' }
+  },
+  required: ['diagnostico', 'tratamiento', 'advertencia', 'esUrgente']
+};
+
+const REGISTRAR_PLANTA_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    nombreComun: { type: 'STRING' },
+    nombreCientifico: { type: 'STRING' },
+    toxicidadFelina: { type: 'STRING', enum: ['Segura', 'Tóxica leve (irritante)', 'Altamente tóxica (urgencia)'] },
+    toxicidadCanina: { type: 'STRING', enum: ['Segura', 'Tóxica leve (irritante)', 'Altamente tóxica (urgencia)'] },
+    compuestosToxicos: { type: 'STRING' },
+    intervaloRiegoSugeridoDias: { type: 'INTEGER' }
+  },
+  required: ['nombreComun', 'nombreCientifico', 'toxicidadFelina', 'toxicidadCanina', 'compuestosToxicos', 'intervaloRiegoSugeridoDias']
+};
+
+const REGISTRAR_EXOTICO_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    especie: { type: 'STRING' },
+    tipoEspecifico: { type: 'STRING' },
+    nombreSugerido: { type: 'STRING' },
+    temperaturaTerrario: { type: 'NUMBER' },
+    humedadTerrario: { type: 'NUMBER' },
+    intervaloAlimentacionDias: { type: 'NUMBER' }
+  },
+  required: ['especie', 'tipoEspecifico', 'nombreSugerido', 'temperaturaTerrario', 'humedadTerrario', 'intervaloAlimentacionDias']
+};
+
 export class GeminiAPIService {
   /**
    * Obtiene la clave de API disponible con fallbacks robustos para entornos de desarrollo y producción.
@@ -220,7 +288,8 @@ CRÍTICO - NAVEGACIÓN Y ACCESO A FICHAS: Si el usuario te pide abrir, ir, ver, 
                   parts: [{ text: systemInstruction }]
                 },
                 generationConfig: {
-                  responseMimeType: 'application/json'
+                  responseMimeType: 'application/json',
+                  responseSchema: ANALISIS_MULTIMODAL_SCHEMA
                 }
               }),
               signal: controller.signal
@@ -643,6 +712,15 @@ CRÍTICO - NAVEGACIÓN Y ACCESO A FICHAS: Si el usuario te pide abrir, ir, ver, 
           userParts.push({ text: promptTexto });
         }
 
+        let responseSchema: any = SALUD_SCHEMA;
+        if (mode === 'registrar_mascota') {
+          responseSchema = REGISTRAR_MASCOTA_SCHEMA;
+        } else if (mode === 'registrar_planta') {
+          responseSchema = REGISTRAR_PLANTA_SCHEMA;
+        } else if (mode === 'registrar_exotico') {
+          responseSchema = REGISTRAR_EXOTICO_SCHEMA;
+        }
+
         let response: Response | null = null;
         let retries = 3;
         let delay = 1000;
@@ -660,7 +738,10 @@ CRÍTICO - NAVEGACIÓN Y ACCESO A FICHAS: Si el usuario te pide abrir, ir, ver, 
                   role: 'user',
                   parts: userParts
                 }],
-                generationConfig: { responseMimeType: 'application/json' }
+                generationConfig: {
+                  responseMimeType: 'application/json',
+                  responseSchema: responseSchema
+                }
               }),
               signal: controller.signal
             });

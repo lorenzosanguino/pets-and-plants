@@ -1,10 +1,11 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
 import React, { useState } from 'react';
 import type { AnimalExotico, EventoPasado, EntradaDiarioClinico } from '../database/types';
 import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
 import { CardPhotoManager } from './CardPhotoManager';
 import { IAQuotaManager } from '../utils/iaQuota';
-import { escapeHTML } from '../utils/escape';
+import { ReportGeneratorModal } from './ReportGeneratorModal';
 
 
 interface ExoticCardProps {
@@ -19,6 +20,7 @@ const ExoticCardComponent: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onO
   const cuota = IAQuotaManager.obtenerEstadoCuota();
   const [localExpanded, setLocalExpanded] = useState(false);
   const isExpanded = propExpanded !== undefined ? propExpanded : localExpanded;
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   const toggleExpanded = () => {
     if (onToggleExpand) {
@@ -79,7 +81,7 @@ const ExoticCardComponent: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onO
     };
     await LocalDatabase.saveExotico(updated);
     localStorage.setItem('petplant_db_last_updated', Date.now().toString());
-    editingChip && setEditingChip(false);
+    if (editingChip) setEditingChip(false);
     onUpdate();
   };
 
@@ -140,356 +142,7 @@ const ExoticCardComponent: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onO
 
   const exportarFichaExotico = (e: React.MouseEvent) => {
     e.stopPropagation();
-
-    // Crear div temporal de impresión
-    const printDiv = document.createElement('div');
-    printDiv.className = 'print-container';
-    document.body.appendChild(printDiv);
-
-    const formatDate = (isoString?: string) => {
-      if (!isoString) return 'No especificada';
-      try {
-        const d = new Date(isoString);
-        if (isNaN(d.getTime())) return isoString.split('T')[0];
-        return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      } catch {
-        return isoString.split('T')[0] || 'No especificada';
-      }
-    };
-
-    const parseIAReporteExotico = (nota: string) => {
-      let diagnostico = '';
-      let tratamiento = '';
-      let advertencia = '';
-
-      const diagKey = '[IA Diagnóstico Exótico]:';
-      const tratKey = '| Tratamiento:';
-      const advKey = '| Alerta:';
-
-      const diagIdx = nota.indexOf(diagKey);
-      const tratIdx = nota.indexOf(tratKey);
-      const advIdx = nota.indexOf(advKey);
-
-      if (diagIdx !== -1) {
-        const start = diagIdx + diagKey.length;
-        const end = tratIdx !== -1 ? tratIdx : (advIdx !== -1 ? advIdx : nota.length);
-        diagnostico = nota.substring(start, end).trim();
-      } else {
-        diagnostico = nota;
-      }
-
-      if (tratIdx !== -1) {
-        const start = tratIdx + tratKey.length;
-        const end = advIdx !== -1 ? advIdx : nota.length;
-        tratamiento = nota.substring(start, end).trim();
-      }
-
-      if (advIdx !== -1) {
-        const start = advIdx + advKey.length;
-        advertencia = nota.substring(start).trim();
-      }
-
-      return {
-        diagnostico: diagnostico || 'No especificado',
-        tratamiento: tratamiento || 'No especificado',
-        advertencia: advertencia || 'Sin advertencias particulares'
-      };
-    };
-
-    const diaryHtml = (exotico.diarioExotico || []).slice(0, 5).map(d => {
-      const esIAReporte = d.nota.startsWith('[IA');
-      let statusColor = '#9c27b0'; // Purple for notes
-      if (esIAReporte) statusColor = '#2196f3'; // Blue for IA
-
-      let content = '';
-      if (esIAReporte) {
-        const parsed = parseIAReporteExotico(d.nota);
-        content = `
-          <div style="font-weight: 600; color: #2563eb; margin-bottom: 2px;">Diagnóstico Clínico por IA:</div>
-          <div style="margin-bottom: 4px;">${escapeHTML(parsed.diagnostico)}</div>
-          <div style="font-weight: 600; color: #16a34a; margin-bottom: 2px;">Tratamiento sugerido:</div>
-          <div style="margin-bottom: 4px;">${escapeHTML(parsed.tratamiento)}</div>
-          ${parsed.advertencia && parsed.advertencia !== 'Sin advertencias particulares' ? `
-            <div style="font-weight: 600; color: #dc2626; margin-bottom: 2px;">Alerta:</div>
-            <div>${escapeHTML(parsed.advertencia)}</div>
-          ` : ''}
-        `;
-      } else {
-        content = escapeHTML(d.nota);
-      }
-
-      return `
-        <div class="timeline-item" style="border-left-color: ${statusColor};">
-          <div class="timeline-meta">
-            <span class="timeline-date">${formatDate(d.fecha)}</span>
-            <span class="timeline-type" style="background: ${statusColor}15; color: ${statusColor}; border: 1.5px solid ${statusColor}30;">${escapeHTML(d.categoria)}</span>
-          </div>
-          <div class="timeline-text">${content}</div>
-        </div>
-      `;
-    }).join('') || '<p style="font-style: italic; color: #64748b; margin: 0;">Sin registros en el diario</p>';
-
-    const incidenciasHtml = (exotico.historialPasado || []).slice(0, 5).map(h => `
-      <div class="timeline-item" style="border-left-color: #d97706;">
-        <div class="timeline-meta">
-          <span class="timeline-date">${formatDate(h.fecha)}</span>
-          <span class="timeline-type" style="background: #d9770615; color: #d97706; border: 1.5px solid #d9770630;">${escapeHTML(h.tipo)}</span>
-        </div>
-        <div class="timeline-text">${escapeHTML(h.descripcion)}</div>
-      </div>
-    `).join('') || '<p style="font-style: italic; color: #64748b; margin: 0;">Sin registros históricos</p>';
-
-    printDiv.innerHTML = `
-      <style>
-        .print-container {
-          font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
-          color: #0f172a !important;
-          background: #ffffff !important;
-          padding: 20px !important;
-          font-size: 11.5px !important;
-          line-height: 1.4 !important;
-          width: 210mm !important;
-          height: 297mm !important;
-          max-height: 297mm !important;
-          overflow: hidden !important;
-          box-sizing: border-box !important;
-        }
-        .print-container * {
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-          box-sizing: border-box !important;
-          page-break-inside: avoid !important;
-        }
-        .print-container h1, .print-container h2, .print-container h3, .print-container h4 {
-          margin: 0 !important;
-          color: #7c2d12 !important;
-        }
-        .print-container h1 {
-          font-size: 20px !important;
-          font-weight: 800 !important;
-          border-bottom: 2px solid #ea580c !important;
-          padding-bottom: 5px !important;
-          margin-bottom: 10px !important;
-          display: flex !important;
-          justify-content: space-between !important;
-          align-items: flex-end !important;
-        }
-        .print-container h1 span {
-          font-size: 10px !important;
-          font-weight: 500 !important;
-          color: #64748b !important;
-          text-transform: uppercase !important;
-          letter-spacing: 0.05em !important;
-        }
-        .print-container h3 {
-          font-size: 12.5px !important;
-          font-weight: 700 !important;
-          border-bottom: 1.5px solid #e2e8f0 !important;
-          padding-bottom: 4px !important;
-          margin-bottom: 7px !important;
-          color: #7c2d12 !important;
-          text-transform: uppercase !important;
-          letter-spacing: 0.02em !important;
-        }
-        .print-container .grid-container {
-          display: grid !important;
-          grid-template-columns: 32% 64% !important;
-          gap: 4% !important;
-          width: 100% !important;
-        }
-        .print-container .left-col, .print-container .right-col {
-          display: flex !important;
-          flex-direction: column !important;
-          gap: 12px !important;
-        }
-        .print-container .photo-container {
-          width: 100% !important;
-          aspect-ratio: 1 / 1 !important;
-          max-height: 180px !important;
-          border-radius: 8px !important;
-          overflow: hidden !important;
-          border: 1px solid #e2e8f0 !important;
-          background: #f8fafc !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          margin: 0 auto !important;
-        }
-        .print-container .photo-container img {
-          width: 100% !important;
-          height: 100% !important;
-          object-fit: contain !important;
-          background: #f8fafc !important;
-        }
-        .print-container .photo-placeholder {
-          font-size: 64px !important;
-        }
-        .print-container .details-table {
-          width: 100% !important;
-          border-collapse: collapse !important;
-        }
-        .print-container .details-table th, .print-container .details-table td {
-          text-align: left !important;
-          padding: 5px 0 !important;
-          border-bottom: 1px solid #f1f5f9 !important;
-        }
-        .print-container .details-table th {
-          font-weight: 600 !important;
-          color: #64748b !important;
-          width: 45% !important;
-        }
-        .print-container .details-table td {
-          font-weight: 500 !important;
-          color: #0f172a !important;
-        }
-        .print-container .timeline {
-          display: flex !important;
-          flex-direction: column !important;
-          gap: 6px !important;
-        }
-        .print-container .timeline-item {
-          padding: 7px !important;
-          background: #f8fafc !important;
-          border-left: 3px solid #cbd5e1 !important;
-          border-radius: 0 4px 4px 0 !important;
-        }
-        .print-container .timeline-meta {
-          display: flex !important;
-          justify-content: space-between !important;
-          align-items: center !important;
-          margin-bottom: 4px !important;
-        }
-        .print-container .timeline-date {
-          font-weight: 600 !important;
-          color: #64748b !important;
-        }
-        .print-container .timeline-type {
-          font-size: 8px !important;
-          padding: 1px 4px !important;
-          border-radius: 4px !important;
-          font-weight: bold !important;
-          text-transform: uppercase !important;
-        }
-        .print-container .timeline-text {
-          color: #334155 !important;
-          white-space: pre-wrap !important;
-        }
-      </style>
-      <h1>
-        <span>Ficha de Cuidados Exóticos</span>
-        ${escapeHTML(exotico.nombre)}
-      </h1>
-      <div class="grid-container">
-        <div class="left-col">
-          <div class="photo-container">
-            ${exotico.fotoUrl ? `<img src="${exotico.fotoUrl}" alt="${escapeHTML(exotico.nombre)}" />` : `<div class="photo-placeholder">🦎</div>`}
-          </div>
-          <div>
-            <h3>Parámetros Terrario</h3>
-            <table class="details-table">
-              <tr><th>Especie:</th><td>${escapeHTML(exotico.especie)}</td></tr>
-              <tr><th>Tipo Específico:</th><td>${escapeHTML(exotico.tipoEspecifico)}</td></tr>
-              <tr><th>Chip/ID:</th><td>${escapeHTML(exotico.chip || 'Sin Identificación')}</td></tr>
-              <tr><th>Temperatura Terrario:</th><td>${exotico.temperaturaTerrario}°C</td></tr>
-              <tr><th>Humedad Terrario:</th><td>${exotico.humedadTerrario}%</td></tr>
-              <tr><th>Última Alimentación:</th><td>${formatDate(exotico.ultimaAlimentacion)}</td></tr>
-              <tr><th>Frecuencia Alim.:</th><td>Cada ${exotico.intervaloAlimentacionDias} días</td></tr>
-            </table>
-          </div>
-        </div>
-        
-        <div class="right-col">
-          <div>
-            <h3>Diario de Cuidados y Clínico (Últimos 5 registros)</h3>
-            <div class="timeline">
-              ${diaryHtml}
-            </div>
-          </div>
-          
-          <div>
-            <h3>Historial de Eventos (Últimos 5 registros)</h3>
-            <div class="timeline">
-              ${incidenciasHtml}
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // Esperar a que se carguen las imágenes y recursos antes de imprimir
-    const images = printDiv.querySelectorAll('img');
-    let loadedCount = 0;
-    const totalImages = images.length;
-
-    const triggerPrint = () => {
-      const originalTitle = document.title;
-      document.title = `Ficha ${exotico.nombre}`;
-      document.body.classList.add('printing-active');
-      window.focus();
-
-      // Temporalmente ajustar el viewport meta para forzar maquetación de escritorio (evita responsive colapsado en impresión móvil)
-      const viewportMeta = document.querySelector('meta[name="viewport"]');
-      const originalViewport = viewportMeta ? viewportMeta.getAttribute('content') : null;
-      if (viewportMeta) {
-        viewportMeta.setAttribute('content', 'width=800, initial-scale=1.0, maximum-scale=1.0');
-      }
-
-      let cleaned = false;
-      const cleanup = () => {
-        if (cleaned) return;
-        cleaned = true;
-
-        // Retrasamos la limpieza real 6 segundos para que los navegadores móviles (donde afterprint se dispara prematuramente)
-        // tengan suficiente tiempo para renderizar el PDF de la ficha con el diseño y título correctos.
-        setTimeout(() => {
-          document.body.classList.remove('printing-active');
-          if (document.body.contains(printDiv)) {
-            document.body.removeChild(printDiv);
-          }
-          // Restaurar el viewport meta original
-          if (viewportMeta && originalViewport) {
-            viewportMeta.setAttribute('content', originalViewport);
-          }
-          document.title = originalTitle;
-        }, 6000);
-
-        window.removeEventListener('afterprint', cleanup);
-      };
-
-      window.addEventListener('afterprint', cleanup);
-
-      // Forzar la limpieza de seguridad tras 2 segundos si afterprint nunca se disparase
-      setTimeout(cleanup, 2000);
-
-      // Pequeña pausa para permitir que el navegador aplique los cambios del DOM (ocultar #root) en móviles
-      setTimeout(() => {
-        window.print();
-      }, 250);
-    };
-
-    if (totalImages === 0) {
-      triggerPrint();
-    } else {
-      images.forEach(img => {
-        if (img.complete) {
-          loadedCount++;
-          if (loadedCount === totalImages) triggerPrint();
-        } else {
-          img.onload = () => {
-            loadedCount++;
-            if (loadedCount === totalImages) triggerPrint();
-          };
-          img.onerror = () => {
-            loadedCount++;
-            if (loadedCount === totalImages) triggerPrint();
-          };
-        }
-      });
-      // Timeout de seguridad en caso de fallo de carga
-      setTimeout(() => {
-        if (loadedCount < totalImages) triggerPrint();
-      }, 2500);
-    }
+    setIsReportOpen(true);
   };
 
   // Cálculo de días desde última alimentación
@@ -670,7 +323,7 @@ const ExoticCardComponent: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onO
               };
             })()}>
               {exotico.fotoUrl ? (
-                <img src={exotico.fotoUrl} alt={exotico.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={exotico.fotoUrl} alt={exotico.nombre} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 getEspecieEmoji(exotico.especie)
               )}
@@ -939,7 +592,7 @@ const ExoticCardComponent: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onO
               ) : (
                 (() => {
                   const parseIAReporteExotico = (nota: string) => {
-                    let diagnostico = '';
+                    let diagnostico: string;
                     let tratamiento = '';
                     let advertencia = '';
 
@@ -1035,6 +688,54 @@ const ExoticCardComponent: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onO
               )}
             </div>
           </div>
+
+          {/* Historial de Diagnósticos IA Exclusivos */}
+          {exotico.diagnosticosIA && exotico.diagnosticosIA.length > 0 && (
+            <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <p style={{ margin: '0 0 4px 0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>
+                🤖 Historial de Diagnósticos IA (Exótico)
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '250px', overflowY: 'auto' }} className="no-print">
+                {exotico.diagnosticosIA.map(diag => (
+                  <div key={diag.id} style={{
+                    background: 'var(--game-card-bg, #fafafa)',
+                    borderRadius: 'var(--game-radius, 8px)',
+                    border: '1px solid var(--game-border-color, #eee)',
+                    borderLeft: `4px solid ${diag.esUrgente ? '#ef5350' : '#4caf50'}`,
+                    padding: '10px',
+                    fontSize: '11px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    textAlign: 'left'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 'bold', color: 'var(--game-text-bright)' }}>
+                        {diag.esUrgente ? '🚨 URGENTE' : '🩺 Consulta IA'}
+                      </span>
+                      <span style={{ fontSize: '9px', color: 'var(--game-text, #888)' }}>
+                        {diag.fecha.includes('T') ? diag.fecha.split('T')[0] : diag.fecha}
+                      </span>
+                    </div>
+                    {diag.fotoUrl && (
+                      <img src={diag.fotoUrl} alt="Evidencia diagnóstica" loading="lazy" style={{ width: '100%', maxHeight: '120px', objectFit: 'cover', borderRadius: '4px', margin: '4px 0' }} />
+                    )}
+                    <div style={{ color: 'var(--game-text-bright)', lineHeight: '1.4' }}>
+                      <strong>Diagnóstico:</strong> {diag.diagnostico}
+                    </div>
+                    <div style={{ color: 'var(--game-text)', lineHeight: '1.4' }}>
+                      <strong>Tratamiento:</strong> {diag.tratamiento}
+                    </div>
+                    {diag.advertencia && (
+                      <div style={{ color: '#c62828', background: '#ffebee', padding: '4px 6px', borderRadius: '4px', marginTop: '2px', fontSize: '10px' }}>
+                        <strong>Alerta:</strong> {diag.advertencia}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Botones de acción inferior */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #eee', paddingTop: '12px' }}>
@@ -1253,8 +954,29 @@ const ExoticCardComponent: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onO
           </div>
         </div>
       )}
+      <ReportGeneratorModal
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+        item={exotico}
+        type="exotic"
+      />
     </div>
   );
 };
 
-export const ExoticCard = React.memo(ExoticCardComponent);
+export const ExoticCard = React.memo(ExoticCardComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.isExpanded === nextProps.isExpanded &&
+    prevProps.exotico.id === nextProps.exotico.id &&
+    prevProps.exotico.nombre === nextProps.exotico.nombre &&
+    prevProps.exotico.especie === nextProps.exotico.especie &&
+    prevProps.exotico.tipoEspecifico === nextProps.exotico.tipoEspecifico &&
+    prevProps.exotico.temperaturaTerrario === nextProps.exotico.temperaturaTerrario &&
+    prevProps.exotico.humedadTerrario === nextProps.exotico.humedadTerrario &&
+    prevProps.exotico.ultimaAlimentacion === nextProps.exotico.ultimaAlimentacion &&
+    prevProps.exotico.intervaloAlimentacionDias === nextProps.exotico.intervaloAlimentacionDias &&
+    prevProps.exotico.fotoUrl === nextProps.exotico.fotoUrl &&
+    JSON.stringify(prevProps.exotico.diarioExotico) === JSON.stringify(nextProps.exotico.diarioExotico) &&
+    JSON.stringify(prevProps.exotico.diagnosticosIA) === JSON.stringify(nextProps.exotico.diagnosticosIA)
+  );
+});

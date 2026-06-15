@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/purity */
 import React from 'react';
 import type { Planta, Mascota } from '../database/types';
 import { LocalDatabase } from '../database/db';

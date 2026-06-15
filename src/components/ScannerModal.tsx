@@ -347,9 +347,20 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
       categoria: 'Observación general' as const
     };
 
+    const nuevoDiag = {
+      id: safeUUID(),
+      fecha: new Date().toISOString(),
+      diagnostico: scanResult.diagnostico,
+      tratamiento: scanResult.tratamiento,
+      advertencia: scanResult.advertencia || '',
+      esUrgente: !!scanResult.esUrgente,
+      fotoUrl: capturedDataUrl || undefined
+    };
+
     const petActualizado: Mascota = {
       ...pet,
-      diarioClinico: [nuevaNota, ...(pet.diarioClinico || [])]
+      diarioClinico: [nuevaNota, ...(pet.diarioClinico || [])],
+      diagnosticosIA: [nuevoDiag, ...(pet.diagnosticosIA || [])]
     };
 
     await LocalDatabase.saveMascota(petActualizado);
@@ -372,9 +383,20 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
       estadoGeneral: (scanResult.esUrgente ? 'Clorosis/Lesión' : 'Normal') as any
     };
 
+    const nuevoDiag = {
+      id: safeUUID(),
+      fecha: new Date().toISOString(),
+      diagnostico: scanResult.diagnostico,
+      tratamiento: scanResult.tratamiento,
+      advertencia: scanResult.advertencia || '',
+      esUrgente: !!scanResult.esUrgente,
+      fotoUrl: capturedDataUrl || undefined
+    };
+
     const plantActualizada: Planta = {
       ...plant,
-      diarioFoliar: [nuevaNota, ...(plant.diarioFoliar || [])]
+      diarioFoliar: [nuevaNota, ...(plant.diarioFoliar || [])],
+      diagnosticosIA: [nuevoDiag, ...(plant.diagnosticosIA || [])]
     };
 
     await LocalDatabase.savePlanta(plantActualizada);
@@ -394,9 +416,20 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
       categoria: 'Observación general' as const
     };
 
+    const nuevoDiag = {
+      id: safeUUID(),
+      fecha: new Date().toISOString(),
+      diagnostico: scanResult.diagnostico,
+      tratamiento: scanResult.tratamiento,
+      advertencia: scanResult.advertencia || '',
+      esUrgente: !!scanResult.esUrgente,
+      fotoUrl: capturedDataUrl || undefined
+    };
+
     const exoActualizado: AnimalExotico = {
       ...exo,
-      diarioExotico: [nuevaNota, ...(exo.diarioExotico || [])]
+      diarioExotico: [nuevaNota, ...(exo.diarioExotico || [])],
+      diagnosticosIA: [nuevoDiag, ...(exo.diagnosticosIA || [])]
     };
 
     await LocalDatabase.saveExotico(exoActualizado);

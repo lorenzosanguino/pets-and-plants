@@ -1,11 +1,15 @@
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { LocalDatabase } from '../database/db';
 import type { Mascota, Planta, AnimalExotico, EventoCalendario } from '../database/types';
 import { initFirebase, getFirebaseCached } from '../database/firebaseLazy';
-import { WeatherService } from '../services/weatherService';
 import { MicrosoftSyncService } from '../services/microsoftSync';
 import { NotificationManager } from '../utils/notificationManager';
+import { usePWAManager } from '../hooks/usePWAManager';
+import { useGPSWeather } from '../hooks/useGPSWeather';
+import { useTranslations } from '../utils/i18n';
+import { ExtremeWeatherPanel } from '../components/ExtremeWeatherPanel';
+import { NeighborhoodPestAlerts } from '../components/NeighborhoodPestAlerts';
 
 
 // ── Lazy-loaded components (se descargan solo cuando se necesitan) ──────────
@@ -56,6 +60,7 @@ const isDatabaseDefaultDemo = (mascotas: Mascota[], plantas: Planta[], exoticos:
 };
 
 export const PetPlantDashboard: React.FC = () => {
+  const { t } = useTranslations();
   const isRemoteSyncingRef = useRef(false);
   const msSyncTimeoutRef = useRef<any>(null);
 
@@ -69,6 +74,34 @@ export const PetPlantDashboard: React.FC = () => {
     // Comprobación rápida sin cargar Firebase — si la config existe asumimos que está habilitado
     const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDGQWW8tVP8kk6Nss-GCutohfD6IouLzp0";
     return !!apiKey && !apiKey.includes('dummy') && localStorage.getItem('petplant_mock_auth') !== 'true';
+  });
+
+  const [joinedHogares, setJoinedHogares] = useState<Array<{ id: string; nombre: string }>>(() => {
+    try {
+      const saved = localStorage.getItem('petplant_joined_hogares');
+      const parsed = saved ? JSON.parse(saved) : [];
+      const activeId = localStorage.getItem('petplant_hogar_id') || '';
+      const activeNombre = localStorage.getItem('petplant_hogar_nombre') || '';
+      if (activeId && activeNombre && !parsed.some((h: any) => h.id === activeId)) {
+        parsed.push({ id: activeId, nombre: activeNombre });
+        localStorage.setItem('petplant_joined_hogares', JSON.stringify(parsed));
+      }
+      return parsed;
+    } catch {
+      return [];
+    }
+  });
+
+  const [autosyncInterval, setAutosyncInterval] = useState<string>(() => localStorage.getItem('petplant_autosync_interval') || 'off');
+  const [lastAutosyncTime, setLastAutosyncTime] = useState<string>(() => localStorage.getItem('petplant_last_autosync_time') || '');
+
+  const [climaActual, setClimaActual] = useState<any>(() => {
+    try {
+      const saved = localStorage.getItem('petplant_last_gps_weather');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
   });
 
   const [mascotas, setMascotas] = useState<Mascota[]>([]);
@@ -110,113 +143,22 @@ export const PetPlantDashboard: React.FC = () => {
     }, 500);
   };
 
-  const [loadingGPS, setLoadingGPS] = useState(false);
-  const [gpsSyncSuccess, setGpsSyncSuccess] = useState<string | null>(null);
-  const [gpsSyncEnabled, setGpsSyncEnabled] = useState<'undecided' | 'active' | 'inactive'>(() => {
-    const saved = localStorage.getItem('petplant_gps_sync_enabled');
-    if (saved === 'true') return 'active';
-    if (saved === 'false') return 'inactive';
-    return 'undecided';
-  });
+  const {
+    deferredPrompt,
+    isOffline,
+    dismissedInstallBanner,
+    setDismissedInstallBanner,
+    networkNotification,
+    handleInstallPWA
+  } = usePWAManager();
 
-  const handleGPSToggle = async () => {
-    if (gpsSyncEnabled === 'undecided') {
-      const activar = window.confirm("¿Quieres activar la sincronización GPS automática? Esto adaptará el intervalo de riego de tus plantas al clima en tiempo real.");
-      if (activar) {
-        localStorage.setItem('petplant_gps_sync_enabled', 'true');
-        setGpsSyncEnabled('active');
-        sincronizarTodasLasPlantasPorGPS();
-      } else {
-        localStorage.setItem('petplant_gps_sync_enabled', 'false');
-        setGpsSyncEnabled('inactive');
-      }
-    } else {
-      const nuevoEstado = gpsSyncEnabled === 'active' ? 'inactive' : 'active';
-      localStorage.setItem('petplant_gps_sync_enabled', nuevoEstado === 'active' ? 'true' : 'false');
-      setGpsSyncEnabled(nuevoEstado);
-      if (nuevoEstado === 'active') {
-        sincronizarTodasLasPlantasPorGPS();
-      }
-    }
-  };
-
-  const sincronizarTodasLasPlantasPorGPS = async () => {
-    setLoadingGPS(true);
-    setGpsSyncSuccess(null);
-    try {
-      // Comprobar caché climática con TTL de 15 minutos (900.000 ms)
-      const cachedWeather = localStorage.getItem('petplant_last_gps_weather');
-      const cachedTime = Number(localStorage.getItem('petplant_last_gps_time') || 0);
-      
-      let clima;
-      if (cachedWeather && (Date.now() - cachedTime < 15 * 60 * 1000)) {
-        console.log("Reutilizando datos climáticos en caché (TTL activo).");
-        clima = JSON.parse(cachedWeather);
-      } else {
-        const coords = await WeatherService.getCoordenadasGPS();
-        clima = await WeatherService.obtenerClimaEnVivo(coords.latitude, coords.longitude);
-        
-        // Guardar clima obtenido en caché local con timestamp
-        localStorage.setItem('petplant_last_gps_weather', JSON.stringify(clima));
-        localStorage.setItem('petplant_last_gps_time', Date.now().toString());
-      }
-
-      const listPlantas = await LocalDatabase.getPlantas();
-      for (const p of listPlantas) {
-        const baseIntervalo = p.intervaloRiegoDias || 7;
-        const nuevoIntervalo = WeatherService.calcularIntervaloRiegoClimatico(
-          baseIntervalo,
-          p.grosorHoja || 'Normal',
-          clima
-        );
-        const proximaFecha = new Date(Date.now() + nuevoIntervalo * 24 * 3600 * 1000).toISOString();
-        const plantaActualizada = {
-          ...p,
-          intervaloRiegoDias: nuevoIntervalo,
-          proximaFechaRiego: proximaFecha,
-          temperaturaZona: Math.round(clima.temperatura)
-        };
-        await LocalDatabase.savePlanta(plantaActualizada);
-      }
-      
-      await refreshData(true);
-      setGpsSyncSuccess(`¡Sincronizado con éxito! Clima: ${Math.round(clima.temperatura)}°C, HR: ${clima.humedad}%`);
-    } catch (err: any) {
-      console.warn("Fallo GPS en Dashboard, usando simulación de Madrid:", err);
-      try {
-        const climaSimulado = await WeatherService.obtenerClimaEnVivo(40.4167, -3.7037);
-        
-        // Guardar clima simulado obtenido en caché local con timestamp
-        localStorage.setItem('petplant_last_gps_weather', JSON.stringify(climaSimulado));
-        localStorage.setItem('petplant_last_gps_time', Date.now().toString());
-
-        const listPlantas = await LocalDatabase.getPlantas();
-        for (const p of listPlantas) {
-          const baseIntervalo = p.intervaloRiegoDias || 7;
-          const nuevoIntervalo = WeatherService.calcularIntervaloRiegoClimatico(
-            baseIntervalo,
-            p.grosorHoja || 'Normal',
-            climaSimulado
-          );
-          const proximaFecha = new Date(Date.now() + nuevoIntervalo * 24 * 3600 * 1000).toISOString();
-          const plantaActualizada = {
-            ...p,
-            intervaloRiegoDias: nuevoIntervalo,
-            proximaFechaRiego: proximaFecha,
-            temperaturaZona: Math.round(climaSimulado.temperatura)
-          };
-          await LocalDatabase.savePlanta(plantaActualizada);
-        }
-        await refreshData(true);
-        setGpsSyncSuccess(`¡Sincronizado con éxito! (Clima simulado): ${Math.round(climaSimulado.temperatura)}°C, HR: ${climaSimulado.humedad}%`);
-      } catch (innerErr) {
-        console.warn("No se pudo realizar la sincronización climática GPS:", innerErr);
-        alert("No se pudo realizar la sincronización climática GPS.");
-      }
-    } finally {
-      setLoadingGPS(false);
-    }
-  };
+  const {
+    loadingGPS,
+    gpsSyncSuccess,
+    gpsSyncEnabled,
+    handleGPSToggle,
+    sincronizarTodasLasPlantasPorGPS
+  } = useGPSWeather(refreshData);
 
   // Modo de Experiencia: 'landing', 'pets', 'plants', 'exotics'
   const [experienceMode, setExperienceMode] = useState<'landing' | 'pets' | 'plants' | 'exotics'>('landing');
@@ -235,44 +177,7 @@ export const PetPlantDashboard: React.FC = () => {
   const [scannerMode, setScannerMode] = useState<'registrar_mascota' | 'salud_mascota' | 'registrar_planta' | 'enfermedad_planta' | 'registrar_exotico' | 'salud_exotico' | null>(null);
   const [scannerAssetId, setScannerAssetId] = useState<string | null>(null);
 
-  // Estados de PWA y Conexión Offline
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isOffline, setIsOffline] = useState(typeof window !== 'undefined' ? !navigator.onLine : false);
-  const [dismissedInstallBanner, setDismissedInstallBanner] = useState(false);
-  const [networkNotification, setNetworkNotification] = useState<{ message: string; type: 'online' | 'offline' | null }>({ message: '', type: null });
 
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-  }, []);
-
-  useEffect(() => {
-    const goOnline = () => {
-      setIsOffline(false);
-      setNetworkNotification({ message: '¡Conexión recuperada! Sincronizando datos... ✅', type: 'online' });
-      setTimeout(() => {
-        setNetworkNotification(prev => prev.type === 'online' ? { message: '', type: null } : prev);
-      }, 4000);
-    };
-    const goOffline = () => {
-      setIsOffline(true);
-      setNetworkNotification({ message: 'Navegando sin conexión. Las funciones locales de IndexedDB siguen disponibles. ⚠️', type: 'offline' });
-      setTimeout(() => {
-        setNetworkNotification(prev => prev.type === 'offline' ? { message: '', type: null } : prev);
-      }, 5000);
-    };
-    window.addEventListener('online', goOnline);
-    window.addEventListener('offline', goOffline);
-    return () => {
-      window.removeEventListener('online', goOnline);
-      window.removeEventListener('offline', goOffline);
-    };
-  }, []);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -285,14 +190,7 @@ export const PetPlantDashboard: React.FC = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [showManualRegister]);
 
-  const handleInstallPWA = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    console.log(`PWA installation outcome: ${outcome}`);
-    setDeferredPrompt(null);
-    setDismissedInstallBanner(true);
-  };
+
 
   const [uiTheme, setUiTheme] = useState<'gaming' | 'nature' | 'kawaii'>(() => {
     const saved = localStorage.getItem('petplant_game_theme');
@@ -321,7 +219,7 @@ export const PetPlantDashboard: React.FC = () => {
     if (activeHogar && localStorage.getItem('petplant_login_provider') === 'google') {
       refreshData(true);
     }
-  }, [uiTheme]);
+  }, [uiTheme]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [customApiKey, setCustomApiKey] = useState<string>(() => localStorage.getItem('petplant_gemini_api_key') || '');
   const [showApiKey, setShowApiKey] = useState<boolean>(false);
@@ -368,6 +266,16 @@ export const PetPlantDashboard: React.FC = () => {
           console.error('Error al registrar Service Worker:', err);
         });
     }
+
+    import('../services/syncQueue').then(({ SyncQueueService }) => {
+      SyncQueueService.processQueue().catch((err) => {
+        console.error('Error al procesar cola de sincronización inicial:', err);
+      });
+    });
+
+    NotificationManager.checkAndTriggerPendingNotifications().catch((err) => {
+      console.error('Error al procesar notificaciones programadas iniciales:', err);
+    });
   }, []);
 
 
@@ -375,10 +283,10 @@ export const PetPlantDashboard: React.FC = () => {
   // Estados para Grupo Hogar (Moved to top of component to prevent TDZ errors)
 
   const renderConnectivityIndicator = () => {
-    let ledColor = '#757575'; // Gray
-    let text = 'Sin Conexión';
-    let isPulsing = false;
-    let titleTip = 'Estás en modo sin conexión. Los cambios se guardarán localmente.';
+    let ledColor: string;
+    let text: string;
+    let isPulsing: boolean;
+    let titleTip: string;
 
     if (isOffline) {
       ledColor = '#f44336'; // Red
@@ -464,19 +372,16 @@ export const PetPlantDashboard: React.FC = () => {
 
   const notificadosRef = useRef<Set<string>>(new Set());
 
-  const evaluarRecordatoriosMañana = async () => {
+  const evaluarRecordatoriosYPendientes = async () => {
     try {
       const listEventos: EventoCalendario[] = await LocalDatabase.getEventosCalendario();
       
-      // Obtener la fecha de mañana en formato YYYY-MM-DD local
       const mañana = new Date();
       mañana.setDate(mañana.getDate() + 1);
-      
-      // Formato YYYY-MM-DD local
-      const año = mañana.getFullYear();
-      const mes = String(mañana.getMonth() + 1).padStart(2, '0');
-      const dia = String(mañana.getDate()).padStart(2, '0');
-      const mañanaStr = `${año}-${mes}-${dia}`;
+      const añoM = mañana.getFullYear();
+      const mesM = String(mañana.getMonth() + 1).padStart(2, '0');
+      const diaM = String(mañana.getDate()).padStart(2, '0');
+      const mañanaStr = `${añoM}-${mesM}-${diaM}`;
 
       const eventosMañana = listEventos.filter(ev => 
         ev.fecha === mañanaStr && 
@@ -484,27 +389,91 @@ export const PetPlantDashboard: React.FC = () => {
         !notificadosRef.current.has(ev.id)
       );
 
-      if (eventosMañana.length === 0) return;
+      const hoy = new Date();
+      const añoH = hoy.getFullYear();
+      const mesH = String(hoy.getMonth() + 1).padStart(2, '0');
+      const diaH = String(hoy.getDate()).padStart(2, '0');
+      const hoyStr = `${añoH}-${mesH}-${diaH}`;
+
+      const eventosHoy = listEventos.filter(ev => 
+        ev.fecha === hoyStr && 
+        !ev.completado && 
+        !notificadosRef.current.has(ev.id)
+      );
+
+      const listPlantas = await LocalDatabase.getPlantas();
+      const listExoticos = await LocalDatabase.getExoticos();
+
+      const hoyInicioDia = new Date();
+      hoyInicioDia.setHours(0, 0, 0, 0);
+
+      const plantasPendientes = listPlantas.filter(p => {
+        if (!p.proximaFechaRiego) return false;
+        const prox = new Date(p.proximaFechaRiego);
+        prox.setHours(0, 0, 0, 0);
+        return prox <= hoyInicioDia && !notificadosRef.current.has(`riego-${p.id}`);
+      });
+
+      const exoticosPendientes = listExoticos.filter(ex => {
+        if (!ex.ultimaAlimentacion || !ex.intervaloAlimentacionDias) return false;
+        const ult = new Date(ex.ultimaAlimentacion);
+        ult.setHours(0, 0, 0, 0);
+        const proxAlimentacion = new Date(ult.getTime() + ex.intervaloAlimentacionDias * 24 * 3600 * 1000);
+        proxAlimentacion.setHours(0, 0, 0, 0);
+        return proxAlimentacion <= hoyInicioDia && !notificadosRef.current.has(`alimentacion-${ex.id}`);
+      });
+
+      const totalAlertas = eventosMañana.length + eventosHoy.length + plantasPendientes.length + exoticosPendientes.length;
+      if (totalAlertas === 0) return;
 
       const permisoConcedido = await NotificationManager.requestPermission();
       if (!permisoConcedido) return;
 
-      for (const ev of eventosMañana) {
+      for (const ev of eventosHoy) {
         notificadosRef.current.add(ev.id);
-        
-        let prefijo = '📅 Recordatorio';
-        if (ev.categoria === 'veterinario') prefijo = '🐾 Veterinaria';
-        else if (ev.categoria === 'riego') prefijo = '💧 Riego';
-        else if (ev.categoria === 'medicacion') prefijo = '💊 Medicación';
-        else if (ev.categoria === 'abono') prefijo = '🌿 Abono';
+        let prefijo = '📅 Recordatorio Hoy';
+        if (ev.categoria === 'veterinario') prefijo = '🐾 Veterinaria Hoy';
+        else if (ev.categoria === 'riego') prefijo = '💧 Riego Hoy';
+        else if (ev.categoria === 'medicacion') prefijo = '💊 Medicación Hoy';
+        else if (ev.categoria === 'abono') prefijo = '🌿 Abono Hoy';
 
         await NotificationManager.sendNotification(
-          `${prefijo} para mañana`,
+          prefijo,
           ev.texto
         );
       }
+
+      for (const ev of eventosMañana) {
+        notificadosRef.current.add(ev.id);
+        let prefijo = '📅 Recordatorio Mañana';
+        if (ev.categoria === 'veterinario') prefijo = '🐾 Veterinaria Mañana';
+        else if (ev.categoria === 'riego') prefijo = '💧 Riego Mañana';
+        else if (ev.categoria === 'medicacion') prefijo = '💊 Medicación Mañana';
+        else if (ev.categoria === 'abono') prefijo = '🌿 Abono Mañana';
+
+        await NotificationManager.sendNotification(
+          prefijo,
+          ev.texto
+        );
+      }
+
+      for (const p of plantasPendientes) {
+        notificadosRef.current.add(`riego-${p.id}`);
+        await NotificationManager.sendNotification(
+          `💧 Riego Pendiente`,
+          `¡Es hora de regar tu ${p.nombreComun}! (${p.ubicacionHabitacion})`
+        );
+      }
+
+      for (const ex of exoticosPendientes) {
+        notificadosRef.current.add(`alimentacion-${ex.id}`);
+        await NotificationManager.sendNotification(
+          `🦎 Alimentación Pendiente`,
+          `¡Es hora de alimentar a ${ex.nombre} (${ex.tipoEspecifico})!`
+        );
+      }
     } catch (err) {
-      console.warn("Error al evaluar recordatorios de mañana:", err);
+      console.warn("Error al evaluar recordatorios y tareas pendientes:", err);
     }
   };
 
@@ -599,7 +568,7 @@ export const PetPlantDashboard: React.FC = () => {
     reader.readAsText(file);
   };
 
-  const refreshData = async (isLocalEdit = true) => {
+  async function refreshData(isLocalEdit = true) {
     try {
       if (isLocalEdit) {
         localStorage.setItem('petplant_db_last_updated', Date.now().toString());
@@ -612,6 +581,15 @@ export const PetPlantDashboard: React.FC = () => {
       setMascotas(listMascotas);
       setPlantas(listPlantas);
       setExoticos(listExoticos);
+
+      const savedClima = localStorage.getItem('petplant_last_gps_weather');
+      if (savedClima) {
+        try {
+          setClimaActual(JSON.parse(savedClima));
+        } catch (e) {
+          console.error(e);
+        }
+      }
 
       // Sincronización automática tras cambios locales con Microsoft OneDrive
       if (isLocalEdit && localStorage.getItem('petplant_login_provider') === 'microsoft') {
@@ -634,8 +612,8 @@ export const PetPlantDashboard: React.FC = () => {
         }
       }
 
-      // Evaluar recordatorios de agenda para mañana de manera asíncrona
-      evaluarRecordatoriosMañana();
+      // Evaluar recordatorios de agenda y tareas pendientes de manera asíncrona
+      evaluarRecordatoriosYPendientes();
     } catch (err) {
       console.error("Fallo al refrescar IndexedDB:", err);
     }
@@ -753,7 +731,7 @@ export const PetPlantDashboard: React.FC = () => {
             return;
           }
 
-          const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: any) => {
+          const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
               const u = {
                 name: firebaseUser.displayName || "Usuario de Google",
@@ -774,6 +752,14 @@ export const PetPlantDashboard: React.FC = () => {
 
                   if (userHogar) {
                     const { hogarId: cloudHogarId, hogarNombre: cloudHogarNombre } = userHogar;
+
+                    setJoinedHogares(prev => {
+                      if (prev.some(x => x.id === cloudHogarId)) return prev;
+                      const updated = [...prev, { id: cloudHogarId, nombre: cloudHogarNombre }];
+                      localStorage.setItem('petplant_joined_hogares', JSON.stringify(updated));
+                      return updated;
+                    });
+
                     const localHogarId = localStorage.getItem('petplant_hogar_id') || '';
 
                     // Intentar recuperar los datos del hogar en la nube
@@ -854,7 +840,7 @@ export const PetPlantDashboard: React.FC = () => {
     };
 
     initSessions();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleGoogleSignIn = async () => {
     localStorage.setItem('petplant_login_provider', 'google');
@@ -1041,9 +1027,16 @@ export const PetPlantDashboard: React.FC = () => {
       localStorage.setItem('petplant_hogar_nombre', nuevoHogarNombre.trim());
 
       const cachedFb = getFirebaseCached();
-      if (cachedFb?.auth && (cachedFb.auth as any).currentUser) {
-        await cachedFb.FirebaseSyncService.saveUserHogar((cachedFb.auth as any).currentUser.uid, code, nuevoHogarNombre.trim());
+      if (cachedFb?.auth && cachedFb.auth.currentUser) {
+        await cachedFb.FirebaseSyncService.saveUserHogar(cachedFb.auth.currentUser.uid, code, nuevoHogarNombre.trim());
       }
+
+      const h = { id: code, nombre: nuevoHogarNombre.trim() };
+      setJoinedHogares(prev => {
+        const updated = [...prev.filter(x => x.id !== code), h];
+        localStorage.setItem('petplant_joined_hogares', JSON.stringify(updated));
+        return updated;
+      });
 
       setNuevoHogarNombre('');
       setSyncStatus('synced');
@@ -1069,13 +1062,20 @@ export const PetPlantDashboard: React.FC = () => {
         localStorage.setItem('petplant_hogar_nombre', data.nombre);
 
         const cachedFb2 = getFirebaseCached();
-        if (cachedFb2?.auth && (cachedFb2.auth as any).currentUser) {
-          await cachedFb2.FirebaseSyncService.saveUserHogar((cachedFb2.auth as any).currentUser.uid, cleanCode, data.nombre);
+        if (cachedFb2?.auth && cachedFb2.auth.currentUser) {
+          await cachedFb2.FirebaseSyncService.saveUserHogar(cachedFb2.auth.currentUser.uid, cleanCode, data.nombre);
         }
         
         isRemoteSyncingRef.current = true;
         await LocalDatabase.overwriteDatabase(data.mascotas || [], data.plantas || [], data.exoticos || []);
         isRemoteSyncingRef.current = false;
+
+        const h = { id: cleanCode, nombre: data.nombre };
+        setJoinedHogares(prev => {
+          const updated = [...prev.filter(x => x.id !== cleanCode), h];
+          localStorage.setItem('petplant_joined_hogares', JSON.stringify(updated));
+          return updated;
+        });
 
         // Aplicar el tema visual si está presente en el hogar al que nos unimos
         if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii')) {
@@ -1099,9 +1099,9 @@ export const PetPlantDashboard: React.FC = () => {
 
   const desvincularHogar = async () => {
     const cachedFb3 = getFirebaseCached();
-    if (cachedFb3?.auth && (cachedFb3.auth as any).currentUser) {
+    if (cachedFb3?.auth && cachedFb3.auth.currentUser) {
       try {
-        await cachedFb3.FirebaseSyncService.deleteUserHogar((cachedFb3.auth as any).currentUser.uid);
+        await cachedFb3.FirebaseSyncService.deleteUserHogar(cachedFb3.auth.currentUser.uid);
       } catch (err) {
         console.error("Error al desvincular hogar del usuario en la nube:", err);
       }
@@ -1113,6 +1113,127 @@ export const PetPlantDashboard: React.FC = () => {
     setSyncStatus('idle');
     dispararLogroVisual("DESVINCULADO", "Revertido a base de datos local.", 'lvl_up');
   };
+
+  const cambiarHogar = async (code: string) => {
+    if (code === hogarId) return;
+    setSyncStatus('syncing');
+    try {
+      if (!code) {
+        setHogarId('');
+        setHogarNombre('');
+        localStorage.removeItem('petplant_hogar_id');
+        localStorage.removeItem('petplant_hogar_nombre');
+        setSyncStatus('idle');
+        await refreshData(false);
+        dispararLogroVisual("MODO LOCAL", "Cargada base de datos local.", 'lvl_up');
+        return;
+      }
+
+      const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
+      const data = await fbSync.getHogarData(code);
+      if (data) {
+        setHogarId(code);
+        setHogarNombre(data.nombre);
+        localStorage.setItem('petplant_hogar_id', code);
+        localStorage.setItem('petplant_hogar_nombre', data.nombre);
+
+        const cachedFb = getFirebaseCached();
+        if (cachedFb?.auth && cachedFb.auth.currentUser) {
+          await cachedFb.FirebaseSyncService.saveUserHogar(cachedFb.auth.currentUser.uid, code, data.nombre);
+        }
+
+        isRemoteSyncingRef.current = true;
+        await LocalDatabase.overwriteFullDatabase(
+          data.mascotas || [],
+          data.plantas || [],
+          data.exoticos || [],
+          [],
+          []
+        );
+        isRemoteSyncingRef.current = false;
+
+        if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii')) {
+          lastSyncedThemeRef.current = data.theme;
+          setUiTheme(data.theme);
+        }
+
+        setSyncStatus('synced');
+        await refreshData(false);
+        dispararLogroVisual("HOGAR CAMBIADO", `Conectado a: ${data.nombre}`, 'victory');
+      } else {
+        alert("No se pudieron descargar los datos del hogar seleccionado.");
+        setSyncStatus('error');
+      }
+    } catch (err) {
+      console.error(err);
+      setSyncStatus('error');
+    }
+  };
+
+  const abandonarHogar = async (code: string) => {
+    const confirmacion = window.confirm("¿Estás seguro de que deseas eliminar este hogar de tu lista de accesos rápidos?");
+    if (!confirmacion) return;
+
+    setJoinedHogares(prev => {
+      const updated = prev.filter(h => h.id !== code);
+      localStorage.setItem('petplant_joined_hogares', JSON.stringify(updated));
+      return updated;
+    });
+
+    if (code === hogarId) {
+      await cambiarHogar('');
+    } else {
+      dispararLogroVisual("HOGAR REMOVIDO", "Se quitó de la lista de accesos rápidos.", 'lvl_up');
+    }
+  };
+
+  useEffect(() => {
+    if (autosyncInterval === 'off') return;
+
+    const intervalMs = 30 * 1000; // Check every 30 seconds
+    const timer = setInterval(async () => {
+      const activeHogar = localStorage.getItem('petplant_hogar_id');
+      if (!activeHogar) return;
+
+      const provider = localStorage.getItem('petplant_login_provider');
+      if (provider !== 'google') return;
+
+      const lastSync = localStorage.getItem('petplant_last_autosync_timestamp');
+      const lastSyncTime = lastSync ? parseInt(lastSync, 10) : 0;
+      const now = Date.now();
+
+      let limitMs = 0;
+      if (autosyncInterval === '5min') limitMs = 5 * 60 * 1000;
+      else if (autosyncInterval === '1hour') limitMs = 60 * 60 * 1000;
+      else if (autosyncInterval === '1day') limitMs = 24 * 60 * 60 * 1000;
+
+      if (now - lastSyncTime >= limitMs) {
+        console.log("Iniciando copia de seguridad automática en la nube...");
+        try {
+          const listMascotas = await LocalDatabase.getMascotas();
+          const listPlantas = await LocalDatabase.getPlantas();
+          const listExoticos = await LocalDatabase.getExoticos();
+          const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Hogar Sincronizado";
+          
+          setSyncStatus('syncing');
+          const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
+          await fbSync.uploadChanges(activeHogar, activeNombre, listMascotas, listPlantas, listExoticos, uiTheme);
+          
+          const timeStr = new Date().toLocaleString();
+          localStorage.setItem('petplant_last_autosync_timestamp', now.toString());
+          localStorage.setItem('petplant_last_autosync_time', timeStr);
+          setLastAutosyncTime(timeStr);
+          setSyncStatus('synced');
+          console.log(`Copia de seguridad automática completada con éxito a las ${timeStr}`);
+        } catch (err) {
+          console.error("Error en copia de seguridad automática:", err);
+          setSyncStatus('error');
+        }
+      }
+    }, intervalMs);
+
+    return () => clearInterval(timer);
+  }, [autosyncInterval, uiTheme]);
 
   const forzarSubidaNube = async () => {
     if (!hogarId) return;
@@ -1812,11 +1933,11 @@ export const PetPlantDashboard: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                   <span style={{ fontSize: '24px' }}>{experienceMode === 'pets' ? '🐾' : experienceMode === 'exotics' ? '🦎' : '🌿'}</span>
                   <h1 style={{ margin: '0', fontSize: '20px', color: 'var(--game-text-bright, #1a1a1a)', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
-                    {experienceMode === 'pets' ? 'Ecosistema de Bienestar Animal' : experienceMode === 'exotics' ? 'Ecosistema de Animales Exóticos' : 'Ecosistema de Cultivo Botánico'}
+                    {experienceMode === 'pets' ? t('appTitlePets') : experienceMode === 'exotics' ? t('appTitleExotics') : t('appTitlePlants')}
                   </h1>
                 </div>
                 <p style={{ margin: '4px 0 8px 0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
-                  {experienceMode === 'pets' ? 'Gestión preventiva de expedientes y nutrición' : experienceMode === 'exotics' ? 'Terrarios, mudas, humedad y control preventivo' : 'Control agronómico y catálogo biocomparativo'}
+                  {experienceMode === 'pets' ? t('appSubtitlePets') : experienceMode === 'exotics' ? t('appSubtitleExotics') : t('appSubtitlePlants')}
                 </p>
                 {renderConnectivityIndicator()}
               </div>
@@ -1824,7 +1945,7 @@ export const PetPlantDashboard: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                 <span style={{ fontSize: '20px' }}>{experienceMode === 'pets' ? '🐾' : experienceMode === 'exotics' ? '🦎' : '🌿'}</span>
                 <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--game-text-bright, #1a1a1a)', fontFamily: 'var(--game-font, sans-serif)' }}>
-                  {experienceMode === 'pets' ? 'Consultor de Mascotas' : experienceMode === 'exotics' ? 'Consultor de Exóticos' : 'Consultor de Plantas'}
+                  {experienceMode === 'pets' ? t('advisorPets') : experienceMode === 'exotics' ? t('advisorExotics') : t('advisorPlants')}
                 </span>
                 <div style={{ marginLeft: '8px', display: 'inline-block' }}>
                   {renderConnectivityIndicator()}
@@ -1848,7 +1969,7 @@ export const PetPlantDashboard: React.FC = () => {
                   opacity: experienceMode === 'pets' ? 0.9 : 1
                 }}
               >
-                Mascotas 🐾
+                {t('btnPets')}
               </button>
               <button 
                 disabled={experienceMode === 'plants'}
@@ -1865,7 +1986,7 @@ export const PetPlantDashboard: React.FC = () => {
                   opacity: experienceMode === 'plants' ? 0.9 : 1
                 }}
               >
-                Plantas 🌿
+                {t('btnPlants')}
               </button>
               <button 
                 disabled={experienceMode === 'exotics'}
@@ -1882,7 +2003,7 @@ export const PetPlantDashboard: React.FC = () => {
                   opacity: experienceMode === 'exotics' ? 0.9 : 1
                 }}
               >
-                Exóticos 🦎
+                {t('btnExotics')}
               </button>
             </div>
           </div>
@@ -1911,9 +2032,10 @@ export const PetPlantDashboard: React.FC = () => {
                 whiteSpace: 'nowrap'
               }}
             >
-              📊 Mi Dashboard
+              {t('tabDashboard')}
             </button>
             
+
 
 
             <button
@@ -1931,7 +2053,7 @@ export const PetPlantDashboard: React.FC = () => {
                 whiteSpace: 'nowrap'
               }}
             >
-              💬 Consultor IA
+              {t('tabConsultants')}
             </button>
             
             <button
@@ -1949,7 +2071,7 @@ export const PetPlantDashboard: React.FC = () => {
                 whiteSpace: 'nowrap'
               }}
             >
-              ⚙️ Ajustes
+              {t('tabSettings')}
             </button>
           </div>
 
@@ -1957,6 +2079,20 @@ export const PetPlantDashboard: React.FC = () => {
           <div style={{ width: '100%' }}>
             {activeTab === 'dashboard' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                
+                <ExtremeWeatherPanel
+                  clima={climaActual}
+                  gpsSyncEnabled={gpsSyncEnabled}
+                  handleGPSToggle={handleGPSToggle}
+                  sincronizarTodasLasPlantasPorGPS={sincronizarTodasLasPlantasPorGPS}
+                  loadingGPS={loadingGPS}
+                  theme={uiTheme}
+                />
+
+                <NeighborhoodPestAlerts
+                  experienceMode={experienceMode}
+                  theme={uiTheme}
+                />
                 
                 {/* Barra de Acciones de Registro Glassmorphism */}
                 <div style={{
@@ -2196,6 +2332,15 @@ export const PetPlantDashboard: React.FC = () => {
                   joinHogarId={joinHogarId}
                   setJoinHogarId={setJoinHogarId}
                   unirseAHogar={unirseAHogar}
+                  joinedHogares={joinedHogares}
+                  cambiarHogar={cambiarHogar}
+                  abandonarHogar={abandonarHogar}
+                  autosyncInterval={autosyncInterval}
+                  setAutosyncInterval={(val) => {
+                    localStorage.setItem('petplant_autosync_interval', val);
+                    setAutosyncInterval(val);
+                  }}
+                  lastAutosyncTime={lastAutosyncTime}
                   customApiKey={customApiKey}
                   setCustomApiKey={setCustomApiKey}
                   showApiKey={showApiKey}

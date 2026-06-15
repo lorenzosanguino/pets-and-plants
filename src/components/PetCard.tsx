@@ -1,12 +1,13 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Mascota, EspecieMascota } from '../database/types';
 import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
+import { GeminiAPIService } from '../services/geminiAPI';
 import { CardPhotoManager } from './CardPhotoManager';
 import { calcularEdadMascota } from '../utils/age';
 import { IAQuotaManager } from '../utils/iaQuota';
-import { escapeHTML } from '../utils/escape';
+import { ReportGeneratorModal } from './ReportGeneratorModal';
 
 
 interface PetCardProps {
@@ -21,6 +22,15 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
   const cuota = IAQuotaManager.obtenerEstadoCuota();
   const [localExpanded, setLocalExpanded] = useState(false);
   const expanded = isExpanded !== undefined ? isExpanded : localExpanded;
+  const [isReportOpen, setIsReportOpen] = useState(false);
+
+  // Innovation features states
+  const [activeTrainingTrick, setActiveTrainingTrick] = useState<string | null>(null);
+  const [trainingTimer, setTrainingTimer] = useState<number>(0);
+  const [showConfettiTrick, setShowConfettiTrick] = useState<string | null>(null);
+  const [showChefModal, setShowChefModal] = useState(false);
+  const [chefLoading, setChefLoading] = useState(false);
+  const [chefRecipe, setChefRecipe] = useState<{ receta: string; advertencia?: string } | null>(null);
 
   const toggleExpanded = () => {
     if (onToggleExpand) {
@@ -135,405 +145,104 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
 
   const exportarFichaClinica = (e: React.MouseEvent) => {
     e.stopPropagation(); // Evitar que se colapse al hacer clic en exportar
+    setIsReportOpen(true);
+  };
 
-    // Crear div temporal de impresión
-    const printDiv = document.createElement('div');
-    printDiv.className = 'print-container';
-    document.body.appendChild(printDiv);
+  // Training timer countdown
+  useEffect(() => {
+    let intervalId: any;
+    if (activeTrainingTrick && trainingTimer > 0) {
+      intervalId = setInterval(() => {
+        setTrainingTimer(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(intervalId);
+  }, [activeTrainingTrick, trainingTimer]);
 
-    const formatDate = (isoString?: string) => {
-      if (!isoString) return 'No especificada';
-      try {
-        const d = new Date(isoString);
-        if (isNaN(d.getTime())) return isoString.split('T')[0];
-        return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      } catch {
-        return isoString.split('T')[0] || 'No especificada';
-      }
-    };
+  const runChefIA = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setChefLoading(true);
+    setChefRecipe(null);
+    setShowChefModal(true);
 
-    const vaccines = mascota.especie === 'Felino'
-      ? ['Trivalente Felina', 'Leucemia Felina', 'Rabia']
-      : ['Parvovirus', 'Moquillo', 'Adenovirus', 'Rabia', 'Leptospirosis'];
+    const pesoActual = mascota.registroPeso && mascota.registroPeso.length > 0
+      ? mascota.registroPeso[mascota.registroPeso.length - 1].pesoKg
+      : 5;
 
-    const getDewormingLastDateStr = (vName: string) => {
-      const checklist = mascota.vacunasChecklist || [];
-      const dates = checklist
-        .filter(item => item.startsWith(`${vName}_`))
-        .map(item => item.split('_')[1])
-        .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-      if (dates.length > 0) {
-        const parts = dates[0].split('-');
-        return parts.length === 3 ? `${parts[2]}/${parts[1]}` : dates[0];
-      }
-      if (checklist.includes(vName)) {
-        return 'Sí';
-      }
-      return null;
-    };
+    const promptText = `Actúa como veterinario experto en nutrición animal. Diseña una receta casera (cocinada o BARF) detallada en gramos e indica las calorías diarias recomendadas (kcal) para:
+Nombre: ${mascota.nombre}
+Especie: ${mascota.especie === 'Felino' ? 'Gato' : 'Perro'}
+Peso: ${pesoActual} kg
+Actividad: ${mascota.actividad}
+Explica la receta de forma clara en español, detallando las proporciones en gramos de proteínas, vegetales y complementos.`;
 
-    const lastIntVal = getDewormingLastDateStr('Desparasitación Interna');
-    const lastExtVal = getDewormingLastDateStr('Desparasitación Externa');
-
-    const vaccineChecklistHtml = vaccines.map(v => {
-      const isChecked = (mascota.vacunasChecklist || []).includes(v);
-      return `
-        <div class="checklist-item ${isChecked ? 'checked' : ''}">
-          <span class="checkbox">${isChecked ? '✓' : '✗'}</span>
-          <span class="label">${v}</span>
-        </div>
-      `;
-    }).join('') + `
-      <div class="checklist-item ${lastIntVal ? 'checked' : ''}">
-        <span class="checkbox">${lastIntVal ? '✓' : '✗'}</span>
-        <span class="label" style="font-size: 10px;">Desp. Interna ${lastIntVal ? `(${lastIntVal})` : ''}</span>
-      </div>
-      <div class="checklist-item ${lastExtVal ? 'checked' : ''}">
-        <span class="checkbox">${lastExtVal ? '✓' : '✗'}</span>
-        <span class="label" style="font-size: 10px;">Desp. Externa ${lastExtVal ? `(${lastExtVal})` : ''}</span>
-      </div>
-    `;
-
-    const weightsHtml = (mascota.registroPeso || []).slice(-5).reverse().map(w => `
-      <tr>
-        <td>${formatDate(w.fecha)}</td>
-        <td><strong>${w.pesoKg} Kg</strong></td>
-      </tr>
-    `).join('') || '<tr><td colspan="2" style="text-align:center; color:#64748b;">Sin registros de peso</td></tr>';
-
-    const clinicHtml = unifiedHistory.slice(0, 5).map(h => `
-      <div class="timeline-item">
-        <div class="timeline-meta">
-          <span class="timeline-date">${formatDate(h.fecha)}</span>
-          <span class="timeline-type" style="background: ${h.color}15; color: ${h.color}; border: 1px solid ${h.color}30;">${escapeHTML(h.tipo)} - ${escapeHTML(h.subtipo)}</span>
-        </div>
-        <div class="timeline-text">${escapeHTML(h.texto)}</div>
-      </div>
-    `).join('') || '<p style="font-style: italic; color: #64748b; margin: 0;">Sin notas clínicas registradas</p>';
-
-    printDiv.innerHTML = `
-      <style>
-        .print-container {
-          font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
-          color: #0f172a !important;
-          background: #ffffff !important;
-          padding: 20px !important;
-          font-size: 11.5px !important;
-          line-height: 1.4 !important;
-          width: 210mm !important;
-          height: 297mm !important;
-          max-height: 297mm !important; /* Limitar estrictamente al alto A4 */
-          overflow: hidden !important;
-          box-sizing: border-box !important;
-        }
-        .print-container * {
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-          box-sizing: border-box !important;
-          page-break-inside: avoid !important; /* Evitar saltos de página dentro de elementos */
-        }
-        .print-container h1, .print-container h2, .print-container h3, .print-container h4 {
-          margin: 0 !important;
-          color: #1e3a8a !important;
-        }
-        .print-container h1 {
-          font-size: 20px !important;
-          font-weight: 800 !important;
-          border-bottom: 2px solid #3b82f6 !important;
-          padding-bottom: 5px !important;
-          margin-bottom: 10px !important;
-          display: flex !important;
-          justify-content: space-between !important;
-          align-items: flex-end !important;
-        }
-        .print-container h1 span {
-          font-size: 10px !important;
-          font-weight: 500 !important;
-          color: #64748b !important;
-          text-transform: uppercase !important;
-          letter-spacing: 0.05em !important;
-        }
-        .print-container h3 {
-          font-size: 12.5px !important;
-          font-weight: 700 !important;
-          border-bottom: 1.5px solid #e2e8f0 !important;
-          padding-bottom: 4px !important;
-          margin-bottom: 7px !important;
-          color: #1e3a8a !important;
-          text-transform: uppercase !important;
-          letter-spacing: 0.02em !important;
-        }
-        .print-container .grid-container {
-          display: grid !important;
-          grid-template-columns: 32% 64% !important;
-          gap: 4% !important;
-          width: 100% !important;
-        }
-        .print-container .left-col, .print-container .right-col {
-          display: flex !important;
-          flex-direction: column !important;
-          gap: 12px !important;
-        }
-        .print-container .photo-container {
-          width: 100% !important;
-          aspect-ratio: 1 / 1 !important;
-          max-height: 180px !important;
-          border-radius: 8px !important;
-          overflow: hidden !important;
-          border: 1px solid #e2e8f0 !important;
-          background: #f8fafc !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          margin: 0 auto !important;
-        }
-        .print-container .photo-container img {
-          width: 100% !important;
-          height: 100% !important;
-          object-fit: contain !important;
-          background: #f8fafc !important;
-        }
-        .print-container .photo-placeholder {
-          font-size: 64px !important;
-        }
-        .print-container .details-table {
-          width: 100% !important;
-          border-collapse: collapse !important;
-        }
-        .print-container .details-table th, .print-container .details-table td {
-          text-align: left !important;
-          padding: 5px 0 !important;
-          border-bottom: 1px solid #f1f5f9 !important;
-        }
-        .print-container .details-table th {
-          font-weight: 600 !important;
-          color: #64748b !important;
-          width: 45% !important;
-        }
-        .print-container .details-table td {
-          font-weight: 500 !important;
-          color: #0f172a !important;
-        }
-        .print-container .checklist-grid {
-          display: grid !important;
-          grid-template-columns: repeat(2, 1fr) !important;
-          gap: 5px !important;
-        }
-        .print-container .checklist-item {
-          display: flex !important;
-          align-items: center !important;
-          gap: 5px !important;
-          padding: 4px 6px !important;
-          border-radius: 4px !important;
-          background: #f8fafc !important;
-          border: 1px solid #f1f5f9 !important;
-        }
-        .print-container .checklist-item.checked {
-          background: #f0fdf4 !important;
-          border-color: #bbf7d0 !important;
-        }
-        .print-container .checklist-item.checked .checkbox {
-          color: #16a34a !important;
-          font-weight: bold !important;
-        }
-        .print-container .checklist-item.checked .label {
-          color: #14532d !important;
-          font-weight: 500 !important;
-        }
-        .print-container .checkbox {
-          font-size: 10px !important;
-          color: #94a3b8 !important;
-          width: 12px !important;
-          text-align: center !important;
-        }
-        .print-container .label {
-          color: #475569 !important;
-        }
-        .print-container .history-table {
-          width: 100% !important;
-          border-collapse: collapse !important;
-        }
-        .print-container .history-table th, .print-container .history-table td {
-          padding: 5px 8px !important;
-          text-align: left !important;
-          border-bottom: 1px solid #e2e8f0 !important;
-        }
-        .print-container .history-table th {
-          background: #f8fafc !important;
-          color: #475569 !important;
-          font-weight: 600 !important;
-        }
-        .print-container .timeline {
-          display: flex !important;
-          flex-direction: column !important;
-          gap: 6px !important;
-        }
-        .print-container .timeline-item {
-          padding: 7px !important;
-          background: #f8fafc !important;
-          border-left: 3px solid #cbd5e1 !important;
-          border-radius: 0 4px 4px 0 !important;
-        }
-        .print-container .timeline-meta {
-          display: flex !important;
-          justify-content: space-between !important;
-          align-items: center !important;
-          margin-bottom: 4px !important;
-        }
-        .print-container .timeline-date {
-          font-weight: 600 !important;
-          color: #64748b !important;
-        }
-        .print-container .timeline-type {
-          font-size: 8px !important;
-          padding: 1px 4px !important;
-          border-radius: 4px !important;
-          font-weight: bold !important;
-          text-transform: uppercase !important;
-        }
-        .print-container .timeline-text {
-          color: #334155 !important;
-          white-space: pre-wrap !important;
-        }
-        .print-container .badge-castrado {
-          font-size: 9px !important;
-          font-weight: bold !important;
-          padding: 1px 4px !important;
-          border-radius: 4px !important;
-          display: inline-block !important;
-        }
-      </style>
-      <h1>
-        <span>Ficha de Cuidados Mascota</span>
-        ${escapeHTML(mascota.nombre)}
-      </h1>
-      <div class="grid-container">
-        <div class="left-col">
-          <div class="photo-container">
-            ${mascota.fotoUrl ? `<img src="${mascota.fotoUrl}" alt="${escapeHTML(mascota.nombre)}" />` : `<div class="photo-placeholder">${mascota.especie === 'Felino' ? '🐱' : '🐶'}</div>`}
-          </div>
-          <div>
-            <h3>Datos Identificativos</h3>
-            <table class="details-table">
-              <tr><th>Raza:</th><td>${escapeHTML(mascota.raza || 'No especificada')}</td></tr>
-              <tr><th>Sexo:</th><td>${escapeHTML(mascota.sexo || 'No especificado')}</td></tr>
-              <tr><th>Edad:</th><td>${formatDate(mascota.fechaNacimiento)} (${calcularEdadMascota(mascota.fechaNacimiento)})</td></tr>
-              <tr><th>Chip N°:</th><td>${escapeHTML(mascota.numeroChip || 'Sin microchip')}</td></tr>
-              <tr><th>Castrado:</th><td><span class="badge-castrado" style="background: ${mascota.castrado ? '#e2fbe8; color: #1e7e34;' : '#fde8e8; color: #c82333;'}">${mascota.castrado ? 'Sí' : 'No'}</span></td></tr>
-              <tr><th>Actividad:</th><td>${escapeHTML(mascota.actividad)}</td></tr>
-              ${mascota.porcionDiariaGramos ? `<tr><th>Porción diaria:</th><td>${mascota.porcionDiariaGramos}g</td></tr>` : ''}
-            </table>
-          </div>
-        </div>
-        
-        <div class="right-col">
-          <div>
-            <h3>Control Preventivo</h3>
-            <div class="checklist-grid">
-              ${vaccineChecklistHtml}
-            </div>
-          </div>
-          
-          <div>
-            <h3>Curva de Peso (Últimos 5 registros)</h3>
-            <table class="history-table">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Peso</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${weightsHtml}
-              </tbody>
-            </table>
-          </div>
-          
-          <div>
-            <h3>Historial Clínico (Últimos 5 registros)</h3>
-            <div class="timeline">
-              ${clinicHtml}
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // Esperar a que se carguen las imágenes y recursos antes de imprimir
-    const images = printDiv.querySelectorAll('img');
-    let loadedCount = 0;
-    const totalImages = images.length;
-
-    const triggerPrint = () => {
-      const originalTitle = document.title;
-      document.title = `Ficha ${mascota.nombre}`;
-      document.body.classList.add('printing-active');
-      window.focus();
-
-      // Temporalmente ajustar el viewport meta para forzar maquetación de escritorio (evita responsive colapsado en impresión móvil)
-      const viewportMeta = document.querySelector('meta[name="viewport"]');
-      const originalViewport = viewportMeta ? viewportMeta.getAttribute('content') : null;
-      if (viewportMeta) {
-        viewportMeta.setAttribute('content', 'width=800, initial-scale=1.0, maximum-scale=1.0');
-      }
-
-      let cleaned = false;
-      const cleanup = () => {
-        if (cleaned) return;
-        cleaned = true;
-
-        // Retrasamos la limpieza real 6 segundos para que los navegadores móviles (donde afterprint se dispara prematuramente)
-        // tengan suficiente tiempo para renderizar el PDF de la ficha con el diseño y título correctos.
-        setTimeout(() => {
-          document.body.classList.remove('printing-active');
-          if (document.body.contains(printDiv)) {
-            document.body.removeChild(printDiv);
-          }
-          // Restaurar el viewport meta original
-          if (viewportMeta && originalViewport) {
-            viewportMeta.setAttribute('content', originalViewport);
-          }
-          document.title = originalTitle;
-        }, 6000);
-
-        window.removeEventListener('afterprint', cleanup);
-      };
-
-      window.addEventListener('afterprint', cleanup);
-
-      // Forzar la limpieza de seguridad tras 2 segundos si afterprint nunca se disparase
-      setTimeout(cleanup, 2000);
-
-      // Pequeña pausa para permitir que el navegador aplique los cambios del DOM (ocultar #root) en móviles
-      setTimeout(() => {
-        window.print();
-      }, 250);
-    };
-
-    if (totalImages === 0) {
-      triggerPrint();
-    } else {
-      images.forEach(img => {
-        if (img.complete) {
-          loadedCount++;
-          if (loadedCount === totalImages) triggerPrint();
-        } else {
-          img.onload = () => {
-            loadedCount++;
-            if (loadedCount === totalImages) triggerPrint();
-          };
-          img.onerror = () => {
-            loadedCount++;
-            if (loadedCount === totalImages) triggerPrint();
-          };
-        }
+    try {
+      const res = await GeminiAPIService.analizarImagen(
+        null,
+        'veterinario',
+        promptText
+      );
+      setChefRecipe({
+        receta: res.diagnostico + (res.tratamiento ? `\n\nInstrucciones de Preparación:\n${res.tratamiento}` : ''),
+        advertencia: res.advertencia
       });
-      // Timeout de seguridad en caso de fallo de carga
-      setTimeout(() => {
-        if (loadedCount < totalImages) triggerPrint();
-      }, 2500);
+    } catch (err: any) {
+      console.warn("Chef IA error, using offline builder:", err);
+      const kcal = Math.round(70 * Math.pow(pesoActual, 0.75) * (mascota.actividad === 'Alta' ? 1.6 : mascota.actividad === 'Baja' ? 1.2 : 1.4));
+      const proteina = Math.round(pesoActual * 12);
+      const verduras = Math.round(pesoActual * 4);
+      const carbohidratos = Math.round(pesoActual * 3);
+      setChefRecipe({
+        receta: `[Modo Offline - Receta Estimada]
+Requerimiento energético estimado: ${kcal} Kcal/día.
+
+Ingredientes recomendados diariamente:
+🍗 Carne de pollo o pavo magra: ${proteina}g
+🥕 Verduras al vapor (Zanahoria, Calabaza): ${verduras}g
+🍚 Arroz o patata cocida: ${carbohidratos}g
+🦴 Aceite de salmón / Calcio: 1 cucharadita.
+
+Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezclar y servir templado.`,
+        advertencia: 'Esta receta es una aproximación sin conexión. Activa el internet o ingresa tu clave API para obtener sugerencias detalladas por IA.'
+      });
+    } finally {
+      setChefLoading(false);
     }
   };
+
+  const iniciarEntrenamiento = (e: React.MouseEvent, truco: string) => {
+    e.stopPropagation();
+    setActiveTrainingTrick(truco);
+    setTrainingTimer(10);
+  };
+
+  const registrarResultadoEntrenamiento = async (delta: number) => {
+    if (!activeTrainingTrick) return;
+    
+    const progresoActual = mascota.adiestramientoProgress?.[activeTrainingTrick] || 0;
+    const nuevoProgreso = Math.min(100, Math.max(0, progresoActual + delta));
+
+    const mascotaActualizada: Mascota = {
+      ...mascota,
+      adiestramientoProgress: {
+        ...(mascota.adiestramientoProgress || {}),
+        [activeTrainingTrick]: nuevoProgreso
+      }
+    };
+
+    await LocalDatabase.saveMascota(mascotaActualizada);
+    localStorage.setItem('petplant_db_last_updated', Date.now().toString());
+    onUpdate();
+
+    if (nuevoProgreso === 100 && progresoActual < 100) {
+      setShowConfettiTrick(activeTrainingTrick);
+      setTimeout(() => setShowConfettiTrick(null), 4000);
+    }
+
+    setActiveTrainingTrick(null);
+  };
+
+  const trucosEntrenamiento = ['Sienta / Sentarse', 'Quieto', 'Ven aquí', 'Dar la pata', 'Caminar al lado'];
 
   const registrarPeso = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1111,7 +820,7 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
   }
 
   const parseIAReporte = (nota: string) => {
-    let diagnostico = '';
+    let diagnostico: string;
     let tratamiento = '';
     let advertencia = '';
 
@@ -1268,6 +977,7 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
                   <img
                     src={mascota.fotoUrl}
                     alt={mascota.nombre}
+                    loading="lazy"
                     style={{
                       width: '100%',
                       height: '100%',
@@ -1745,6 +1455,54 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
             </div>
           </div>
 
+          {/* Historial de Diagnósticos IA Exclusivos */}
+          {mascota.diagnosticosIA && mascota.diagnosticosIA.length > 0 && (
+            <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <p style={{ margin: '0 0 4px 0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>
+                🤖 Historial de Diagnósticos IA (Clínico)
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '250px', overflowY: 'auto' }} className="no-print">
+                {mascota.diagnosticosIA.map(diag => (
+                  <div key={diag.id} style={{
+                    background: 'var(--game-card-bg, #fafafa)',
+                    borderRadius: 'var(--game-radius, 8px)',
+                    border: '1px solid var(--game-border-color, #eee)',
+                    borderLeft: `4px solid ${diag.esUrgente ? '#ef5350' : '#4caf50'}`,
+                    padding: '10px',
+                    fontSize: '11px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    textAlign: 'left'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 'bold', color: 'var(--game-text-bright)' }}>
+                        {diag.esUrgente ? '🚨 URGENTE' : '🩺 Consulta IA'}
+                      </span>
+                      <span style={{ fontSize: '9px', color: 'var(--game-text, #888)' }}>
+                        {diag.fecha.includes('T') ? diag.fecha.split('T')[0] : diag.fecha}
+                      </span>
+                    </div>
+                    {diag.fotoUrl && (
+                      <img src={diag.fotoUrl} alt="Evidencia diagnóstica" loading="lazy" style={{ width: '100%', maxHeight: '120px', objectFit: 'cover', borderRadius: '4px', margin: '4px 0' }} />
+                    )}
+                    <div style={{ color: 'var(--game-text-bright)', lineHeight: '1.4' }}>
+                      <strong>Diagnóstico:</strong> {diag.diagnostico}
+                    </div>
+                    <div style={{ color: 'var(--game-text)', lineHeight: '1.4' }}>
+                      <strong>Tratamiento:</strong> {diag.tratamiento}
+                    </div>
+                    {diag.advertencia && (
+                      <div style={{ color: '#c62828', background: '#ffebee', padding: '4px 6px', borderRadius: '4px', marginTop: '2px', fontSize: '10px' }}>
+                        <strong>Alerta:</strong> {diag.advertencia}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Código QR Ficticio Clínico */}
           <div className="printable-only-qr" style={{ display: 'none', flexDirection: 'column', alignItems: 'center', marginTop: '16px', borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px' }}>
             <p style={{ margin: '0 0 6px 0', fontSize: '10px', color: 'var(--game-text, #666)', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)' }}>EXPEDIENTE CLÍNICO DIGITAL</p>
@@ -1754,7 +1512,54 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
             <span style={{ fontSize: '8px', color: 'var(--game-text, #888)', marginTop: '4px', fontFamily: 'var(--game-font, sans-serif)' }}>Escanea para descargar historial clínico</span>
           </div>
 
-          {/* Botones de Acción: Exportar */}
+          {/* Escuela de Adiestramiento Adaptativo */}
+          <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }} className="no-print">
+            <p style={{ margin: '0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>
+              🎓 Escuela de Adiestramiento Adaptativo
+            </p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {trucosEntrenamiento.map((truco) => {
+                const progreso = mascota.adiestramientoProgress?.[truco] || 0;
+                return (
+                  <div key={truco} style={{
+                    background: 'var(--code-bg, #f4f3ec)',
+                    borderRadius: '8px', padding: '8px 12px',
+                    display: 'flex', flexDirection: 'column', gap: '6px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--game-text-bright)' }}>{truco}</span>
+                      <span style={{ fontSize: '10px', fontWeight: 'bold', color: progreso === 100 ? '#16a34a' : 'var(--accent, #8f20e6)' }}>
+                        {progreso === 100 ? '⭐ Dominado' : `${progreso}%`}
+                      </span>
+                    </div>
+                    
+                    {/* Barra de progreso */}
+                    <div style={{ width: '100%', height: '5px', background: '#cbd5e1', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ width: `${progreso}%`, height: '100%', background: progreso === 100 ? '#16a34a' : 'var(--accent, #8f20e6)', transition: 'width 0.3s' }} />
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2px' }}>
+                      <button
+                        type="button"
+                        onClick={(e) => iniciarEntrenamiento(e, truco)}
+                        disabled={activeTrainingTrick !== null}
+                        style={{
+                          padding: '3px 8px', fontSize: '9.5px', fontWeight: 'bold',
+                          background: 'transparent', border: '1px solid var(--border)',
+                          borderRadius: '4px', cursor: 'pointer', color: 'var(--text-h)'
+                        }}
+                      >
+                        {progreso === 100 ? 'Reforzar 🎓' : 'Entrenar ⏱️'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Botones de Acción: Exportar, Nutrición */}
           <div style={{ display: 'flex', gap: '8px', marginTop: '8px', borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px' }} className="no-print">
             <button
               onClick={exportarFichaClinica}
@@ -1772,6 +1577,23 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
               }}
             >
               Exportar Ficha 📄
+            </button>
+            <button
+              onClick={runChefIA}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                background: 'var(--game-accent-light, rgba(25, 118, 210, 0.1))',
+                color: 'var(--game-text-bright, #1976d2)',
+                border: '1.5px solid var(--game-border-color, #1976d2)',
+                borderRadius: 'var(--game-radius, 8px)',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontFamily: 'var(--game-font, sans-serif)'
+              }}
+            >
+              Chef Nutricional 🍖
             </button>
           </div>
 
@@ -1959,8 +1781,258 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
           )}
         </>
       )}
+      <ReportGeneratorModal
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+        item={mascota}
+        type="pet"
+      />
+
+      {/* MODAL DEL CHEF NUTRICIONAL IA */}
+      {showChefModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(8,6,13,0.7)', backdropFilter: 'blur(8px)',
+          zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '20px', boxSizing: 'border-box'
+        }} className="no-print">
+          <div style={{
+            background: 'var(--bg, #fff)',
+            border: '1px solid var(--border, #e5e4e7)',
+            borderRadius: '16px',
+            width: '100%', maxWidth: '500px',
+            maxHeight: '90vh',
+            padding: '24px', boxSizing: 'border-box',
+            textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '16px',
+            boxShadow: 'var(--shadow)', overflowY: 'auto'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--text-h, #08060d)', fontWeight: 800 }}>
+                Chef Nutricional IA 🍖
+              </h3>
+              <span style={{ fontSize: '11px', background: 'var(--accent-bg)', color: 'var(--accent)', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
+                Gemini AI
+              </span>
+            </div>
+
+            {chefLoading ? (
+              <div style={{ padding: '40px 0', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', animation: 'spin 2s linear infinite', display: 'inline-block' }}>🍖</div>
+                <p style={{ margin: '10px 0 0 0', fontSize: '13px', color: 'var(--text)' }}>Generando receta y proporciones calóricas...</p>
+              </div>
+            ) : chefRecipe ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ 
+                  background: 'var(--code-bg, #f4f3ec)', 
+                  borderRadius: '12px', padding: '16px',
+                  fontFamily: 'monospace', fontSize: '12px',
+                  whiteSpace: 'pre-wrap', color: 'var(--text-h)',
+                  border: '1px solid var(--border)'
+                }}>
+                  {chefRecipe.receta}
+                </div>
+
+                {chefRecipe.advertencia && (
+                  <div style={{
+                    fontSize: '11px', color: '#c2410c', background: '#fff7ed',
+                    border: '1px solid #fed7aa', borderRadius: '8px', padding: '8px 12px'
+                  }}>
+                    ⚠️ {chefRecipe.advertencia}
+                  </div>
+                )}
+                
+                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const printWindow = window.open('', '_blank');
+                      if (printWindow) {
+                        printWindow.document.write(`
+                          <html>
+                            <head>
+                              <title>Receta Chef IA - ${mascota.nombre}</title>
+                              <style>
+                                body { font-family: system-ui, sans-serif; padding: 40px; color: #333; line-height: 1.5; }
+                                h1 { border-bottom: 2px solid #ea580c; padding-bottom: 10px; color: #7c2d12; }
+                                pre { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; font-size: 14px; white-space: pre-wrap; }
+                              </style>
+                            </head>
+                            <body>
+                              <h1>🍖 Receta y Plan Nutricional: ${mascota.nombre}</h1>
+                              <p><strong>Especie:</strong> Perro/Gato | <strong>Actividad:</strong> ${mascota.actividad}</p>
+                              <hr />
+                              <pre>${chefRecipe.receta.replace('[Modo Offline - Receta Estimada]', '')}</pre>
+                              <script>window.print();</script>
+                            </body>
+                          </html>
+                        `);
+                        printWindow.document.close();
+                      }
+                    }}
+                    style={{
+                      flex: 1, padding: '10px', background: 'transparent',
+                      border: '1px solid var(--border)', borderRadius: '8px',
+                      cursor: 'pointer', fontSize: '13px', fontWeight: 'bold'
+                    }}
+                  >
+                    Imprimir Receta 🖨️
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            <button 
+              type="button" 
+              onClick={() => setShowChefModal(false)}
+              style={{
+                width: '100%', padding: '10px',
+                background: 'var(--accent, #8f20e6)', color: 'white',
+                border: 'none', borderRadius: '8px',
+                fontWeight: 'bold', fontSize: '13.5px', cursor: 'pointer',
+                marginTop: '8px'
+              }}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE ENTRENAMIENTO ACTIVO */}
+      {activeTrainingTrick && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(8,6,13,0.7)', backdropFilter: 'blur(8px)',
+          zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '20px', boxSizing: 'border-box'
+        }} className="no-print">
+          <div style={{
+            background: 'var(--bg, #fff)',
+            border: '1px solid var(--border, #e5e4e7)',
+            borderRadius: '16px',
+            width: '100%', maxWidth: '380px',
+            padding: '24px', boxSizing: 'border-box',
+            textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '16px',
+            boxShadow: 'var(--shadow)'
+          }}>
+            <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--text-h)', fontWeight: 'bold' }}>
+              Entrenando "{activeTrainingTrick}" ⏱️
+            </h3>
+            
+            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text)' }}>
+              Practica el comando con tu mascota ahora.
+            </p>
+
+            <div style={{ fontSize: '48px', fontWeight: '800', color: 'var(--accent)' }}>
+              {trainingTimer > 0 ? `${trainingTimer}s` : '¡Tiempo! 🎉'}
+            </div>
+
+            {trainingTimer === 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <p style={{ margin: 0, fontSize: '12px', fontWeight: 'bold' }}>¿Cómo respondió tu mascota?</p>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    type="button" 
+                    onClick={() => registrarResultadoEntrenamiento(-10)}
+                    style={{ flex: 1, padding: '8px', background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', borderRadius: '8px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                  >
+                    🔴 Le costó
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => registrarResultadoEntrenamiento(5)}
+                    style={{ flex: 1, padding: '8px', background: '#ffedd5', color: '#c2410c', border: '1px solid #fed7aa', borderRadius: '8px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                  >
+                    🟡 Progreso
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => registrarResultadoEntrenamiento(15)}
+                    style={{ flex: 1, padding: '8px', background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: '8px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                  >
+                    🟢 Perfecto
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button 
+                type="button" 
+                onClick={() => setActiveTrainingTrick(null)}
+                style={{ padding: '8px', background: 'transparent', border: '1px solid var(--border)', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}
+              >
+                Cancelar Sesión
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* CONFETTI ANIMATION ON COMMAND DOMINADO */}
+      {showConfettiTrick && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          pointerEvents: 'none', zIndex: 12000, overflow: 'hidden'
+        }}>
+          {Array.from({ length: 30 }).map((_, i) => {
+            const colors = ['#f43f5e', '#3b82f6', '#10b981', '#eab308', '#a855f7', '#ff7849'];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            const randomTx = (Math.random() - 0.5) * 400;
+            const randomTy = (Math.random() - 0.5) * 400 - 200;
+            const randomSize = Math.random() * 8 + 6;
+            return (
+              <div
+                key={i}
+                className="confetti-particle"
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  width: `${randomSize}px`,
+                  height: `${randomSize}px`,
+                  borderRadius: '50%',
+                  background: randomColor,
+                  // @ts-ignore
+                  '--tx': `${randomTx}px`,
+                  '--ty': `${randomTy}px`,
+                  animation: 'confettiExplode 2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards'
+                }}
+              />
+            );
+          })}
+          <div style={{
+            position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%, -50%)',
+            background: 'rgba(255,255,255,0.95)', border: '2px solid #16a34a',
+            padding: '12px 24px', borderRadius: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+            textAlign: 'center', animation: 'modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+          }}>
+            <span style={{ fontSize: '32px' }}>🏆</span>
+            <h4 style={{ margin: '4px 0 0 0', color: '#15803d', fontWeight: 'bold' }}>¡Comando Dominado!</h4>
+            <p style={{ margin: 0, fontSize: '12px', color: '#4b5563' }}>Tu mascota ha aprendido "{showConfettiTrick}"</p>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes confettiExplode {
+          0% { transform: translate(0, 0) scale(1); opacity: 1; }
+          100% { transform: translate(var(--tx), var(--ty)) scale(0.2); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 };
 
-export const PetCard = React.memo(PetCardComponent);
+export const PetCard = React.memo(PetCardComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.isExpanded === nextProps.isExpanded &&
+    prevProps.mascota.id === nextProps.mascota.id &&
+    prevProps.mascota.nombre === nextProps.mascota.nombre &&
+    prevProps.mascota.especie === nextProps.mascota.especie &&
+    prevProps.mascota.raza === nextProps.mascota.raza &&
+    prevProps.mascota.fechaNacimiento === nextProps.mascota.fechaNacimiento &&
+    prevProps.mascota.fotoUrl === nextProps.mascota.fotoUrl &&
+    JSON.stringify(prevProps.mascota.registroPeso) === JSON.stringify(nextProps.mascota.registroPeso) &&
+    JSON.stringify(prevProps.mascota.historialVacunas) === JSON.stringify(nextProps.mascota.historialVacunas) &&
+    JSON.stringify(prevProps.mascota.diagnosticosIA) === JSON.stringify(nextProps.mascota.diagnosticosIA)
+  );
+});

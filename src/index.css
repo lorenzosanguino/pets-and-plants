@@ -4,9 +4,9 @@
   --bg: #fff;
   --border: #e5e4e7;
   --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
+  --accent: #8f20e6;
+  --accent-bg: rgba(143, 32, 230, 0.1);
+  --accent-border: rgba(143, 32, 230, 0.5);
   --social-bg: rgba(244, 243, 236, 0.5);
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
@@ -118,7 +118,7 @@ code {
   --game-card-bg: rgba(31, 40, 51, 0.88);
   --game-border-color: #66fcf1;
   --game-border: 2px solid #66fcf1;
-  --game-text: #c5a1ff;
+  --game-text: #e0d0ff;
   --game-text-bright: #66fcf1;
   --game-accent: #fbee09;
   --game-font: 'Orbitron', monospace;
@@ -152,8 +152,8 @@ code {
   --game-card-bg: rgba(255, 255, 255, 0.88);
   --game-border-color: #ffb6c1;
   --game-border: 3px dashed #ffb6c1;
-  --game-text: #b05273;
-  --game-text-bright: #ff6b8b;
+  --game-text: #701c37;
+  --game-text-bright: #9e1b3b;
   --game-accent: #da70d6;
   --game-font: 'Fredoka', sans-serif;
   --game-accent-light: rgba(255, 182, 193, 0.25);
@@ -263,17 +263,6 @@ button {
   transition: all 0.2s ease;
 }
 
-/* Contraste mejorado para el tema Kawaii (letras más oscuras sobre fondos claros/grises) */
-[data-game-theme="kawaii"] {
-  --game-text: #701c37 !important; /* Rosa oscuro frambuesa para alto contraste */
-  --game-text-bright: #9e1b3b !important; /* Fucsia/Cereza oscuro para títulos legibles */
-}
-
-/* Contraste mejorado para el tema Gaming (letras más brillantes sobre fondos oscuros) */
-[data-game-theme="gaming"] {
-  --game-text: #e0d0ff !important; /* Lila/Lavanda claro para legibilidad óptima */
-  --game-text-bright: #66fcf1 !important; /* Cyan neon */
-}
 
 /* Ajustes para el Consultor IA en móvil y escritorio (evita el scroll vertical completo de la pantalla) y centrado de chat */
 .ia-view-wrapper {
