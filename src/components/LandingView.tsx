@@ -12,7 +12,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
   setActiveTab,
 }) => {
   return (
-    <div style={{
+    <div className="landing-view-wrapper" style={{
       maxWidth: '850px',
       margin: '0 auto',
       display: 'flex',
@@ -37,8 +37,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
       <div className="landing-decorator" style={{ position: 'absolute', top: '45%', left: '10px', fontSize: '24px' }}>🌸</div>
       <div className="landing-decorator-delay" style={{ position: 'absolute', top: '65%', right: '15px', fontSize: '24px' }}>🍀</div>
 
-      <div style={{ zIndex: 3 }}>
-        <h1 style={{
+      <div className="landing-title-block" style={{ zIndex: 3 }}>
+        <h1 className="landing-title" style={{
           margin: '0 0 8px 0',
           fontSize: '38px',
           fontWeight: '900',
@@ -49,7 +49,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
         }}>
           🐾 PET & PLANT PRO 🌿
         </h1>
-        <p style={{ margin: '0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', fontWeight: '500' }}>
+        <p className="landing-subtitle" style={{ margin: '0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', fontWeight: '500' }}>
           Bienvenido al centro integrado seguro. Selecciona el ecosistema que deseas gestionar:
         </p>
       </div>
@@ -275,40 +275,71 @@ export const LandingView: React.FC<LandingViewProps> = ({
           font-family: var(--game-font, sans-serif);
         }
         @media (max-width: 600px) {
+          .landing-view-wrapper {
+            min-height: 100vh !important;
+            height: 100vh !important;
+            padding: 12px 10px !important;
+            gap: 8px !important;
+            justify-content: space-between !important;
+            overflow: hidden !important;
+          }
+          .landing-decorator, .landing-decorator-delay {
+            display: none !important;
+          }
+          .landing-title-block {
+            margin-bottom: 2px !important;
+          }
+          .landing-title {
+            font-size: min(7vw, 26px) !important;
+            margin: 0 0 4px 0 !important;
+          }
+          .landing-subtitle {
+            font-size: 11px !important;
+            line-height: 1.25 !important;
+            max-width: 90% !important;
+            margin: 0 auto !important;
+          }
           .landing-container {
-            flex-direction: column;
-            gap: 5px !important;
-            margin-top: 2px !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+            margin-top: 0px !important;
+            width: 100% !important;
+            flex: 1 !important;
+            max-height: calc(100vh - 120px) !important;
+            justify-content: space-evenly !important;
           }
           .landing-card {
             flex-direction: row !important;
             text-align: left !important;
             align-items: center !important;
-            padding: 6px 10px !important;
+            padding: 14px 16px !important;
             max-width: 100% !important;
             min-width: 100% !important;
-            gap: 6px !important;
-            border-radius: 10px !important;
+            gap: 16px !important;
+            border-radius: 12px !important;
+            flex: 1 !important;
+            min-height: 0 !important;
           }
           .landing-card .premium-logo-cat,
           .landing-card .premium-logo-fern,
           .landing-card .premium-logo-exotic {
-            width: 32px !important;
-            height: 32px !important;
-            font-size: 18px !important;
-            border-width: 1.5px !important;
+            width: 58px !important;
+            height: 58px !important;
+            font-size: 30px !important;
+            border-width: 3px !important;
             flex-shrink: 0 !important;
           }
           .landing-card-title {
-            font-size: 12px !important;
+            font-size: 15px !important;
+            margin-bottom: 2px !important;
           }
           .landing-card-desc {
-            font-size: 9px !important;
-            display: -webkit-box;
-            -webkit-line-clamp: 1;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            line-height: 1.2;
+            font-size: 10.5px !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            line-height: 1.3 !important;
           }
           .landing-card-button {
             display: none !important;
