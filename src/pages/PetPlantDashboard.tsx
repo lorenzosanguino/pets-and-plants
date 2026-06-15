@@ -2327,21 +2327,9 @@ export const PetPlantDashboard: React.FC = () => {
             )}
 
             {activeTab === 'dashboard' && experienceMode === 'travels' && (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))',
-                gap: '24px',
-                width: '100%',
-                boxSizing: 'border-box'
-              }}>
+              <div style={{ width: '100%', boxSizing: 'border-box' }}>
                 <Suspense fallback={<ChunkLoader height="300px" />}>
                   <VacationAdvice mode="travels" />
-                </Suspense>
-                <Suspense fallback={<ChunkLoader height="300px" />}>
-                  <IAConsultantsView 
-                    hideSelector={false} 
-                    onNavigateToAsset={handleNavigateToAsset} 
-                  />
                 </Suspense>
               </div>
             )}
