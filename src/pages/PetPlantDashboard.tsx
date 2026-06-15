@@ -113,6 +113,7 @@ export const PetPlantDashboard: React.FC = () => {
     if (experienceMode === 'pets') return '#1976d2';
     if (experienceMode === 'exotics') return '#ff8f00';
     if (experienceMode === 'travels') return '#0284c7';
+    if (experienceMode === 'consultants') return '#7b1fa2';
     return '#2e7d32'; // plants
   };
 
@@ -161,8 +162,8 @@ export const PetPlantDashboard: React.FC = () => {
     sincronizarTodasLasPlantasPorGPS
   } = useGPSWeather(refreshData);
 
-  // Modo de Experiencia: 'landing', 'pets', 'plants', 'exotics', 'travels'
-  const [experienceMode, setExperienceMode] = useState<'landing' | 'pets' | 'plants' | 'exotics' | 'travels'>('landing');
+  // Modo de Experiencia: 'landing', 'pets', 'plants', 'exotics', 'travels', 'consultants'
+  const [experienceMode, setExperienceMode] = useState<'landing' | 'pets' | 'plants' | 'exotics' | 'travels' | 'consultants'>('landing');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'consultants' | 'settings'>('dashboard');
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
 
@@ -1932,21 +1933,21 @@ export const PetPlantDashboard: React.FC = () => {
             {activeTab !== 'consultants' ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                  <span style={{ fontSize: '24px' }}>{experienceMode === 'pets' ? '🐾' : experienceMode === 'exotics' ? '🦎' : experienceMode === 'travels' ? '✈️' : '🌿'}</span>
+                  <span style={{ fontSize: '24px' }}>{experienceMode === 'pets' ? '🐾' : experienceMode === 'exotics' ? '🦎' : experienceMode === 'travels' ? '✈️' : experienceMode === 'consultants' ? '💬' : '🌿'}</span>
                   <h1 style={{ margin: '0', fontSize: '20px', color: 'var(--game-text-bright, #1a1a1a)', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
-                    {experienceMode === 'pets' ? t('appTitlePets') : experienceMode === 'exotics' ? t('appTitleExotics') : experienceMode === 'travels' ? 'Guía de Viajes y Vacaciones' : t('appTitlePlants')}
+                    {experienceMode === 'pets' ? t('appTitlePets') : experienceMode === 'exotics' ? t('appTitleExotics') : experienceMode === 'travels' ? 'Guía de Viajes y Vacaciones' : experienceMode === 'consultants' ? 'Consultores de Inteligencia Artificial' : t('appTitlePlants')}
                   </h1>
                 </div>
                 <p style={{ margin: '4px 0 8px 0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
-                  {experienceMode === 'pets' ? t('appSubtitlePets') : experienceMode === 'exotics' ? t('appSubtitleExotics') : experienceMode === 'travels' ? 'Consulta guías y agentes inteligentes para tu viaje' : t('appSubtitlePlants')}
+                  {experienceMode === 'pets' ? t('appSubtitlePets') : experienceMode === 'exotics' ? t('appSubtitleExotics') : experienceMode === 'travels' ? 'Consulta guías y agentes inteligentes para tu viaje' : experienceMode === 'consultants' ? 'Realiza diagnósticos clínicos, preguntas de cultivo y consultas avanzadas' : t('appSubtitlePlants')}
                 </p>
                 {renderConnectivityIndicator()}
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '20px' }}>{experienceMode === 'pets' ? '🐾' : experienceMode === 'exotics' ? '🦎' : experienceMode === 'travels' ? '✈️' : '🌿'}</span>
+                <span style={{ fontSize: '20px' }}>{experienceMode === 'pets' ? '🐾' : experienceMode === 'exotics' ? '🦎' : experienceMode === 'travels' ? '✈️' : experienceMode === 'consultants' ? '💬' : '🌿'}</span>
                 <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--game-text-bright, #1a1a1a)', fontFamily: 'var(--game-font, sans-serif)' }}>
-                  {experienceMode === 'pets' ? t('advisorPets') : experienceMode === 'exotics' ? t('advisorExotics') : experienceMode === 'travels' ? 'Consultores de Viajes' : t('advisorPlants')}
+                  {experienceMode === 'pets' ? t('advisorPets') : experienceMode === 'exotics' ? t('advisorExotics') : experienceMode === 'travels' ? 'Consultores de Viajes' : experienceMode === 'consultants' ? 'Consultores IA' : t('advisorPlants')}
                 </span>
                 <div style={{ marginLeft: '8px', display: 'inline-block' }}>
                   {renderConnectivityIndicator()}
@@ -2048,6 +2049,28 @@ export const PetPlantDashboard: React.FC = () => {
               >
                 {t('btnTravels')}
               </button>
+              <button 
+                disabled={experienceMode === 'consultants'}
+                onClick={() => { setExperienceMode('consultants'); setActiveTab('dashboard'); }}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  background: experienceMode === 'consultants' ? 'var(--game-accent-light, #f3e5f5)' : '#f5f5f5',
+                  color: experienceMode === 'consultants' ? '#7b1fa2' : '#666',
+                  border: '1px solid #eaeaea',
+                  borderRadius: '12px',
+                  fontSize: '11.5px',
+                  fontWeight: 'bold',
+                  cursor: experienceMode === 'consultants' ? 'default' : 'pointer',
+                  opacity: experienceMode === 'consultants' ? 0.9 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                {t('btnConsultants')}
+              </button>
             </div>
           </div>
 
@@ -2080,26 +2103,6 @@ export const PetPlantDashboard: React.FC = () => {
             
 
 
-
-            {experienceMode !== 'travels' && (
-              <button
-                onClick={() => setActiveTab('consultants')}
-                style={{
-                  padding: '12px 16px',
-                  background: 'none',
-                  border: 'none',
-                  borderBottom: activeTab === 'consultants' ? `3px solid ${getAccentColor()}` : '3px solid transparent',
-                  color: activeTab === 'consultants' ? getAccentColor() : '#666',
-                  fontWeight: activeTab === 'consultants' ? 'bold' : 'normal',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  transition: 'all 0.2s',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {t('tabConsultants')}
-              </button>
-            )}
             
             <button
               onClick={() => setActiveTab('settings')}
@@ -2122,7 +2125,7 @@ export const PetPlantDashboard: React.FC = () => {
 
           {/* Contenido Dinámico de las Pestañas según el Ecosistema */}
           <div style={{ width: '100%' }}>
-            {activeTab === 'dashboard' && experienceMode !== 'travels' && (
+            {activeTab === 'dashboard' && experienceMode !== 'travels' && experienceMode !== 'consultants' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 
                 <ExtremeWeatherPanel
@@ -2342,6 +2345,17 @@ export const PetPlantDashboard: React.FC = () => {
                 <Suspense fallback={<ChunkLoader height="300px" />}>
                   <VacationAdvice mode="travels" />
                 </Suspense>
+                <Suspense fallback={<ChunkLoader height="300px" />}>
+                  <IAConsultantsView 
+                    hideSelector={false} 
+                    onNavigateToAsset={handleNavigateToAsset} 
+                  />
+                </Suspense>
+              </div>
+            )}
+
+            {activeTab === 'dashboard' && experienceMode === 'consultants' && (
+              <div style={{ width: '100%', boxSizing: 'border-box' }}>
                 <Suspense fallback={<ChunkLoader height="300px" />}>
                   <IAConsultantsView 
                     hideSelector={false} 
