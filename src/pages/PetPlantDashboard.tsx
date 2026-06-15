@@ -1475,7 +1475,7 @@ export const PetPlantDashboard: React.FC = () => {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: 'space-between',
           gap: '24px',
           zIndex: 99999,
           opacity: isFading ? 0 : 1,
@@ -1483,7 +1483,7 @@ export const PetPlantDashboard: React.FC = () => {
           color: uiTheme === 'gaming' ? '#ffffff' : (uiTheme === 'kawaii' ? '#b05273' : '#2e7d32'),
           fontFamily: 'var(--game-font, sans-serif)',
           textAlign: 'center',
-          padding: '24px 20px',
+          padding: '80px 24px 60px 24px',
           boxSizing: 'border-box',
           textShadow: uiTheme === 'gaming' 
             ? '0 2px 10px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 255, 127, 0.4)' 
