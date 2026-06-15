@@ -21,7 +21,7 @@ export class SyncQueueService {
       console.log(`Acción encolada con éxito: ${tipoAccion}`);
       
       // Intentar procesar inmediatamente si hay red
-      if (typeof navigator !== 'undefined' && navigator.onLine && localStorage.getItem('petplant_simulated_offline') !== 'true') {
+      if (typeof navigator !== 'undefined' && navigator.onLine) {
         this.processQueue().catch((err) =>
           console.error('Error al procesar la cola tras encolar:', err)
         );
@@ -36,7 +36,7 @@ export class SyncQueueService {
    */
   static async processQueue(): Promise<void> {
     if (this.isProcessing) return;
-    if (typeof navigator !== 'undefined' && (!navigator.onLine || localStorage.getItem('petplant_simulated_offline') === 'true')) {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
       console.log('Dispositivo offline, posponiendo sincronización de cola.');
       return;
     }

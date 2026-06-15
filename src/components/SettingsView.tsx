@@ -1,9 +1,8 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTranslations } from '../utils/i18n';
 import { LocalDatabase } from '../database/db';
-import { SyncQueueService } from '../services/syncQueue';
-import type { AccionSincronizacion, Mascota, Planta, AnimalExotico } from '../database/types';
+import type { Mascota, Planta, AnimalExotico } from '../database/types';
 import { initFirebase, getFirebaseCached } from '../database/firebaseLazy';
 
 interface SettingsViewProps {
@@ -86,14 +85,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   lastAutosyncTime
 }) => {
   const { locale, setLocale, t } = useTranslations();
-
-  const [isSimulatedOffline, setIsSimulatedOffline] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('petplant_simulated_offline') === 'true';
-    }
-    return false;
-  });
-  const [accionesPendientes, setAccionesPendientes] = useState<AccionSincronizacion[]>([]);
 
   // Conflict resolution states
   const [showConflictModal, setShowConflictModal] = useState(false);
@@ -309,46 +300,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         alert("Asegúrate de suscribirte primero y aceptar permisos.");
       }
     }
-  };
-
-  const cargarAccionesPendientes = async () => {
-    try {
-      const list = await LocalDatabase.getAccionesSincronizacion();
-      setAccionesPendientes(list);
-    } catch (err) {
-      console.error('Error al cargar acciones pendientes:', err);
-    }
-  };
-
-  useEffect(() => {
-    cargarAccionesPendientes();
-    const interval = setInterval(cargarAccionesPendientes, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const toggleSimulatedOffline = () => {
-    const newVal = !isSimulatedOffline;
-    localStorage.setItem('petplant_simulated_offline', newVal.toString());
-    setIsSimulatedOffline(newVal);
-    window.dispatchEvent(new Event('petplant_network_status_change'));
-  };
-
-  const ejecutarSincronizacionCola = async () => {
-    if (isSimulatedOffline) {
-      alert('No se puede sincronizar en modo offline simulado. Por favor, desactiva el modo offline primero.');
-      return;
-    }
-    await SyncQueueService.processQueue();
-    await cargarAccionesPendientes();
-  };
-
-  const vaciarColaSincronizacion = async () => {
-    const list = await LocalDatabase.getAccionesSincronizacion();
-    for (const item of list) {
-      await LocalDatabase.deleteAccionSincronizacion(item.id);
-    }
-    await cargarAccionesPendientes();
-    alert('Cola de sincronización vaciada con éxito.');
   };
 
   return (
@@ -892,153 +843,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             </div>
 
-            {/* PANEL DE SIMULACIÓN DE SINCRONIZACIÓN OFFLINE */}
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-              padding: '16px',
-              background: isSimulatedOffline ? 'rgba(211, 47, 47, 0.04)' : 'rgba(76, 175, 80, 0.04)',
-              border: isSimulatedOffline ? '1.5px dashed #dc2626' : '1.5px dashed #16a34a',
-              borderRadius: 'var(--game-radius, 12px)',
-              marginTop: '16px',
-              textAlign: 'left'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', fontWeight: 'bold', color: isSimulatedOffline ? '#dc2626' : '#16a34a', fontFamily: 'var(--game-font, sans-serif)' }}>
-                  🔌 Simulador de Sincronización Offline
-                </span>
-                <span style={{
-                  padding: '3px 8px',
-                  borderRadius: '12px',
-                  fontSize: '9px',
-                  fontWeight: 'bold',
-                  background: isSimulatedOffline ? '#dc2626' : '#16a34a',
-                  color: '#fff'
-                }}>
-                  {isSimulatedOffline ? 'MODO OFFLINE ACTIVADO' : 'CONEXIÓN NORMAL'}
-                </span>
-              </div>
 
-              <p style={{ margin: '0', fontSize: '11px', color: 'var(--game-text, #666)' }}>
-                Usa este panel para simular que tu dispositivo pierde la conexión a internet. Cualquier cambio que realices (riegos, registros, etc.) se encolará localmente en IndexedDB.
-              </p>
-
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  onClick={toggleSimulatedOffline}
-                  style={{
-                    padding: '8px 14px',
-                    background: isSimulatedOffline ? '#16a34a' : '#dc2626',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: uiTheme === 'gaming' ? '0px' : '6px',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    fontFamily: 'var(--game-font, sans-serif)',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}
-                >
-                  {isSimulatedOffline ? '🌐 Volver a conectar' : '🔌 Forzar Offline'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={ejecutarSincronizacionCola}
-                  disabled={isSimulatedOffline || accionesPendientes.length === 0}
-                  style={{
-                    padding: '8px 14px',
-                    background: '#1976d2',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: uiTheme === 'gaming' ? '0px' : '6px',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    cursor: isSimulatedOffline || accionesPendientes.length === 0 ? 'not-allowed' : 'pointer',
-                    opacity: isSimulatedOffline || accionesPendientes.length === 0 ? 0.5 : 1,
-                    fontFamily: 'var(--game-font, sans-serif)',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}
-                >
-                  Procesar Cola Manual 🚀
-                </button>
-
-                {accionesPendientes.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={vaciarColaSincronizacion}
-                    style={{
-                      padding: '8px 14px',
-                      background: 'transparent',
-                      color: '#dc2626',
-                      border: '1px solid #dc2626',
-                      borderRadius: uiTheme === 'gaming' ? '0px' : '6px',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      fontFamily: 'var(--game-font, sans-serif)'
-                    }}
-                  >
-                    Vaciar Cola 🗑️
-                  </button>
-                )}
-              </div>
-
-              {/* LISTA DE ACCIONES PENDIENTES */}
-              <div style={{ marginTop: '8px', borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '8px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text, #444)', display: 'block', marginBottom: '6px' }}>
-                  Mutaciones pendientes en cola ({accionesPendientes.length}):
-                </span>
-
-                {accionesPendientes.length === 0 ? (
-                  <p style={{ margin: '0', fontSize: '11px', color: '#888', fontStyle: 'italic' }}>
-                    La cola está vacía. Todos los cambios se sincronizan en vivo.
-                  </p>
-                ) : (
-                  <div style={{
-                    maxHeight: '120px',
-                    overflowY: 'auto',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
-                    padding: '6px',
-                    background: 'rgba(0,0,0,0.02)',
-                    borderRadius: '4px',
-                    border: '1px solid rgba(0,0,0,0.05)'
-                  }}>
-                    {accionesPendientes.map((item) => (
-                      <div
-                        key={item.id}
-                        style={{
-                          fontSize: '10px',
-                          padding: '6px',
-                          background: '#fff',
-                          borderLeft: '3px solid #1976d2',
-                          borderRadius: '3px',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          fontFamily: 'var(--game-font, monospace)'
-                        }}
-                      >
-                        <div>
-                          <strong style={{ color: '#1565c0' }}>{item.tipoAccion}</strong>
-                          <span style={{ color: '#666', marginLeft: '6px' }}>
-                            ({new Date(item.timestamp).toLocaleTimeString()})
-                          </span>
-                        </div>
-                        <span style={{ fontSize: '9px', background: '#f5f5f5', padding: '2px 4px', borderRadius: '3px', color: '#666' }}>
-                          ID: {item.id.slice(0, 8)}...
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
 
             <button
               onClick={desvincularHogar}
