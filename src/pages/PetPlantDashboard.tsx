@@ -2274,8 +2274,6 @@ export const PetPlantDashboard: React.FC = () => {
                   syncStatus={syncStatus}
                   isCloudEnabled={isCloudEnabled}
                   dispararLogroVisual={dispararLogroVisual}
-                  forzarSubidaNube={() => {}}
-                  forzarDescargaNube={() => {}}
                   desvincularHogar={desvincularHogar}
                   nuevoHogarNombre={nuevoHogarNombre}
                   setNuevoHogarNombre={setNuevoHogarNombre}
@@ -2286,9 +2284,6 @@ export const PetPlantDashboard: React.FC = () => {
                   joinedHogares={joinedHogares}
                   cambiarHogar={cambiarHogar}
                   abandonarHogar={abandonarHogar}
-                  autosyncInterval="off"
-                  setAutosyncInterval={() => {}}
-                  lastAutosyncTime=""
                   customApiKey={customApiKey}
                   setCustomApiKey={setCustomApiKey}
                   showApiKey={showApiKey}

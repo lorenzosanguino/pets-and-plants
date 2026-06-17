@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react';
 import { useTranslations } from '../utils/i18n';
 import { LocalDatabase } from '../database/db';
@@ -16,8 +17,6 @@ interface SettingsViewProps {
   syncStatus: 'idle' | 'syncing' | 'synced' | 'error';
   isCloudEnabled: boolean;
   dispararLogroVisual: (title: string, subtitle: string, type: 'lvl_up' | 'victory') => void;
-  forzarSubidaNube: () => void;
-  forzarDescargaNube: () => void;
   desvincularHogar: () => void;
   nuevoHogarNombre: string;
   setNuevoHogarNombre: (val: string) => void;
@@ -40,9 +39,6 @@ interface SettingsViewProps {
   joinedHogares: Array<{ id: string; nombre: string }>;
   cambiarHogar: (code: string) => Promise<void>;
   abandonarHogar: (code: string) => Promise<void>;
-  autosyncInterval: string;
-  setAutosyncInterval: (val: string) => void;
-  lastAutosyncTime: string;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -56,8 +52,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   syncStatus,
   isCloudEnabled,
   dispararLogroVisual,
-  forzarSubidaNube,
-  forzarDescargaNube,
   desvincularHogar,
   nuevoHogarNombre,
   setNuevoHogarNombre,
@@ -79,10 +73,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   importarCopiaSeguridad,
   joinedHogares,
   cambiarHogar,
-  abandonarHogar,
-  autosyncInterval,
-  setAutosyncInterval,
-  lastAutosyncTime
+  abandonarHogar
 }) => {
   const { locale, setLocale, t } = useTranslations();
 
@@ -93,64 +84,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [remoteDataInfo, setRemoteDataInfo] = useState<any>(null);
   const [localPayload, setLocalPayload] = useState<any>(null);
   const [remotePayload, setRemotePayload] = useState<any>(null);
-
-  const checkConflicts = async () => {
-    if (!hogarId) {
-      alert("Debes estar conectado a un Hogar para resolver conflictos.");
-      return;
-    }
-    setConflictLoading(true);
-    try {
-      const localM = await LocalDatabase.getMascotas();
-      const localP = await LocalDatabase.getPlantas();
-      const localE = await LocalDatabase.getExoticos();
-      const localTime = localStorage.getItem('petplant_db_last_updated') || '0';
-
-      const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
-      const remote = await fbSync.getHogarData(hogarId);
-
-      setLocalDataInfo({
-        timestamp: parseInt(localTime, 10),
-        mascotasCount: localM.length,
-        plantasCount: localP.length,
-        exoticosCount: localE.length,
-        mascotasNames: localM.map(m => m.nombre).join(', '),
-        plantasNames: localP.map(p => p.nombreComun).join(', '),
-        exoticosNames: localE.map(e => e.nombre).join(', ')
-      });
-      setLocalPayload({ mascotas: localM, plantas: localP, exoticos: localE });
-
-      if (remote) {
-        setRemoteDataInfo({
-          timestamp: remote.updatedAt || 0,
-          mascotasCount: (remote.mascotas || []).length,
-          plantasCount: (remote.plantas || []).length,
-          exoticosCount: (remote.exoticos || []).length,
-          mascotasNames: (remote.mascotas || []).map(m => m.nombre).join(', '),
-          plantasNames: (remote.plantas || []).map(p => p.nombreComun).join(', '),
-          exoticosNames: (remote.exoticos || []).map(e => e.nombre).join(', ')
-        });
-        setRemotePayload({ mascotas: remote.mascotas || [], plantas: remote.plantas || [], exoticos: remote.exoticos || [] });
-      } else {
-        setRemoteDataInfo({
-          timestamp: 0,
-          mascotasCount: 0,
-          plantasCount: 0,
-          exoticosCount: 0,
-          mascotasNames: 'Ninguno',
-          plantasNames: 'Ninguno',
-          exoticosNames: 'Ninguno'
-        });
-        setRemotePayload({ mascotas: [], plantas: [], exoticos: [] });
-      }
-      setShowConflictModal(true);
-    } catch (err) {
-      console.error(err);
-      alert("Error al cargar datos para comparación.");
-    } finally {
-      setConflictLoading(false);
-    }
-  };
 
   const resolverConLocal = async () => {
     if (!hogarId || !localPayload) return;
