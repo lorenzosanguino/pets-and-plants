@@ -91,8 +91,7 @@ export const PetPlantDashboard: React.FC = () => {
     }
   });
 
-  const [autosyncInterval, setAutosyncInterval] = useState<string>(() => localStorage.getItem('petplant_autosync_interval') || 'off');
-  const [lastAutosyncTime, setLastAutosyncTime] = useState<string>(() => localStorage.getItem('petplant_last_autosync_time') || '');
+
 
   const [climaActual, setClimaActual] = useState<any>(() => {
     try {
@@ -767,30 +766,30 @@ export const PetPlantDashboard: React.FC = () => {
                     const data = await FirebaseSyncService.getHogarData(cloudHogarId);
 
                     if (data) {
-                      // Si el hogar en la nube tiene datos y estamos en un dispositivo diferente o vacío localmente, sincronizar
-                      if (cloudHogarId !== localHogarId) {
-                        const isLocalDemo = isDatabaseDefaultDemo(listMascotas, listPlantas, listExoticos);
-                        const isCloudDemo = isDatabaseDefaultDemo(data.mascotas || [], data.plantas || [], data.exoticos || []);
+                      // Vincular siempre al hogar de la nube
+                      localStorage.setItem('petplant_hogar_id', cloudHogarId);
+                      localStorage.setItem('petplant_hogar_nombre', cloudHogarNombre);
+                      setHogarId(cloudHogarId);
+                      setHogarNombre(cloudHogarNombre);
 
-                        if (!isLocalDemo && isCloudDemo) {
-                          // El dispositivo local tiene datos reales, pero la nube solo tiene datos demo.
-                          // Subimos los datos locales reales a la nube para no perderlos y propagarlos.
-                          localStorage.setItem('petplant_hogar_id', cloudHogarId);
-                          localStorage.setItem('petplant_hogar_nombre', cloudHogarNombre);
-                          setHogarId(cloudHogarId);
-                          setHogarNombre(cloudHogarNombre);
+                      const isLocalDemo = isDatabaseDefaultDemo(listMascotas, listPlantas, listExoticos);
+                      const isCloudDemo = isDatabaseDefaultDemo(data.mascotas || [], data.plantas || [], data.exoticos || []);
+                      const cloudHasRealData = !isCloudDemo && (data.mascotas?.length > 0 || data.plantas?.length > 0 || data.exoticos?.length > 0);
+
+                      if (!isLocalDemo && isCloudDemo) {
+                        // Local tiene datos reales, nube solo tiene demo → subir local a la nube
+                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme);
+                      } else if (cloudHasRealData) {
+                        // La nube tiene datos reales → SIEMPRE descargar de la nube (fuente de verdad)
+                        // Esto cubre el caso de borrar datos locales en el móvil
+                        isRemoteSyncingRef.current = true;
+                        await LocalDatabase.overwriteDatabase(data.mascotas || [], data.plantas || [], data.exoticos || []);
+                        isRemoteSyncingRef.current = false;
+                        await refreshData(false);
+                      } else if (cloudHogarId !== localHogarId) {
+                        // Hogar diferente y la nube está vacía → subir lo que haya en local
+                        if (listMascotas.length > 0 || listPlantas.length > 0 || listExoticos.length > 0) {
                           await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme);
-                        } else {
-                          // En cualquier otro caso (el local es demo, o ambos son reales/la nube es la fuente oficial), descargamos
-                          localStorage.setItem('petplant_hogar_id', cloudHogarId);
-                          localStorage.setItem('petplant_hogar_nombre', cloudHogarNombre);
-                          setHogarId(cloudHogarId);
-                          setHogarNombre(cloudHogarNombre);
-
-                          isRemoteSyncingRef.current = true;
-                          await LocalDatabase.overwriteDatabase(data.mascotas || [], data.plantas || [], data.exoticos || []);
-                          isRemoteSyncingRef.current = false;
-                          await refreshData(false);
                         }
                       }
 
@@ -1188,112 +1187,9 @@ export const PetPlantDashboard: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (autosyncInterval === 'off') return;
 
-    const intervalMs = 30 * 1000; // Check every 30 seconds
-    const timer = setInterval(async () => {
-      const activeHogar = localStorage.getItem('petplant_hogar_id');
-      if (!activeHogar) return;
 
-      const provider = localStorage.getItem('petplant_login_provider');
-      if (provider !== 'google') return;
 
-      const lastSync = localStorage.getItem('petplant_last_autosync_timestamp');
-      const lastSyncTime = lastSync ? parseInt(lastSync, 10) : 0;
-      const now = Date.now();
-
-      let limitMs = 0;
-      if (autosyncInterval === '5min') limitMs = 5 * 60 * 1000;
-      else if (autosyncInterval === '1hour') limitMs = 60 * 60 * 1000;
-      else if (autosyncInterval === '1day') limitMs = 24 * 60 * 60 * 1000;
-
-      if (now - lastSyncTime >= limitMs) {
-        console.log("Iniciando copia de seguridad automática en la nube...");
-        try {
-          const listMascotas = await LocalDatabase.getMascotas();
-          const listPlantas = await LocalDatabase.getPlantas();
-          const listExoticos = await LocalDatabase.getExoticos();
-          const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Hogar Sincronizado";
-          
-          setSyncStatus('syncing');
-          const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
-          await fbSync.uploadChanges(activeHogar, activeNombre, listMascotas, listPlantas, listExoticos, uiTheme);
-          
-          const timeStr = new Date().toLocaleString();
-          localStorage.setItem('petplant_last_autosync_timestamp', now.toString());
-          localStorage.setItem('petplant_last_autosync_time', timeStr);
-          setLastAutosyncTime(timeStr);
-          setSyncStatus('synced');
-          console.log(`Copia de seguridad automática completada con éxito a las ${timeStr}`);
-        } catch (err) {
-          console.error("Error en copia de seguridad automática:", err);
-          setSyncStatus('error');
-        }
-      }
-    }, intervalMs);
-
-    return () => clearInterval(timer);
-  }, [autosyncInterval, uiTheme]);
-
-  const forzarSubidaNube = async () => {
-    if (!hogarId) return;
-    const confirmacion = window.confirm("¿Estás seguro de que quieres subir tus datos locales a tu cuenta? Esto sobrescribirá lo que haya en la nube con las mascotas y plantas de este dispositivo.");
-    if (!confirmacion) return;
-    
-    setSyncStatus('syncing');
-    try {
-      const listMascotas = await LocalDatabase.getMascotas();
-      const listPlantas = await LocalDatabase.getPlantas();
-      const listExoticos = await LocalDatabase.getExoticos();
-      
-      const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Mi Hogar";
-      const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
-      await fbSync.uploadChanges(hogarId, activeNombre, listMascotas, listPlantas, listExoticos, uiTheme);
-      
-      localStorage.setItem('petplant_db_last_updated', Date.now().toString());
-      setSyncStatus('synced');
-      alert("¡Datos subidos con éxito! Ahora tus mascotas y plantas están guardadas en tu cuenta de Google.");
-    } catch (err) {
-      console.error(err);
-      setSyncStatus('error');
-      alert("Error al subir datos.");
-    }
-  };
-
-  const forzarDescargaNube = async () => {
-    if (!hogarId) return;
-    const confirmacion = window.confirm("¿Estás seguro de que quieres descargar los datos de tu cuenta? Esto reemplazará las mascotas y plantas de este dispositivo con las de la nube.");
-    if (!confirmacion) return;
-
-    setSyncStatus('syncing');
-    try {
-      const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
-      const data = await fbSync.getHogarData(hogarId);
-      if (data) {
-        isRemoteSyncingRef.current = true;
-        await LocalDatabase.overwriteDatabase(data.mascotas || [], data.plantas || [], data.exoticos || []);
-        isRemoteSyncingRef.current = false;
-        
-        if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii')) {
-          lastSyncedThemeRef.current = data.theme || null;
-          setUiTheme(data.theme);
-        }
-
-        localStorage.setItem('petplant_db_last_updated', data.updatedAt.toString());
-        await refreshData(false);
-        setSyncStatus('synced');
-        alert("¡Datos descargados con éxito! Se han aplicado las mascotas, plantas y tema visual de tu cuenta.");
-      } else {
-        alert("No se encontraron datos en la nube para este hogar.");
-        setSyncStatus('error');
-      }
-    } catch (err) {
-      console.error(err);
-      setSyncStatus('error');
-      alert("Error al descargar datos.");
-    }
-  };
 
   useEffect(() => {
     if (uiTheme !== 'gaming' || experienceMode === 'landing') return;
@@ -2378,8 +2274,8 @@ export const PetPlantDashboard: React.FC = () => {
                   syncStatus={syncStatus}
                   isCloudEnabled={isCloudEnabled}
                   dispararLogroVisual={dispararLogroVisual}
-                  forzarSubidaNube={forzarSubidaNube}
-                  forzarDescargaNube={forzarDescargaNube}
+                  forzarSubidaNube={() => {}}
+                  forzarDescargaNube={() => {}}
                   desvincularHogar={desvincularHogar}
                   nuevoHogarNombre={nuevoHogarNombre}
                   setNuevoHogarNombre={setNuevoHogarNombre}
@@ -2390,12 +2286,9 @@ export const PetPlantDashboard: React.FC = () => {
                   joinedHogares={joinedHogares}
                   cambiarHogar={cambiarHogar}
                   abandonarHogar={abandonarHogar}
-                  autosyncInterval={autosyncInterval}
-                  setAutosyncInterval={(val) => {
-                    localStorage.setItem('petplant_autosync_interval', val);
-                    setAutosyncInterval(val);
-                  }}
-                  lastAutosyncTime={lastAutosyncTime}
+                  autosyncInterval="off"
+                  setAutosyncInterval={() => {}}
+                  lastAutosyncTime=""
                   customApiKey={customApiKey}
                   setCustomApiKey={setCustomApiKey}
                   showApiKey={showApiKey}
