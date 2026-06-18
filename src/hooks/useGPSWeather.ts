@@ -3,31 +3,47 @@ import { LocalDatabase } from '../database/db';
 import { WeatherService } from '../services/weatherService';
 import { NotificationManager } from '../utils/notificationManager';
 
+const NOTIF_COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 horas
+
 const evaluarYNotificarClimaExtremo = (c: any) => {
   if (!c) return;
+
+  const lastNotif = Number(localStorage.getItem('petplant_last_clima_notif') || 0);
+  if (Date.now() - lastNotif < NOTIF_COOLDOWN_MS) return; // Ya notificó en las últimas 12h
+
   const temp = c.temperatura;
   const hum = c.humedad;
+
+  let notifEnviada = false;
 
   if (temp > 32) {
     NotificationManager.sendNotification(
       "🔥 Alerta de Calor Extremo",
       `La temperatura actual es de ${Math.round(temp)}°C. Mantén a tus mascotas hidratadas y protege tus plantas del sol directo.`
     );
+    notifEnviada = true;
   } else if (temp < 10) {
     NotificationManager.sendNotification(
       "❄️ Alerta de Frío Extremo",
       `La temperatura actual es de ${Math.round(temp)}°C. Resguarda tus plantas sensibles y cobija a tus mascotas en el interior.`
     );
+    notifEnviada = true;
   } else if (hum < 30) {
     NotificationManager.sendNotification(
       "🏜️ Alerta de Sequedad Ambiental",
       `La humedad relativa es muy baja (${Math.round(hum)}%). Comprueba el sustrato de tus plantas por si requiere riego extra.`
     );
+    notifEnviada = true;
   } else if (hum > 85) {
     NotificationManager.sendNotification(
       "🌧️ Alerta de Humedad Saturada",
       `Humedad ambiental del ${Math.round(hum)}%. Alto riesgo de hongos. Evita regar plantas crasas/suculentas hoy.`
     );
+    notifEnviada = true;
+  }
+
+  if (notifEnviada) {
+    localStorage.setItem('petplant_last_clima_notif', Date.now().toString());
   }
 };
 
