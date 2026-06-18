@@ -1526,34 +1526,7 @@ export const PetPlantDashboard: React.FC = () => {
                   >
                     Cerrar Sesión / Usar otra cuenta 🚪
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleGPSToggle}
-                    className="gps-pulse-button"
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)',
-                      color: '#ffffff',
-                      border: '2px solid #f59e0b',
-                      borderRadius: '10px',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      boxShadow: '0 4px 14px rgba(245, 158, 11, 0.3)',
-                      fontFamily: 'var(--game-font, sans-serif)',
-                      transition: 'all 0.2s',
-                      textShadow: '0 1px 2px rgba(0,0,0,0.2)'
-                    }}
-                  >
-                    {gpsSyncEnabled === 'active' 
-                      ? 'GPS: Sincronización Activa 🛰️' 
-                      : (gpsSyncEnabled === 'inactive' ? 'GPS: Sincronización Inactiva 🛰️' : 'Configurar Sincronización GPS 🛰️')}
-                  </button>
+
                 </div>
               </div>
             ) : (
@@ -1620,32 +1593,7 @@ export const PetPlantDashboard: React.FC = () => {
                   Iniciar Sesión con Microsoft / Hotmail
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleGPSToggle}
-                  className="gps-pulse-button"
-                  style={{
-                    padding: '8px 16px',
-                    background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)',
-                    color: '#ffffff',
-                    border: '2px solid #f59e0b',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    boxShadow: '0 4px 14px rgba(245, 158, 11, 0.3)',
-                    fontFamily: 'var(--game-font, sans-serif)',
-                    transition: 'all 0.2s',
-                    textShadow: '0 1px 2px rgba(0,0,0,0.2)'
-                  }}
-                >
-                  {gpsSyncEnabled === 'active' 
-                    ? 'GPS: Sincronización Activa 🛰️' 
-                    : (gpsSyncEnabled === 'inactive' ? 'GPS: Sincronización Inactiva 🛰️' : 'Activar Sincronización GPS 🛰️')}
-                </button>
+
               </div>
             )}
           </div>
