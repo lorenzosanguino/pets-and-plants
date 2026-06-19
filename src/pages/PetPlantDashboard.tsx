@@ -250,7 +250,7 @@ export const PetPlantDashboard: React.FC = () => {
     // Push a state so popstate event fires when pressing back
     window.history.pushState({ mode: experienceMode, tab: activeTab }, '');
 
-    const handlePopState = () => {
+    const handlePopState = (e: PopStateEvent) => {
       if (showScanner) {
         setShowScanner(false);
         setScannerAssetId(null);
@@ -259,7 +259,16 @@ export const PetPlantDashboard: React.FC = () => {
         setShowManualRegister(null);
         window.history.pushState({ mode: experienceMode, tab: activeTab }, '');
       } else {
-        setExperienceMode('landing');
+        if (!e.state || e.state.mode === 'landing') {
+          setExperienceMode('landing');
+        } else {
+          if (e.state.mode && e.state.mode !== experienceMode) {
+            setExperienceMode(e.state.mode);
+          }
+          if (e.state.tab && e.state.tab !== activeTab) {
+            setActiveTab(e.state.tab);
+          }
+        }
       }
     };
 
