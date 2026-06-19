@@ -3,12 +3,23 @@ import React, { useState, useCallback, useRef } from 'react';
 export const useTTS = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const sentencesQueueRef = useRef<string[]>([]);
+  const currentSentenceIndexRef = useRef<number>(0);
+
+  const stop = useCallback(() => {
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
+  }, []);
 
   const speak = useCallback((text: string) => {
     if (!window.speechSynthesis) return;
 
+    // Detener cualquier reproducción previa de inmediato
+    window.speechSynthesis.cancel();
+
     if (isSpeaking) {
-      window.speechSynthesis.cancel();
       setIsSpeaking(false);
       return;
     }
@@ -18,32 +29,54 @@ export const useTTS = () => {
       .replace(/\*(.*?)\*/g, '$1')
       .replace(/#{1,6}\s/g, '')
       .replace(/`(.*?)`/g, '$1')
-      .replace(/\n{2,}/g, '. ')
-      .replace(/\n/g, ', ')
       .trim();
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = 'es-ES';
-    utterance.rate = 0.95;
-    utterance.pitch = 1;
-    utterance.volume = 1;
+    // Segmentar en oraciones cortas o fragmentos para evitar límites del navegador
+    const sentences = cleanText
+      .split(/(?<=[.!?])\s+|\n+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
 
-    const voices = window.speechSynthesis.getVoices();
-    const spanishVoice = voices.find(v => v.lang.startsWith('es'));
-    if (spanishVoice) utterance.voice = spanishVoice;
+    if (sentences.length === 0) return;
 
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+    setIsSpeaking(true);
+    sentencesQueueRef.current = sentences;
+    currentSentenceIndexRef.current = 0;
 
-    utteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
+    const speakNext = () => {
+      if (currentSentenceIndexRef.current >= sentencesQueueRef.current.length) {
+        setIsSpeaking(false);
+        return;
+      }
+
+      const sentenceText = sentencesQueueRef.current[currentSentenceIndexRef.current];
+      const utterance = new SpeechSynthesisUtterance(sentenceText);
+      utterance.lang = 'es-ES';
+      utterance.rate = 0.95;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+
+      const voices = window.speechSynthesis.getVoices();
+      const spanishVoice = voices.find(v => v.lang.startsWith('es'));
+      if (spanishVoice) utterance.voice = spanishVoice;
+
+      utterance.onend = () => {
+        currentSentenceIndexRef.current++;
+        speakNext();
+      };
+
+      utterance.onerror = (e) => {
+        console.error("Error en reproducción TTS de fragmento:", e);
+        currentSentenceIndexRef.current++;
+        speakNext();
+      };
+
+      utteranceRef.current = utterance;
+      window.speechSynthesis.speak(utterance);
+    };
+
+    speakNext();
   }, [isSpeaking]);
-
-  const stop = useCallback(() => {
-    window.speechSynthesis?.cancel();
-    setIsSpeaking(false);
-  }, []);
 
   const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 

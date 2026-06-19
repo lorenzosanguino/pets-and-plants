@@ -997,8 +997,11 @@ export const PetPlantDashboard: React.FC = () => {
       const isLocalDemo = isDatabaseDefaultDemo(localMascotas, localPlantas, localExoticos);
       const isCloudDemo = isDatabaseDefaultDemo(data.mascotas || [], data.plantas || [], data.exoticos || []);
 
+      // Salvaguarda: si la nube tiene datos demo y local tiene datos reales, NO sobreescribir bajo ningún concepto
+      const esIntentoDeMachacarConDemo = isCloudDemo && !isLocalDemo;
+
       // Solo sobreescribir si la actualización remota es estrictamente más nueva, si local está vacío, o si local es demo y la nube es real
-      if (data.updatedAt > localLastUpdated || isLocalEmpty || (isLocalDemo && !isCloudDemo)) {
+      if (!esIntentoDeMachacarConDemo && (data.updatedAt > localLastUpdated || isLocalEmpty || (isLocalDemo && !isCloudDemo))) {
         setSyncStatus('syncing');
         try {
           isRemoteSyncingRef.current = true;

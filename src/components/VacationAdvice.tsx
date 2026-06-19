@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { GeminiAPIService } from '../services/geminiAPI';
+import { TTSButton } from '../utils/useTTS';
 
 interface VacationAdviceProps {
   mode: 'plants' | 'pets' | 'exotics' | 'travels';
@@ -291,9 +292,14 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({ mode }) => {
                   boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                 }}
               >
-                <strong style={{ display: 'block', fontSize: '10px', color: '#666', marginBottom: '2px' }}>
-                  {msg.sender === 'user' ? 'Tú:' : 'Asesor de Viajes IA:'}
-                </strong>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', gap: '8px' }}>
+                  <strong style={{ fontSize: '10px', color: '#666' }}>
+                    {msg.sender === 'user' ? 'Tú:' : 'Asesor de Viajes IA:'}
+                  </strong>
+                  {msg.sender === 'ia' && (
+                    <TTSButton text={msg.text} size="small" />
+                  )}
+                </div>
                 <span style={{ fontFamily: 'var(--game-font, sans-serif)' }}>{msg.text}</span>
               </div>
             ))}

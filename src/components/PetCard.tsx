@@ -179,7 +179,8 @@ Nombre: ${mascota.nombre}
 Especie: ${especieTexto}
 Peso: ${pesoActual} kg
 Actividad: ${mascota.actividad || 'Moderada'}
-Explica la receta de forma clara en español, detallando las proporciones en gramos de proteínas, vegetales y complementos. Si es un gato, ten en cuenta sus necesidades específicas de taurina y proteína animal.`;
+Explica la receta de forma clara en español, detallando las proporciones en gramos de proteínas, vegetales y complementos. Si es un gato, ten en cuenta sus necesidades de taurina.
+IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos cortos, omitiendo introducciones o comentarios largos para acelerar la respuesta.`;
 
     try {
       const res = await GeminiAPIService.analizarImagen(
@@ -1673,6 +1674,10 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
               </div>
             ) : chefRecipe ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '2px' }}>
+                  <TTSButton text={chefRecipe.receta} theme={theme} size="small" />
+                </div>
+                
                 <div style={{ 
                   background: 'var(--code-bg, #f4f3ec)', 
                   borderRadius: '12px', padding: '16px',
@@ -1693,7 +1698,6 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                 )}
                 
                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center' }}>
-                  <TTSButton text={chefRecipe.receta} theme={theme} size="small" />
                   <button
                     type="button"
                     onClick={() => {

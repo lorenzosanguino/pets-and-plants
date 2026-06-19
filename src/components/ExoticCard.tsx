@@ -68,7 +68,8 @@ Especie: ${exotico.especie}${exotico.tipoEspecifico ? ` (${exotico.tipoEspecific
 ${pesoActual ? `Peso: ${pesoActual} kg` : ''}
 Temperatura del terrario: ${exotico.temperaturaTerrario || 26}°C
 Humedad del terrario: ${exotico.humedadTerrario || 60}%
-Explica en español qué alimentos son adecuados, con qué frecuencia, y qué suplementos necesita. Indica también alimentos prohibidos para esta especie.`;
+Explica en español qué alimentos son adecuados, con qué frecuencia, y qué suplementos necesita. Indica también alimentos prohibidos.
+IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos cortos, omitiendo introducciones o comentarios largos para acelerar la respuesta.`;
 
     try {
       const res = await GeminiAPIService.analizarImagen(null, 'exoticos', promptText);

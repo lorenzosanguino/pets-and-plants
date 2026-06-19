@@ -44,7 +44,8 @@ Sustrato: ${planta.grosorHoja ? `Hojas de tipo ${planta.grosorHoja}` : ''}
 Temperatura típica: ${planta.temperaturaZona || 22}°C
 Tipo de riego: ${planta.tipoRiegoEspecifico || 'Agua del grifo reposada'}
 
-Explica en español qué tipo de abono/nutrientes necesita (macro y micronutrientes necesarios), con qué frecuencia según la época del año (primavera, verano, otoño, invierno), y consejos especiales de sustrato y riego para asimilar mejor los nutrientes.`;
+Explica en español qué tipo de abono/nutrientes necesita (macro y micronutrientes necesarios), con qué frecuencia según la época del año, y consejos especiales de sustrato/riego.
+IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos cortos, omitiendo introducciones o comentarios largos para acelerar la respuesta.`;
 
     try {
       const res = await GeminiAPIService.analizarImagen(null, 'agronomo', promptText);
