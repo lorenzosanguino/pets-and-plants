@@ -787,21 +787,22 @@ export const PetPlantDashboard: React.FC = () => {
                       const isCloudDemo = isDatabaseDefaultDemo(data.mascotas || [], data.plantas || [], data.exoticos || []);
                       const cloudHasRealData = !isCloudDemo && (data.mascotas?.length > 0 || data.plantas?.length > 0 || data.exoticos?.length > 0);
 
+                      const localLastUpdated = Number(localStorage.getItem('petplant_db_last_updated') || 0);
+                      const isLocalEmpty = listMascotas.length === 0 && listPlantas.length === 0 && listExoticos.length === 0;
+                      const remoteIsNewer = data.updatedAt > localLastUpdated;
+
                       if (!isLocalDemo && isCloudDemo) {
                         // Local tiene datos reales, nube solo tiene demo → subir local a la nube
                         await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme);
-                      } else if (cloudHasRealData) {
-                        // La nube tiene datos reales → SIEMPRE descargar de la nube (fuente de verdad)
-                        // Esto cubre el caso de borrar datos locales en el móvil
+                      } else if (cloudHasRealData && (remoteIsNewer || isLocalEmpty || isLocalDemo)) {
+                        // Descargar de la nube si es más nueva, si local está vacío o si local es demo
                         isRemoteSyncingRef.current = true;
                         await LocalDatabase.overwriteDatabase(data.mascotas || [], data.plantas || [], data.exoticos || []);
                         isRemoteSyncingRef.current = false;
                         await refreshData(false);
-                      } else if (cloudHogarId !== localHogarId) {
-                        // Hogar diferente y la nube está vacía → subir lo que haya en local
-                        if (listMascotas.length > 0 || listPlantas.length > 0 || listExoticos.length > 0) {
-                          await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme);
-                        }
+                      } else {
+                        // Si el local es más nuevo o contiene cambios reales no presentes en la nube, subir local a la nube
+                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme);
                       }
 
                       // Aplicar tema de la nube si existe y es válido
