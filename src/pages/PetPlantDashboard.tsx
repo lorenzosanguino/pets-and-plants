@@ -2017,6 +2017,83 @@ export const PetPlantDashboard: React.FC = () => {
           <div style={{ width: '100%' }}>
             {activeTab === 'dashboard' && experienceMode !== 'travels' && experienceMode !== 'consultants' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {/* Barra de Acciones de Registro Glassmorphism */}
+                <div style={{
+                  background: 'var(--game-card-bg, rgba(255, 255, 255, 0.65))',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  border: 'var(--game-border, 1px solid rgba(255, 255, 255, 0.4))',
+                  borderRadius: 'var(--game-radius, 16px)',
+                  padding: '16px 20px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '16px',
+                  flexWrap: 'wrap',
+                  boxShadow: 'var(--game-shadow, 0 8px 32px 0 rgba(31, 38, 135, 0.04))'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--game-text-bright, #2c3e50)', fontFamily: 'var(--game-font, sans-serif)' }}>
+                      {experienceMode === 'pets' ? '🐾 Registro de Mascotas' : experienceMode === 'exotics' ? '🦎 Registro de Exóticos' : '🌿 Registro de Plantas'}
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--game-text, #7f8c8d)', fontFamily: 'var(--game-font, sans-serif)' }}>
+                      {experienceMode === 'pets' ? 'Agrega un nuevo perro, gato u otro animal de compañía.' : experienceMode === 'exotics' ? 'Registra tu terrario, anfibios, reptiles o arácnidos.' : 'Añade una planta especificando su ubicación e intervalos de riego.'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <button
+                      onClick={() => {
+                        if (experienceMode === 'pets') setScannerMode('registrar_mascota');
+                        else if (experienceMode === 'plants') setScannerMode('registrar_planta');
+                        else if (experienceMode === 'exotics') setScannerMode('registrar_exotico');
+                        setShowScanner(true);
+                      }}
+                      style={{
+                        padding: '10px 18px',
+                        background: `linear-gradient(135deg, ${getAccentColor()} 0%, ${getAccentColor()}ee 100%)`,
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '10px',
+                        fontSize: '13px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--game-font, sans-serif)',
+                        boxShadow: `0 4px 14px rgba(0, 0, 0, 0.1)`,
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <span>📷</span> Registrar con IA (Escanear)
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (experienceMode === 'pets') setShowManualRegister('pet');
+                        else if (experienceMode === 'plants') setShowManualRegister('plant');
+                        else setShowManualRegister('exotic');
+                      }}
+                      style={{
+                        padding: '10px 18px',
+                        background: 'transparent',
+                        border: `2px solid ${getAccentColor()}`,
+                        color: getAccentColor(),
+                        borderRadius: '10px',
+                        fontSize: '13px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--game-font, sans-serif)',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <span>➕</span> Registro Manual
+                    </button>
+                  </div>
+                </div>
+
                 {/* Cuadrícula Principal */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))', gap: '24px', width: '100%', boxSizing: 'border-box' }}>
                   
@@ -2116,83 +2193,6 @@ export const PetPlantDashboard: React.FC = () => {
 
 
 
-                </div>
-
-                {/* Barra de Acciones de Registro Glassmorphism */}
-                <div style={{
-                  background: 'var(--game-card-bg, rgba(255, 255, 255, 0.65))',
-                  backdropFilter: 'blur(12px)',
-                  WebkitBackdropFilter: 'blur(12px)',
-                  border: 'var(--game-border, 1px solid rgba(255, 255, 255, 0.4))',
-                  borderRadius: 'var(--game-radius, 16px)',
-                  padding: '16px 20px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: '16px',
-                  flexWrap: 'wrap',
-                  boxShadow: 'var(--game-shadow, 0 8px 32px 0 rgba(31, 38, 135, 0.04))'
-                }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--game-text-bright, #2c3e50)', fontFamily: 'var(--game-font, sans-serif)' }}>
-                      {experienceMode === 'pets' ? '🐾 Registro de Mascotas' : experienceMode === 'exotics' ? '🦎 Registro de Exóticos' : '🌿 Registro de Plantas'}
-                    </span>
-                    <span style={{ fontSize: '11px', color: 'var(--game-text, #7f8c8d)', fontFamily: 'var(--game-font, sans-serif)' }}>
-                      {experienceMode === 'pets' ? 'Agrega un nuevo perro, gato u otro animal de compañía.' : experienceMode === 'exotics' ? 'Registra tu terrario, anfibios, reptiles o arácnidos.' : 'Añade una planta especificando su ubicación e intervalos de riego.'}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <button
-                      onClick={() => {
-                        if (experienceMode === 'pets') setScannerMode('registrar_mascota');
-                        else if (experienceMode === 'plants') setScannerMode('registrar_planta');
-                        else if (experienceMode === 'exotics') setScannerMode('registrar_exotico');
-                        setShowScanner(true);
-                      }}
-                      style={{
-                        padding: '10px 18px',
-                        background: `linear-gradient(135deg, ${getAccentColor()} 0%, ${getAccentColor()}ee 100%)`,
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '10px',
-                        fontSize: '13px',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        fontFamily: 'var(--game-font, sans-serif)',
-                        boxShadow: `0 4px 14px rgba(0, 0, 0, 0.1)`,
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      <span>📷</span> Registrar con IA (Escanear)
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (experienceMode === 'pets') setShowManualRegister('pet');
-                        else if (experienceMode === 'plants') setShowManualRegister('plant');
-                        else setShowManualRegister('exotic');
-                      }}
-                      style={{
-                        padding: '10px 18px',
-                        background: 'transparent',
-                        border: `2px solid ${getAccentColor()}`,
-                        color: getAccentColor(),
-                        borderRadius: '10px',
-                        fontSize: '13px',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        fontFamily: 'var(--game-font, sans-serif)',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      <span>➕</span> Registro Manual
-                    </button>
-                  </div>
                 </div>
 
                 {/* Calendario */}
