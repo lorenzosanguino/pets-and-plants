@@ -5,8 +5,10 @@ import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
 import { CardPhotoManager } from './CardPhotoManager';
 import { IAQuotaManager } from '../utils/iaQuota';
+import { GeminiAPIService } from '../services/geminiAPI';
 import { ReportGeneratorModal } from './ReportGeneratorModal';
 import { BiometricChart } from './BiometricChart';
+import { TTSButton } from '../utils/useTTS';
 
 
 interface ExoticCardProps {
@@ -44,6 +46,45 @@ const ExoticCardComponent: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onO
   const [editingChip, setEditingChip] = useState(false);
   const [chipValue, setChipValue] = useState(exotico.chip || '');
   const theme = localStorage.getItem('petplant_game_theme') || 'nature';
+
+  // Chef Nutricional IA para exóticos
+  const [showChefModal, setShowChefModal] = useState(false);
+  const [chefLoading, setChefLoading] = useState(false);
+  const [chefRecipe, setChefRecipe] = useState<{ receta: string; advertencia?: string } | null>(null);
+
+  const runChefIA = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setChefLoading(true);
+    setChefRecipe(null);
+    setShowChefModal(true);
+
+    const pesoActual = exotico.registroPeso && exotico.registroPeso.length > 0
+      ? exotico.registroPeso[exotico.registroPeso.length - 1].pesoKg
+      : null;
+
+    const promptText = `Actúa como veterinario especialista en animales exóticos y herpetología. Diseña un plan de alimentación detallado para:
+Nombre: ${exotico.nombre}
+Especie: ${exotico.especie}${exotico.tipoEspecifico ? ` (${exotico.tipoEspecifico})` : ''}
+${pesoActual ? `Peso: ${pesoActual} kg` : ''}
+Temperatura del terrario: ${exotico.temperaturaTerrario || 26}°C
+Humedad del terrario: ${exotico.humedadTerrario || 60}%
+Explica en español qué alimentos son adecuados, con qué frecuencia, y qué suplementos necesita. Indica también alimentos prohibidos para esta especie.`;
+
+    try {
+      const res = await GeminiAPIService.analizarImagen(null, 'exoticos', promptText);
+      setChefRecipe({
+        receta: res.diagnostico + (res.tratamiento ? `\n\nRecomendaciones adicionales:\n${res.tratamiento}` : ''),
+        advertencia: res.advertencia
+      });
+    } catch {
+      setChefRecipe({
+        receta: `[Modo Offline - Guía estimada para ${exotico.especie}]\n\nConsulta a un veterinario especializado en animales exóticos para obtener una dieta personalizada.`,
+        advertencia: 'Activa la conexión o introduce tu API Key en Ajustes para obtener recomendaciones detalladas por IA.'
+      });
+    } finally {
+      setChefLoading(false);
+    }
+  };
 
   const [isEditing, setIsEditing] = useState(false);
   const [editNombre, setEditNombre] = useState(exotico.nombre);
@@ -868,6 +909,23 @@ const ExoticCardComponent: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onO
             >
               Exportar Ficha 📄
             </button>
+            <button
+              onClick={runChefIA}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                background: 'var(--game-accent-light, rgba(25,118,210,0.1))',
+                color: 'var(--game-text-bright, #1976d2)',
+                border: '1.5px solid var(--game-border-color, #1976d2)',
+                borderRadius: 'var(--game-radius, 6px)',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontFamily: 'var(--game-font, sans-serif)'
+              }}
+            >
+              Chef Nutricional 🍽️
+            </button>
             <button 
               onClick={() => onOpenScanner && onOpenScanner('salud_exotico', exotico.id)}
               disabled={!cuota.esIlimitado && cuota.restantes === 0}
@@ -1072,6 +1130,33 @@ const ExoticCardComponent: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onO
         item={exotico}
         type="exotic"
       />
+
+      {/* MODAL CHEF NUTRICIONAL IA — EXÓTICOS */}
+      {showChefModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setShowChefModal(false)}>
+          <div style={{ background: 'var(--game-card-bg, #fff)', borderRadius: theme === 'gaming' ? '0px' : '16px', padding: '24px', maxWidth: '480px', width: '90%', maxHeight: '80vh', overflowY: 'auto', border: 'var(--game-border, none)', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <strong style={{ fontSize: '15px', color: 'var(--game-text-bright)', fontFamily: 'var(--game-font, sans-serif)' }}>🍽️ Chef Nutricional IA — {exotico.nombre}</strong>
+              <button type="button" onClick={() => setShowChefModal(false)} style={{ background: 'transparent', border: 'none', fontSize: '18px', cursor: 'pointer', color: 'var(--game-text)' }}>✕</button>
+            </div>
+            {chefLoading ? (
+              <div style={{ textAlign: 'center', padding: '32px', color: 'var(--game-text)', fontSize: '13px', fontStyle: 'italic' }}>⏳ Consultando con el especialista en exóticos...</div>
+            ) : chefRecipe ? (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+                  <TTSButton text={chefRecipe.receta} theme={theme} />
+                </div>
+                <pre style={{ whiteSpace: 'pre-wrap', fontSize: '12px', lineHeight: '1.6', color: 'var(--game-text-bright)', fontFamily: 'var(--game-font, sans-serif)', margin: 0 }}>{chefRecipe.receta}</pre>
+                {chefRecipe.advertencia && (
+                  <div style={{ marginTop: '12px', padding: '10px', background: 'rgba(245,158,11,0.08)', borderLeft: '3px solid #f59e0b', borderRadius: '6px', fontSize: '11px', color: '#92400e' }}>
+                    ⚠️ {chefRecipe.advertencia}
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,0 +1,89 @@
+import React, { useState, useCallback, useRef } from 'react';
+
+export const useTTS = () => {
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const speak = useCallback((text: string) => {
+    if (!window.speechSynthesis) return;
+
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    const cleanText = text
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/#{1,6}\s/g, '')
+      .replace(/`(.*?)`/g, '$1')
+      .replace(/\n{2,}/g, '. ')
+      .replace(/\n/g, ', ')
+      .trim();
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = 'es-ES';
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    const voices = window.speechSynthesis.getVoices();
+    const spanishVoice = voices.find(v => v.lang.startsWith('es'));
+    if (spanishVoice) utterance.voice = spanishVoice;
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    utteranceRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+  }, [isSpeaking]);
+
+  const stop = useCallback(() => {
+    window.speechSynthesis?.cancel();
+    setIsSpeaking(false);
+  }, []);
+
+  const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+
+  return { speak, stop, isSpeaking, isSupported };
+};
+
+interface TTSButtonProps {
+  text: string;
+  theme?: string;
+  size?: 'small' | 'normal';
+}
+
+export const TTSButton: React.FC<TTSButtonProps> = ({ text, theme = 'nature', size = 'small' }) => {
+  const { speak, isSpeaking, isSupported } = useTTS();
+  if (!isSupported || !text?.trim()) return null;
+
+  const isSmall = size === 'small';
+
+  return (
+    <button
+      type="button"
+      onClick={() => speak(text)}
+      title={isSpeaking ? 'Detener lectura' : 'Escuchar respuesta'}
+      style={{
+        padding: isSmall ? '3px 8px' : '5px 12px',
+        background: isSpeaking ? 'rgba(239,68,68,0.1)' : 'rgba(0,0,0,0.04)',
+        border: `1px solid ${isSpeaking ? '#ef4444' : 'rgba(0,0,0,0.12)'}`,
+        borderRadius: theme === 'gaming' ? '0px' : '6px',
+        fontSize: isSmall ? '11px' : '12px',
+        cursor: 'pointer',
+        color: isSpeaking ? '#ef4444' : 'var(--game-text-bright, #555)',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        fontFamily: 'var(--game-font, sans-serif)',
+        transition: 'all 0.2s',
+        flexShrink: 0
+      }}
+    >
+      {isSpeaking ? '⏹ Detener' : '🔊 Escuchar'}
+    </button>
+  );
+};

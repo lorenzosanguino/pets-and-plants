@@ -162,8 +162,8 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
 
   // Vacunas (solo mascotas)
   const petVaccines = isPet && (petItem.especie === 'Felino'
-    ? ['Trivalente Felina', 'Leucemia Felina', 'Rabia']
-    : ['Parvovirus', 'Moquillo', 'Adenovirus', 'Rabia', 'Leptospirosis']);
+    ? ['Trivalente Felina (1ª dosis)', 'Trivalente Felina (2ª dosis)', 'Leucemia Felina', 'Rabia']
+    : ['Parvovirus', 'Moquillo', 'Adenovirus', 'Rabia', 'Leptospirosis', 'Bordetella']);
 
   const getDewormingLastDateStr = (vName: string) => {
     if (!isPet) return null;

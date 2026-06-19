@@ -123,4 +123,66 @@ export class NotificationManager {
       console.error('Error al evaluar notificaciones programadas en IndexedDB:', err);
     }
   }
+
+  /**
+   * Comprueba si alguna mascota tiene deparasitación próxima (≤ 7 días) o vencida
+   * y envía una notificación. Cooldown de 24 horas para no repetir.
+   */
+  static async checkDewormingReminders() {
+    if (typeof window === 'undefined') return;
+
+    const COOLDOWN_KEY = 'petplant_last_deworming_notif';
+    const COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 horas
+    const lastNotif = Number(localStorage.getItem(COOLDOWN_KEY) || 0);
+    if (Date.now() - lastNotif < COOLDOWN_MS) return;
+
+    try {
+      const mascotas = await LocalDatabase.getMascotas();
+      const hoy = new Date();
+      const tipos = ['Desparasitación Interna', 'Desparasitación Externa'] as const;
+      const intervalos: Record<string, number> = {
+        'Desparasitación Interna': 3,
+        'Desparasitación Externa': 1
+      };
+
+      for (const mascota of mascotas) {
+        if (mascota.especie !== 'Felino' && mascota.especie !== 'Canino') continue;
+        const checklist = mascota.vacunasChecklist || [];
+
+        for (const tipo of tipos) {
+          const prefix = `${tipo}_`;
+          const dates = checklist
+            .filter(item => item.startsWith(prefix))
+            .map(item => item.slice(prefix.length))
+            .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+
+          if (dates.length === 0) continue;
+
+          const lastDate = new Date(dates[0]);
+          const nextDate = new Date(lastDate);
+          nextDate.setMonth(nextDate.getMonth() + intervalos[tipo]);
+
+          const diasRestantes = Math.ceil((nextDate.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+
+          if (diasRestantes < 0) {
+            await this.sendNotification(
+              `💊 ${tipo} vencida — ${mascota.nombre}`,
+              `La ${tipo.toLowerCase()} de ${mascota.nombre} venció hace ${Math.abs(diasRestantes)} días. ¡Es hora de ponerla al día!`
+            );
+            localStorage.setItem(COOLDOWN_KEY, Date.now().toString());
+            return; // Una notificación por sesión es suficiente
+          } else if (diasRestantes <= 7) {
+            await this.sendNotification(
+              `💊 ${tipo} próxima — ${mascota.nombre}`,
+              `La ${tipo.toLowerCase()} de ${mascota.nombre} vence en ${diasRestantes} día${diasRestantes === 1 ? '' : 's'}. ¡Recuerda administrarla a tiempo!`
+            );
+            localStorage.setItem(COOLDOWN_KEY, Date.now().toString());
+            return;
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error al comprobar recordatorios de deparasitación:', err);
+    }
+  }
 }

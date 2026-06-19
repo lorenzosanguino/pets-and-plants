@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GeminiAPIService } from '../services/geminiAPI';
 import { ImageOptimizer } from '../utils/imageOptimizer';
 import { safeUUID } from '../utils/uuid';
 import { LocalDatabase } from '../database/db';
+import { TTSButton } from '../utils/useTTS';
 import type { ChatMensaje } from '../database/types';
 
 interface ChatMessage {
@@ -426,14 +427,14 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
           fontFamily: 'monospace'
         }}>
           <strong style={{ color: '#ffd700', fontSize: '11px', display: 'block', marginBottom: '6px', borderBottom: '1px solid #fff', paddingBottom: '4px' }}>
-            ☞ ACTION_RECOMMEND
+            ☞ RECOMENDACIÓN DE ACCIÓN
           </strong>
           <p style={{ margin: '0 0 8px 0', fontSize: '11px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
             {m.diagnosticoClinico.tratamiento}
           </p>
           {m.diagnosticoClinico.advertencia && (
             <div style={{ padding: '6px', border: '1px solid #ff3b30', fontSize: '10px', color: '#ff3b30', background: 'rgba(255, 59, 48, 0.1)' }}>
-              <strong>ALERT:</strong> {m.diagnosticoClinico.advertencia}
+              <strong>ALERTA:</strong> {m.diagnosticoClinico.advertencia}
             </div>
           )}
         </div>
@@ -450,14 +451,14 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
           fontFamily: 'monospace'
         }}>
           <strong style={{ fontSize: '11px', display: 'block', marginBottom: '6px', borderBottom: '1px dashed #33ff33', paddingBottom: '4px' }}>
-            * SYSTEM_ADVISORY: INTERVENTION_PLAN
+            * SISTEMA: PLAN DE INTERVENCIÓN
           </strong>
           <p style={{ margin: '0 0 8px 0', fontSize: '11px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
             {m.diagnosticoClinico.tratamiento}
           </p>
           {m.diagnosticoClinico.advertencia && (
             <div style={{ padding: '6px', border: '1px solid #33ff33', fontSize: '10px', color: '#33ff33' }}>
-              <strong>ATTN_ALERT:</strong> {m.diagnosticoClinico.advertencia}
+              <strong>ATENCIÓN:</strong> {m.diagnosticoClinico.advertencia}
             </div>
           )}
         </div>
@@ -557,13 +558,14 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
           borderBottom: '1px dashed rgba(51, 255, 51, 0.3)',
           width: '100%'
         }}>
-          {m.sender === 'user' ? '> USER_LOG: ' : '> SYS_ASSIST: '}
+          {m.sender === 'user' ? '> USUARIO: ' : '> SISTEMA: '}
           {m.imageUrl && (
             <div style={{ margin: '8px 0', maxWidth: '240px', overflow: 'hidden', border: '1px solid #33ff33', background: '#000' }}>
               <img src={m.imageUrl} alt="Adjunto" style={{ width: '100%', display: 'block', objectFit: 'contain', height: 'auto', maxHeight: '220px', filter: 'grayscale(100%) brightness(80%) sepia(100%) hue-rotate(50deg) saturate(1000%)' }} />
             </div>
           )}
           <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{m.text}</div>
+          {m.sender === 'ia' && <TTSButton text={m.text} theme={theme} size="small" />}
           {renderTratamientoIA(m)}
           <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '6px', textAlign: 'right' }}>
             {m.timestamp.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
@@ -572,7 +574,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
       );
     }
 
-    // Default: adventure / MGS Codec Bubble
+    // Default theme — burbuja de chat
     return (
       <div key={m.id} style={{
         alignSelf: m.sender === 'user' ? 'flex-end' : 'flex-start',
@@ -598,6 +600,11 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
           </div>
         )}
         <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{m.text}</div>
+        {m.sender === 'ia' && (
+          <div style={{ marginTop: '6px' }}>
+            <TTSButton text={m.text} theme={theme} size="small" />
+          </div>
+        )}
         {renderTratamientoIA(m)}
         <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '6px', textAlign: 'right', color: m.sender === 'user' ? 'var(--game-text)' : '#78909c' }}>
           {m.timestamp.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
@@ -788,7 +795,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
               fontFamily: 'var(--game-font, monospace)'
             }}>
               {theme === 'terminal' 
-                ? '> CALCULATING_SYS_DIAGNOSIS...' 
+                ? '> ANALIZANDO_CONSULTA...' 
                 : attachedImage
                   ? 'El consultor está examinando minuciosamente la fisiopatología de la imagen...'
                   : 'El consultor está analizando tu consulta...'}
@@ -934,7 +941,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
                 flexShrink: 0
               }}
             >
-              {loadingIA ? (theme === 'terminal' ? 'CALC...' : 'Analizando...') : (theme === 'terminal' ? 'SEND >' : 'Enviar')}
+              {loadingIA ? (theme === 'terminal' ? 'ANALIZANDO...' : 'Analizando...') : (theme === 'terminal' ? 'ENVIAR >' : 'Enviar')}
             </button>
           </form>
 

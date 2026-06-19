@@ -77,8 +77,8 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
       mascotas.forEach(m => {
         if (m.especie === 'Felino' || m.especie === 'Canino') {
           const checklistRequerido = m.especie === 'Felino'
-            ? ['Trivalente Felina', 'Leucemia Felina', 'Rabia', 'Desparasitación Interna', 'Desparasitación Externa']
-            : ['Parvovirus', 'Moquillo', 'Adenovirus', 'Rabia', 'Leptospirosis', 'Desparasitación Interna', 'Desparasitación Externa'];
+            ? ['Trivalente Felina (1ª dosis)', 'Trivalente Felina (2ª dosis)', 'Leucemia Felina', 'Rabia', 'Desparasitación Interna', 'Desparasitación Externa']
+            : ['Parvovirus', 'Moquillo', 'Adenovirus', 'Rabia', 'Leptospirosis', 'Bordetella', 'Desparasitación Interna', 'Desparasitación Externa'];
 
           const marcados = m.vacunasChecklist || [];
           const pendientes = checklistRequerido.filter(v => !marcados.includes(v));

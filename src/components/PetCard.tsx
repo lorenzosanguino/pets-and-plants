@@ -9,6 +9,7 @@ import { calcularEdadMascota } from '../utils/age';
 import { IAQuotaManager } from '../utils/iaQuota';
 import { ReportGeneratorModal } from './ReportGeneratorModal';
 import { BiometricChart } from './BiometricChart';
+import { TTSButton } from '../utils/useTTS';
 
 
 interface PetCardProps {
@@ -1691,7 +1692,8 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                   </div>
                 )}
                 
-                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center' }}>
+                  <TTSButton text={chefRecipe.receta} theme={theme} size="small" />
                   <button
                     type="button"
                     onClick={() => {

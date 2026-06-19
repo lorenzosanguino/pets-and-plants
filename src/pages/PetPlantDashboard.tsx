@@ -276,6 +276,11 @@ export const PetPlantDashboard: React.FC = () => {
     NotificationManager.checkAndTriggerPendingNotifications().catch((err) => {
       console.error('Error al procesar notificaciones programadas iniciales:', err);
     });
+
+    // Recordatorios de deparasitación (cada 24h)
+    NotificationManager.checkDewormingReminders().catch((err) => {
+      console.error('Error al comprobar recordatorios de deparasitación:', err);
+    });
   }, []);
 
 
