@@ -185,7 +185,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
     try {
       const res = await GeminiAPIService.analizarImagen(
         null,
-        'veterinario',
+        'chef',
         promptText
       );
       setChefRecipe({

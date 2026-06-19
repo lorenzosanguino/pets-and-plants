@@ -72,7 +72,7 @@ Explica en español qué alimentos son adecuados, con qué frecuencia, y qué su
 IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos cortos, omitiendo introducciones o comentarios largos para acelerar la respuesta.`;
 
     try {
-      const res = await GeminiAPIService.analizarImagen(null, 'exoticos', promptText);
+      const res = await GeminiAPIService.analizarImagen(null, 'chef_exoticos', promptText);
       setChefRecipe({
         receta: res.diagnostico + (res.tratamiento ? `\n\nRecomendaciones adicionales:\n${res.tratamiento}` : ''),
         advertencia: res.advertencia

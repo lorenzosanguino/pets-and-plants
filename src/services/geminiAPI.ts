@@ -163,7 +163,7 @@ export class GeminiAPIService {
    */
   static async analizarImagen(
     imageBlob: Blob | null,
-    tipoConsultor: 'veterinario' | 'agronomo' | 'exoticos',
+    tipoConsultor: 'veterinario' | 'agronomo' | 'exoticos' | 'chef' | 'chef_exoticos',
     promptTexto: string,
     simulatedTemplateKey?: 'vet_garrapata' | 'vet_herida' | 'plant_marron' | 'plant_parasito',
     dbInfo?: { mascotas: Mascota[]; plantas: Planta[]; exoticos: AnimalExotico[] },
@@ -230,11 +230,18 @@ CRÍTICO - NAVEGACIÓN Y ACCESO A FICHAS: Si el usuario te pide abrir, ir, ver, 
           const aspectInstruction = `\n\nCRÍTICO - ASPECTO Y RESOLUCIÓN COMPLETOS: Analiza la imagen completa en su resolución y relación de aspecto originales. No asumes que la imagen ha sido recortada a un cuadrado; evalúa todos los elementos visibles en todo el encuadre enviado.`;
           systemInstruction = `${baseSystemInstruction}${dbContext}${gpsContext}${navigationInstruction}${aspectInstruction}`;
         } else {
-          const baseSystemInstruction = tipoConsultor === 'veterinario'
-            ? "Actúa como un veterinario clínico experto con especialización en bienestar animal y medicina preventiva. Estás en una conversación de chat fluida y natural con el usuario, quien no ha adjuntado ninguna imagen. Responde a su consulta o duda de forma profesional, detallada y comprensiva, como lo haría un experto en una conversación real. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas claves: 'diagnostico' (tu respuesta completa y fluida al usuario, estructurada con párrafos o listas si es necesario, sin pedirle fotos a menos que sea estrictamente necesario para diagnosticar una lesión física oculta), 'tratamiento' (debe ser una cadena vacía ''), 'advertencia' (debe ser una cadena vacía ''), 'esUrgente' (un booleano false, a menos que el usuario describa una emergencia letal explícita), y opcionalmente 'abrirFicha' (u objeto, omitiendo la clave si no aplica)."
-            : tipoConsultor === 'exoticos'
-            ? "Actúa como un veterinario especialista en animales exóticos y terrariofilia. Estás en una conversación de chat fluida y natural con el usuario, quien no ha adjuntado ninguna imagen. Responde a sus dudas sobre parámetros de terrario, alimentación, muda o comportamiento de forma experta, clara y detallada. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas claves: 'diagnostico' (tu respuesta completa y fluida al usuario, estructurada con párrafos o listas si es necesario, sin pedirle fotos a menos que sea estrictamente necesario para diagnosticar una lesión física oculta), 'tratamiento' (debe ser una cadena vacía ''), 'advertencia' (debe ser una cadena vacía ''), 'esUrgente' (un booleano false, a menos que el usuario describa una emergencia letal explícita), y opcionalmente 'abrirFicha' (u objeto, omitiendo la clave si no aplica)."
-            : "Actúa como un agrónomo, botánico y fitopatólogo experto. Estás en una conversación de chat fluida y natural con el usuario, quien no ha adjuntado ninguna imagen. Responde a sus dudas sobre sustratos, riego, luz, abono o cuidados de plantas de forma experta, práctica y detallada. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas claves: 'diagnostico' (tu respuesta completa y fluida al usuario, estructurada con párrafos o listas si es necesario, sin pedirle fotos a menos que sea estrictamente necesario para diagnosticar una plaga física oculta), 'tratamiento' (debe ser una cadena vacía ''), 'advertencia' (debe ser una cadena vacía ''), 'esUrgente' (un booleano false, a menos que el usuario describa una emergencia letal explícita), y opcionalmente 'abrirFicha' (u objeto, omitiendo la clave si no aplica).";
+          let baseSystemInstruction = '';
+          if (tipoConsultor === 'chef') {
+            baseSystemInstruction = "Actúa como un chef y veterinario nutricionista de mascotas experto. Diseña una receta casera o plan alimentario detallado, saludable y equilibrado para la mascota en base a sus datos de especie, peso y actividad. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas claves de texto: 'diagnostico' (la receta y desglose de ingredientes detallado en gramos con sus calorías recomendadas, estructurada de forma clara y directa con puntos cortos), 'tratamiento' (instrucciones de preparación paso a paso), 'advertencia' (advertencias de alimentos prohibidos o suplementación como taurina en gatos), 'esUrgente' (un booleano false), y opcionalmente 'abrirFicha' (u objeto, omitiendo la clave si no aplica).";
+          } else if (tipoConsultor === 'chef_exoticos') {
+            baseSystemInstruction = "Actúa como un chef y veterinario especialista en nutrición de animales exóticos. Diseña un plan de alimentación detallado, saludable y equilibrado para el animal en base a su especie, peso, temperatura y humedad del terrario. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas claves de texto: 'diagnostico' (los alimentos recomendados, frecuencia y proporciones, estructurada de forma clara y directa con puntos cortos), 'tratamiento' (instrucciones de preparación o consejos de administración paso a paso), 'advertencia' (advertencias de alimentos prohibidos o suplementos críticos necesarios), 'esUrgente' (un booleano false), y opcionalmente 'abrirFicha' (u objeto, omitiendo la clave si no aplica).";
+          } else if (tipoConsultor === 'veterinario') {
+            baseSystemInstruction = "Actúa como un veterinario clínico experto con especialización en bienestar animal and medicina preventiva. Estás en una conversación de chat fluida y natural con el usuario, quien no ha adjuntado ninguna imagen. Responde a su consulta o duda de forma profesional, detallada y comprensiva, como lo haría un experto en una conversación real. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas claves: 'diagnostico' (tu respuesta completa y fluida al usuario, estructurada con párrafos o listas si es necesario, sin pedirle fotos a menos que sea estrictamente necesario para diagnosticar una lesión física oculta), 'tratamiento' (debe ser una cadena vacía ''), 'advertencia' (debe ser una cadena vacía ''), 'esUrgente' (un booleano false, a menos que el usuario describa una emergencia letal explícita), y opcionalmente 'abrirFicha' (u objeto, omitiendo la clave si no aplica).";
+          } else if (tipoConsultor === 'exoticos') {
+            baseSystemInstruction = "Actúa como un veterinario especialista en animales exóticos y terrariofilia. Estás en una conversación de chat fluida y natural con el usuario, quien no ha adjuntado ninguna imagen. Responde a sus dudas sobre parámetros de terrario, alimentación, muda o comportamiento de forma experta, clara y detallada. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas claves: 'diagnostico' (tu respuesta completa y fluida al usuario, estructurada con párrafos o listas si es necesario, sin pedirle fotos a menos que sea estrictamente necesario para diagnosticar una lesión física oculta), 'tratamiento' (debe ser una cadena vacía ''), 'advertencia' (debe ser una cadena vacía ''), 'esUrgente' (un booleano false, a menos que el usuario describa una emergencia letal explícita), y opcionalmente 'abrirFicha' (u objeto, omitiendo la clave si no aplica).";
+          } else {
+            baseSystemInstruction = "Actúa como un agrónomo, botánico y fitopatólogo experto. Estás en una conversación de chat fluida y natural con el usuario, quien no ha adjuntado ninguna imagen. Responde a sus dudas sobre sustratos, riego, luz, abono o cuidados de plantas de forma experta, práctica y detallada. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas claves: 'diagnostico' (tu respuesta completa y fluida al usuario, estructurada con párrafos o listas si es necesario, sin pedirle fotos a menos que sea estrictamente necesario para diagnosticar una plaga física oculta), 'tratamiento' (debe ser una cadena vacía ''), 'advertencia' (debe ser una cadena vacía ''), 'esUrgente' (un booleano false, a menos que el usuario describa una emergencia letal explícita), y opcionalmente 'abrirFicha' (u objeto, omitiendo la clave si no aplica).";
+          }
           systemInstruction = `${baseSystemInstruction}${dbContext}${gpsContext}${navigationInstruction}`;
         }
 
@@ -373,6 +380,103 @@ CRÍTICO - NAVEGACIÓN Y ACCESO A FICHAS: Si el usuario te pide abrir, ir, ver, 
 
         // Si NO hay imagen física adjunta, forzamos respuestas fluidas y conversacionales (sin tratamientos ni advertencias en cajas adicionales)
         if (!imageBlob && !simulatedTemplateKey) {
+          // Interceptar Chef Nutricional (Mascotas caninas/felinas)
+          if (tipoConsultor === 'chef') {
+            const nombreMatch = promptTexto.match(/Nombre:\s*(.*)/i);
+            const especieMatch = promptTexto.match(/Especie:\s*(.*)/i);
+            const pesoMatch = promptTexto.match(/Peso:\s*([\d.]+)/i);
+            const actividadMatch = promptTexto.match(/Actividad:\s*(.*)/i);
+
+            const nombre = nombreMatch ? nombreMatch[1].trim() : 'Mascota';
+            const especie = especieMatch ? especieMatch[1].trim() : 'Perro';
+            const peso = pesoMatch ? parseFloat(pesoMatch[1]) : 5;
+            const actividad = actividadMatch ? actividadMatch[1].trim() : 'Moderada';
+
+            const esGato = especie.toLowerCase().includes('gato') || especie.toLowerCase().includes('felino');
+            const kcal = Math.round(70 * Math.pow(peso, 0.75) * (actividad === 'Alta' ? 1.6 : actividad === 'Baja' ? 1.2 : 1.4));
+            const proteina = Math.round(peso * 12);
+            const verduras = Math.round(peso * 4);
+            const carbohidratos = Math.round(peso * 3);
+
+            const receta = `[Modo Offline - Receta Estimada para ${nombre}]
+Requerimiento energético estimado: ${kcal} Kcal/día.
+
+Ingredientes recomendados diariamente:
+${esGato ? '🍗 Carne de pollo/pavo magra o salmón' : '🍗 Carne de pollo, pavo o ternera magra'}: ${proteina}g
+🥕 Verduras al vapor (Zanahoria, Calabaza, Calabacín): ${verduras}g
+${esGato ? '🍚 Arroz cocido (opcional, muy poco)' : '🍚 Arroz o patata cocida'}: ${carbohidratos}g
+🦴 Aceite de salmón / Calcio: 1 cucharadita.
+${esGato ? '💊 Taurina: Suplemento esencial diario.' : ''}`;
+
+            resolve({
+              diagnostico: receta,
+              tratamiento: "Cocinar las proteínas y verduras al vapor sin sal, ajo, cebolla ni condimentos. Mezclar bien con los aceites/suplementos una vez templado.",
+              advertencia: "Esta receta es una estimación aproximada sin conexión. Activa el internet o ingresa tu clave API en Ajustes ⚙️ para obtener recetas totalmente personalizadas y dinámicas.",
+              esUrgente: false,
+              abrirFicha
+            });
+            return;
+          }
+
+          // Interceptar Chef Nutricional (Exóticos)
+          if (tipoConsultor === 'chef_exoticos') {
+            const nombreMatch = promptTexto.match(/Nombre:\s*(.*)/i);
+            const especieMatch = promptTexto.match(/Especie:\s*(.*)/i);
+            const tempMatch = promptTexto.match(/Temperatura del terrario:\s*([\d.]+)/i);
+            const humMatch = promptTexto.match(/Humedad del terrario:\s*([\d.]+)/i);
+
+            const nombre = nombreMatch ? nombreMatch[1].trim() : 'Animal';
+            const especieCompleta = especieMatch ? especieMatch[1].trim() : 'Exótico';
+            const temp = tempMatch ? tempMatch[1] : '26';
+            const hum = humMatch ? humMatch[1] : '60';
+
+            const especieLower = especieCompleta.toLowerCase();
+            let alimentosAdecuados: string;
+            let alimentosProhibidos: string;
+            let frecuencia: string;
+            let suplementos: string;
+
+            if (especieLower.includes('serpiente') || especieLower.includes('pitón') || especieLower.includes('boa') || especieLower.includes('python')) {
+              alimentosAdecuados = '• Ratones o ratas de tamaño adecuado (diámetro similar a la parte más ancha de su cuerpo).\n• Se recomienda ofrecer alimento previamente congelado y descongelado a temperatura ambiente.';
+              alimentosProhibidos = '• Presas vivas (pueden morder y causar heridas graves e infecciones).\n• Carne procesada, embutidos o alimentos cocinados.';
+              frecuencia = '• Ejemplares jóvenes: Cada 5-7 días.\n• Ejemplares adultos: Cada 10-15 días.';
+              suplementos = '• No suele requerir si la presa entera está sana, pero se puede espolvorear calcio esporádicamente.';
+            } else if (especieLower.includes('rana') || especieLower.includes('sapo') || especieLower.includes('anfibio')) {
+              alimentosAdecuados = '• Insectos vivos pequeños cargados de nutrientes (gut-loaded): grillos, moscas de la fruta (Drosophila), pequeñas cucarachas.';
+              alimentosProhibidos = '• Insectos capturados en la naturaleza (pueden contener pesticidas o parásitos).\n• Alimentos comerciales para perros o gatos.';
+              frecuencia = '• Cada 2-3 días, preferiblemente al atardecer (hábitos crepusculares/nocturnos).';
+              suplementos = '• Espolvorear Calcio + Vitamina D3 en los insectos 2 veces por semana, y un complejo multivitamínico para reptiles 1 vez al mes.';
+            } else if (especieLower.includes('tarántula') || especieLower.includes('araña') || especieLower.includes('escorpión')) {
+              alimentosAdecuados = '• Insectos vivos: grillos, cucarachas Dubia, runners o tenebrios adecuados al tamaño de su prosoma/opistosoma.';
+              alimentosProhibidos = '• Insectos grandes o agresivos mientras esté en periodo de premuda o recién mudada (su exoesqueleto es blando y vulnerable).';
+              frecuencia = '• Jóvenes: 1-2 veces por semana.\n• Adultos: Cada 10-14 días.';
+              suplementos = '• No requiere suplementación de calcio o vitaminas. Mantener agua limpia en un tapón plano.';
+            } else {
+              alimentosAdecuados = '• Dieta variada según sea insectívoro, herbívoro o carnívoro.\n• Verduras de hoja verde (diente de león, canónigos) e insectos vivos.';
+              alimentosProhibidos = '• Lechuga iceberg, espinacas en exceso, aguacate, cítricos, chocolate, azúcares.';
+              frecuencia = '• Variable según edad y especie (diaria para herbívoros jóvenes, espaciada para carnívoros).';
+              suplementos = '• Calcio sin fósforo espolvoreado en la comida 2-3 veces por semana; Vitamina D3 según exposición a luz UVB.';
+            }
+
+            const receta = `[Modo Offline - Guía Nutricional para ${nombre} (${especieCompleta})]
+Temperatura de terrario registrada: ${temp}°C
+Humedad de terrario registrada: ${hum}%
+
+Alimentos Recomendados:
+${alimentosAdecuados}
+
+Frecuencia sugerida:
+${frecuencia}`;
+
+            resolve({
+              diagnostico: receta,
+              tratamiento: `Administración y Suplementos:\n${suplementos}`,
+              advertencia: `Alimentos Prohibidos:\n${alimentosProhibidos}\n\nNota: Esta es una guía de referencia rápida sin conexión. Activa el internet o ingresa tu clave API en Ajustes ⚙️ para obtener un plan nutricional dinámico por IA.`,
+              esUrgente: false,
+              abrirFicha
+            });
+            return;
+          }
           // 0. Interceptar preguntas sobre cómo enviar o mandar fotos
           if (text.includes('cómo mando') || text.includes('como mando') || text.includes('cómo enviar') || text.includes('como enviar') || text.includes('subir foto') || text.includes('adjuntar')) {
             resolve({
