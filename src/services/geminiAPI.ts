@@ -175,7 +175,7 @@ export class GeminiAPIService {
     if (!simulatedTemplateKey) {
       const cuota = IAQuotaManager.obtenerEstadoCuota();
       if (!cuota.esIlimitado && cuota.restantes <= 0) {
-        throw new Error("Límite diario de análisis de IA alcanzado. Por favor, introduce tu propia API Key en Ajustes ⚙️.");
+        throw new Error(`Límite diario de análisis de IA alcanzado. Estará disponible de nuevo en ${IAQuotaManager.obtenerMensajeTiempoRestante()}. Por favor, introduce tu propia API Key en Ajustes ⚙️.`);
       }
     }
 
@@ -880,7 +880,7 @@ ${frecuencia}`;
   ): Promise<any> {
     const cuota = IAQuotaManager.obtenerEstadoCuota();
     if (!cuota.esIlimitado && cuota.restantes <= 0) {
-      throw new Error("Límite diario de análisis de IA alcanzado. Por favor, introduce tu propia API Key en Ajustes ⚙️.");
+      throw new Error(`Límite diario de análisis de IA alcanzado. Estará disponible de nuevo en ${IAQuotaManager.obtenerMensajeTiempoRestante()}. Por favor, introduce tu propia API Key en Ajustes ⚙️.`);
     }
 
     const apiKey = this.getApiKey();

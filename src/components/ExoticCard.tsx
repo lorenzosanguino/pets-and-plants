@@ -948,7 +948,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
               {cuota.esIlimitado 
                 ? '⚡ Modo Premium: Análisis ilimitados' 
                 : cuota.restantes === 0 
-                  ? '❌ Límite diario de IA alcanzado (Ingresa tu API Key en Ajustes)' 
+                  ? `❌ Límite diario alcanzado (Espera ${IAQuotaManager.obtenerMensajeTiempoRestante()} o añade tu API Key en Ajustes ⚙️)` 
                   : `🔑 Te quedan ${cuota.restantes} análisis de IA hoy`}
             </span>
           </div>

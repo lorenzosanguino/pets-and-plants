@@ -77,7 +77,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
       setScanResult(res);
 
       if (res._isSimulated) {
-        setErrorMsg(`Aviso: Límite de cuota Gemini excedido o sin conexión (${res._apiError}). Se han cargado datos simulados de demostración.`);
+        setErrorMsg(`Aviso: ${IAQuotaManager.formatearErrorCuota(res._apiError)}`);
       }
 
       // Pre-rellenar los formularios correspondientes
@@ -139,7 +139,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
       setScanResult(res);
 
       if (res._isSimulated) {
-        setErrorMsg(`Aviso: Límite de cuota Gemini excedido o sin conexión (${res._apiError}). Se han cargado datos simulados de demostración.`);
+        setErrorMsg(`Aviso: ${IAQuotaManager.formatearErrorCuota(res._apiError)}`);
       }
 
       if (mode === 'registrar_mascota') {
@@ -533,7 +533,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
             {cuota.esIlimitado 
               ? '⚡ Modo Premium: Análisis ilimitados con tu clave API.' 
               : cuota.restantes === 0 
-                ? '❌ Límite diario de análisis alcanzado. Ingresa tu API Key en Ajustes ⚙️ para tener análisis ilimitados.' 
+                ? `❌ Límite diario de análisis alcanzado (Espera ${IAQuotaManager.obtenerMensajeTiempoRestante()} o añade tu API Key en Ajustes ⚙️)` 
                 : `🔑 Te quedan ${cuota.restantes} análisis de IA disponibles hoy.`}
           </span>
         </div>
@@ -608,7 +608,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
               <span style={{ fontSize: '48px', display: 'block', marginBottom: '16px' }}>⚠️</span>
               <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#c62828', fontWeight: 'bold' }}>Escáner Deshabilitado</h3>
               <p style={{ fontSize: '13px', margin: '0 0 16px 0', color: 'var(--game-text)' }}>
-                Has alcanzado tu límite diario de análisis clínicos. Para poder seguir analizando, introduce tu clave API en la sección de Ajustes ⚙️.
+                Has alcanzado tu límite diario de análisis gratuitos. Estará disponible de nuevo en ${IAQuotaManager.obtenerMensajeTiempoRestante()}. Para análisis ilimitados inmediatos, introduce tu clave API en Ajustes ⚙️.
               </p>
             </div>
           ) : (

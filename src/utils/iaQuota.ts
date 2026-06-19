@@ -69,4 +69,72 @@ export class IAQuotaManager {
       limite: LIMITE_DIARIO_GRATUITO
     };
   }
+
+  /**
+   * Obtiene el tiempo restante en milisegundos para que se libere al menos una petición de la cuota local.
+   */
+  static obtenerTiempoRestanteMs(): number {
+    const historialReciente = this.getHistorialUso();
+    if (historialReciente.length === 0) return 0;
+    
+    const ahora = Date.now();
+    
+    // El elemento más antiguo es el que primero saldrá de la ventana de 24 horas
+    const masAntiguo = Math.min(...historialReciente);
+    const tiempoParaLiberarse = masAntiguo + 24 * 60 * 60 * 1000;
+    
+    return Math.max(0, tiempoParaLiberarse - ahora);
+  }
+
+  /**
+   * Obtiene el tiempo restante formateado como un mensaje legible (horas, minutos y segundos).
+   */
+  static obtenerMensajeTiempoRestante(): string {
+    const ms = this.obtenerTiempoRestanteMs();
+    if (ms <= 0) return 'unos instantes';
+    
+    const totalSegundos = Math.floor(ms / 1000);
+    const horas = Math.floor(totalSegundos / 3600);
+    const minutos = Math.floor((totalSegundos % 3600) / 60);
+    const segundos = totalSegundos % 60;
+    
+    const partes: string[] = [];
+    if (horas > 0) partes.push(`${horas} ${horas === 1 ? 'hora' : 'horas'}`);
+    if (minutos > 0) partes.push(`${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}`);
+    if (horas === 0 && minutos === 0) partes.push(`${segundos} ${segundos === 1 ? 'segundo' : 'segundos'}`);
+    
+    return partes.join(' y ');
+  }
+
+  /**
+   * Formatea un error de API en un mensaje amigable y legible para el usuario.
+   */
+  static formatearErrorCuota(errorStr: string): string {
+    if (!errorStr) return "Límite de cuota excedido. Por favor, inténtalo más tarde.";
+    
+    const retryMatch = errorStr.match(/retry\s+in\s+([\d.]+)\s*s/i) || 
+                       errorStr.match(/retryDelay["']?:\s*["']?(\d+)/i) ||
+                       errorStr.match(/retry\s+after\s+(\d+)/i);
+    
+    if (retryMatch) {
+      const segundosFloat = parseFloat(retryMatch[1]);
+      const segundos = Math.max(1, Math.round(segundosFloat));
+      if (segundos < 60) {
+        return `Google Gemini está descansando un momento por exceso de peticiones. Estará listo de nuevo en ${segundos} ${segundos === 1 ? 'segundo' : 'segundos'}. Mientras tanto, cargamos datos simulados de demostración. 🐾`;
+      } else {
+        const minutos = Math.floor(segundos / 60);
+        const segsRestantes = segundos % 60;
+        const tiempoTexto = segsRestantes > 0 
+          ? `${minutos} ${minutos === 1 ? 'minuto' : 'minutos'} y ${segsRestantes} ${segsRestantes === 1 ? 'segundo' : 'segundos'}`
+          : `${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}`;
+        return `Google Gemini está descansando un momento por exceso de peticiones. Estará listo de nuevo en ${tiempoTexto}. Mientras tanto, cargamos datos simulados de demostración. 🐾`;
+      }
+    }
+
+    if (errorStr.includes("429") || errorStr.toLowerCase().includes("quota") || errorStr.includes("RESOURCE_EXHAUSTED")) {
+      return "Google Gemini está saturado en este momento. Por favor, espera un momento antes de realizar otra consulta. Mientras tanto, cargamos datos simulados de demostración. 🐾";
+    }
+
+    return `Conexión limitada (${errorStr}). Cargando datos simulados de demostración. 🐾`;
+  }
 }
