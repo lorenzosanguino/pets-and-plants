@@ -99,6 +99,31 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
 
   const alertas = obtenerAlertasClimaticas(clima);
 
+  // Determinar la severidad máxima para el estilo del contenedor unificado
+  const tiposAlerta = alertas.map(a => a.tipo);
+  let tipoMaximo: 'danger' | 'warning' | 'info' | 'success' = 'success';
+  if (tiposAlerta.includes('danger')) {
+    tipoMaximo = 'danger';
+  } else if (tiposAlerta.includes('warning')) {
+    tipoMaximo = 'warning';
+  } else if (tiposAlerta.includes('info')) {
+    tipoMaximo = 'info';
+  }
+
+  let borderCol = 'rgba(76, 175, 80, 0.4)';
+  let bgCol = 'rgba(76, 175, 80, 0.04)';
+
+  if (tipoMaximo === 'danger') {
+    borderCol = 'rgba(239, 68, 68, 0.5)';
+    bgCol = 'rgba(239, 68, 68, 0.05)';
+  } else if (tipoMaximo === 'warning') {
+    borderCol = 'rgba(245, 158, 11, 0.5)';
+    bgCol = 'rgba(245, 158, 11, 0.05)';
+  } else if (tipoMaximo === 'info') {
+    borderCol = 'rgba(59, 130, 246, 0.5)';
+    bgCol = 'rgba(59, 130, 246, 0.05)';
+  }
+
   return (
     <div style={{
       background: 'var(--game-card-bg, #ffffff)',
@@ -209,105 +234,105 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
         // GPS Activo con Clima cargado
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           
-          {/* Alertas Render */}
-          {alertas.map((alerta, index) => {
-            const isDanger = alerta.tipo === 'danger';
-            const isWarning = alerta.tipo === 'warning';
+          {/* Alertas Render Unificado */}
+          <div
+            style={{
+              border: `1.5px solid ${borderCol}`,
+              background: bgCol,
+              borderRadius: theme === 'gaming' ? '0px' : '12px',
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+              transition: 'all 0.3s'
+            }}
+          >
+            {/* Lista de Alertas Activas */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {alertas.map((alerta, idx) => {
+                let alertaTitleCol = '#2e7d32';
+                if (alerta.tipo === 'danger') alertaTitleCol = '#c62828';
+                else if (alerta.tipo === 'warning') alertaTitleCol = '#ef6c00';
+                else if (alerta.tipo === 'info') alertaTitleCol = '#1565c0';
 
-            
-            // Colores adaptativos premium
-            let borderCol = 'rgba(76, 175, 80, 0.4)';
-            let bgCol = 'rgba(76, 175, 80, 0.04)';
-            let titleCol = '#2e7d32';
-
-            if (isDanger) {
-              borderCol = 'rgba(239, 68, 68, 0.5)';
-              bgCol = 'rgba(239, 68, 68, 0.05)';
-              titleCol = '#c62828';
-            } else if (isWarning) {
-              borderCol = 'rgba(245, 158, 11, 0.5)';
-              bgCol = 'rgba(245, 158, 11, 0.05)';
-              titleCol = '#ef6c00';
-            } else if (alerta.tipo === 'info') {
-              borderCol = 'rgba(59, 130, 246, 0.5)';
-              bgCol = 'rgba(59, 130, 246, 0.05)';
-              titleCol = '#1565c0';
-            }
-
-            return (
-              <div
-                key={index}
-                style={{
-                  border: `1.5px solid ${borderCol}`,
-                  background: bgCol,
-                  borderRadius: theme === 'gaming' ? '0px' : '12px',
-                  padding: '16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '12px',
-                  transition: 'all 0.3s'
-                }}
-              >
-                {/* Alerta Title Header */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '18px' }}>{alerta.icon}</span>
-                  <strong style={{ fontSize: '13px', color: titleCol, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    {alerta.titulo}
-                  </strong>
-                </div>
-
-                <p style={{ margin: 0, fontSize: '12px', color: 'var(--game-text-bright, #333)', lineHeight: '1.4' }}>
-                  {alerta.mensaje}
-                </p>
-
-                {/* Columnas de Diagnóstico adaptativo */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                  gap: '14px',
-                  borderTop: '1px solid rgba(0,0,0,0.05)',
-                  paddingTop: '12px'
-                }}>
-                  {/* Mascotas */}
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
-                    background: 'var(--game-card-bg, #ffffff)',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(0,0,0,0.03)'
+                return (
+                  <div key={idx} style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '4px',
+                    borderBottom: idx < alertas.length - 1 ? '1px dashed rgba(0,0,0,0.06)' : 'none',
+                    paddingBottom: idx < alertas.length - 1 ? '10px' : '0px'
                   }}>
-                    <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#1565c0', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      🐾 Cuidado de Mascotas
-                    </span>
-                    <p style={{ margin: 0, fontSize: '11px', color: 'var(--game-text, #555)', lineHeight: '1.4' }}>
-                      {alerta.riesgoMascotas}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '18px' }}>{alerta.icon}</span>
+                      <strong style={{ fontSize: '13px', color: alertaTitleCol, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {alerta.titulo}
+                      </strong>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '12px', color: 'var(--game-text-bright, #333)', lineHeight: '1.4' }}>
+                      {alerta.mensaje}
                     </p>
                   </div>
+                );
+              })}
+            </div>
 
-                  {/* Plantas */}
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
-                    background: 'var(--game-card-bg, #ffffff)',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(0,0,0,0.03)'
-                  }}>
-                    <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#2e7d32', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      🌿 Manejo de Cultivo
-                    </span>
-                    <p style={{ margin: 0, fontSize: '11px', color: 'var(--game-text, #555)', lineHeight: '1.4' }}>
-                      {alerta.riesgoPlantas}
-                    </p>
-                  </div>
+            {/* Columnas de Diagnóstico adaptativo */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: '14px',
+              borderTop: '1px solid rgba(0,0,0,0.05)',
+              paddingTop: '12px'
+            }}>
+              {/* Mascotas */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+                background: 'var(--game-card-bg, #ffffff)',
+                padding: '12px',
+                borderRadius: '8px',
+                border: '1px solid rgba(0,0,0,0.03)'
+              }}>
+                <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#1565c0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  🐾 Cuidado de Mascotas
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {alertas.map((alerta, idx) => (
+                    <div key={idx} style={{ fontSize: '11px', color: 'var(--game-text, #555)', lineHeight: '1.4', display: 'flex', gap: '4px' }}>
+                      {alertas.length > 1 && <span>•</span>}
+                      <span>{alerta.riesgoMascotas}</span>
+                    </div>
+                  ))}
                 </div>
-
               </div>
-            );
-          })}
+
+              {/* Plantas */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+                background: 'var(--game-card-bg, #ffffff)',
+                padding: '12px',
+                borderRadius: '8px',
+                border: '1px solid rgba(0,0,0,0.03)'
+              }}>
+                <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#2e7d32', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  🌿 Manejo de Cultivo
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {alertas.map((alerta, idx) => (
+                    <div key={idx} style={{ fontSize: '11px', color: 'var(--game-text, #555)', lineHeight: '1.4', display: 'flex', gap: '4px' }}>
+                      {alertas.length > 1 && <span>•</span>}
+                      <span>{alerta.riesgoPlantas}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+          </div>
           
         </div>
       )}
