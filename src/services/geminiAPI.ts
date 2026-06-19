@@ -147,6 +147,7 @@ const REGISTRAR_EXOTICO_SCHEMA = {
 };
 
 export class GeminiAPIService {
+  static _lastApiError: string | null = null;
   /**
    * Obtiene la clave de API disponible con fallbacks robustos para entornos de desarrollo y producción.
    */
@@ -170,6 +171,7 @@ export class GeminiAPIService {
     gpsCoords?: DatosClimaticos,
     historial?: { sender: 'user' | 'ia'; text: string }[]
   ): Promise<AnalisisMultimodalResult> {
+    GeminiAPIService._lastApiError = null;
     if (!simulatedTemplateKey) {
       const cuota = IAQuotaManager.obtenerEstadoCuota();
       if (!cuota.esIlimitado && cuota.restantes <= 0) {
@@ -339,13 +341,21 @@ CRÍTICO - NAVEGACIÓN Y ACCESO A FICHAS: Si el usuario te pide abrir, ir, ver, 
           }
         } else if (response) {
           const errText = await response.text();
-          throw new Error(`HTTP ${response.status}: ${errText}`);
+          let parsedError = "";
+          try {
+            const errObj = JSON.parse(errText);
+            parsedError = errObj.error?.message || errText;
+          } catch {
+            parsedError = errText;
+          }
+          throw new Error(`HTTP ${response.status}: ${parsedError}`);
         }
       } catch (err: any) {
         if (err.message && err.message.includes("Límite diario")) {
           throw err;
         }
         console.error("Fallo en llamada a API de Gemini en analizarImagen, desviando a simulado:", err);
+        GeminiAPIService._lastApiError = err.message || String(err);
       }
     }
 
@@ -408,10 +418,14 @@ ${esGato ? '🍚 Arroz cocido (opcional, muy poco)' : '🍚 Arroz o patata cocid
 🦴 Aceite de salmón / Calcio: 1 cucharadita.
 ${esGato ? '💊 Taurina: Suplemento esencial diario.' : ''}`;
 
+            const errWarning = GeminiAPIService._lastApiError
+              ? `\n\n[Error de API: ${GeminiAPIService._lastApiError}]`
+              : "";
+
             resolve({
               diagnostico: receta,
               tratamiento: "Cocinar las proteínas y verduras al vapor sin sal, ajo, cebolla ni condimentos. Mezclar bien con los aceites/suplementos una vez templado.",
-              advertencia: "Esta receta es una estimación aproximada sin conexión. Activa el internet o ingresa tu clave API en Ajustes ⚙️ para obtener recetas totalmente personalizadas y dinámicas.",
+              advertencia: `Esta receta es una estimación aproximada sin conexión. Activa el internet o ingresa tu clave API en Ajustes ⚙️ para obtener recetas totalmente personalizadas y dinámicas.${errWarning}`,
               esUrgente: false,
               abrirFicha
             });
@@ -468,10 +482,14 @@ ${alimentosAdecuados}
 Frecuencia sugerida:
 ${frecuencia}`;
 
+            const errWarning = GeminiAPIService._lastApiError
+              ? `\n\n[Error de API: ${GeminiAPIService._lastApiError}]`
+              : "";
+
             resolve({
               diagnostico: receta,
               tratamiento: `Administración y Suplementos:\n${suplementos}`,
-              advertencia: `Alimentos Prohibidos:\n${alimentosProhibidos}\n\nNota: Esta es una guía de referencia rápida sin conexión. Activa el internet o ingresa tu clave API en Ajustes ⚙️ para obtener un plan nutricional dinámico por IA.`,
+              advertencia: `Alimentos Prohibidos:\n${alimentosProhibidos}\n\nNota: Esta es una guía de referencia rápida sin conexión. Activa el internet o ingresa tu clave API en Ajustes ⚙️ para obtener un plan nutricional dinámico por IA.${errWarning}`,
               esUrgente: false,
               abrirFicha
             });
