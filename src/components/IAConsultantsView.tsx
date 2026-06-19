@@ -15,6 +15,7 @@ interface ChatMessage {
     tratamiento: string;
     advertencia: string;
     esUrgente: boolean;
+    abrirFicha?: { tipo: 'mascota' | 'planta' | 'exotico'; id: string } | null;
   };
 }
 
@@ -327,10 +328,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
 
 
 
-      // Desencadenar la navegación a la ficha si es requerido
-      if (res.abrirFicha && onNavigateToAsset) {
-        onNavigateToAsset(res.abrirFicha.tipo, res.abrirFicha.id);
-      }
+      // NO navegar automáticamente — se muestra un botón en el mensaje para que el usuario decida
 
       const iaMsg: ChatMessage = {
         id: safeUUID(),
@@ -340,7 +338,8 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
         diagnosticoClinico: {
           tratamiento: res.tratamiento,
           advertencia: res.advertencia,
-          esUrgente: res.esUrgente
+          esUrgente: res.esUrgente,
+          abrirFicha: res.abrirFicha || undefined
         }
       };
 
@@ -491,6 +490,26 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
           }}>
             <strong>Atención Preventiva:</strong> {m.diagnosticoClinico.advertencia}
           </div>
+        )}
+        {m.diagnosticoClinico.abrirFicha && onNavigateToAsset && (
+          <button
+            type="button"
+            onClick={() => onNavigateToAsset!(m.diagnosticoClinico!.abrirFicha!.tipo, m.diagnosticoClinico!.abrirFicha!.id)}
+            style={{
+              marginTop: '10px',
+              padding: '6px 14px',
+              background: 'var(--game-accent, #1976d2)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              fontFamily: 'var(--game-font, sans-serif)'
+            }}
+          >
+            📂 Ver ficha
+          </button>
         )}
       </div>
     );
@@ -770,7 +789,9 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
             }}>
               {theme === 'terminal' 
                 ? '> CALCULATING_SYS_DIAGNOSIS...' 
-                : 'El consultor está examinando minuciosamente la fisiopatología de la imagen...'}
+                : attachedImage
+                  ? 'El consultor está examinando minuciosamente la fisiopatología de la imagen...'
+                  : 'El consultor está analizando tu consulta...'}
             </div>
           )}
           <div ref={messagesEndRef} />

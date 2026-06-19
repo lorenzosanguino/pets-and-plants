@@ -32,6 +32,8 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
   const [showChefModal, setShowChefModal] = useState(false);
   const [chefLoading, setChefLoading] = useState(false);
   const [chefRecipe, setChefRecipe] = useState<{ receta: string; advertencia?: string } | null>(null);
+  // Estado local para deparasitación — refleja cambios inmediatamente sin esperar al padre
+  const [localVacunasChecklist, setLocalVacunasChecklist] = useState<string[]>(() => mascota.vacunasChecklist || []);
 
   const toggleExpanded = () => {
     if (onToggleExpand) {
@@ -170,12 +172,13 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
       ? mascota.registroPeso[mascota.registroPeso.length - 1].pesoKg
       : 5;
 
+    const especieTexto = mascota.especie === 'Felino' ? 'Gato (felino)' : mascota.especie === 'Canino' ? 'Perro (canino)' : mascota.especie;
     const promptText = `Actúa como veterinario experto en nutrición animal. Diseña una receta casera (cocinada o BARF) detallada en gramos e indica las calorías diarias recomendadas (kcal) para:
 Nombre: ${mascota.nombre}
-Especie: ${mascota.especie === 'Felino' ? 'Gato' : 'Perro'}
+Especie: ${especieTexto}
 Peso: ${pesoActual} kg
-Actividad: ${mascota.actividad}
-Explica la receta de forma clara en español, detallando las proporciones en gramos de proteínas, vegetales y complementos.`;
+Actividad: ${mascota.actividad || 'Moderada'}
+Explica la receta de forma clara en español, detallando las proporciones en gramos de proteínas, vegetales y complementos. Si es un gato, ten en cuenta sus necesidades específicas de taurina y proteína animal.`;
 
     try {
       const res = await GeminiAPIService.analizarImagen(
@@ -377,10 +380,12 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
   };
 
   const getDewormingInfo = (vName: 'Desparasitación Interna' | 'Desparasitación Externa') => {
-    const checklist = mascota.vacunasChecklist || [];
+    // Usa localVacunasChecklist para reflejar cambios inmediatamente tras Registrar Toma
+    const checklist = localVacunasChecklist;
+    const prefix = `${vName}_`;
     const dates = checklist
-      .filter(item => item.startsWith(`${vName}_`))
-      .map(item => item.split('_')[1])
+      .filter(item => item.startsWith(prefix))
+      .map(item => item.slice(prefix.length)) // slice más robusto que split
       .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
     
     const intervalMonths = vName === 'Desparasitación Interna' ? 3 : 1;
@@ -443,9 +448,13 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
     const confirmar = window.confirm(`¿Quieres registrar una nueva toma de ${vName} hoy (${hoyFormateado})?`);
     if (!confirmar) return;
 
-    const current = mascota.vacunasChecklist || [];
-    const cleanCurrent = current.filter(item => item !== vName && !item.startsWith(`${vName}_`));
+    const current = localVacunasChecklist;
+    const prefix = `${vName}_`;
+    const cleanCurrent = current.filter(item => item !== vName && !item.startsWith(prefix));
     const updated = [...cleanCurrent, `${vName}_${todayStr}`];
+
+    // Actualizar estado local inmediatamente para refrescar la UI sin esperar al padre
+    setLocalVacunasChecklist(updated);
 
     const nuevoEvento = {
       id: safeUUID(),
@@ -1042,8 +1051,8 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
                 {(mascota.especie === 'Felino' 
-                  ? ['Trivalente Felina', 'Leucemia Felina', 'Rabia'] 
-                  : ['Parvovirus', 'Moquillo', 'Adenovirus', 'Rabia', 'Leptospirosis']
+                  ? ['Trivalente Felina (1ª dosis)', 'Trivalente Felina (2ª dosis)', 'Leucemia Felina', 'Rabia'] 
+                  : ['Parvovirus', 'Moquillo', 'Adenovirus', 'Rabia', 'Leptospirosis', 'Bordetella']
                 ).map(vName => {
                   const isChecked = (mascota.vacunasChecklist || []).includes(vName);
                   return (
@@ -1353,8 +1362,8 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
             <span style={{ fontSize: '8px', color: 'var(--game-text, #888)', marginTop: '4px', fontFamily: 'var(--game-font, sans-serif)' }}>Escanea para descargar historial clínico</span>
           </div>
 
-          {/* Escuela de Adiestramiento Adaptativo */}
-          <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }} className="no-print">
+          {/* Escuela de Adiestramiento Adaptativo — solo para caninos */}
+          {mascota.especie === 'Canino' && <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }} className="no-print">
             <p style={{ margin: '0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>
               🎓 Escuela de Adiestramiento Adaptativo
             </p>
@@ -1398,7 +1407,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                 );
               })}
             </div>
-          </div>
+          </div>}
 
           {/* Botones de Acción: Exportar, Nutrición */}
           <div style={{ display: 'flex', gap: '8px', marginTop: '8px', borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px' }} className="no-print">
