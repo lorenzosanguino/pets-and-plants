@@ -300,11 +300,17 @@ export const PetPlantDashboard: React.FC = () => {
       titleTip = 'Sin conexión a internet. Funcionando en modo local.';
     } else {
       // Online
+      const provider = localStorage.getItem('petplant_login_provider');
       if (!hogarId) {
         ledColor = '#2196f3'; // Blue (Online, local database only)
         text = 'Online (Local)';
         isPulsing = false;
         titleTip = 'Conectado a internet. Datos guardados localmente. Configura la nube en Ajustes para sincronizar.';
+      } else if (provider !== 'google' && provider !== 'microsoft') {
+        ledColor = '#2196f3'; // Blue (Online, local household)
+        text = 'Online (Hogar local)';
+        isPulsing = false;
+        titleTip = 'Unido al hogar, pero guardando en local. Inicia sesión en Ajustes para sincronizar con la nube.';
       } else {
         // Connected to Cloud
         if (syncStatus === 'synced') {
@@ -972,7 +978,11 @@ export const PetPlantDashboard: React.FC = () => {
 
   // Suscripción en tiempo real a cambios de Grupo Hogar con validación de timestamps
   useEffect(() => {
-    if (!hogarId) return;
+    const provider = localStorage.getItem('petplant_login_provider');
+    if (!hogarId || provider !== 'google') {
+      // Evitar suscripción en tiempo real a Firestore si no hay sesión activa con Google
+      return;
+    }
 
     setSyncStatus('synced');
     const unsubscribe = getFirebaseCached()?.FirebaseSyncService.listenToHogar(hogarId, async (data) => {

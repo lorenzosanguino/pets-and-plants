@@ -7,6 +7,8 @@ import { CardPhotoManager } from './CardPhotoManager';
 import { IAQuotaManager } from '../utils/iaQuota';
 import { ReportGeneratorModal } from './ReportGeneratorModal';
 import { BiometricChart } from './BiometricChart';
+import { GeminiAPIService } from '../services/geminiAPI';
+import { TTSButton } from '../utils/useTTS';
 
 interface PlantCardProps {
   planta: Planta;
@@ -21,6 +23,44 @@ const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpen
   const [localExpanded, setLocalExpanded] = useState(false);
   const expanded = isExpanded !== undefined ? isExpanded : localExpanded;
   const [isReportOpen, setIsReportOpen] = useState(false);
+
+  // Chef Nutricional para Plantas
+  const [showChefModal, setShowChefModal] = useState(false);
+  const [chefLoading, setChefLoading] = useState(false);
+  const [chefRecipe, setChefRecipe] = useState<{ receta: string; advertencia?: string } | null>(null);
+
+  const runChefIA = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setChefLoading(true);
+    setChefRecipe(null);
+    setShowChefModal(true);
+
+    const promptText = `Actúa como agrónomo experto en botánica y nutrición vegetal. Diseña un plan de abonado y cuidado nutricional detallado para la siguiente planta:
+Nombre común: ${planta.nombreComun}
+Nombre científico: ${planta.nombreCientifico || 'No especificado'}
+Ubicación/Habitación: ${planta.ubicacionHabitacion}
+Intervalo de riego actual: cada ${planta.intervaloRiegoDias} días
+Sustrato: ${planta.grosorHoja ? `Hojas de tipo ${planta.grosorHoja}` : ''}
+Temperatura típica: ${planta.temperaturaZona || 22}°C
+Tipo de riego: ${planta.tipoRiegoEspecifico || 'Agua del grifo reposada'}
+
+Explica en español qué tipo de abono/nutrientes necesita (macro y micronutrientes necesarios), con qué frecuencia según la época del año (primavera, verano, otoño, invierno), y consejos especiales de sustrato y riego para asimilar mejor los nutrientes.`;
+
+    try {
+      const res = await GeminiAPIService.analizarImagen(null, 'agronomo', promptText);
+      setChefRecipe({
+        receta: res.diagnostico + (res.tratamiento ? `\n\nRecomendaciones adicionales:\n${res.tratamiento}` : ''),
+        advertencia: res.advertencia
+      });
+    } catch {
+      setChefRecipe({
+        receta: `[Modo Offline - Guía estimada para ${planta.nombreComun}]\n\nPor favor, consulta a un especialista o añade tu clave API de Gemini en Ajustes para obtener recomendaciones específicas por IA.`,
+        advertencia: 'Activa la conexión o introduce tu API Key en Ajustes para obtener recomendaciones detalladas por IA.'
+      });
+    } finally {
+      setChefLoading(false);
+    }
+  };
 
   // Luxometer states
   const [showLuxmeter, setShowLuxmeter] = useState(false);
@@ -1414,7 +1454,24 @@ const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpen
                 fontFamily: 'var(--game-font, sans-serif)'
               }}
             >
-              Medir Luz Solar ☀️
+              Medir Luz ☀️
+            </button>
+            <button
+              onClick={runChefIA}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                background: 'var(--game-accent-light, rgba(76, 175, 80, 0.1))',
+                color: 'var(--game-text-bright, #4caf50)',
+                border: '1.5px solid var(--game-border-color, #4caf50)',
+                borderRadius: 'var(--game-radius, 8px)',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontFamily: 'var(--game-font, sans-serif)'
+              }}
+            >
+              Chef Nutricional 🌱
             </button>
           </div>
 
@@ -1608,6 +1665,33 @@ const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpen
         item={planta}
         type="plant"
       />
+
+      {/* MODAL CHEF NUTRICIONAL IA — PLANTAS */}
+      {showChefModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setShowChefModal(false)}>
+          <div style={{ background: 'var(--game-card-bg, #fff)', borderRadius: theme === 'gaming' ? '0px' : '16px', padding: '24px', maxWidth: '480px', width: '90%', maxHeight: '80vh', overflowY: 'auto', border: 'var(--game-border, none)', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <strong style={{ fontSize: '15px', color: 'var(--game-text-bright)', fontFamily: 'var(--game-font, sans-serif)' }}>🍽️ Chef Nutricional IA — {planta.nombreComun}</strong>
+              <button type="button" onClick={() => setShowChefModal(false)} style={{ background: 'transparent', border: 'none', fontSize: '18px', cursor: 'pointer', color: 'var(--game-text)' }}>✕</button>
+            </div>
+            {chefLoading ? (
+              <div style={{ textAlign: 'center', padding: '32px', color: 'var(--game-text)', fontSize: '13px', fontStyle: 'italic' }}>⏳ Consultando con el agrónomo especialista...</div>
+            ) : chefRecipe ? (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+                  <TTSButton text={chefRecipe.receta} theme={theme} />
+                </div>
+                <pre style={{ whiteSpace: 'pre-wrap', fontSize: '12px', lineHeight: '1.6', color: 'var(--game-text-bright)', fontFamily: 'var(--game-font, sans-serif)', margin: 0 }}>{chefRecipe.receta}</pre>
+                {chefRecipe.advertencia && (
+                  <div style={{ marginTop: '12px', padding: '10px', background: 'rgba(245,158,11,0.08)', borderLeft: '3px solid #f59e0b', borderRadius: '6px', fontSize: '11px', color: '#92400e' }}>
+                    ⚠️ {chefRecipe.advertencia}
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
 
       {/* MODAL DEL LUXÓMETRO DOMÉSTICO */}
       {showLuxmeter && (

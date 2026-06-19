@@ -168,9 +168,10 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
   const getDewormingLastDateStr = (vName: string) => {
     if (!isPet) return null;
     const checklist = petItem.vacunasChecklist || [];
+    const prefix = `${vName}_`;
     const dates = checklist
-      .filter(x => x.startsWith(`${vName}_`))
-      .map(x => x.split('_')[1])
+      .filter(x => x.startsWith(prefix))
+      .map(x => x.slice(prefix.length))
       .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
     if (dates.length > 0) {
       const parts = dates[0].split('-');

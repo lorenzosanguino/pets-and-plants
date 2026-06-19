@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { TTSButton } from '../utils/useTTS';
 import { CameraScanner } from './CameraScanner';
 import { GeminiAPIService } from '../services/geminiAPI';
 import { LocalDatabase } from '../database/db';
@@ -888,6 +889,9 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
                 {mode === 'salud_mascota' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
                     <div style={{ padding: '12px', background: 'rgba(0,0,0,0.03)', borderRadius: '8px', border: '1px solid var(--game-border-color)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+                        <TTSButton text={`Diagnóstico: ${scanResult.diagnostico}. Tratamiento sugerido: ${scanResult.tratamiento}.${scanResult.advertencia ? ` Alerta: ${scanResult.advertencia}` : ''}`} />
+                      </div>
                       <p><strong>Diagnóstico:</strong> {scanResult.diagnostico}</p>
                       <p><strong>Tratamiento sugerido:</strong> {scanResult.tratamiento}</p>
                       <p style={{ color: scanResult.esUrgente ? '#f44336' : 'inherit' }}><strong>Alerta:</strong> {scanResult.advertencia}</p>
@@ -917,6 +921,9 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
                 {mode === 'enfermedad_planta' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
                     <div style={{ padding: '12px', background: 'rgba(0,0,0,0.03)', borderRadius: '8px', border: '1px solid var(--game-border-color)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+                        <TTSButton text={`Diagnóstico Fitosanitario: ${scanResult.diagnostico}. Acción Recomendada: ${scanResult.tratamiento}.${scanResult.advertencia ? ` Peligro: ${scanResult.advertencia}` : ''}`} />
+                      </div>
                       <p><strong>Diagnóstico Fitosanitario:</strong> {scanResult.diagnostico}</p>
                       <p><strong>Acción Recomendada:</strong> {scanResult.tratamiento}</p>
                       <p style={{ color: scanResult.esUrgente ? '#f44336' : 'inherit' }}><strong>Peligro:</strong> {scanResult.advertencia}</p>
@@ -989,6 +996,9 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
                 {mode === 'salud_exotico' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
                     <div style={{ padding: '12px', background: 'rgba(0,0,0,0.03)', borderRadius: '8px', border: '1px solid var(--game-border-color)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+                        <TTSButton text={`Diagnóstico de Terrario: ${scanResult.diagnostico}. Tratamiento sugerido: ${scanResult.tratamiento}.${scanResult.advertencia ? ` Alerta: ${scanResult.advertencia}` : ''}`} />
+                      </div>
                       <p><strong>Diagnóstico de Terrario:</strong> {scanResult.diagnostico}</p>
                       <p><strong>Tratamiento sugerido:</strong> {scanResult.tratamiento}</p>
                       <p style={{ color: scanResult.esUrgente ? '#f44336' : 'inherit' }}><strong>Alerta:</strong> {scanResult.advertencia}</p>

@@ -391,7 +391,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
       }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '56px', height: '56px', border: '1px solid #00ff00', background: 'rgba(0,255,0,0.05)', justifyContent: 'center' }}>
           <span style={{ fontSize: '18px' }}>👤</span>
-          <span style={{ fontSize: '8px', fontWeight: 'bold' }}>SNAKE</span>
+          <span style={{ fontSize: '8px', fontWeight: 'bold' }}>USUARIO</span>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, gap: '4px' }}>
@@ -406,7 +406,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '56px', height: '56px', border: '1px solid #00ff00', background: 'rgba(0,255,0,0.05)', justifyContent: 'center' }}>
           <span style={{ fontSize: '18px' }}>{activeConsultant === 'veterinario' ? '🩺' : '🌱'}</span>
           <span style={{ fontSize: '8px', fontWeight: 'bold', textTransform: 'uppercase' }}>
-            {activeConsultant === 'veterinario' ? 'VET_IA' : 'AGRO_IA'}
+            {activeConsultant === 'veterinario' ? 'VET-IA' : 'AGRO-IA'}
           </span>
         </div>
       </div>
