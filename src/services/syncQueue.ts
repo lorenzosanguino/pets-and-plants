@@ -53,8 +53,8 @@ export class SyncQueueService {
       const hogarNombre = localStorage.getItem('petplant_hogar_nombre') || 'Mi Hogar';
       const uiTheme = (localStorage.getItem('petplant_game_theme') || 'nature') as any;
 
-      if (!hogarId) {
-        console.warn('No hay hogar activo para sincronizar. Vaciando cola obsoleta.');
+      if (!hogarId && provider !== 'microsoft') {
+        console.warn('No hay hogar activo ni OneDrive para sincronizar. Vaciando cola obsoleta.');
         await this.clearQueue(acciones);
         this.isProcessing = false;
         return;
@@ -65,7 +65,7 @@ export class SyncQueueService {
       const plantas = await LocalDatabase.getPlantas();
       const exoticos = await LocalDatabase.getExoticos();
 
-      if (provider === 'google') {
+      if (hogarId && provider !== 'microsoft') {
         const { FirebaseSyncService } = await import('../database/firebaseSync');
         if (FirebaseSyncService.isCloudEnabled()) {
           console.log('Sincronizando cola de mutaciones con Firebase Firestore...');

@@ -2,10 +2,55 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 export const useTTS = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [currentRate, setCurrentRate] = useState<number>(1.15); // Velocidad normal por defecto
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const sentencesQueueRef = useRef<string[]>([]);
   const currentSentenceIndexRef = useRef<number>(0);
   const activeSpeakingRef = useRef<boolean>(false);
+  const rateRef = useRef<number>(1.15);
+
+  const playCurrent = useCallback(() => {
+    if (!activeSpeakingRef.current || !window.speechSynthesis) return;
+
+    if (currentSentenceIndexRef.current >= sentencesQueueRef.current.length) {
+      setIsSpeaking(false);
+      activeSpeakingRef.current = false;
+      return;
+    }
+
+    const sentenceText = sentencesQueueRef.current[currentSentenceIndexRef.current];
+    const utterance = new SpeechSynthesisUtterance(sentenceText);
+    utterance.lang = 'es-ES';
+    utterance.rate = rateRef.current;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    const voices = window.speechSynthesis.getVoices();
+    const spanishVoice = voices.find(v => v.lang.startsWith('es'));
+    if (spanishVoice) utterance.voice = spanishVoice;
+
+    utterance.onend = () => {
+      if (!activeSpeakingRef.current) {
+        setIsSpeaking(false);
+        return;
+      }
+      currentSentenceIndexRef.current++;
+      playCurrent();
+    };
+
+    utterance.onerror = (e) => {
+      console.error("Error en reproducción TTS de fragmento:", e);
+      if (!activeSpeakingRef.current) {
+        setIsSpeaking(false);
+        return;
+      }
+      currentSentenceIndexRef.current++;
+      playCurrent();
+    };
+
+    utteranceRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+  }, []);
 
   const stop = useCallback(() => {
     activeSpeakingRef.current = false;
@@ -27,6 +72,10 @@ export const useTTS = () => {
     }
 
     const cleanText = text
+      .replace(/\p{Extended_Pictographic}/gu, '')
+      .replace(/[\u{1F300}-\u{1F9FF}]/gu, '')
+      .replace(/[\u{2700}-\u{27BF}]/gu, '')
+      .replace(/[\u{2600}-\u{26FF}]/gu, '')
       .replace(/\*\*(.*?)\*\*/g, '$1')
       .replace(/\*(.*?)\*/g, '$1')
       .replace(/#{1,6}\s/g, '')
@@ -49,54 +98,21 @@ export const useTTS = () => {
     sentencesQueueRef.current = sentences;
     currentSentenceIndexRef.current = 0;
 
-    const speakNext = () => {
-      // Si el flag de reproducción activa es false, abortar inmediatamente el bucle
-      if (!activeSpeakingRef.current) {
-        setIsSpeaking(false);
-        return;
+    playCurrent();
+  }, [isSpeaking, stop, playCurrent]);
+
+  const setSpeed = useCallback((newRate: number) => {
+    rateRef.current = newRate;
+    setCurrentRate(newRate);
+    if (activeSpeakingRef.current && window.speechSynthesis) {
+      if (utteranceRef.current) {
+        utteranceRef.current.onend = null;
+        utteranceRef.current.onerror = null;
       }
-
-      if (currentSentenceIndexRef.current >= sentencesQueueRef.current.length) {
-        setIsSpeaking(false);
-        return;
-      }
-
-      const sentenceText = sentencesQueueRef.current[currentSentenceIndexRef.current];
-      const utterance = new SpeechSynthesisUtterance(sentenceText);
-      utterance.lang = 'es-ES';
-      utterance.rate = 0.95;
-      utterance.pitch = 1;
-      utterance.volume = 1;
-
-      const voices = window.speechSynthesis.getVoices();
-      const spanishVoice = voices.find(v => v.lang.startsWith('es'));
-      if (spanishVoice) utterance.voice = spanishVoice;
-
-      utterance.onend = () => {
-        if (!activeSpeakingRef.current) {
-          setIsSpeaking(false);
-          return;
-        }
-        currentSentenceIndexRef.current++;
-        speakNext();
-      };
-
-      utterance.onerror = (e) => {
-        console.error("Error en reproducción TTS de fragmento:", e);
-        if (!activeSpeakingRef.current) {
-          setIsSpeaking(false);
-          return;
-        }
-        currentSentenceIndexRef.current++;
-        speakNext();
-      };
-
-      utteranceRef.current = utterance;
-      window.speechSynthesis.speak(utterance);
-    };
-
-    speakNext();
-  }, [isSpeaking, stop]);
+      window.speechSynthesis.cancel();
+      playCurrent();
+    }
+  }, [playCurrent]);
 
   // Silenciar automáticamente si el usuario cambia de pestaña o minimiza la app
   useEffect(() => {
@@ -113,7 +129,7 @@ export const useTTS = () => {
 
   const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
-  return { speak, stop, isSpeaking, isSupported };
+  return { speak, stop, isSpeaking, isSupported, rate: currentRate, setSpeed };
 };
 
 interface TTSButtonProps {
@@ -123,33 +139,69 @@ interface TTSButtonProps {
 }
 
 export const TTSButton: React.FC<TTSButtonProps> = ({ text, theme = 'nature', size = 'small' }) => {
-  const { speak, isSpeaking, isSupported } = useTTS();
+  const { speak, isSpeaking, isSupported, rate, setSpeed } = useTTS();
   if (!isSupported || !text?.trim()) return null;
 
   const isSmall = size === 'small';
 
   return (
-    <button
-      type="button"
-      onClick={() => speak(text)}
-      title={isSpeaking ? 'Detener lectura' : 'Escuchar respuesta'}
-      style={{
-        padding: isSmall ? '3px 8px' : '5px 12px',
-        background: isSpeaking ? 'rgba(239,68,68,0.1)' : 'rgba(0,0,0,0.04)',
-        border: `1px solid ${isSpeaking ? '#ef4444' : 'rgba(0,0,0,0.12)'}`,
-        borderRadius: theme === 'gaming' ? '0px' : '6px',
-        fontSize: isSmall ? '11px' : '12px',
-        cursor: 'pointer',
-        color: isSpeaking ? '#ef4444' : 'var(--game-text-bright, #555)',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '4px',
-        fontFamily: 'var(--game-font, sans-serif)',
-        transition: 'all 0.2s',
-        flexShrink: 0
-      }}
-    >
-      {isSpeaking ? '⏹ Detener' : '🔊 Escuchar'}
-    </button>
+    <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+      <button
+        type="button"
+        onClick={() => speak(text)}
+        title={isSpeaking ? 'Detener lectura' : 'Escuchar respuesta'}
+        style={{
+          padding: isSmall ? '3px 8px' : '5px 12px',
+          background: isSpeaking ? 'rgba(239,68,68,0.1)' : 'rgba(0,0,0,0.04)',
+          border: `1px solid ${isSpeaking ? '#ef4444' : 'rgba(0,0,0,0.12)'}`,
+          borderRadius: theme === 'gaming' ? '0px' : '6px',
+          fontSize: isSmall ? '11px' : '12px',
+          cursor: 'pointer',
+          color: isSpeaking ? '#ef4444' : 'var(--game-text-bright, #555)',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          fontFamily: 'var(--game-font, sans-serif)',
+          transition: 'all 0.2s',
+          flexShrink: 0
+        }}
+      >
+        {isSpeaking ? '⏹ Detener' : '🔊 Escuchar'}
+      </button>
+
+      {isSpeaking && (
+        <button
+          type="button"
+          onClick={() => setSpeed(rate === 1.5 ? 1.15 : 1.5)}
+          title="Alternar velocidad de lectura (x1.15 / x1.5)"
+          style={{
+            padding: isSmall ? '3px 8px' : '5px 12px',
+            background: rate === 1.5 
+              ? (theme === 'terminal' ? 'transparent' : 'rgba(76,175,80,0.1)') 
+              : 'rgba(0,0,0,0.04)',
+            border: `1px solid ${
+              rate === 1.5 
+                ? (theme === 'terminal' ? '#33ff33' : '#4caf50') 
+                : 'rgba(0,0,0,0.12)'
+            }`,
+            borderRadius: theme === 'gaming' ? '0px' : '6px',
+            fontSize: isSmall ? '11px' : '12px',
+            cursor: 'pointer',
+            color: rate === 1.5 
+              ? (theme === 'terminal' ? '#33ff33' : '#4caf50') 
+              : 'var(--game-text-bright, #555)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontFamily: 'var(--game-font, sans-serif)',
+            transition: 'all 0.2s',
+            fontWeight: 'bold',
+            flexShrink: 0
+          }}
+        >
+          <span>⚡</span> x1.5
+        </button>
+      )}
+    </div>
   );
 };

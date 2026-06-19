@@ -69,6 +69,7 @@ export const PetPlantDashboard: React.FC = () => {
   const [nuevoHogarNombre, setNuevoHogarNombre] = useState('');
   const [joinHogarId, setJoinHogarId] = useState('');
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
+  const [firebaseLoaded, setFirebaseLoaded] = useState(false);
   const [isCloudEnabled] = useState(() => {
     // Comprobación rápida sin cargar Firebase — si la config existe asumimos que está habilitado
     const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDGQWW8tVP8kk6Nss-GCutohfD6IouLzp0";
@@ -235,7 +236,7 @@ export const PetPlantDashboard: React.FC = () => {
     }
 
     const activeHogar = localStorage.getItem('petplant_hogar_id');
-    if (activeHogar && localStorage.getItem('petplant_login_provider') === 'google') {
+    if (activeHogar && localStorage.getItem('petplant_login_provider') !== 'microsoft') {
       refreshData(true);
     }
   }, [uiTheme]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -289,6 +290,29 @@ export const PetPlantDashboard: React.FC = () => {
       navigator.serviceWorker.register('/sw.js')
         .then((reg) => {
           console.log('Service Worker registrado con éxito en scope:', reg.scope);
+
+          const handleUpdate = () => {
+            console.log('Nueva versión detectada; forzando recarga de página para activar cambios...');
+            window.location.reload();
+          };
+
+          if (reg.waiting) {
+            handleUpdate();
+            return;
+          }
+
+          reg.onupdatefound = () => {
+            const installingWorker = reg.installing;
+            if (installingWorker) {
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed') {
+                  if (navigator.serviceWorker.controller) {
+                    handleUpdate();
+                  }
+                }
+              };
+            }
+          };
         })
         .catch((err) => {
           console.error('Error al registrar Service Worker:', err);
@@ -334,33 +358,25 @@ export const PetPlantDashboard: React.FC = () => {
         text = 'Online (Local)';
         isPulsing = false;
         titleTip = 'Conectado a internet. Datos guardados localmente. Configura la nube en Ajustes para sincronizar.';
-      } else if (provider !== 'google' && provider !== 'microsoft') {
-        ledColor = '#2196f3'; // Blue (Online, local household)
-        text = 'Online (Hogar local)';
-        isPulsing = false;
-        titleTip = 'Unido al hogar, pero guardando en local. Inicia sesión en Ajustes para sincronizar con la nube.';
       } else {
-        // Connected to Cloud
+        // Connected to Cloud (via Google, Microsoft or direct Hogar code)
         if (syncStatus === 'synced') {
           ledColor = '#4caf50'; // Green
-          text = 'Nube OK';
-          isPulsing = true;
-          titleTip = 'Sincronizado con la nube de forma segura.';
+          text = provider === 'microsoft' ? 'Nube (MS)' : 'Nube (Hogar)';
+          isPulsing = false;
+          titleTip = provider === 'microsoft'
+            ? 'Copia de seguridad en Microsoft OneDrive sincronizada y al día.'
+            : 'Grupo Hogar en la nube (Firebase Firestore) totalmente sincronizado en tiempo real.';
         } else if (syncStatus === 'syncing') {
-          ledColor = '#ff9800'; // Amber/Orange
+          ledColor = '#ffeb3b'; // Yellow
           text = 'Sincronizando...';
           isPulsing = true;
-          titleTip = 'Subiendo o descargando cambios en tiempo real...';
-        } else if (syncStatus === 'error') {
-          ledColor = '#f44336'; // Red
+          titleTip = 'Actualizando cambios con la nube...';
+        } else {
+          ledColor = '#ff9800'; // Orange
           text = 'Error Nube';
           isPulsing = true;
-          titleTip = 'Error al sincronizar con la nube. Se reintentará automáticamente.';
-        } else {
-          ledColor = '#4caf50'; // Green
-          text = 'Conectado';
-          isPulsing = false;
-          titleTip = 'Conectado al grupo hogar.';
+          titleTip = 'Fallo en la última comunicación con la nube. Se volverá a intentar automáticamente.';
         }
       }
     }
@@ -637,7 +653,7 @@ export const PetPlantDashboard: React.FC = () => {
 
       // Sincronización automática tras cambios locales con Firebase
       const activeHogar = localStorage.getItem('petplant_hogar_id');
-      if (activeHogar && !isRemoteSyncingRef.current && localStorage.getItem('petplant_login_provider') === 'google') {
+      if (activeHogar && !isRemoteSyncingRef.current && localStorage.getItem('petplant_login_provider') !== 'microsoft') {
         const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Hogar Sincronizado";
         setSyncStatus('syncing');
         const uploadPromise = getFirebaseCached()?.FirebaseSyncService.uploadChanges(activeHogar, activeNombre, listMascotas, listPlantas, listExoticos, uiTheme);
@@ -762,6 +778,7 @@ export const PetPlantDashboard: React.FC = () => {
       } else {
         // Google/Firebase session initialization
         initFirebase().then(({ auth, FirebaseSyncService, onAuthStateChanged }) => {
+          setFirebaseLoaded(true);
           if (!auth) {
             const saved = localStorage.getItem('petplant_user_session');
             if (saved) {
@@ -870,6 +887,45 @@ export const PetPlantDashboard: React.FC = () => {
                 setUser(null);
                 localStorage.removeItem('petplant_login_provider');
                 localStorage.removeItem('petplant_user_session');
+              }
+
+              // Sincronización bidireccional para usuarios no autenticados que tienen un código de hogar
+              const localHogarId = localStorage.getItem('petplant_hogar_id');
+              if (localHogarId && FirebaseSyncService.isCloudEnabled()) {
+                try {
+                  const data = await FirebaseSyncService.getHogarData(localHogarId);
+                  if (data) {
+                    const listMascotas = await LocalDatabase.getMascotas();
+                    const listPlantas = await LocalDatabase.getPlantas();
+                    const listExoticos = await LocalDatabase.getExoticos();
+
+                    const isLocalDemo = isDatabaseDefaultDemo(listMascotas, listPlantas, listExoticos);
+                    const isCloudDemo = isDatabaseDefaultDemo(data.mascotas || [], data.plantas || [], data.exoticos || []);
+                    const cloudHasRealData = !isCloudDemo && (data.mascotas?.length > 0 || data.plantas?.length > 0 || data.exoticos?.length > 0);
+
+                    const localLastUpdated = Number(localStorage.getItem('petplant_db_last_updated') || 0);
+                    const isLocalEmpty = listMascotas.length === 0 && listPlantas.length === 0 && listExoticos.length === 0;
+                    const remoteIsNewer = data.updatedAt > localLastUpdated;
+
+                    if (!isLocalDemo && isCloudDemo) {
+                      await FirebaseSyncService.uploadChanges(localHogarId, data.nombre, listMascotas, listPlantas, listExoticos, uiTheme);
+                    } else if (cloudHasRealData && (remoteIsNewer || isLocalEmpty || isLocalDemo)) {
+                      isRemoteSyncingRef.current = true;
+                      await LocalDatabase.overwriteDatabase(data.mascotas || [], data.plantas || [], data.exoticos || []);
+                      isRemoteSyncingRef.current = false;
+                      await refreshData(false);
+                    } else {
+                      await FirebaseSyncService.uploadChanges(localHogarId, data.nombre, listMascotas, listPlantas, listExoticos, uiTheme);
+                    }
+
+                    if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii')) {
+                      lastSyncedThemeRef.current = data.theme || null;
+                      setUiTheme(data.theme);
+                    }
+                  }
+                } catch (err) {
+                  console.error("Error al sincronizar hogar no-auth al iniciar:", err);
+                }
               }
             }
           });
@@ -1008,13 +1064,15 @@ export const PetPlantDashboard: React.FC = () => {
   // Suscripción en tiempo real a cambios de Grupo Hogar con validación de timestamps
   useEffect(() => {
     const provider = localStorage.getItem('petplant_login_provider');
-    if (!hogarId || provider !== 'google') {
-      // Evitar suscripción en tiempo real a Firestore si no hay sesión activa con Google
+    if (!hogarId || provider === 'microsoft') {
       return;
     }
 
+    const cachedFb = getFirebaseCached();
+    if (!cachedFb) return;
+
     setSyncStatus('synced');
-    const unsubscribe = getFirebaseCached()?.FirebaseSyncService.listenToHogar(hogarId, async (data) => {
+    const unsubscribe = cachedFb.FirebaseSyncService.listenToHogar(hogarId, async (data) => {
       const localLastUpdated = Number(localStorage.getItem('petplant_db_last_updated') || 0);
       
       // Comprobar si la base de datos local está totalmente vacía
@@ -1060,7 +1118,7 @@ export const PetPlantDashboard: React.FC = () => {
 
     return () => { unsubscribe?.(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hogarId]);
+  }, [hogarId, firebaseLoaded]);
 
   const crearHogar = async (e: React.FormEvent) => {
     e.preventDefault();

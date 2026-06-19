@@ -517,6 +517,19 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
   };
 
   const renderBurbujaChat = (m: ChatMessage) => {
+    const getSpeechText = (msg: ChatMessage) => {
+      let t = msg.text;
+      if (msg.diagnosticoClinico) {
+        if (msg.diagnosticoClinico.tratamiento && msg.diagnosticoClinico.tratamiento.trim()) {
+          t += "\n\nAcción recomendada: " + msg.diagnosticoClinico.tratamiento;
+        }
+        if (msg.diagnosticoClinico.advertencia && msg.diagnosticoClinico.advertencia.trim()) {
+          t += "\n\nAtención preventiva: " + msg.diagnosticoClinico.advertencia;
+        }
+      }
+      return t;
+    };
+
     if (theme === 'arcade') {
       return (
         <div key={m.id} style={{
@@ -539,6 +552,11 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
             </div>
           )}
           <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{m.text}</div>
+          {m.sender === 'ia' && (
+            <div style={{ marginTop: '6px' }}>
+              <TTSButton text={getSpeechText(m)} theme={theme} size="small" />
+            </div>
+          )}
           {renderTratamientoIA(m)}
           <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '6px', textAlign: 'right' }}>
             {m.timestamp.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
@@ -565,7 +583,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
             </div>
           )}
           <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{m.text}</div>
-          {m.sender === 'ia' && <TTSButton text={m.text} theme={theme} size="small" />}
+          {m.sender === 'ia' && <TTSButton text={getSpeechText(m)} theme={theme} size="small" />}
           {renderTratamientoIA(m)}
           <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '6px', textAlign: 'right' }}>
             {m.timestamp.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
@@ -602,7 +620,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
         <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{m.text}</div>
         {m.sender === 'ia' && (
           <div style={{ marginTop: '6px' }}>
-            <TTSButton text={m.text} theme={theme} size="small" />
+            <TTSButton text={getSpeechText(m)} theme={theme} size="small" />
           </div>
         )}
         {renderTratamientoIA(m)}
@@ -750,6 +768,76 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
               {activeConsultant === 'veterinario' ? '🐾 Consultor Veterinario' : activeConsultant === 'exoticos' ? '🦎 Especialista en Exóticos' : '🌿 Consultor Agrónomo'}
             </h3>
           )}
+
+          {/* Badge de Estado del Motor de IA (Real vs Simulado) */}
+          {(() => {
+            const hasApiKey = !!GeminiAPIService.getApiKey();
+            if (theme === 'terminal') {
+              return (
+                <div style={{
+                  fontSize: '11px',
+                  color: hasApiKey ? '#33ff33' : '#ffb300',
+                  fontFamily: 'monospace',
+                  border: `1px dashed ${hasApiKey ? '#33ff33' : '#ffb300'}`,
+                  padding: '2px 6px',
+                  marginRight: '6px'
+                }}>
+                  {hasApiKey ? '[STATUS: PREMIUM_REAL_IA]' : '[STATUS: OFFLINE_DEMO_SIM]'}
+                </div>
+              );
+            }
+            if (theme === 'arcade') {
+              return (
+                <div style={{
+                  fontSize: '11px',
+                  color: hasApiKey ? '#00ffff' : '#ff00ff',
+                  fontFamily: 'monospace',
+                  textShadow: `0 0 5px ${hasApiKey ? '#00ffff' : '#ff00ff'}`,
+                  border: `1px solid ${hasApiKey ? '#00ffff' : '#ff00ff'}`,
+                  padding: '2px 6px',
+                  marginRight: '6px',
+                  background: 'rgba(0,0,0,0.5)'
+                }}>
+                  {hasApiKey ? '💎 IA REAL' : '👾 SIMULADOR'}
+                </div>
+              );
+            }
+            if (theme === 'adventure') {
+              return (
+                <div style={{
+                  fontSize: '10px',
+                  fontWeight: 'bold',
+                  color: hasApiKey ? '#00ff00' : '#ffcc00',
+                  border: `1px solid ${hasApiKey ? '#00ff00' : '#ffcc00'}`,
+                  padding: '2px 6px',
+                  background: 'rgba(0, 0, 0, 0.4)',
+                  fontFamily: 'monospace',
+                  letterSpacing: '1px',
+                  marginRight: '6px'
+                }}>
+                  {hasApiKey ? 'REAL_IA' : 'SIMULATION'}
+                </div>
+              );
+            }
+            return (
+              <div style={{
+                fontSize: '11px',
+                fontWeight: 'bold',
+                color: hasApiKey ? '#2e7d32' : '#d84315',
+                background: hasApiKey ? 'rgba(46, 125, 50, 0.08)' : 'rgba(216, 67, 21, 0.08)',
+                border: `1px solid ${hasApiKey ? 'rgba(46, 125, 50, 0.3)' : 'rgba(216, 67, 21, 0.3)'}`,
+                padding: '4px 10px',
+                borderRadius: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                marginRight: '6px'
+              }} title={hasApiKey ? "IA de Gemini activa (Consulta Real)" : "Modo demostración offline (Configura tu API Key en Ajustes ⚙️)"}>
+                <span>{hasApiKey ? '💎' : '⚠️'}</span>
+                <span>{hasApiKey ? 'Consulta Real' : 'Consulta Simulada'}</span>
+              </div>
+            );
+          })()}
 
           {/* API Key configuration removed (resolved automatically from environment variables) */}
           <button
