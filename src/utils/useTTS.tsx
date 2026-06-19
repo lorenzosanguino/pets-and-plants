@@ -1,12 +1,14 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 export const useTTS = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const sentencesQueueRef = useRef<string[]>([]);
   const currentSentenceIndexRef = useRef<number>(0);
+  const activeSpeakingRef = useRef<boolean>(false);
 
   const stop = useCallback(() => {
+    activeSpeakingRef.current = false;
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
@@ -20,7 +22,7 @@ export const useTTS = () => {
     window.speechSynthesis.cancel();
 
     if (isSpeaking) {
-      setIsSpeaking(false);
+      stop();
       return;
     }
 
@@ -29,6 +31,9 @@ export const useTTS = () => {
       .replace(/\*(.*?)\*/g, '$1')
       .replace(/#{1,6}\s/g, '')
       .replace(/`(.*?)`/g, '$1')
+      .replace(/\*/g, '')
+      .replace(/-\s+/g, '')
+      .replace(/•\s+/g, '')
       .trim();
 
     // Segmentar en oraciones cortas o fragmentos para evitar límites del navegador
@@ -40,10 +45,17 @@ export const useTTS = () => {
     if (sentences.length === 0) return;
 
     setIsSpeaking(true);
+    activeSpeakingRef.current = true;
     sentencesQueueRef.current = sentences;
     currentSentenceIndexRef.current = 0;
 
     const speakNext = () => {
+      // Si el flag de reproducción activa es false, abortar inmediatamente el bucle
+      if (!activeSpeakingRef.current) {
+        setIsSpeaking(false);
+        return;
+      }
+
       if (currentSentenceIndexRef.current >= sentencesQueueRef.current.length) {
         setIsSpeaking(false);
         return;
@@ -61,12 +73,20 @@ export const useTTS = () => {
       if (spanishVoice) utterance.voice = spanishVoice;
 
       utterance.onend = () => {
+        if (!activeSpeakingRef.current) {
+          setIsSpeaking(false);
+          return;
+        }
         currentSentenceIndexRef.current++;
         speakNext();
       };
 
       utterance.onerror = (e) => {
         console.error("Error en reproducción TTS de fragmento:", e);
+        if (!activeSpeakingRef.current) {
+          setIsSpeaking(false);
+          return;
+        }
         currentSentenceIndexRef.current++;
         speakNext();
       };
@@ -76,7 +96,20 @@ export const useTTS = () => {
     };
 
     speakNext();
-  }, [isSpeaking]);
+  }, [isSpeaking, stop]);
+
+  // Silenciar automáticamente si el usuario cambia de pestaña o minimiza la app
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stop();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [stop]);
 
   const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
