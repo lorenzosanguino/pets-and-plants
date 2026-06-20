@@ -160,6 +160,45 @@ export class GeminiAPIService {
   }
 
   /**
+   * Envía una petición HTTP a la API de Gemini (directamente o a través del proxy seguro)
+   */
+  static async requestGemini(payload: any, signal: AbortSignal): Promise<Response> {
+    const customKey = typeof window !== 'undefined' ? localStorage.getItem('petplant_gemini_api_key') : null;
+    
+    if (customKey) {
+      // Si el usuario introdujo su propia API key, llamamos directamente a Google Gemini
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${customKey}`;
+      return fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal
+      });
+    } else {
+      // Si usamos la API key por defecto, llamamos al proxy de Vercel para no exponerla.
+      // Si estamos en entorno de desarrollo local sin Vercel Dev y tenemos la clave local, podemos usarla de fallback directo.
+      const devKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (typeof window !== 'undefined' && window.location.hostname === 'localhost' && devKey) {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${devKey}`;
+        return fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal
+        });
+      }
+      
+      const endpoint = '/api/gemini';
+      return fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal
+      });
+    }
+  }
+
+  /**
    * Realiza un diagnóstico multimodal utilizando la clave API real o el simulador experto offline (Backwards compatibility).
    */
   static async analizarImagen(
@@ -181,7 +220,7 @@ export class GeminiAPIService {
 
     const apiKey = this.getApiKey();
 
-    if (apiKey) {
+    if (true) {
       try {
         let base64Data: string | null = null;
         if (imageBlob) {
@@ -288,21 +327,16 @@ CRÍTICO - NAVEGACIÓN Y ACCESO A FICHAS: Si el usuario te pide abrir, ir, ver, 
 
         while (retries > 0) {
           try {
-            response = await fetch(endpoint, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: contents,
-                systemInstruction: {
-                  parts: [{ text: systemInstruction }]
-                },
-                generationConfig: {
-                  responseMimeType: 'application/json',
-                  responseSchema: ANALISIS_MULTIMODAL_SCHEMA
-                }
-              }),
-              signal: controller.signal
-            });
+            response = await this.requestGemini({
+              contents: contents,
+              systemInstruction: {
+                parts: [{ text: systemInstruction }]
+              },
+              generationConfig: {
+                responseMimeType: 'application/json',
+                responseSchema: ANALISIS_MULTIMODAL_SCHEMA
+              }
+            }, controller.signal);
 
             if (response.status === 429 || response.status === 503) {
               console.warn(`Gemini API returned ${response.status} in analizarImagen. Retrying in ${delay}ms...`);
@@ -885,7 +919,7 @@ ${frecuencia}`;
 
     const apiKey = this.getApiKey();
 
-    if (apiKey && imageBlob) {
+    if (imageBlob) {
       try {
         const base64Data = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
@@ -942,24 +976,19 @@ ${frecuencia}`;
 
         while (retries > 0) {
           try {
-            response = await fetch(endpoint, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                systemInstruction: {
-                  parts: [{ text: systemInstruction }]
-                },
-                contents: [{
-                  role: 'user',
-                  parts: userParts
-                }],
-                generationConfig: {
-                  responseMimeType: 'application/json',
-                  responseSchema: responseSchema
-                }
-              }),
-              signal: controller.signal
-            });
+            response = await this.requestGemini({
+              systemInstruction: {
+                parts: [{ text: systemInstruction }]
+              },
+              contents: [{
+                role: 'user',
+                parts: userParts
+              }],
+              generationConfig: {
+                responseMimeType: 'application/json',
+                responseSchema: responseSchema
+              }
+            }, controller.signal);
 
             if (response.status === 429 || response.status === 503) {
               console.warn(`Gemini API returned ${response.status} in analizarSmartScanner. Retrying in ${delay}ms...`);
