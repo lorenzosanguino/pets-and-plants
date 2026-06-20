@@ -5,9 +5,18 @@ import { TTSButton } from '../utils/useTTS';
 interface VacationAdviceProps {
   mode: 'plants' | 'pets' | 'exotics' | 'travels';
   theme?: string;
+  mascotas?: any[];
+  plantas?: any[];
+  exoticos?: any[];
 }
 
-export const VacationAdvice: React.FC<VacationAdviceProps> = ({ mode, theme = 'nature' }) => {
+export const VacationAdvice: React.FC<VacationAdviceProps> = ({ 
+  mode, 
+  theme = 'nature',
+  mascotas = [],
+  plantas = [],
+  exoticos = []
+}) => {
   const [prevMode, setPrevMode] = useState(mode);
   const [activeTab, setActiveTab] = useState<'plants' | 'cats' | 'dogs' | 'exotics'>(() => {
     if (mode === 'plants') return 'plants';
@@ -53,7 +62,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({ mode, theme = 'n
         contextLabel = activeTab === 'cats' ? 'Gatos' : 'Perros';
       }
 
-      const promptContext = `El usuario pregunta sobre consejos de vacaciones/viaje. Ecosistema activo: ${contextLabel}. Pregunta: ${currentQuery}`;
+      const promptContext = `El usuario pregunta sobre consejos de vacaciones/viaje. Ecosistema activo: ${contextLabel}. Revisa los datos de los elementos registrados por el usuario para darle consejos específicos para sus animales o plantas particulares si aplica. Pregunta: ${currentQuery}`;
       
       // Map all current messages as history
       const historyForAPI = chatMessages.map(m => ({
@@ -66,7 +75,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({ mode, theme = 'n
         consultantType, 
         promptContext,
         undefined,
-        undefined,
+        { mascotas, plantas, exoticos },
         undefined,
         historyForAPI
       );
