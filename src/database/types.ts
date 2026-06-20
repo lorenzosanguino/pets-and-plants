@@ -83,6 +83,7 @@ export interface Planta {
   ubicacionHabitacion: string;
   tipoRiegoEspecifico: TipoRiego;
   intervaloRiegoDias: number;
+  intervaloRiegoBase?: number;
   ultimaFechaRiego: string; // ISO Date
   proximaFechaRiego: string; // ISO Date
   toxicidadFelina: NivelToxicidadFelina; // Seguridad Felina Soberana

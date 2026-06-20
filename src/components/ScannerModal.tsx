@@ -286,6 +286,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
       ubicacionHabitacion: plantUbicacion,
       tipoRiegoEspecifico: plantTipoRiego as any,
       intervaloRiegoDias: diasIntervalo,
+      intervaloRiegoBase: diasIntervalo,
       ultimaFechaRiego: ultimaFecha.toISOString(),
       proximaFechaRiego: proximaFecha.toISOString(),
       toxicidadFelina: plantToxicidad,

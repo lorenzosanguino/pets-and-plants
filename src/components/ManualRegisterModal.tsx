@@ -374,6 +374,7 @@ export const ManualPlantForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
       ubicacionHabitacion: ubicacion,
       tipoRiegoEspecifico: tipoRiego,
       intervaloRiegoDias: diasIntervalo,
+      intervaloRiegoBase: diasIntervalo,
       ultimaFechaRiego: ultimaFecha.toISOString(),
       proximaFechaRiego: proximaFecha.toISOString(),
       toxicidadFelina: toxicidad,

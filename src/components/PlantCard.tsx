@@ -695,6 +695,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                 nombreCientifico: editNombreCientifico.trim() || undefined,
                 ubicacionHabitacion: editUbicacion.trim(),
                 intervaloRiegoDias: intVal,
+                intervaloRiegoBase: intVal,
                 proximaFechaRiego: proxima,
                 toxicidadFelina: editToxicidadFelina,
                 toxicidadCanina: editToxicidadCanina,

@@ -89,7 +89,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
       const clima = await WeatherService.obtenerClimaEnVivo(coords.latitude, coords.longitude);
       setClimaGPS(clima);
 
-      const baseIntervalo = 7;
+      const baseIntervalo = activePlant.intervaloRiegoBase || activePlant.intervaloRiegoDias || 7;
       const nuevoIntervalo = WeatherService.calcularIntervaloRiegoClimatico(
         baseIntervalo,
         activePlant.grosorHoja || 'Normal',
@@ -100,6 +100,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
       const plantaActualizada: Planta = {
         ...activePlant,
         intervaloRiegoDias: nuevoIntervalo,
+        intervaloRiegoBase: baseIntervalo,
         proximaFechaRiego: proximaFecha,
         temperaturaZona: Math.round(clima.temperatura)
       };
@@ -121,7 +122,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
       const climaSimulado = await WeatherService.obtenerClimaEnVivo(40.4167, -3.7037);
       setClimaGPS(climaSimulado);
       
-      const baseIntervalo = 7;
+      const baseIntervalo = activePlant.intervaloRiegoBase || activePlant.intervaloRiegoDias || 7;
       const nuevoIntervalo = WeatherService.calcularIntervaloRiegoClimatico(
         baseIntervalo,
         activePlant.grosorHoja || 'Normal',
@@ -131,6 +132,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
       const plantaActualizada: Planta = {
         ...activePlant,
         intervaloRiegoDias: nuevoIntervalo,
+        intervaloRiegoBase: baseIntervalo,
         proximaFechaRiego: proximaFecha,
         temperaturaZona: Math.round(climaSimulado.temperatura)
       };

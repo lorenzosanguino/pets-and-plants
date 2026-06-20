@@ -83,7 +83,7 @@ export const useGPSWeather = (refreshData: (force?: boolean) => Promise<void>) =
 
       const listPlantas = await LocalDatabase.getPlantas();
       for (const p of listPlantas) {
-        const baseIntervalo = p.intervaloRiegoDias || 7;
+        const baseIntervalo = p.intervaloRiegoBase || p.intervaloRiegoDias || 7;
         const nuevoIntervalo = WeatherService.calcularIntervaloRiegoClimatico(
           baseIntervalo,
           p.grosorHoja || 'Normal',
@@ -93,6 +93,7 @@ export const useGPSWeather = (refreshData: (force?: boolean) => Promise<void>) =
         const plantaActualizada = {
           ...p,
           intervaloRiegoDias: nuevoIntervalo,
+          intervaloRiegoBase: baseIntervalo,
           proximaFechaRiego: proximaFecha,
           temperaturaZona: Math.round(clima.temperatura),
         };
@@ -117,7 +118,7 @@ export const useGPSWeather = (refreshData: (force?: boolean) => Promise<void>) =
 
         const listPlantas = await LocalDatabase.getPlantas();
         for (const p of listPlantas) {
-          const baseIntervalo = p.intervaloRiegoDias || 7;
+          const baseIntervalo = p.intervaloRiegoBase || p.intervaloRiegoDias || 7;
           const nuevoIntervalo = WeatherService.calcularIntervaloRiegoClimatico(
             baseIntervalo,
             p.grosorHoja || 'Normal',
@@ -127,6 +128,7 @@ export const useGPSWeather = (refreshData: (force?: boolean) => Promise<void>) =
           const plantaActualizada = {
             ...p,
             intervaloRiegoDias: nuevoIntervalo,
+            intervaloRiegoBase: baseIntervalo,
             proximaFechaRiego: proximaFecha,
             temperaturaZona: Math.round(climaSimulado.temperatura),
           };
