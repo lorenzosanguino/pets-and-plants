@@ -148,15 +148,15 @@ export class FirebaseSyncService {
     const code = this.generateHogarCode();
     const data: HogarCloudData = {
       nombre,
-      mascotas,
-      plantas,
-      exoticos,
+      mascotas: mascotas || [],
+      plantas: plantas || [],
+      exoticos: exoticos || [],
       updatedAt: Date.now(),
-      lastUpdatedBy: deviceSessionId,
-      theme,
-      eventos,
-      chats
+      lastUpdatedBy: deviceSessionId
     };
+    if (theme !== undefined) data.theme = theme;
+    if (eventos !== undefined) data.eventos = eventos;
+    if (chats !== undefined) data.chats = chats;
 
     if (this.isCloudEnabled() && db) {
       const docRef = doc(db, 'hogares', code);
@@ -206,15 +206,15 @@ export class FirebaseSyncService {
   ): Promise<void> {
     const data: HogarCloudData = {
       nombre,
-      mascotas,
-      plantas,
-      exoticos,
+      mascotas: mascotas || [],
+      plantas: plantas || [],
+      exoticos: exoticos || [],
       updatedAt: Date.now(),
-      lastUpdatedBy: deviceSessionId,
-      theme,
-      eventos,
-      chats
+      lastUpdatedBy: deviceSessionId
     };
+    if (theme !== undefined) data.theme = theme;
+    if (eventos !== undefined) data.eventos = eventos;
+    if (chats !== undefined) data.chats = chats;
 
     if (this.isCloudEnabled() && db) {
       const docRef = doc(db, 'hogares', code);
