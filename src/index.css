@@ -177,6 +177,57 @@ code {
   transform: scale(0.95);
 }
 
+/* Tema Midnight Ocean (Azul noche premium) */
+[data-game-theme="midnight"] {
+  --bg: #0b132b;
+  --game-bg: #0b132b;
+  --game-card-bg: rgba(28, 37, 65, 0.95);
+  --game-border-color: #00b4d8;
+  --game-border: 1px solid rgba(0, 180, 216, 0.45);
+  --game-text: #e2e8f0;
+  --game-text-bright: #90e0ef;
+  --game-accent: #00f5d4;
+  --game-font: 'Outfit', system-ui, -apple-system, sans-serif;
+  --game-accent-light: rgba(0, 180, 216, 0.12);
+  --game-radius: 12px;
+  --game-shadow: 0 10px 25px rgba(0, 180, 216, 0.2);
+  --game-bg-image: linear-gradient(rgba(11, 19, 43, 0.88), rgba(11, 19, 43, 0.88)), url("/flow_lab_imagenes/carga_midnight.webp");
+}
+
+/* Tema Vintage Botanical (Enciclopedia e invernadero clásico) */
+[data-game-theme="vintage"] {
+  --bg: #f5efe3;
+  --game-bg: #f5efe3;
+  --game-card-bg: rgba(254, 252, 248, 0.96);
+  --game-border-color: #cda250;
+  --game-border: 2px solid #cda250;
+  --game-text: #2f4f4f;
+  --game-text-bright: #1c3b2b;
+  --game-accent: #b8860b;
+  --game-font: 'Georgia', 'Playfair Display', serif;
+  --game-accent-light: rgba(205, 162, 80, 0.12);
+  --game-radius: 6px;
+  --game-shadow: 0 8px 24px rgba(47, 79, 79, 0.09);
+  --game-bg-image: linear-gradient(rgba(245, 239, 227, 0.88), rgba(245, 239, 227, 0.88)), url("/flow_lab_imagenes/carga_vintage.webp");
+}
+
+/* Tema Zen Matcha (Relajante, té verde y piedra) */
+[data-game-theme="matcha"] {
+  --bg: #e8ece9;
+  --game-bg: #e8ece9;
+  --game-card-bg: rgba(255, 255, 255, 0.94);
+  --game-border-color: #8fa89b;
+  --game-border: 1px solid #d0dcd6;
+  --game-text: #4a5d4e;
+  --game-text-bright: #2d3b2f;
+  --game-accent: #8fa89b;
+  --game-font: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --game-accent-light: rgba(143, 168, 155, 0.15);
+  --game-radius: 16px;
+  --game-shadow: 0 8px 24px rgba(74, 93, 78, 0.06);
+  --game-bg-image: linear-gradient(rgba(232, 236, 233, 0.88), rgba(232, 236, 233, 0.88)), url("/flow_lab_imagenes/carga_matcha.webp");
+}
+
 /* Animaciones de Logros de Videojuegos */
 @keyframes skyrimLevelUp {
   0% { transform: scale(0.6) translateY(-50px); opacity: 0; }
