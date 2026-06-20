@@ -468,26 +468,33 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
     return (
       <div style={{
         marginTop: '12px',
-        background: 'rgba(102, 252, 241, 0.05)',
+        background: theme === 'gaming' ? 'rgba(102, 252, 241, 0.05)' : 'var(--game-accent-light, rgba(0,0,0,0.02))',
         borderRadius: '8px',
         padding: '12px',
         border: '1px solid var(--game-border-color, #eaeaea)',
-        color: 'var(--game-text-bright, #333)'
+        color: theme === 'gaming' ? 'var(--game-text, #e0d0ff)' : 'var(--game-text, #333)'
       }}>
-        <strong style={{ color: 'var(--game-accent, #66fcf1)', fontSize: '11px', display: 'block', marginBottom: '6px', borderBottom: '1px solid var(--game-border-color)', paddingBottom: '4px' }}>
+        <strong style={{ 
+          color: theme === 'gaming' ? 'var(--game-accent, #66fcf1)' : 'var(--game-text-bright, #333)', 
+          fontSize: '11px', 
+          display: 'block', 
+          marginBottom: '6px', 
+          borderBottom: '1px solid var(--game-border-color, #eaeaea)', 
+          paddingBottom: '4px' 
+        }}>
           📋 ACCIÓN COMPATIBLE
         </strong>
-        <p style={{ margin: '0 0 8px 0', fontSize: '11px', whiteSpace: 'pre-wrap', color: 'var(--game-text)', lineHeight: '1.5' }}>
+        <p style={{ margin: '0 0 8px 0', fontSize: '11px', whiteSpace: 'pre-wrap', color: theme === 'gaming' ? 'var(--game-text, #e0d0ff)' : 'var(--game-text, #333)', lineHeight: '1.5' }}>
           {m.diagnosticoClinico.tratamiento}
         </p>
         {m.diagnosticoClinico.advertencia && (
           <div style={{
             padding: '8px',
-            background: 'var(--game-accent-light, #fcfcfc)',
+            background: theme === 'gaming' ? 'rgba(251, 238, 9, 0.1)' : 'var(--game-accent-light, #fcfcfc)',
             borderRadius: '6px',
             fontSize: '10px',
-            color: 'var(--game-text-bright)',
-            borderLeft: '3px solid var(--game-accent, #888)'
+            color: theme === 'gaming' ? 'var(--game-accent, #fbee09)' : 'var(--game-text-bright)',
+            borderLeft: theme === 'gaming' ? '3px solid var(--game-accent, #fbee09)' : '3px solid var(--game-text-bright, #888)'
           }}>
             <strong>Atención Preventiva:</strong> {m.diagnosticoClinico.advertencia}
           </div>
@@ -500,7 +507,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
               marginTop: '10px',
               padding: '6px 14px',
               background: 'var(--game-accent, #1976d2)',
-              color: '#fff',
+              color: theme === 'gaming' ? '#000000' : '#ffffff',
               border: 'none',
               borderRadius: '6px',
               fontSize: '11px',
@@ -598,19 +605,19 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
         alignSelf: m.sender === 'user' ? 'flex-end' : 'flex-start',
         background: m.sender === 'user' 
           ? (theme === 'gaming' ? 'rgba(51, 243, 255, 0.15)' : 'var(--game-accent-light, rgba(0,0,0,0.05))') 
-          : '#ffffff',
+          : (theme === 'gaming' ? 'var(--game-card-bg, #1f2833)' : '#ffffff'),
         border: m.sender === 'user'
           ? '2px solid var(--game-border-color, #66fcf1)'
-          : '1px solid rgba(0, 0, 0, 0.12)',
+          : (theme === 'gaming' ? '1px solid var(--game-border-color, #66fcf1)' : '1px solid rgba(0, 0, 0, 0.12)'),
         borderRadius: 'var(--game-radius, 12px)',
-        color: m.sender === 'user' 
-          ? 'var(--game-text-bright, #333)' 
-          : '#1f2937',
+        color: theme === 'gaming'
+          ? (m.sender === 'user' ? 'var(--game-text-bright, #66fcf1)' : 'var(--game-text, #e0d0ff)')
+          : (m.sender === 'user' ? 'var(--game-text-bright, #333)' : '#1f2937'),
         padding: '10px 14px',
         fontSize: '13px',
         fontFamily: 'var(--game-font, sans-serif)',
         maxWidth: '85%',
-        boxShadow: m.sender === 'ia' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'
+        boxShadow: m.sender === 'ia' ? (theme === 'gaming' ? '0 2px 12px rgba(102, 252, 241, 0.2)' : '0 2px 8px rgba(0,0,0,0.08)') : 'none'
       }}>
         {m.imageUrl && (
           <div style={{ marginBottom: '8px', maxWidth: '280px', overflow: 'hidden', borderRadius: '4px', border: '1px solid var(--game-border-color)', background: '#111' }}>
