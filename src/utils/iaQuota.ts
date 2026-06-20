@@ -135,6 +135,15 @@ export class IAQuotaManager {
   static formatearErrorCuota(errorStr: string): string {
     if (!errorStr) return "Límite de cuota excedido. Por favor, inténtalo más tarde.";
     
+    const status = this.obtenerEstadoCuota();
+    const tiempoRenovacion = this.obtenerMensajeTiempoRestante();
+    
+    const infoCuota = status.esIlimitado
+      ? 'Tienes cuota ilimitada con tu clave API.'
+      : status.restantes > 0
+      ? `Te quedan ${status.restantes} de ${status.limite} consultas gratuitas hoy (se renovará en ${tiempoRenovacion}).`
+      : `Límite gratuito de hoy alcanzado (se renovará en ${tiempoRenovacion}).`;
+    
     const retryMatch = errorStr.match(/retry\s+in\s+([\d.]+)\s*s/i) || 
                        errorStr.match(/retryDelay["']?:\s*["']?(\d+)/i) ||
                        errorStr.match(/retry\s+after\s+(\d+)/i);
@@ -143,13 +152,13 @@ export class IAQuotaManager {
       const segundosFloat = parseFloat(retryMatch[1]);
       const segundos = Math.max(1, Math.round(segundosFloat));
       const tiempoTexto = this.formatearSegundos(segundos);
-      return `Google Gemini está descansando un momento por exceso de peticiones. Estará listo de nuevo en ${tiempoTexto}. (Si este aviso persiste tras la espera, es probable que se haya alcanzado el límite diario global compartido; puedes configurar tu propia API Key gratuita en Ajustes ⚙️ para usar la app sin esperas). Mientras tanto, cargamos datos simulados de demostración. 🐾`;
+      return `Google Gemini está descansando un momento por exceso de peticiones. Estará listo de nuevo en ${tiempoTexto}. [${infoCuota}] (Si este aviso persiste tras la espera, es probable que se haya alcanzado el límite diario global compartido; puedes configurar tu propia API Key gratuita en Ajustes ⚙️ para usar la app sin esperas). Mientras tanto, cargamos datos simulados de demostración. 🐾`;
     }
 
     if (errorStr.includes("429") || errorStr.toLowerCase().includes("quota") || errorStr.includes("RESOURCE_EXHAUSTED")) {
-      return "Google Gemini ha agotado el límite de peticiones compartidas o está saturado en este momento. Por favor, espera un momento o configura tu propia API Key gratuita en Ajustes ⚙️ para uso ilimitado y sin esperas. Mientras tanto, cargamos datos simulados de demostración. 🐾";
+      return `Google Gemini ha agotado el límite de peticiones compartidas o está saturado en este momento. [${infoCuota}] Configura tu propia API Key gratuita en Ajustes ⚙️ para uso ilimitado y sin esperas. Mientras tanto, cargamos datos simulados de demostración. 🐾`;
     }
 
-    return `Conexión limitada (${errorStr}). Cargando datos simulados de demostración. 🐾`;
+    return `Conexión limitada (${errorStr}). [${infoCuota}] Cargando datos simulados de demostración. 🐾`;
   }
 }
