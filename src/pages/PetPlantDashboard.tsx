@@ -211,10 +211,10 @@ export const PetPlantDashboard: React.FC = () => {
 
 
 
-  const [uiTheme, setUiTheme] = useState<'gaming' | 'nature' | 'kawaii' | 'midnight' | 'vintage' | 'matcha'>(() => {
+  const [uiTheme, setUiTheme] = useState<'gaming' | 'nature' | 'kawaii' | 'vintage'>(() => {
     const saved = localStorage.getItem('petplant_game_theme');
-    return (saved === 'gaming' || saved === 'nature' || saved === 'kawaii' || saved === 'midnight' || saved === 'vintage' || saved === 'matcha')
-      ? saved as 'gaming' | 'nature' | 'kawaii' | 'midnight' | 'vintage' | 'matcha'
+    return (saved === 'gaming' || saved === 'nature' || saved === 'kawaii' || saved === 'vintage')
+      ? saved as 'gaming' | 'nature' | 'kawaii' | 'vintage'
       : 'nature';
   });
 
@@ -1079,7 +1079,7 @@ export const PetPlantDashboard: React.FC = () => {
                       }
 
                       // Aplicar tema de la nube si existe y es válido
-                      if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'midnight' || data.theme === 'vintage' || data.theme === 'matcha')) {
+                      if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'vintage')) {
                         lastSyncedThemeRef.current = data.theme || null;
                         setUiTheme(data.theme as any);
                       }
@@ -1182,7 +1182,7 @@ export const PetPlantDashboard: React.FC = () => {
                       await FirebaseSyncService.uploadChanges(localHogarId, data.nombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
                     }
 
-                    if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'midnight' || data.theme === 'vintage' || data.theme === 'matcha')) {
+                    if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'vintage')) {
                       lastSyncedThemeRef.current = data.theme || null;
                       setUiTheme(data.theme as any);
                     }
@@ -1380,7 +1380,7 @@ export const PetPlantDashboard: React.FC = () => {
       }
 
       // Aplicar el tema visual de la nube si existe y es diferente
-      if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'midnight' || data.theme === 'vintage' || data.theme === 'matcha')) {
+      if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'vintage')) {
         setUiTheme(prevTheme => {
           if (prevTheme !== data.theme) {
             lastSyncedThemeRef.current = data.theme || null;
@@ -1479,7 +1479,7 @@ export const PetPlantDashboard: React.FC = () => {
         });
 
         // Aplicar el tema visual si está presente en el hogar al que nos unimos
-        if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'midnight' || data.theme === 'vintage' || data.theme === 'matcha')) {
+        if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'vintage')) {
           lastSyncedThemeRef.current = data.theme || null;
           setUiTheme(data.theme as any);
         }
@@ -1553,7 +1553,7 @@ export const PetPlantDashboard: React.FC = () => {
         );
         isRemoteSyncingRef.current = false;
 
-        if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'midnight' || data.theme === 'vintage' || data.theme === 'matcha')) {
+        if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'vintage')) {
           lastSyncedThemeRef.current = data.theme;
           setUiTheme(data.theme as any);
         }

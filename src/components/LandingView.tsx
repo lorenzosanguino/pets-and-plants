@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface LandingViewProps {
-  uiTheme: 'gaming' | 'nature' | 'kawaii' | 'midnight' | 'vintage' | 'matcha';
+  uiTheme: 'gaming' | 'nature' | 'kawaii' | 'vintage';
   setExperienceMode: (mode: 'landing' | 'pets' | 'plants' | 'exotics' | 'travels' | 'consultants') => void;
   setActiveTab: (tab: 'dashboard' | 'consultants' | 'settings') => void;
 }

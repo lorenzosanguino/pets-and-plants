@@ -7,8 +7,8 @@ import type { Mascota, Planta, AnimalExotico } from '../database/types';
 import { initFirebase, getFirebaseCached } from '../database/firebaseLazy';
 
 interface SettingsViewProps {
-  uiTheme: 'gaming' | 'nature' | 'kawaii' | 'midnight' | 'vintage' | 'matcha';
-  setUiTheme: (theme: 'gaming' | 'nature' | 'kawaii' | 'midnight' | 'vintage' | 'matcha') => void;
+  uiTheme: 'gaming' | 'nature' | 'kawaii' | 'vintage';
+  setUiTheme: (theme: 'gaming' | 'nature' | 'kawaii' | 'vintage') => void;
   loadingGPS: boolean;
   gpsSyncSuccess: string | null;
   sincronizarTodasLasPlantasPorGPS: () => void;
@@ -405,35 +405,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <strong style={{ fontSize: '13px', color: 'var(--game-text-bright, #111)', fontFamily: 'var(--game-font, sans-serif)' }}>{t('themeGaming')}</strong>
           </div>
 
-          {/* Tema 4: Midnight Ocean */}
-          <div 
-            className="theme-button-item"
-            onClick={() => setUiTheme('midnight')}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                setUiTheme('midnight');
-              }
-            }}
-            tabIndex={0}
-            role="button"
-            style={{
-              padding: '10px 16px',
-              background: uiTheme === 'midnight' ? 'var(--game-accent-light, rgba(0, 180, 216, 0.15))' : 'transparent',
-              borderRadius: '10px',
-              border: uiTheme === 'midnight' 
-                ? '2px solid var(--game-border-color, #00b4d8)' 
-                : '1px solid rgba(128, 128, 128, 0.3)',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-          >
-            <span style={{ fontSize: '20px' }}>🌊</span>
-            <strong style={{ fontSize: '13px', color: 'var(--game-text-bright, #111)', fontFamily: 'var(--game-font, sans-serif)' }}>{t('themeMidnight')}</strong>
-          </div>
 
           {/* Tema 5: Vintage Botanical */}
           <div 
@@ -465,35 +436,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <strong style={{ fontSize: '13px', color: 'var(--game-text-bright, #111)', fontFamily: 'var(--game-font, sans-serif)' }}>{t('themeVintage')}</strong>
           </div>
 
-          {/* Tema 6: Zen Matcha */}
-          <div 
-            className="theme-button-item"
-            onClick={() => setUiTheme('matcha')}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                setUiTheme('matcha');
-              }
-            }}
-            tabIndex={0}
-            role="button"
-            style={{
-              padding: '10px 16px',
-              background: uiTheme === 'matcha' ? 'var(--game-accent-light, rgba(143, 168, 155, 0.18))' : 'transparent',
-              borderRadius: '10px',
-              border: uiTheme === 'matcha' 
-                ? '2px solid var(--game-border-color, #8fa89b)' 
-                : '1px solid rgba(128, 128, 128, 0.3)',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-          >
-            <span style={{ fontSize: '20px' }}>🍵</span>
-            <strong style={{ fontSize: '13px', color: 'var(--game-text-bright, #111)', fontFamily: 'var(--game-font, sans-serif)' }}>{t('themeMatcha')}</strong>
-          </div>
         </div>
       </div>
 

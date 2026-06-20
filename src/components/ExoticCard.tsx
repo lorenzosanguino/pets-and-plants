@@ -661,9 +661,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                   let accentColor = '#ff8f00'; // exotics orange
                   if (theme === 'kawaii') accentColor = '#ff6b8b';
                   else if (theme === 'gaming') accentColor = '#66fcf1';
-                  else if (theme === 'midnight') accentColor = '#00f5d4';
                   else if (theme === 'vintage') accentColor = '#b8860b';
-                  else if (theme === 'matcha') accentColor = '#8fa89b';
                   return (
                     <>
                       <BiometricChart data={chartData} yLabel="Peso (g)" color={accentColor} theme={theme as any} />
@@ -694,9 +692,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                   let accentColor = '#ff8f00';
                   if (theme === 'kawaii') accentColor = '#ff6b8b';
                   else if (theme === 'gaming') accentColor = '#66fcf1';
-                  else if (theme === 'midnight') accentColor = '#00f5d4';
                   else if (theme === 'vintage') accentColor = '#b8860b';
-                  else if (theme === 'matcha') accentColor = '#8fa89b';
                   return (
                     <>
                       <BiometricChart data={chartData} yLabel="Longitud (cm)" color={accentColor} theme={theme as any} />

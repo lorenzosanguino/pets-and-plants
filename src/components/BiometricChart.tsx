@@ -9,7 +9,7 @@ interface BiometricChartProps {
   data: BiometricDataPoint[];
   yLabel: string;
   color: string;
-  theme?: 'gaming' | 'nature' | 'kawaii' | 'midnight' | 'vintage' | 'matcha';
+  theme?: 'gaming' | 'nature' | 'kawaii' | 'vintage';
 }
 
 export const BiometricChart: React.FC<BiometricChartProps> = ({

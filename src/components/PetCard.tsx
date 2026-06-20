@@ -507,9 +507,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
     if (theme === 'nature') accentColor = '#2e7d32';
     else if (theme === 'kawaii') accentColor = '#ff6b8b';
     else if (theme === 'gaming') accentColor = '#66fcf1';
-    else if (theme === 'midnight') accentColor = '#00f5d4';
     else if (theme === 'vintage') accentColor = '#b8860b';
-    else if (theme === 'matcha') accentColor = '#8fa89b';
 
     return (
       <BiometricChart
