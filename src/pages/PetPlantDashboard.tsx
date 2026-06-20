@@ -358,7 +358,7 @@ export const PetPlantDashboard: React.FC = () => {
         titleTip = 'Conectado a internet. Datos guardados localmente. Configura la nube en Ajustes para sincronizar.';
       } else {
         // Connected to Cloud (via Google, Microsoft or direct Hogar code)
-        if (syncStatus === 'synced') {
+        if (syncStatus === 'synced' || syncStatus === 'idle') {
           ledColor = '#4caf50'; // Green
           text = provider === 'microsoft' ? 'Nube (MS)' : 'Nube (Hogar)';
           isPulsing = false;
