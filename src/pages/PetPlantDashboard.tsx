@@ -46,13 +46,16 @@ const ChunkLoader: React.FC<{ height?: string }> = ({ height = '120px' }) => (
 
 
 const isDatabaseDefaultDemo = (mascotas: Mascota[], plantas: Planta[], exoticos: AnimalExotico[]) => {
-  if (mascotas.length > 1 || plantas.length > 1 || exoticos.length > 0) {
+  if (mascotas.length > 1 || plantas.length > 1 || exoticos.length > 1) {
     return false;
   }
   if (mascotas.length === 1 && mascotas[0].id !== 'mascota-luna-id') {
     return false;
   }
   if (plantas.length === 1 && plantas[0].id !== 'planta-fern-id') {
+    return false;
+  }
+  if (exoticos.length === 1 && exoticos[0].id !== 'exotico-tarantula-id') {
     return false;
   }
   return true;
