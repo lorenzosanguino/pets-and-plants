@@ -143,11 +143,11 @@ export class IAQuotaManager {
       const segundosFloat = parseFloat(retryMatch[1]);
       const segundos = Math.max(1, Math.round(segundosFloat));
       const tiempoTexto = this.formatearSegundos(segundos);
-      return `Google Gemini está descansando un momento por exceso de peticiones. Estará listo de nuevo en ${tiempoTexto}. Mientras tanto, cargamos datos simulados de demostración. 🐾`;
+      return `Google Gemini está descansando un momento por exceso de peticiones. Estará listo de nuevo en ${tiempoTexto}. (Si este aviso persiste tras la espera, es probable que se haya alcanzado el límite diario global compartido; puedes configurar tu propia API Key gratuita en Ajustes ⚙️ para usar la app sin esperas). Mientras tanto, cargamos datos simulados de demostración. 🐾`;
     }
 
     if (errorStr.includes("429") || errorStr.toLowerCase().includes("quota") || errorStr.includes("RESOURCE_EXHAUSTED")) {
-      return "Google Gemini está saturado en este momento. Por favor, espera un momento antes de realizar otra consulta. Mientras tanto, cargamos datos simulados de demostración. 🐾";
+      return "Google Gemini ha agotado el límite de peticiones compartidas o está saturado en este momento. Por favor, espera un momento o configura tu propia API Key gratuita en Ajustes ⚙️ para uso ilimitado y sin esperas. Mientras tanto, cargamos datos simulados de demostración. 🐾";
     }
 
     return `Conexión limitada (${errorStr}). Cargando datos simulados de demostración. 🐾`;
