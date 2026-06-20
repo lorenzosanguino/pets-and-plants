@@ -105,11 +105,11 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
     ctx.lineWidth = 2.5;
     ctx.strokeRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
 
-    // Draw corner handles
-    const handleSize = 8;
+    // Draw corner handles (circular, 12px diameter)
+    const handleSize = 12;
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = accentColor;
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 2.0;
 
     const corners = [
       { x: cropRect.x, y: cropRect.y }, // NW
@@ -119,8 +119,10 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
     ];
 
     corners.forEach(c => {
-      ctx.fillRect(c.x - handleSize/2, c.y - handleSize/2, handleSize, handleSize);
-      ctx.strokeRect(c.x - handleSize/2, c.y - handleSize/2, handleSize, handleSize);
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, handleSize / 2, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.stroke();
     });
 
     // Draw grid lines inside crop rect
@@ -142,7 +144,7 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
   }, [img, brightness, contrast, cropRect, accentColor]);
 
   // Handle Drag / Resize Mouse Events
-  const getMousePos = (e: React.MouseEvent | React.TouchEvent) => {
+  const getMousePos = (e: React.MouseEvent | React.TouchEvent | TouchEvent | MouseEvent) => {
     if (!canvasRef.current) return { x: 0, y: 0 };
     const rect = canvasRef.current.getBoundingClientRect();
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
@@ -158,7 +160,7 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
     const pos = getMousePos(e);
     
     // Check if clicked near corners
-    const handleDist = 12;
+    const handleDist = 20; // Aumentado a 20px
     const isNW = Math.hypot(pos.x - cropRect.x, pos.y - cropRect.y) < handleDist;
     const isNE = Math.hypot(pos.x - (cropRect.x + cropRect.w), pos.y - cropRect.y) < handleDist;
     const isSE = Math.hypot(pos.x - (cropRect.x + cropRect.w), pos.y - (cropRect.y + cropRect.h)) < handleDist;
@@ -180,51 +182,74 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
     }
   };
 
-  const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (dragMode === 'none' || !canvasRef.current) return;
-    e.preventDefault();
-    const pos = getMousePos(e);
-    const dx = pos.x - dragStart.current.x;
-    const dy = pos.y - dragStart.current.y;
-    const canvas = canvasRef.current;
+  // Escuchar eventos a nivel de ventana cuando se arrastra
+  useEffect(() => {
+    if (dragMode === 'none' || !img) return;
 
-    const startRect = dragStart.current.rect;
-    let newRect = { ...cropRect };
+    const handleWindowMove = (e: MouseEvent | TouchEvent) => {
+      if (!canvasRef.current) return;
+      const rect = canvasRef.current.getBoundingClientRect();
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+      const pos = {
+        x: Math.round(clientX - rect.left),
+        y: Math.round(clientY - rect.top)
+      };
 
-    if (dragMode === 'move') {
-      newRect.x = Math.max(0, Math.min(canvas.width - startRect.w, startRect.x + dx));
-      newRect.y = Math.max(0, Math.min(canvas.height - startRect.h, startRect.y + dy));
-    } else {
-      const minSize = 25;
-      if (dragMode === 'nw') {
-        const newX = Math.max(0, Math.min(startRect.x + startRect.w - minSize, startRect.x + dx));
-        const newY = Math.max(0, Math.min(startRect.y + startRect.h - minSize, startRect.y + dy));
-        newRect.w = startRect.x + startRect.w - newX;
-        newRect.h = startRect.y + startRect.h - newY;
-        newRect.x = newX;
-        newRect.y = newY;
-      } else if (dragMode === 'ne') {
-        const newY = Math.max(0, Math.min(startRect.y + startRect.h - minSize, startRect.y + dy));
-        newRect.w = Math.max(minSize, Math.min(canvas.width - startRect.x, startRect.w + dx));
-        newRect.h = startRect.y + startRect.h - newY;
-        newRect.y = newY;
-      } else if (dragMode === 'se') {
-        newRect.w = Math.max(minSize, Math.min(canvas.width - startRect.x, startRect.w + dx));
-        newRect.h = Math.max(minSize, Math.min(canvas.height - startRect.y, startRect.h + dy));
-      } else if (dragMode === 'sw') {
-        const newX = Math.max(0, Math.min(startRect.x + startRect.w - minSize, startRect.x + dx));
-        newRect.w = startRect.x + startRect.w - newX;
-        newRect.h = Math.max(minSize, Math.min(canvas.height - startRect.y, startRect.h + dy));
-        newRect.x = newX;
+      const dx = pos.x - dragStart.current.x;
+      const dy = pos.y - dragStart.current.y;
+      const canvas = canvasRef.current;
+
+      const startRect = dragStart.current.rect;
+      let newRect = { ...cropRect };
+
+      if (dragMode === 'move') {
+        newRect.x = Math.max(0, Math.min(canvas.width - startRect.w, startRect.x + dx));
+        newRect.y = Math.max(0, Math.min(canvas.height - startRect.h, startRect.y + dy));
+      } else {
+        const minSize = 25;
+        if (dragMode === 'nw') {
+          const newX = Math.max(0, Math.min(startRect.x + startRect.w - minSize, startRect.x + dx));
+          const newY = Math.max(0, Math.min(startRect.y + startRect.h - minSize, startRect.y + dy));
+          newRect.w = startRect.x + startRect.w - newX;
+          newRect.h = startRect.y + startRect.h - newY;
+          newRect.x = newX;
+          newRect.y = newY;
+        } else if (dragMode === 'ne') {
+          const newY = Math.max(0, Math.min(startRect.y + startRect.h - minSize, startRect.y + dy));
+          newRect.w = Math.max(minSize, Math.min(canvas.width - startRect.x, startRect.w + dx));
+          newRect.h = startRect.y + startRect.h - newY;
+          newRect.y = newY;
+        } else if (dragMode === 'se') {
+          newRect.w = Math.max(minSize, Math.min(canvas.width - startRect.x, startRect.w + dx));
+          newRect.h = Math.max(minSize, Math.min(canvas.height - startRect.y, startRect.h + dy));
+        } else if (dragMode === 'sw') {
+          const newX = Math.max(0, Math.min(startRect.x + startRect.w - minSize, startRect.x + dx));
+          newRect.w = startRect.x + startRect.w - newX;
+          newRect.h = Math.max(minSize, Math.min(canvas.height - startRect.y, startRect.h + dy));
+          newRect.x = newX;
+        }
       }
-    }
 
-    setCropRect(newRect);
-  };
+      setCropRect(newRect);
+    };
 
-  const handleEnd = () => {
-    setDragMode('none');
-  };
+    const handleWindowEnd = () => {
+      setDragMode('none');
+    };
+
+    window.addEventListener('mousemove', handleWindowMove);
+    window.addEventListener('mouseup', handleWindowEnd);
+    window.addEventListener('touchmove', handleWindowMove, { passive: false });
+    window.addEventListener('touchend', handleWindowEnd);
+
+    return () => {
+      window.removeEventListener('mousemove', handleWindowMove);
+      window.removeEventListener('mouseup', handleWindowEnd);
+      window.removeEventListener('touchmove', handleWindowMove);
+      window.removeEventListener('touchend', handleWindowEnd);
+    };
+  }, [dragMode, img, cropRect]);
 
   const handleSave = () => {
     if (!img || !canvasRef.current) return;
@@ -336,12 +361,7 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
           <canvas
             ref={canvasRef}
             onMouseDown={handleStart}
-            onMouseMove={handleMove}
-            onMouseUp={handleEnd}
-            onMouseLeave={handleEnd}
             onTouchStart={handleStart}
-            onTouchMove={handleMove}
-            onTouchEnd={handleEnd}
             style={{
               display: 'block',
               cursor: dragMode === 'move' ? 'move' : 'crosshair',

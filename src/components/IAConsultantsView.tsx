@@ -713,15 +713,24 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
           </div>
         )}
         {/* Cabecera y Selector de Consultor */}
-        <div style={{ display: 'flex', gap: '8px', borderBottom: 'var(--game-border, 1px solid #f0f0f0)', paddingBottom: '12px', marginBottom: '12px', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '12px', 
+          borderBottom: 'var(--game-border, 1px solid #f0f0f0)', 
+          paddingBottom: '12px', 
+          marginBottom: '12px',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '100%'
+        }}>
           {!hideSelector ? (
-            <div style={{ display: 'flex', gap: '6px', flex: 1, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
               <button
                 type="button"
                 onClick={() => { setActiveConsultant('veterinario'); setAttachedImage(null); }}
                 style={{
-                  flex: 1,
-                  padding: '8px 10px',
+                  padding: '8px 16px',
                   background: activeConsultant === 'veterinario' ? 'var(--game-accent-light, #e3f2fd)' : 'var(--game-bg, #f5f5f5)',
                   color: activeConsultant === 'veterinario' ? 'var(--game-text-bright, #1976d2)' : 'var(--game-text, #555)',
                   border: 'var(--game-border, none)',
@@ -739,8 +748,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
                 type="button"
                 onClick={() => { setActiveConsultant('agronomo'); setAttachedImage(null); }}
                 style={{
-                  flex: 1,
-                  padding: '8px 10px',
+                  padding: '8px 16px',
                   background: activeConsultant === 'agronomo' ? 'var(--game-accent-light, #e8f5e9)' : 'var(--game-bg, #f5f5f5)',
                   color: activeConsultant === 'agronomo' ? 'var(--game-text-bright, #2e7d32)' : 'var(--game-text, #555)',
                   border: 'var(--game-border, none)',
@@ -758,8 +766,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
                 type="button"
                 onClick={() => { setActiveConsultant('exoticos'); setAttachedImage(null); }}
                 style={{
-                  flex: 1,
-                  padding: '8px 10px',
+                  padding: '8px 16px',
                   background: activeConsultant === 'exoticos' ? 'var(--game-accent-light, #fff8e1)' : 'var(--game-bg, #f5f5f5)',
                   color: activeConsultant === 'exoticos' ? 'var(--game-text-bright, #ff8f00)' : 'var(--game-text, #555)',
                   border: 'var(--game-border, none)',
@@ -775,104 +782,101 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
               </button>
             </div>
           ) : (
-            <h3 style={{ margin: '0', fontSize: '14px', color: activeConsultant === 'veterinario' ? '#1976d2' : activeConsultant === 'exoticos' ? '#ff8f00' : '#2e7d32', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)' }}>
+            <h3 style={{ margin: '0', fontSize: '14px', color: activeConsultant === 'veterinario' ? '#1976d2' : activeConsultant === 'exoticos' ? '#ff8f00' : '#2e7d32', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
               {activeConsultant === 'veterinario' ? '🐾 Consultor Veterinario' : activeConsultant === 'exoticos' ? '🦎 Especialista en Exóticos' : '🌿 Consultor Agrónomo'}
             </h3>
           )}
 
-          {/* Badge de Estado del Motor de IA (Real vs Simulado) */}
-          {(() => {
-            const hasApiKey = !!GeminiAPIService.getApiKey();
-            if (theme === 'terminal') {
+          {/* Fila Centrada de Acciones: Badge de Estado + Botón Limpiar Chat */}
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center', width: '100%', flexWrap: 'wrap' }}>
+            {(() => {
+              const hasApiKey = !!GeminiAPIService.getApiKey();
+              if (theme === 'terminal') {
+                return (
+                  <div style={{
+                    fontSize: '11px',
+                    color: hasApiKey ? '#33ff33' : '#ffb300',
+                    fontFamily: 'monospace',
+                    border: `1px dashed ${hasApiKey ? '#33ff33' : '#ffb300'}`,
+                    padding: '2px 6px'
+                  }}>
+                    {hasApiKey ? '[STATUS: PREMIUM_REAL_IA]' : '[STATUS: OFFLINE_DEMO_SIM]'}
+                  </div>
+                );
+              }
+              if (theme === 'arcade') {
+                return (
+                  <div style={{
+                    fontSize: '11px',
+                    color: hasApiKey ? '#00ffff' : '#ff00ff',
+                    fontFamily: 'monospace',
+                    textShadow: `0 0 5px ${hasApiKey ? '#00ffff' : '#ff00ff'}`,
+                    border: `1px solid ${hasApiKey ? '#00ffff' : '#ff00ff'}`,
+                    padding: '2px 6px',
+                    background: 'rgba(0,0,0,0.5)'
+                  }}>
+                    {hasApiKey ? '💎 IA REAL' : '👾 SIMULADOR'}
+                  </div>
+                );
+              }
+              if (theme === 'adventure') {
+                return (
+                  <div style={{
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    color: hasApiKey ? '#00ff00' : '#ffcc00',
+                    border: `1px solid ${hasApiKey ? '#00ff00' : '#ffcc00'}`,
+                    padding: '2px 6px',
+                    background: 'rgba(0, 0, 0, 0.4)',
+                    fontFamily: 'monospace',
+                    letterSpacing: '1px'
+                  }}>
+                    {hasApiKey ? 'REAL_IA' : 'SIMULATION'}
+                  </div>
+                );
+              }
               return (
                 <div style={{
                   fontSize: '11px',
-                  color: hasApiKey ? '#33ff33' : '#ffb300',
-                  fontFamily: 'monospace',
-                  border: `1px dashed ${hasApiKey ? '#33ff33' : '#ffb300'}`,
-                  padding: '2px 6px',
-                  marginRight: '6px'
-                }}>
-                  {hasApiKey ? '[STATUS: PREMIUM_REAL_IA]' : '[STATUS: OFFLINE_DEMO_SIM]'}
-                </div>
-              );
-            }
-            if (theme === 'arcade') {
-              return (
-                <div style={{
-                  fontSize: '11px',
-                  color: hasApiKey ? '#00ffff' : '#ff00ff',
-                  fontFamily: 'monospace',
-                  textShadow: `0 0 5px ${hasApiKey ? '#00ffff' : '#ff00ff'}`,
-                  border: `1px solid ${hasApiKey ? '#00ffff' : '#ff00ff'}`,
-                  padding: '2px 6px',
-                  marginRight: '6px',
-                  background: 'rgba(0,0,0,0.5)'
-                }}>
-                  {hasApiKey ? '💎 IA REAL' : '👾 SIMULADOR'}
-                </div>
-              );
-            }
-            if (theme === 'adventure') {
-              return (
-                <div style={{
-                  fontSize: '10px',
                   fontWeight: 'bold',
-                  color: hasApiKey ? '#00ff00' : '#ffcc00',
-                  border: `1px solid ${hasApiKey ? '#00ff00' : '#ffcc00'}`,
-                  padding: '2px 6px',
-                  background: 'rgba(0, 0, 0, 0.4)',
-                  fontFamily: 'monospace',
-                  letterSpacing: '1px',
-                  marginRight: '6px'
-                }}>
-                  {hasApiKey ? 'REAL_IA' : 'SIMULATION'}
+                  color: hasApiKey ? '#2e7d32' : '#d84315',
+                  background: hasApiKey ? 'rgba(46, 125, 50, 0.08)' : 'rgba(216, 67, 21, 0.08)',
+                  border: `1px solid ${hasApiKey ? 'rgba(46, 125, 50, 0.3)' : 'rgba(216, 67, 21, 0.3)'}`,
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }} title={hasApiKey ? "IA de Gemini activa (Consulta Real)" : "Modo demostración offline (Configura tu API Key en Ajustes ⚙️)"}>
+                  <span>{hasApiKey ? '💎' : '⚠️'}</span>
+                  <span>{hasApiKey ? 'Consulta Real' : 'Consulta Simulada'}</span>
                 </div>
               );
-            }
-            return (
-              <div style={{
+            })()}
+
+            <button
+              type="button"
+              onClick={borrarHistorial}
+              style={{
+                padding: '6px 12px',
+                background: 'transparent',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                borderRadius: theme === 'arcade' ? '0px' : '6px',
+                color: '#ef4444',
                 fontSize: '11px',
                 fontWeight: 'bold',
-                color: hasApiKey ? '#2e7d32' : '#d84315',
-                background: hasApiKey ? 'rgba(46, 125, 50, 0.08)' : 'rgba(216, 67, 21, 0.08)',
-                border: `1px solid ${hasApiKey ? 'rgba(46, 125, 50, 0.3)' : 'rgba(216, 67, 21, 0.3)'}`,
-                padding: '4px 10px',
-                borderRadius: '20px',
+                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',
-                marginRight: '6px'
-              }} title={hasApiKey ? "IA de Gemini activa (Consulta Real)" : "Modo demostración offline (Configura tu API Key en Ajustes ⚙️)"}>
-                <span>{hasApiKey ? '💎' : '⚠️'}</span>
-                <span>{hasApiKey ? 'Consulta Real' : 'Consulta Simulada'}</span>
-              </div>
-            );
-          })()}
-
-          {/* API Key configuration removed (resolved automatically from environment variables) */}
-          <button
-            type="button"
-            onClick={borrarHistorial}
-            style={{
-              padding: '6px 12px',
-              background: 'transparent',
-              border: '1px solid rgba(239, 68, 68, 0.4)',
-              borderRadius: theme === 'arcade' ? '0px' : '6px',
-              color: '#ef4444',
-              fontSize: '11px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontFamily: 'var(--game-font, sans-serif)',
-              transition: 'all 0.2s'
-            }}
-            title="Borrar todo el historial de chat para este consultor"
-          >
-            🗑️ Limpiar Chat
-          </button>
+                fontFamily: 'var(--game-font, sans-serif)',
+                transition: 'all 0.2s'
+              }}
+              title="Borrar todo el historial de chat para este consultor"
+            >
+              🗑️ Limpiar Chat
+            </button>
+          </div>
         </div>
 
         {/* MGS Codec Panel when in Adventure theme */}

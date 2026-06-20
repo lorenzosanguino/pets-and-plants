@@ -2551,6 +2551,7 @@ export const PetPlantDashboard: React.FC = () => {
                     <EcosystemCalendar 
                       plantas={plantas}
                       mascotas={mascotas}
+                      exoticos={exoticos}
                       onUpdate={refreshData} 
                     />
                   </Suspense>

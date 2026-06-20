@@ -61,6 +61,95 @@ export interface HogarCloudData {
 // Device/Session ID to prevent feedback loops
 const deviceSessionId = Math.random().toString(36).substring(2, 11);
 
+// Memory caches to avoid redundant Firestore reads and writes
+const uploadedImagesCache = new Set<string>();
+const resolvedImagesCache = new Map<string, string>();
+
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return `${str.length}_${Math.abs(hash).toString(36)}`;
+}
+
+function walkAndExtract(obj: any, code: string, images: { id: string; base64: string }[]): any {
+  if (obj === null || obj === undefined) return obj;
+
+  if (typeof obj === 'string') {
+    if (obj.startsWith('data:image/')) {
+      const hash = simpleHash(obj);
+      const imgId = `HOGAR-IMG-${code}-${hash}`;
+      images.push({ id: imgId, base64: obj });
+      return `@REF:${imgId}`;
+    }
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => walkAndExtract(item, code, images));
+  }
+
+  if (typeof obj === 'object') {
+    const newObj: any = {};
+    for (const key of Object.keys(obj)) {
+      newObj[key] = walkAndExtract(obj[key], code, images);
+    }
+    return newObj;
+  }
+
+  return obj;
+}
+
+async function walkAndResolve(obj: any): Promise<any> {
+  if (obj === null || obj === undefined) return obj;
+
+  if (typeof obj === 'string') {
+    if (obj.startsWith('@REF:')) {
+      const imgId = obj.substring(5); // Remove "@REF:"
+      const cached = resolvedImagesCache.get(imgId);
+      if (cached) {
+        return cached;
+      }
+      if (db) {
+        try {
+          const docRef = doc(db, 'hogares', imgId);
+          const snap = await getDoc(docRef);
+          if (snap.exists()) {
+            const data = snap.data();
+            if (data && data.base64) {
+              resolvedImagesCache.set(imgId, data.base64);
+              return data.base64;
+            }
+          }
+        } catch (e) {
+          console.error(`Error resolving image reference ${imgId}:`, e);
+        }
+      }
+      return obj; // Fallback to reference if failed
+    }
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return await Promise.all(obj.map(item => walkAndResolve(item)));
+  }
+
+  if (typeof obj === 'object') {
+    const newObj: any = {};
+    const keys = Object.keys(obj);
+    const resolvedValues = await Promise.all(keys.map(key => walkAndResolve(obj[key])));
+    for (let i = 0; i < keys.length; i++) {
+      newObj[keys[i]] = resolvedValues[i];
+    }
+    return newObj;
+  }
+
+  return obj;
+}
+
 export class FirebaseSyncService {
   static isCloudEnabled(): boolean {
     return isFirebaseEnabled && db !== null;
@@ -155,8 +244,26 @@ export class FirebaseSyncService {
     if (chats !== undefined) data.chats = chats;
 
     if (this.isCloudEnabled() && db) {
+      const images: { id: string; base64: string }[] = [];
+      const cleanedData = walkAndExtract(data, code, images);
+
+      // Subir imágenes en paralelo
+      const uploadPromises = images.map(async (img) => {
+        if (!uploadedImagesCache.has(img.id)) {
+          const imgDocRef = doc(db!, 'hogares', img.id);
+          await setDoc(imgDocRef, {
+            base64: img.base64,
+            isImage: true,
+            updatedAt: Date.now()
+          });
+          uploadedImagesCache.add(img.id);
+          resolvedImagesCache.set(img.id, img.base64);
+        }
+      });
+      await Promise.all(uploadPromises);
+
       const docRef = doc(db, 'hogares', code);
-      await setDoc(docRef, data);
+      await setDoc(docRef, cleanedData);
     } else {
       // Mock store in localStorage
       localStorage.setItem(`mock_hogar_${code}`, JSON.stringify(data));
@@ -178,7 +285,8 @@ export class FirebaseSyncService {
       );
       const snap = await Promise.race([getDocPromise, timeoutPromise]);
       if (snap.exists()) {
-        return snap.data() as HogarCloudData;
+        const rawData = snap.data() as HogarCloudData;
+        return await walkAndResolve(rawData);
       }
       return null;
     } else {
@@ -213,8 +321,26 @@ export class FirebaseSyncService {
     if (chats !== undefined) data.chats = chats;
 
     if (this.isCloudEnabled() && db) {
+      const images: { id: string; base64: string }[] = [];
+      const cleanedData = walkAndExtract(data, code, images);
+
+      // Subir imágenes en paralelo
+      const uploadPromises = images.map(async (img) => {
+        if (!uploadedImagesCache.has(img.id)) {
+          const imgDocRef = doc(db!, 'hogares', img.id);
+          await setDoc(imgDocRef, {
+            base64: img.base64,
+            isImage: true,
+            updatedAt: Date.now()
+          });
+          uploadedImagesCache.add(img.id);
+          resolvedImagesCache.set(img.id, img.base64);
+        }
+      });
+      await Promise.all(uploadPromises);
+
       const docRef = doc(db, 'hogares', code);
-      await setDoc(docRef, data, { merge: true });
+      await setDoc(docRef, cleanedData, { merge: true });
     } else {
       localStorage.setItem(`mock_hogar_${code}`, JSON.stringify(data));
       // Broadcast to other tabs
@@ -237,12 +363,13 @@ export class FirebaseSyncService {
   ): () => void {
     if (this.isCloudEnabled() && db) {
       const docRef = doc(db, 'hogares', code);
-      const unsubscribe = onSnapshot(docRef, (snapshot) => {
+      const unsubscribe = onSnapshot(docRef, async (snapshot) => {
         if (snapshot.exists()) {
-          const data = snapshot.data() as HogarCloudData;
+          const rawData = snapshot.data() as HogarCloudData;
           // Solo llamamos al callback si el cambio lo hizo otro dispositivo/pestaña
-          if (data.lastUpdatedBy !== deviceSessionId) {
-            callback(data);
+          if (rawData.lastUpdatedBy !== deviceSessionId) {
+            const resolved = await walkAndResolve(rawData);
+            callback(resolved);
           }
         }
       }, (err) => {

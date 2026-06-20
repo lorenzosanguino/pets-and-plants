@@ -861,54 +861,6 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
             </div>
           </div>
 
-          {/* Historial de Diagnósticos IA Exclusivos */}
-          {exotico.diagnosticosIA && exotico.diagnosticosIA.length > 0 && (
-            <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <p style={{ margin: '0 0 4px 0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>
-                🤖 Historial de Diagnósticos IA (Exótico)
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '250px', overflowY: 'auto' }} className="no-print">
-                {exotico.diagnosticosIA.map(diag => (
-                  <div key={diag.id} style={{
-                    background: 'var(--game-card-bg, #fafafa)',
-                    borderRadius: 'var(--game-radius, 8px)',
-                    border: '1px solid var(--game-border-color, #eee)',
-                    borderLeft: `4px solid ${diag.esUrgente ? '#ef5350' : '#4caf50'}`,
-                    padding: '10px',
-                    fontSize: '11px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '4px',
-                    textAlign: 'left'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 'bold', color: 'var(--game-text-bright)' }}>
-                        {diag.esUrgente ? '🚨 URGENTE' : '🩺 Consulta IA'}
-                      </span>
-                      <span style={{ fontSize: '9px', color: 'var(--game-text, #888)' }}>
-                        {diag.fecha.includes('T') ? diag.fecha.split('T')[0] : diag.fecha}
-                      </span>
-                    </div>
-                    {diag.fotoUrl && (
-                      <img src={diag.fotoUrl} alt="Evidencia diagnóstica" loading="lazy" style={{ width: '100%', maxHeight: '120px', objectFit: 'cover', borderRadius: '4px', margin: '4px 0' }} />
-                    )}
-                    <div style={{ color: 'var(--game-text-bright)', lineHeight: '1.4' }}>
-                      <strong>Diagnóstico:</strong> {diag.diagnostico}
-                    </div>
-                    <div style={{ color: 'var(--game-text)', lineHeight: '1.4' }}>
-                      <strong>Tratamiento:</strong> {diag.tratamiento}
-                    </div>
-                    {diag.advertencia && (
-                      <div style={{ color: '#c62828', background: '#ffebee', padding: '4px 6px', borderRadius: '4px', marginTop: '2px', fontSize: '10px' }}>
-                        <strong>Alerta:</strong> {diag.advertencia}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Botones de acción inferior */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #eee', paddingTop: '12px' }}>
             <button
@@ -1121,25 +1073,30 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
 
             </div>
 
-            {/* Botón inferior de cerrar */}
-            <button
-              onClick={() => setIaReporteModal(null)}
-              style={{
-                padding: '10px 16px',
-                background: 'var(--game-accent, #1a1a1a)',
-                color: theme === 'gaming' ? '#000' : '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                fontSize: '12px',
-                alignSelf: 'flex-end',
-                marginTop: '8px',
-                fontFamily: 'var(--game-font, sans-serif)'
-              }}
-            >
-              Cerrar
-            </button>
+            {/* Botón inferior de cerrar y TTS */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', width: '100%' }}>
+              <TTSButton
+                text={`Diagnóstico: ${iaReporteModal.diagnostico}. Tratamiento sugerido: ${iaReporteModal.tratamiento}. ${iaReporteModal.advertencia ? `Advertencia: ${iaReporteModal.advertencia}` : ''}`}
+                theme={theme}
+                size="normal"
+              />
+              <button
+                onClick={() => setIaReporteModal(null)}
+                style={{
+                  padding: '10px 16px',
+                  background: 'var(--game-accent, #1a1a1a)',
+                  color: theme === 'gaming' ? '#000' : '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '12px',
+                  fontFamily: 'var(--game-font, sans-serif)'
+                }}
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1201,6 +1158,7 @@ export const ExoticCard = React.memo(ExoticCardComponent, (prevProps, nextProps)
     prevProps.exotico.ultimaAlimentacion === nextProps.exotico.ultimaAlimentacion &&
     prevProps.exotico.intervaloAlimentacionDias === nextProps.exotico.intervaloAlimentacionDias &&
     prevProps.exotico.fotoUrl === nextProps.exotico.fotoUrl &&
+    JSON.stringify(prevProps.exotico.fotos) === JSON.stringify(nextProps.exotico.fotos) &&
     JSON.stringify(prevProps.exotico.diarioExotico) === JSON.stringify(nextProps.exotico.diarioExotico) &&
     JSON.stringify(prevProps.exotico.diagnosticosIA) === JSON.stringify(nextProps.exotico.diagnosticosIA)
   );

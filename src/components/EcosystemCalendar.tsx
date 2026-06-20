@@ -7,10 +7,11 @@ import { safeUUID } from '../utils/uuid';
 interface EcosystemCalendarProps {
   plantas: any[];
   mascotas: any[];
+  exoticos?: any[];
   onUpdate: () => void;
 }
 
-export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = [], mascotas = [], onUpdate }) => {
+export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = [], mascotas = [], exoticos = [], onUpdate }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [eventos, setEventos] = useState<EventoCalendario[]>([]);
   const [selectedDayStr, setSelectedDayStr] = useState<string | null>(() => {
@@ -68,6 +69,25 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
             emoji: '⚖️',
             color: '#9c27b0',
             targetId: m.id
+          });
+        }
+      });
+
+      // Pesaje sugerido para exóticos
+      exoticos.forEach(e => {
+        const ultimoPeso = e.registroPeso && e.registroPeso[e.registroPeso.length - 1];
+        const fechaUltimoPeso = ultimoPeso ? new Date(ultimoPeso.fecha) : new Date(0);
+        const diferenciaMs = hoy.getTime() - fechaUltimoPeso.getTime();
+        const diasDesdePeso = Math.floor(diferenciaMs / (1000 * 60 * 60 * 24));
+
+        if (diasDesdePeso >= 7 || !ultimoPeso) {
+          tareas.push({
+            type: 'peso-exotico',
+            title: `Pesar a ${e.nombre}`,
+            detail: "Mantener actualizada la curva de peso",
+            emoji: '⚖️',
+            color: '#9c27b0',
+            targetId: e.id
           });
         }
       });
@@ -184,6 +204,21 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
       onUpdate();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleToggleCompletado = async (ev: EventoCalendario) => {
+    try {
+      const updated: EventoCalendario = {
+        ...ev,
+        completado: !ev.completado
+      };
+      await LocalDatabase.saveEventoCalendario(updated);
+      localStorage.setItem('petplant_db_last_updated', Date.now().toString());
+      await loadEvents();
+      onUpdate();
+    } catch (err) {
+      console.error("Error toggling event completion:", err);
     }
   };
 
@@ -475,7 +510,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                   <span style={{ fontSize: '10px', color: '#666' }}>{t.detail}</span>
                 </div>
                 
-                {(t.type === 'riego' || t.type === 'vacuna') && (
+                {(t.type === 'riego' || t.type === 'vacuna' || t.type === 'peso' || t.type === 'peso-exotico') && (
                   <button
                     onClick={async () => {
                       if (t.type === 'riego') {
@@ -504,6 +539,39 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                             await LocalDatabase.saveMascota({
                               ...m,
                               vacunasChecklist: updated
+                            });
+                          }
+                        }
+                      } else if (t.type === 'peso' || t.type === 'peso-exotico') {
+                        const isExo = t.type === 'peso-exotico';
+                        const animal = isExo
+                          ? exoticos.find(item => item.id === t.targetId)
+                          : mascotas.find(item => item.id === t.targetId);
+
+                        if (animal) {
+                          const pesoInput = window.prompt(`Introduce el nuevo peso (Kg) para ${animal.nombre}:`);
+                          if (pesoInput === null) return; // User cancelled
+                          const pesoNum = parseFloat(pesoInput.replace(',', '.'));
+                          if (isNaN(pesoNum) || pesoNum <= 0) {
+                            alert("Por favor, introduce un número válido para el peso.");
+                            return;
+                          }
+                          const nuevoRegistro = {
+                            fecha: new Date().toISOString(),
+                            pesoKg: pesoNum
+                          };
+
+                          if (isExo) {
+                            const listadoPeso = animal.registroPeso || [];
+                            await LocalDatabase.saveExotico({
+                              ...animal,
+                              registroPeso: [...listadoPeso, nuevoRegistro]
+                            });
+                          } else {
+                            const listadoPeso = animal.registroPeso || [];
+                            await LocalDatabase.saveMascota({
+                              ...animal,
+                              registroPeso: [...listadoPeso, nuevoRegistro]
                             });
                           }
                         }
@@ -543,15 +611,30 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                     borderRadius: '8px',
                     border: '1px solid #eee',
                     borderLeft: `5px solid ${getCategoryColor(ev.categoria)}`,
-                    background: '#fcfcfc',
-                    fontSize: '12px'
+                    background: ev.completado ? 'rgba(0, 0, 0, 0.02)' : '#fcfcfc',
+                    fontSize: '12px',
+                    opacity: ev.completado ? 0.6 : 1,
+                    transition: 'all 0.2s'
                   }}
                 >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontSize: '10px', fontWeight: 'bold', color: getCategoryColor(ev.categoria), textTransform: 'uppercase' }}>
-                      {getCategoryLabel(ev.categoria)}
-                    </span>
-                    <span style={{ color: 'var(--game-text-bright)' }}>{ev.texto}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+                    <input
+                      type="checkbox"
+                      checked={!!ev.completado}
+                      onChange={() => handleToggleCompletado(ev)}
+                      style={{ cursor: 'pointer', width: '16px', height: '16px', flexShrink: 0 }}
+                      title={ev.completado ? "Marcar como pendiente" : "Marcar como completado"}
+                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left', minWidth: 0 }}>
+                      <span style={{ fontSize: '9px', fontWeight: 'bold', color: getCategoryColor(ev.categoria), textTransform: 'uppercase' }}>
+                        {getCategoryLabel(ev.categoria)}
+                      </span>
+                      <span style={{ 
+                        color: 'var(--game-text-bright)', 
+                        textDecoration: ev.completado ? 'line-through' : 'none',
+                        wordBreak: 'break-word'
+                      }}>{ev.texto}</span>
+                    </div>
                   </div>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <button 

@@ -9,6 +9,12 @@ export const useTTS = () => {
   const activeSpeakingRef = useRef<boolean>(false);
   const rateRef = useRef<number>(1.15);
 
+  const cleanUtterance = (utt: SpeechSynthesisUtterance) => {
+    if (typeof window !== 'undefined' && (window as any)._activeUtterances) {
+      (window as any)._activeUtterances = (window as any)._activeUtterances.filter((u: any) => u !== utt);
+    }
+  };
+
   const playCurrent = useCallback(() => {
     if (!activeSpeakingRef.current || !window.speechSynthesis) return;
 
@@ -30,6 +36,7 @@ export const useTTS = () => {
     if (spanishVoice) utterance.voice = spanishVoice;
 
     utterance.onend = () => {
+      cleanUtterance(utterance);
       if (!activeSpeakingRef.current) {
         setIsSpeaking(false);
         return;
@@ -39,6 +46,7 @@ export const useTTS = () => {
     };
 
     utterance.onerror = (e) => {
+      cleanUtterance(utterance);
       console.error("Error en reproducción TTS de fragmento:", e);
       if (!activeSpeakingRef.current) {
         setIsSpeaking(false);
@@ -48,14 +56,25 @@ export const useTTS = () => {
       playCurrent();
     };
 
+    // Almacenar en objeto global para evitar recolección de basura
+    if (typeof window !== 'undefined') {
+      (window as any)._activeUtterances = (window as any)._activeUtterances || [];
+      (window as any)._activeUtterances.push(utterance);
+    }
+
     utteranceRef.current = utterance;
+    window.speechSynthesis.resume(); // Evitar estado pausado/bloqueado
     window.speechSynthesis.speak(utterance);
   }, []);
 
   const stop = useCallback(() => {
     activeSpeakingRef.current = false;
     if (window.speechSynthesis) {
+      window.speechSynthesis.resume(); // Asegurar que no está pausado antes de cancelar
       window.speechSynthesis.cancel();
+    }
+    if (typeof window !== 'undefined') {
+      (window as any)._activeUtterances = [];
     }
     setIsSpeaking(false);
   }, []);
@@ -63,8 +82,8 @@ export const useTTS = () => {
   const speak = useCallback((text: string) => {
     if (!window.speechSynthesis) return;
 
-    // Detener cualquier reproducción previa de inmediato
-    window.speechSynthesis.cancel();
+    window.speechSynthesis.resume(); // Asegurar que no está pausado
+    window.speechSynthesis.cancel(); // Detener cualquier reproducción previa de inmediato
 
     if (isSpeaking) {
       stop();
@@ -109,6 +128,7 @@ export const useTTS = () => {
         utteranceRef.current.onend = null;
         utteranceRef.current.onerror = null;
       }
+      window.speechSynthesis.resume();
       window.speechSynthesis.cancel();
       playCurrent();
     }
@@ -124,6 +144,13 @@ export const useTTS = () => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [stop]);
+
+  // Limpieza al desmontar el hook
+  useEffect(() => {
+    return () => {
+      stop();
     };
   }, [stop]);
 
