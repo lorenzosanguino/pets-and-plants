@@ -64,6 +64,14 @@ export class SyncQueueService {
       const mascotas = await LocalDatabase.getMascotas();
       const plantas = await LocalDatabase.getPlantas();
       const exoticos = await LocalDatabase.getExoticos();
+      const eventos = await LocalDatabase.getEventosCalendario();
+      
+      const chats = [];
+      const consultantIds = ['veterinario', 'agronomo', 'exotico'];
+      for (const id of consultantIds) {
+        const chat = await LocalDatabase.getChatHistorial(id);
+        if (chat) chats.push(chat);
+      }
 
       if (hogarId && provider !== 'microsoft') {
         const { FirebaseSyncService } = await import('../database/firebaseSync');
@@ -75,17 +83,19 @@ export class SyncQueueService {
             mascotas,
             plantas,
             exoticos,
-            uiTheme
+            uiTheme,
+            eventos,
+            chats
           );
         }
       } else if (provider === 'microsoft') {
         console.log('Sincronizando cola de mutaciones con Microsoft OneDrive...');
-        const eventos = await LocalDatabase.getEventosCalendario();
         await MicrosoftSyncService.uploadBackup({
           mascotas,
           plantas,
           exoticos,
           eventos,
+          chats,
           updatedAt: Date.now()
         });
       }

@@ -573,29 +573,40 @@ export class LocalDatabase {
     mascotas: Mascota[],
     plantas: Planta[],
     exoticos: AnimalExotico[],
-    eventos: EventoCalendario[] = [],
-    chats: ChatHistorial[] = []
+    eventos?: EventoCalendario[],
+    chats?: ChatHistorial[]
   ): Promise<void> {
     const db = await openDB();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(['mascotas', 'plantas', 'exoticos', 'eventos_calendario', 'chats_consultor'], 'readwrite');
+      const storesToTransaction = ['mascotas', 'plantas', 'exoticos'];
+      if (eventos !== undefined) storesToTransaction.push('eventos_calendario');
+      if (chats !== undefined) storesToTransaction.push('chats_consultor');
+
+      const tx = db.transaction(storesToTransaction, 'readwrite');
+      
       const petStore = tx.objectStore('mascotas');
       const plantStore = tx.objectStore('plantas');
       const exoticStore = tx.objectStore('exoticos');
-      const eventStore = tx.objectStore('eventos_calendario');
-      const chatStore = tx.objectStore('chats_consultor');
 
       petStore.clear();
       plantStore.clear();
       exoticStore.clear();
-      eventStore.clear();
-      chatStore.clear();
 
       mascotas.forEach(m => petStore.put(m));
       plantas.forEach(p => plantStore.put(p));
       exoticos.forEach(e => exoticStore.put(e));
-      eventos.forEach(ev => eventStore.put(ev));
-      chats.forEach(ch => chatStore.put(ch));
+
+      if (eventos !== undefined) {
+        const eventStore = tx.objectStore('eventos_calendario');
+        eventStore.clear();
+        eventos.forEach(ev => eventStore.put(ev));
+      }
+
+      if (chats !== undefined) {
+        const chatStore = tx.objectStore('chats_consultor');
+        chatStore.clear();
+        chats.forEach(ch => chatStore.put(ch));
+      }
 
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);

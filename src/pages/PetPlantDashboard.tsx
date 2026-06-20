@@ -682,15 +682,40 @@ export const PetPlantDashboard: React.FC = () => {
       if (activeHogar && !isRemoteSyncingRef.current && localStorage.getItem('petplant_login_provider') !== 'microsoft') {
         const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Hogar Sincronizado";
         setSyncStatus('syncing');
-        const uploadPromise = getFirebaseCached()?.FirebaseSyncService.uploadChanges(activeHogar, activeNombre, listMascotas, listPlantas, listExoticos, uiTheme);
-        if (uploadPromise) {
-          uploadPromise
-            .then(() => setSyncStatus('synced'))
-            .catch((err: any) => {
-              console.error("Error al sincronizar cambios locales:", err);
-              setSyncStatus('error');
-            });
-        }
+        Promise.all([
+          LocalDatabase.getEventosCalendario(),
+          (async () => {
+            const chats = [];
+            const consultantIds = ['veterinario', 'agronomo', 'exotico'];
+            for (const id of consultantIds) {
+              const chat = await LocalDatabase.getChatHistorial(id);
+              if (chat) chats.push(chat);
+            }
+            return chats;
+          })()
+        ]).then(([listEventos, chats]) => {
+          const uploadPromise = getFirebaseCached()?.FirebaseSyncService.uploadChanges(
+            activeHogar, 
+            activeNombre, 
+            listMascotas, 
+            listPlantas, 
+            listExoticos, 
+            uiTheme,
+            listEventos,
+            chats
+          );
+          if (uploadPromise) {
+            uploadPromise
+              .then(() => setSyncStatus('synced'))
+              .catch((err: any) => {
+                console.error("Error al sincronizar cambios locales:", err);
+                setSyncStatus('error');
+              });
+          }
+        }).catch(err => {
+          console.error("Error al cargar eventos/chats para auto-sync:", err);
+          setSyncStatus('error');
+        });
       }
 
       // Evaluar recordatorios de agenda y tareas pendientes de manera asíncrona
@@ -705,30 +730,64 @@ export const PetPlantDashboard: React.FC = () => {
     setSyncStatus('syncing');
     try {
       const backup = await MicrosoftSyncService.downloadBackup();
+      
+      const listMascotas = await LocalDatabase.getMascotas();
+      const listPlantas = await LocalDatabase.getPlantas();
+      const listExoticos = await LocalDatabase.getExoticos();
+      
+      const isLocalDemo = isDatabaseDefaultDemo(listMascotas, listPlantas, listExoticos);
+      const isLocalEmpty = listMascotas.length === 0 && listPlantas.length === 0 && listExoticos.length === 0;
+
       if (backup) {
-        isRemoteSyncingRef.current = true;
-        await LocalDatabase.overwriteFullDatabase(
-          backup.mascotas || [],
-          backup.plantas || [],
-          backup.exoticos || [],
-          backup.eventos || [],
-          backup.chats || []
-        );
-        isRemoteSyncingRef.current = false;
-        await refreshData(false);
-        setSyncStatus('synced');
+        const isCloudDemo = isDatabaseDefaultDemo(backup.mascotas || [], backup.plantas || [], backup.exoticos || []);
+        const localLastUpdated = Number(localStorage.getItem('petplant_db_last_updated') || 0);
+        const remoteIsNewer = backup.updatedAt > localLastUpdated;
+        
+        // Safeguard: if cloud has demo and local has real, do NOT overwrite local. Instead, upload local to cloud.
+        if (!isLocalDemo && isCloudDemo) {
+          console.log("OneDrive: Local has real data, cloud has demo. Uploading local data.");
+          await triggerOneDriveSyncDirect();
+          setSyncStatus('synced');
+        } else if (!isLocalDemo && !isCloudDemo && !remoteIsNewer) {
+          // Both have real data, but local is newer or equal -> upload local to cloud
+          console.log("OneDrive: Local is newer or equal. Uploading local data.");
+          await triggerOneDriveSyncDirect();
+          setSyncStatus('synced');
+        } else {
+          // Cloud has real data and is newer, or local is empty, or local is demo. Overwrite local.
+          console.log("OneDrive: Cloud is newer or local is demo/empty. Downloading cloud data.");
+          isRemoteSyncingRef.current = true;
+          await LocalDatabase.overwriteFullDatabase(
+            backup.mascotas || [],
+            backup.plantas || [],
+            backup.exoticos || [],
+            backup.eventos || [],
+            backup.chats || []
+          );
+          isRemoteSyncingRef.current = false;
+          await refreshData(false);
+          setSyncStatus('synced');
+        }
       } else {
-        // No backup found -> first time user for MS account
-        // Clear local database and seed only demo cards
-        isRemoteSyncingRef.current = true;
-        await LocalDatabase.resetToDemo();
-        isRemoteSyncingRef.current = false;
-        await refreshData(false);
-        // Upload initial demo cards to OneDrive to create backup file
-        await triggerOneDriveSyncDirect();
+        // No backup found on OneDrive
+        if (!isLocalDemo && !isLocalEmpty) {
+          // Local has real data -> upload to OneDrive to create the backup file
+          console.log("OneDrive: No remote backup found, but local has real data. Uploading local data.");
+          await triggerOneDriveSyncDirect();
+          setSyncStatus('synced');
+        } else {
+          // Local is demo or empty -> reset local to demo and upload to create the backup file
+          console.log("OneDrive: No remote backup and local is empty/demo. Seeding demo and uploading.");
+          isRemoteSyncingRef.current = true;
+          await LocalDatabase.resetToDemo();
+          isRemoteSyncingRef.current = false;
+          await refreshData(false);
+          await triggerOneDriveSyncDirect();
+          setSyncStatus('synced');
+        }
       }
     } catch (err) {
-      console.error("Error al descargar copia de seguridad de OneDrive:", err);
+      console.error("Error al descargar o sincronizar con OneDrive:", err);
       setSyncStatus('error');
     }
   };
@@ -806,7 +865,7 @@ export const PetPlantDashboard: React.FC = () => {
         const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Mi Hogar";
         
         console.log('Subiendo copia a Firebase...');
-        await fbSync.uploadChanges(activeHogar, activeNombre, listMascotas, listPlantas, listExoticos, uiTheme);
+        await fbSync.uploadChanges(activeHogar, activeNombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
         
         setSyncStatus('synced');
         alert(`✔️ Sincronización exitosa: datos de tu grupo hogar '${activeNombre}' subidos correctamente a Firebase Cloud.`);
@@ -850,7 +909,7 @@ export const PetPlantDashboard: React.FC = () => {
             setUser(null);
             localStorage.removeItem('petplant_login_provider');
             localStorage.removeItem('petplant_user_session');
-            await LocalDatabase.resetToDemo();
+            alert("Tu sesión de Microsoft OneDrive ha expirado. Vuelve a iniciar sesión para continuar sincronizando tus datos.");
             await refreshData(false);
           }
         } catch (err) {
@@ -886,6 +945,14 @@ export const PetPlantDashboard: React.FC = () => {
                   const listMascotas = await LocalDatabase.getMascotas();
                   const listPlantas = await LocalDatabase.getPlantas();
                   const listExoticos = await LocalDatabase.getExoticos();
+                  const listEventos = await LocalDatabase.getEventosCalendario();
+                  
+                  const chats = [];
+                  const consultantIds = ['veterinario', 'agronomo', 'exotico'];
+                  for (const id of consultantIds) {
+                    const chat = await LocalDatabase.getChatHistorial(id);
+                    if (chat) chats.push(chat);
+                  }
 
                   if (userHogar) {
                     const { hogarId: cloudHogarId, hogarNombre: cloudHogarNombre } = userHogar;
@@ -919,16 +986,22 @@ export const PetPlantDashboard: React.FC = () => {
 
                       if (!isLocalDemo && isCloudDemo) {
                         // Local tiene datos reales, nube solo tiene demo → subir local a la nube
-                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme);
+                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
                       } else if (cloudHasRealData && (remoteIsNewer || isLocalEmpty || isLocalDemo)) {
                         // Descargar de la nube si es más nueva, si local está vacío o si local es demo
                         isRemoteSyncingRef.current = true;
-                        await LocalDatabase.overwriteDatabase(data.mascotas || [], data.plantas || [], data.exoticos || []);
+                        await LocalDatabase.overwriteFullDatabase(
+                          data.mascotas || [],
+                          data.plantas || [],
+                          data.exoticos || [],
+                          data.eventos,
+                          data.chats
+                        );
                         isRemoteSyncingRef.current = false;
                         await refreshData(false);
                       } else {
                         // Si el local es más nuevo o contiene cambios reales no presentes en la nube, subir local a la nube
-                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme);
+                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
                       }
 
                       // Aplicar tema de la nube si existe y es válido
@@ -939,7 +1012,7 @@ export const PetPlantDashboard: React.FC = () => {
                     } else {
                       // Si no hay datos en la nube para este hogarId pero tenemos datos locales, los subimos de inmediato
                       if (listMascotas.length > 0 || listPlantas.length > 0 || listExoticos.length > 0) {
-                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme);
+                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
                       }
                     }
                   } else {
@@ -948,10 +1021,10 @@ export const PetPlantDashboard: React.FC = () => {
                     if (localHogarId) {
                       await FirebaseSyncService.saveUserHogar(firebaseUser.uid, localHogarId, localHogarNombre);
                       // Subir los datos locales actuales para asegurar que el hogar en la nube esté creado
-                      await FirebaseSyncService.uploadChanges(localHogarId, localHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme);
+                      await FirebaseSyncService.uploadChanges(localHogarId, localHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
                     } else {
                       // Crear automáticamente un hogar nuevo si el usuario no tiene ninguno local ni remoto
-                      const nuevoCodigo = await FirebaseSyncService.createHogar("Mi Hogar", listMascotas, listPlantas, listExoticos, uiTheme);
+                      const nuevoCodigo = await FirebaseSyncService.createHogar("Mi Hogar", listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
                       localStorage.setItem('petplant_hogar_id', nuevoCodigo);
                       localStorage.setItem('petplant_hogar_nombre', "Mi Hogar");
                       setHogarId(nuevoCodigo);
@@ -979,6 +1052,14 @@ export const PetPlantDashboard: React.FC = () => {
                     const listMascotas = await LocalDatabase.getMascotas();
                     const listPlantas = await LocalDatabase.getPlantas();
                     const listExoticos = await LocalDatabase.getExoticos();
+                    const listEventos = await LocalDatabase.getEventosCalendario();
+                    
+                    const chats = [];
+                    const consultantIds = ['veterinario', 'agronomo', 'exotico'];
+                    for (const id of consultantIds) {
+                      const chat = await LocalDatabase.getChatHistorial(id);
+                      if (chat) chats.push(chat);
+                    }
 
                     const isLocalDemo = isDatabaseDefaultDemo(listMascotas, listPlantas, listExoticos);
                     const isCloudDemo = isDatabaseDefaultDemo(data.mascotas || [], data.plantas || [], data.exoticos || []);
@@ -989,14 +1070,20 @@ export const PetPlantDashboard: React.FC = () => {
                     const remoteIsNewer = data.updatedAt > localLastUpdated;
 
                     if (!isLocalDemo && isCloudDemo) {
-                      await FirebaseSyncService.uploadChanges(localHogarId, data.nombre, listMascotas, listPlantas, listExoticos, uiTheme);
+                      await FirebaseSyncService.uploadChanges(localHogarId, data.nombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
                     } else if (cloudHasRealData && (remoteIsNewer || isLocalEmpty || isLocalDemo)) {
                       isRemoteSyncingRef.current = true;
-                      await LocalDatabase.overwriteDatabase(data.mascotas || [], data.plantas || [], data.exoticos || []);
+                      await LocalDatabase.overwriteFullDatabase(
+                        data.mascotas || [],
+                        data.plantas || [],
+                        data.exoticos || [],
+                        data.eventos,
+                        data.chats
+                      );
                       isRemoteSyncingRef.current = false;
                       await refreshData(false);
                     } else {
-                      await FirebaseSyncService.uploadChanges(localHogarId, data.nombre, listMascotas, listPlantas, listExoticos, uiTheme);
+                      await FirebaseSyncService.uploadChanges(localHogarId, data.nombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
                     }
 
                     if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii')) {
@@ -1173,7 +1260,13 @@ export const PetPlantDashboard: React.FC = () => {
         setSyncStatus('syncing');
         try {
           isRemoteSyncingRef.current = true;
-          await LocalDatabase.overwriteDatabase(data.mascotas || [], data.plantas || [], data.exoticos || []);
+          await LocalDatabase.overwriteFullDatabase(
+            data.mascotas || [],
+            data.plantas || [],
+            data.exoticos || [],
+            data.eventos,
+            data.chats
+          );
           await refreshData(false);
           setSyncStatus('synced');
           dispararLogroVisual("SINCRO HOGAR", "Datos del hogar actualizados en vivo.", 'lvl_up');
@@ -1206,7 +1299,23 @@ export const PetPlantDashboard: React.FC = () => {
     if (!nuevoHogarNombre.trim()) return;
     setSyncStatus('syncing');
     try {
-      const code = await (getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService).createHogar(nuevoHogarNombre.trim(), mascotas, plantas, exoticos, uiTheme);
+      const listEventos = await LocalDatabase.getEventosCalendario();
+      const chats = [];
+      const consultantIds = ['veterinario', 'agronomo', 'exotico'];
+      for (const id of consultantIds) {
+        const chat = await LocalDatabase.getChatHistorial(id);
+        if (chat) chats.push(chat);
+      }
+      
+      const code = await (getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService).createHogar(
+        nuevoHogarNombre.trim(), 
+        mascotas, 
+        plantas, 
+        exoticos, 
+        uiTheme,
+        listEventos,
+        chats
+      );
       setHogarId(code);
       setHogarNombre(nuevoHogarNombre.trim());
       localStorage.setItem('petplant_hogar_id', code);
@@ -1252,8 +1361,13 @@ export const PetPlantDashboard: React.FC = () => {
           await cachedFb2.FirebaseSyncService.saveUserHogar(cachedFb2.auth.currentUser.uid, cleanCode, data.nombre);
         }
         
-        isRemoteSyncingRef.current = true;
-        await LocalDatabase.overwriteDatabase(data.mascotas || [], data.plantas || [], data.exoticos || []);
+        await LocalDatabase.overwriteFullDatabase(
+          data.mascotas || [],
+          data.plantas || [],
+          data.exoticos || [],
+          data.eventos,
+          data.chats
+        );
         isRemoteSyncingRef.current = false;
 
         const h = { id: cleanCode, nombre: data.nombre };
@@ -1333,8 +1447,8 @@ export const PetPlantDashboard: React.FC = () => {
           data.mascotas || [],
           data.plantas || [],
           data.exoticos || [],
-          [],
-          []
+          data.eventos,
+          data.chats
         );
         isRemoteSyncingRef.current = false;
 
@@ -2370,6 +2484,7 @@ export const PetPlantDashboard: React.FC = () => {
                   <IAConsultantsView 
                     hideSelector={false} 
                     onNavigateToAsset={handleNavigateToAsset} 
+                    onUpdate={refreshData}
                   />
                 </Suspense>
               </div>
@@ -2390,6 +2505,7 @@ export const PetPlantDashboard: React.FC = () => {
                   } 
                   hideSelector={true} 
                   onNavigateToAsset={handleNavigateToAsset}
+                  onUpdate={refreshData}
                 />
               </Suspense>
             )}

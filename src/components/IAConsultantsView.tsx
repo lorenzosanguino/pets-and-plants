@@ -24,12 +24,14 @@ interface IAConsultantsViewProps {
   forceConsultant?: 'veterinario' | 'agronomo' | 'exoticos';
   hideSelector?: boolean;
   onNavigateToAsset?: (tipo: 'mascota' | 'planta' | 'exotico', id: string) => void;
+  onUpdate?: () => void;
 }
 
 export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({ 
   forceConsultant,
   hideSelector = false,
-  onNavigateToAsset
+  onNavigateToAsset,
+  onUpdate
 }) => {
   const theme = localStorage.getItem('petplant_game_theme') || 'adventure';
 
@@ -238,6 +240,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
         mensajes: [],
         ultimaActualizacion: new Date().toISOString()
       });
+      onUpdate?.();
       
       let defaultText = '';
       if (activeConsultant === 'veterinario') {
@@ -359,6 +362,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
         ultimaActualizacion: new Date().toISOString()
       };
       await LocalDatabase.saveChatHistorial(chatHist);
+      onUpdate?.();
     } catch (err) {
       console.error("Error al procesar el mensaje por IA:", err);
       alert("Lo siento, ha ocurrido un error al comunicarse con la IA. Por favor, inténtelo de nuevo.");
