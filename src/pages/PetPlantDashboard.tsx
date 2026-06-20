@@ -385,24 +385,35 @@ export const PetPlantDashboard: React.FC = () => {
     }
 
     return (
-      <div 
-        title={titleTip}
+      <button 
+        type="button"
+        title={`${titleTip} (Haz clic para forzar sincronización y comprobar la nube)`}
+        onClick={forceSyncToCloud}
         style={{
           display: 'inline-flex',
           alignItems: 'center',
           gap: '6px',
-          padding: '4px 10px',
-          background: uiTheme === 'gaming' ? 'rgba(0,0,0,0.4)' : 'rgba(255, 255, 255, 0.7)',
-          border: uiTheme === 'gaming' ? '1px solid var(--game-border-color)' : '1px solid #eaeaea',
+          padding: '4px 12px',
+          background: uiTheme === 'gaming' ? 'rgba(0,0,0,0.5)' : 'rgba(255, 255, 255, 0.85)',
+          border: uiTheme === 'gaming' ? '1px solid var(--game-border-color)' : '1px solid #c8e6c9',
           borderRadius: '20px',
           fontSize: '11px',
           fontWeight: 'bold',
           color: 'var(--game-text-bright, #333)',
           fontFamily: 'var(--game-font, sans-serif)',
-          cursor: 'help',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
-          transition: 'all 0.3s ease',
-          margin: '4px 0'
+          cursor: 'pointer',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          transition: 'all 0.2s ease',
+          margin: '4px 0',
+          outline: 'none'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'scale(1.05)';
+          if (uiTheme !== 'gaming') e.currentTarget.style.background = '#e8f5e9';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'none';
+          e.currentTarget.style.background = uiTheme === 'gaming' ? 'rgba(0,0,0,0.5)' : 'rgba(255, 255, 255, 0.85)';
         }}
       >
         <span 
@@ -417,7 +428,7 @@ export const PetPlantDashboard: React.FC = () => {
           }} 
         />
         <span>{text}</span>
-      </div>
+      </button>
     );
   };
 
@@ -740,6 +751,61 @@ export const PetPlantDashboard: React.FC = () => {
     } catch (err) {
       console.error("Error al subir copia a OneDrive:", err);
       setSyncStatus('error');
+    }
+  };
+
+  const forceSyncToCloud = async () => {
+    if (isOffline) {
+      alert("No se puede sincronizar: estás sin conexión a internet.");
+      return;
+    }
+
+    const provider = localStorage.getItem('petplant_login_provider');
+    const activeHogar = localStorage.getItem('petplant_hogar_id');
+
+    setSyncStatus('syncing');
+    try {
+      const listMascotas = await LocalDatabase.getMascotas();
+      const listPlantas = await LocalDatabase.getPlantas();
+      const listExoticos = await LocalDatabase.getExoticos();
+      const listEventos = await LocalDatabase.getEventosCalendario();
+      
+      const chats = [];
+      const consultantIds = ['veterinario', 'agronomo', 'exotico'];
+      for (const id of consultantIds) {
+        const chat = await LocalDatabase.getChatHistorial(id);
+        if (chat) chats.push(chat);
+      }
+
+      if (provider === 'microsoft') {
+        console.log('Subiendo copia a OneDrive...');
+        await MicrosoftSyncService.uploadBackup({
+          mascotas: listMascotas,
+          plantas: listPlantas,
+          exoticos: listExoticos,
+          eventos: listEventos,
+          chats: chats,
+          updatedAt: Date.now()
+        });
+        setSyncStatus('synced');
+        alert("✔️ Sincronización exitosa: copia de seguridad subida a Microsoft OneDrive.");
+      } else if (activeHogar) {
+        const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
+        const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Mi Hogar";
+        
+        console.log('Subiendo copia a Firebase...');
+        await fbSync.uploadChanges(activeHogar, activeNombre, listMascotas, listPlantas, listExoticos, uiTheme);
+        
+        setSyncStatus('synced');
+        alert(`✔️ Sincronización exitosa: datos de tu grupo hogar '${activeNombre}' subidos correctamente a Firebase Cloud.`);
+      } else {
+        alert("⚠️ No tienes configurado un grupo hogar activo o cuenta en la nube. Ve a 'Ajustes' para registrarte o vincularte.");
+        setSyncStatus('synced');
+      }
+    } catch (err: any) {
+      console.error("Fallo en sincronización manual:", err);
+      setSyncStatus('error');
+      alert("❌ Error en la sincronización: " + (err.message || err));
     }
   };
 
