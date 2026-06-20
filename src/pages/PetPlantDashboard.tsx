@@ -688,24 +688,23 @@ export const PetPlantDashboard: React.FC = () => {
             }
             return chats;
           })()
-        ]).then(([listEventos, chats]) => {
-          const uploadPromise = getFirebaseCached()?.FirebaseSyncService.uploadChanges(
-            activeHogar, 
-            activeNombre, 
-            listMascotas, 
-            listPlantas, 
-            listExoticos, 
-            uiTheme,
-            listEventos,
-            chats
-          );
-          if (uploadPromise) {
-            uploadPromise
-              .then(() => setSyncStatus('synced'))
-              .catch((err: any) => {
-                console.error("Error al sincronizar cambios locales:", err);
-                setSyncStatus('error');
-              });
+        ]).then(async ([listEventos, chats]) => {
+          try {
+            const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
+            await fbSync.uploadChanges(
+              activeHogar, 
+              activeNombre, 
+              listMascotas, 
+              listPlantas, 
+              listExoticos, 
+              uiTheme,
+              listEventos,
+              chats
+            );
+            setSyncStatus('synced');
+          } catch (err: any) {
+            console.error("Error al sincronizar cambios locales:", err);
+            setSyncStatus('error');
           }
         }).catch(err => {
           console.error("Error al cargar eventos/chats para auto-sync:", err);
