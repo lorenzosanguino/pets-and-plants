@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, getDoc, onSnapshot, enableMultiTabIndexedDbPersistence } from 'firebase/firestore';
+import { initializeFirestore, doc, setDoc, getDoc, onSnapshot, enableMultiTabIndexedDbPersistence } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import type { Mascota, Planta, AnimalExotico, EventoCalendario, ChatHistorial } from './types';
 
@@ -30,7 +30,11 @@ export let auth: Auth | null = null;
 if (isFirebaseEnabled) {
   try {
     const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    db = getFirestore(app);
+    // Utilizar initializeFirestore para forzar HTTP Long Polling en dispositivos móviles
+    // y redes que puedan tener WebSockets/gRPC bloqueados por los operadores.
+    db = initializeFirestore(app, {
+      experimentalForceLongPolling: true
+    });
     auth = getAuth(app);
     // Enable multi-tab offline persistence
     enableMultiTabIndexedDbPersistence(db).catch((err) => {
@@ -72,7 +76,12 @@ export class FirebaseSyncService {
   static async getUserHogar(uid: string): Promise<{ hogarId: string; hogarNombre: string } | null> {
     if (this.isCloudEnabled() && db) {
       const docRef = doc(db, 'hogares', `user_hogar_${uid}`);
-      const snap = await getDoc(docRef);
+      const getDocPromise = getDoc(docRef);
+      // Timeout de 10 segundos en lectura para no congelar la app en redes lentas
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error("Timeout al obtener hogar del usuario en Firestore")), 10000)
+      );
+      const snap = await Promise.race([getDocPromise, timeoutPromise]);
       if (snap.exists()) {
         const data = snap.data();
         if (data && data.hogarId) {
@@ -166,7 +175,12 @@ export class FirebaseSyncService {
   static async getHogarData(code: string): Promise<HogarCloudData | null> {
     if (this.isCloudEnabled() && db) {
       const docRef = doc(db, 'hogares', code);
-      const snap = await getDoc(docRef);
+      const getDocPromise = getDoc(docRef);
+      // Timeout de 10 segundos en lectura para no congelar la app en redes lentas
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error("Timeout al obtener datos del hogar en Firestore")), 10000)
+      );
+      const snap = await Promise.race([getDocPromise, timeoutPromise]);
       if (snap.exists()) {
         return snap.data() as HogarCloudData;
       }
