@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { LocalDatabase } from '../database/db';
 import type { Mascota, Planta, AnimalExotico, EventoCalendario } from '../database/types';
@@ -44,6 +44,8 @@ const ChunkLoader: React.FC<{ height?: string }> = ({ height = '120px' }) => (
   </div>
 );
 
+
+const getNowTimestamp = (): number => Date.now();
 
 const isDatabaseDefaultDemo = (mascotas: Mascota[], plantas: Planta[], exoticos: AnimalExotico[]) => {
   return (
@@ -152,13 +154,19 @@ export const PetPlantDashboard: React.FC = () => {
     handleInstallPWA
   } = usePWAManager();
 
+  const refreshDataRef = useRef<any>(null);
+
   const {
     loadingGPS,
     gpsSyncSuccess,
     gpsSyncEnabled,
     handleGPSToggle,
     sincronizarTodasLasPlantasPorGPS
-  } = useGPSWeather(refreshData);
+  } = useGPSWeather(async (force) => {
+    if (refreshDataRef.current) {
+      await refreshDataRef.current(force);
+    }
+  });
 
   // Modo de Experiencia: 'landing', 'pets', 'plants', 'exotics', 'travels', 'consultants'
   const [experienceMode, setExperienceMode] = useState<'landing' | 'pets' | 'plants' | 'exotics' | 'travels' | 'consultants'>(() => {
@@ -236,9 +244,9 @@ export const PetPlantDashboard: React.FC = () => {
 
     const activeHogar = localStorage.getItem('petplant_hogar_id');
     if (activeHogar && localStorage.getItem('petplant_login_provider') !== 'microsoft') {
-      refreshData(true);
+      refreshDataRef.current?.(true);
     }
-  }, [uiTheme]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [uiTheme]);
 
   const [customApiKey, setCustomApiKey] = useState<string>(() => localStorage.getItem('petplant_gemini_api_key') || '');
   const [showApiKey, setShowApiKey] = useState<boolean>(false);
@@ -667,7 +675,7 @@ export const PetPlantDashboard: React.FC = () => {
   async function refreshData(isLocalEdit = true) {
     try {
       if (isLocalEdit) {
-        localStorage.setItem('petplant_db_last_updated', Date.now().toString());
+        localStorage.setItem('petplant_db_last_updated', getNowTimestamp().toString());
       }
 
       const listMascotas = await LocalDatabase.getMascotas();
@@ -764,6 +772,10 @@ export const PetPlantDashboard: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    refreshDataRef.current = refreshData;
+  }, [refreshData]);
+
   // ── Microsoft & Google Cloud Sync & Auth Helpers ───────────────────────────
   const syncFromOneDrive = async () => {
     setSyncStatus('syncing');
@@ -856,7 +868,7 @@ export const PetPlantDashboard: React.FC = () => {
         exoticos: listExoticos,
         eventos: listEventos,
         chats: chats,
-        updatedAt: Date.now()
+        updatedAt: getNowTimestamp()
       });
       setSyncStatus('synced');
       setSyncErrorMessage(null);
@@ -898,7 +910,7 @@ export const PetPlantDashboard: React.FC = () => {
           exoticos: listExoticos,
           eventos: listEventos,
           chats: chats,
-          updatedAt: Date.now()
+          updatedAt: getNowTimestamp()
         });
         setSyncStatus('synced');
         setSyncErrorMessage(null);
@@ -1015,8 +1027,6 @@ export const PetPlantDashboard: React.FC = () => {
                       localStorage.setItem('petplant_joined_hogares', JSON.stringify(updated));
                       return updated;
                     });
-
-                    const localHogarId = localStorage.getItem('petplant_hogar_id') || '';
 
                     // Intentar recuperar los datos del hogar en la nube
                     let data = await FirebaseSyncService.getHogarData(cloudHogarId);
@@ -1200,7 +1210,7 @@ export const PetPlantDashboard: React.FC = () => {
     };
 
     initSessions();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleGoogleSignIn = async () => {
     localStorage.setItem('petplant_login_provider', 'google');
@@ -1322,7 +1332,6 @@ export const PetPlantDashboard: React.FC = () => {
       }
     };
     initDB();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Suscripción en tiempo real a cambios de Grupo Hogar con validación de timestamps
@@ -1392,7 +1401,6 @@ export const PetPlantDashboard: React.FC = () => {
     });
 
     return () => { unsubscribe?.(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hogarId, firebaseLoaded]);
 
   const crearHogar = async (e: React.FormEvent) => {

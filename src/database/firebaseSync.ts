@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { initializeFirestore, doc, setDoc, getDoc, onSnapshot, enableMultiTabIndexedDbPersistence } from 'firebase/firestore';
+import { initializeFirestore, doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import type { Mascota, Planta, AnimalExotico, EventoCalendario, ChatHistorial } from './types';
 

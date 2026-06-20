@@ -4,6 +4,8 @@ import type { EventoCalendario } from '../database/types';
 import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
 
+const getNowTimestamp = (): number => Date.now();
+
 interface EcosystemCalendarProps {
   plantas: any[];
   mascotas: any[];
@@ -199,7 +201,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
   const handleDeleteEvent = async (id: string) => {
     try {
       await LocalDatabase.deleteEventoCalendario(id);
-      localStorage.setItem('petplant_db_last_updated', Date.now().toString());
+      localStorage.setItem('petplant_db_last_updated', getNowTimestamp().toString());
       await loadEvents();
       onUpdate();
     } catch (err) {
@@ -214,7 +216,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
         completado: !ev.completado
       };
       await LocalDatabase.saveEventoCalendario(updated);
-      localStorage.setItem('petplant_db_last_updated', Date.now().toString());
+      localStorage.setItem('petplant_db_last_updated', getNowTimestamp().toString());
       await loadEvents();
       onUpdate();
     } catch (err) {

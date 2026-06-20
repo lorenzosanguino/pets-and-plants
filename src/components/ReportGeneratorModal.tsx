@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import type { Mascota, AnimalExotico, Planta } from '../database/types';
 import { calcularEdadMascota } from '../utils/age';

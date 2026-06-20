@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useRef, useState, useEffect } from 'react';
 
 interface PhotoEditorModalProps {
@@ -201,7 +202,7 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
       const canvas = canvasRef.current;
 
       const startRect = dragStart.current.rect;
-      let newRect = { ...cropRect };
+      const newRect = { ...cropRect };
 
       if (dragMode === 'move') {
         newRect.x = Math.max(0, Math.min(canvas.width - startRect.w, startRect.x + dx));

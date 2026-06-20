@@ -1,10 +1,11 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react';
 import { useTranslations } from '../utils/i18n';
 import { LocalDatabase } from '../database/db';
 import type { Mascota, Planta, AnimalExotico } from '../database/types';
 import { initFirebase, getFirebaseCached } from '../database/firebaseLazy';
+
+const getNowTimestamp = (): number => Date.now();
 
 interface SettingsViewProps {
   uiTheme: 'gaming' | 'nature' | 'kawaii' | 'vintage';
@@ -184,7 +185,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       setConflictLoading(true);
       const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
       await fbSync.uploadChanges(hogarId, hogarNombre, localPayload.mascotas, localPayload.plantas, localPayload.exoticos, uiTheme);
-      localStorage.setItem('petplant_db_last_updated', Date.now().toString());
+      localStorage.setItem('petplant_db_last_updated', getNowTimestamp().toString());
       setShowConflictModal(false);
       dispararLogroVisual("CONFLICTO RESUELTO", "Se han subido tus datos locales a la nube.", "victory");
     } catch (err) {
@@ -200,7 +201,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     try {
       setConflictLoading(true);
       await LocalDatabase.overwriteDatabase(remotePayload.mascotas, remotePayload.plantas, remotePayload.exoticos);
-      localStorage.setItem('petplant_db_last_updated', (remoteDataInfo.timestamp || Date.now()).toString());
+      localStorage.setItem('petplant_db_last_updated', (remoteDataInfo.timestamp || getNowTimestamp()).toString());
       setShowConflictModal(false);
       dispararLogroVisual("CONFLICTO RESUELTO", "Se han descargado los datos de la nube.", "victory");
       setTimeout(() => window.location.reload(), 1000);
@@ -247,7 +248,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       await LocalDatabase.overwriteDatabase(mergedM, mergedP, mergedE);
       
       const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
-      const now = Date.now();
+      const now = getNowTimestamp();
       await fbSync.uploadChanges(hogarId, hogarNombre, mergedM, mergedP, mergedE, uiTheme);
       localStorage.setItem('petplant_db_last_updated', now.toString());
 

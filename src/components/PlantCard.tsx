@@ -238,7 +238,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
           const noise = (Math.random() - 0.5) * 50;
           const calculatedLux = Math.max(100, Math.round((avgBrightness / 255) * 10000 + 200 + noise));
           setLuxValue(calculatedLux);
-        } catch (e) {
+        } catch {
           console.warn('Canvas reading blocked by CORS/Privacy, falling back to simulated values');
         }
       }
@@ -270,7 +270,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
     // Intentar activar sensor de luz nativo si existe
     if ('AmbientLightSensor' in window) {
       try {
-        // @ts-ignore
+        // @ts-expect-error AmbientLightSensor is experimental
         const sensor = new AmbientLightSensor();
         sensor.onreading = () => {
           setLuxValue(Math.round(sensor.illuminance));

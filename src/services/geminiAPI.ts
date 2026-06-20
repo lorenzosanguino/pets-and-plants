@@ -219,8 +219,9 @@ export class GeminiAPIService {
     }
 
     const apiKey = this.getApiKey();
+    const shouldTryApi = !!apiKey || !simulatedTemplateKey;
 
-    if (true) {
+    if (shouldTryApi) {
       try {
         let base64Data: string | null = null;
         if (imageBlob) {
@@ -315,8 +316,6 @@ CRÍTICO - NAVEGACIÓN Y ACCESO A FICHAS: Si el usuario te pide abrir, ir, ver, 
             parts: currentParts
           });
         }
-
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 segundos de timeout
@@ -917,7 +916,7 @@ ${frecuencia}`;
       throw new Error(`Límite diario de análisis de IA alcanzado. Estará disponible de nuevo en ${IAQuotaManager.obtenerMensajeTiempoRestante()}. Por favor, introduce tu propia API Key en Ajustes ⚙️.`);
     }
 
-    const apiKey = this.getApiKey();
+
 
     if (imageBlob) {
       try {
@@ -948,8 +947,6 @@ ${frecuencia}`;
         
         const aspectInstruction = `\n\nCRÍTICO - ASPECTO Y RESOLUCIÓN COMPLETOS: Analiza la imagen completa en su resolución y relación de aspecto originales. No asumes que la imagen ha sido recortada a un cuadrado; evalúa todos los elementos visibles en todo el encuadre enviado.`;
         systemInstruction += aspectInstruction;
-
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 segundos de timeout

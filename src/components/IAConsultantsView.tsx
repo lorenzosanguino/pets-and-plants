@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { GeminiAPIService } from '../services/geminiAPI';
 import { ImageOptimizer } from '../utils/imageOptimizer';
 import { safeUUID } from '../utils/uuid';

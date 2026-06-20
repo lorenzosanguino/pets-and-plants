@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
 import React, { useState, useEffect } from 'react';
 import type { Mascota, EspecieMascota } from '../database/types';
 import { LocalDatabase } from '../database/db';
@@ -1814,7 +1814,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                   height: `${randomSize}px`,
                   borderRadius: '50%',
                   background: randomColor,
-                  // @ts-ignore
+                  // @ts-expect-error Custom CSS variable
                   '--tx': `${randomTx}px`,
                   '--ty': `${randomTy}px`,
                   animation: 'confettiExplode 2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards'

@@ -1,7 +1,9 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 export const useTTS = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const playCurrentRef = useRef<() => void>(() => {});
   const [currentRate, setCurrentRate] = useState<number>(1.15); // Velocidad normal por defecto
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const sentencesQueueRef = useRef<string[]>([]);
@@ -42,7 +44,7 @@ export const useTTS = () => {
         return;
       }
       currentSentenceIndexRef.current++;
-      playCurrent();
+      playCurrentRef.current();
     };
 
     utterance.onerror = (e) => {
@@ -53,7 +55,7 @@ export const useTTS = () => {
         return;
       }
       currentSentenceIndexRef.current++;
-      playCurrent();
+      playCurrentRef.current();
     };
 
     // Almacenar en objeto global para evitar recolección de basura
@@ -66,6 +68,10 @@ export const useTTS = () => {
     window.speechSynthesis.resume(); // Evitar estado pausado/bloqueado
     window.speechSynthesis.speak(utterance);
   }, []);
+
+  useEffect(() => {
+    playCurrentRef.current = playCurrent;
+  }, [playCurrent]);
 
   const stop = useCallback(() => {
     activeSpeakingRef.current = false;
