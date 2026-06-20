@@ -87,23 +87,46 @@ export class IAQuotaManager {
   }
 
   /**
-   * Obtiene el tiempo restante formateado como un mensaje legible (horas, minutos y segundos).
+   * Formatea una cantidad de segundos en días, horas, minutos y segundos de forma legible en español.
+   */
+  static formatearSegundos(totalSegundos: number): string {
+    if (totalSegundos <= 0) return 'unos instantes';
+
+    const dias = Math.floor(totalSegundos / 86400);
+    const horas = Math.floor((totalSegundos % 86400) / 3600);
+    const minutos = Math.floor((totalSegundos % 3600) / 60);
+    const segundos = totalSegundos % 60;
+
+    const partes: string[] = [];
+    if (dias > 0) {
+      partes.push(`${dias} ${dias === 1 ? 'día' : 'días'}`);
+    }
+    if (horas > 0) {
+      partes.push(`${horas} ${horas === 1 ? 'hora' : 'horas'}`);
+    }
+    if (minutos > 0) {
+      partes.push(`${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}`);
+    }
+    if (segundos > 0 || partes.length === 0) {
+      partes.push(`${segundos} ${segundos === 1 ? 'segundo' : 'segundos'}`);
+    }
+
+    if (partes.length === 1) return partes[0];
+    
+    const todasMenosUltima = partes.slice(0, -1).join(', ');
+    const ultima = partes[partes.length - 1];
+    return `${todasMenosUltima} y ${ultima}`;
+  }
+
+  /**
+   * Obtiene el tiempo restante formateado como un mensaje legible (días, horas, minutos y segundos).
    */
   static obtenerMensajeTiempoRestante(): string {
     const ms = this.obtenerTiempoRestanteMs();
     if (ms <= 0) return 'unos instantes';
     
     const totalSegundos = Math.floor(ms / 1000);
-    const horas = Math.floor(totalSegundos / 3600);
-    const minutos = Math.floor((totalSegundos % 3600) / 60);
-    const segundos = totalSegundos % 60;
-    
-    const partes: string[] = [];
-    if (horas > 0) partes.push(`${horas} ${horas === 1 ? 'hora' : 'horas'}`);
-    if (minutos > 0) partes.push(`${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}`);
-    if (horas === 0 && minutos === 0) partes.push(`${segundos} ${segundos === 1 ? 'segundo' : 'segundos'}`);
-    
-    return partes.join(' y ');
+    return this.formatearSegundos(totalSegundos);
   }
 
   /**
@@ -119,16 +142,8 @@ export class IAQuotaManager {
     if (retryMatch) {
       const segundosFloat = parseFloat(retryMatch[1]);
       const segundos = Math.max(1, Math.round(segundosFloat));
-      if (segundos < 60) {
-        return `Google Gemini está descansando un momento por exceso de peticiones. Estará listo de nuevo en ${segundos} ${segundos === 1 ? 'segundo' : 'segundos'}. Mientras tanto, cargamos datos simulados de demostración. 🐾`;
-      } else {
-        const minutos = Math.floor(segundos / 60);
-        const segsRestantes = segundos % 60;
-        const tiempoTexto = segsRestantes > 0 
-          ? `${minutos} ${minutos === 1 ? 'minuto' : 'minutos'} y ${segsRestantes} ${segsRestantes === 1 ? 'segundo' : 'segundos'}`
-          : `${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}`;
-        return `Google Gemini está descansando un momento por exceso de peticiones. Estará listo de nuevo en ${tiempoTexto}. Mientras tanto, cargamos datos simulados de demostración. 🐾`;
-      }
+      const tiempoTexto = this.formatearSegundos(segundos);
+      return `Google Gemini está descansando un momento por exceso de peticiones. Estará listo de nuevo en ${tiempoTexto}. Mientras tanto, cargamos datos simulados de demostración. 🐾`;
     }
 
     if (errorStr.includes("429") || errorStr.toLowerCase().includes("quota") || errorStr.includes("RESOURCE_EXHAUSTED")) {
