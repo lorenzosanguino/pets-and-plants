@@ -85,6 +85,94 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [localPayload, setLocalPayload] = useState<any>(null);
   const [remotePayload, setRemotePayload] = useState<any>(null);
 
+  // States and function for cloud diagnostics
+  const [diagnosticLog, setDiagnosticLog] = useState<string>('');
+  const [runningDiag, setRunningDiag] = useState<boolean>(false);
+
+  const runCloudDiagnostics = async () => {
+    setRunningDiag(true);
+    setDiagnosticLog("Iniciando pruebas de diagnóstico de la nube...\n");
+    
+    const log = (msg: string) => {
+      setDiagnosticLog(prev => prev + msg + "\n");
+    };
+
+    try {
+      log("1. Comprobando claves del navegador...");
+      log(`API Key presente: ${isCloudEnabled ? "SÍ" : "NO"}`);
+      
+      log("\n2. Cargando SDK de Firebase lazy-loaded...");
+      const firebaseInstance = getFirebaseCached() ?? await initFirebase();
+      log("SDK de Firebase cargado en memoria.");
+
+      const authInstance = firebaseInstance.auth;
+      const FirebaseSyncServiceInstance = firebaseInstance.FirebaseSyncService;
+
+      log(`Estado de autenticación del usuario: ${authInstance?.currentUser ? `Conectado (${authInstance.currentUser.email})` : "No autenticado / Invitado"}`);
+
+      log("\n3. Verificando estado de red del navegador...");
+      log(`Navegador Online: ${navigator.onLine ? "SÍ" : "NO"}`);
+
+      log("\n4. Probando escritura directa en la base de datos (Firestore)...");
+      if (!FirebaseSyncServiceInstance.isCloudEnabled()) {
+        log("Firebase está desactivado en la configuración o usando credenciales dummy.");
+        setRunningDiag(false);
+        return;
+      }
+
+      // Intentar una escritura a un hogar de prueba o al hogar actual
+      const testHogarId = hogarId || "HOGAR-DIAGNOSTIC-TEST";
+      log(`Intentando escribir en colección 'hogares' con documento '${testHogarId}'...`);
+      
+      const uploadPromise = FirebaseSyncServiceInstance.uploadChanges(
+        testHogarId,
+        "Test de Diagnóstico",
+        [], // mascotas
+        [], // plantas
+        [], // exoticos
+        uiTheme
+      );
+
+      // Usar un timeout de 8 segundos para la prueba
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error("Timeout de red en la escritura de Firestore (8s). Posible bloqueo de WebSockets o gRPC por tu operador móvil.")), 8000)
+      );
+
+      await Promise.race([uploadPromise, timeoutPromise]);
+      log("✅ ¡Escritura en Firestore completada con éxito!");
+
+      log("\n5. Probando lectura directa desde la base de datos (Firestore)...");
+      const readPromise = FirebaseSyncServiceInstance.getHogarData(testHogarId);
+      const readTimeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error("Timeout de red en la lectura de Firestore (8s).")), 8000)
+      );
+
+      const readData = await Promise.race([readPromise, readTimeoutPromise]);
+      log(`✅ ¡Lectura completada con éxito! Nombre del hogar en la nube: "${readData?.nombre}"`);
+      log("\n🎉 DIAGNÓSTICO EXITOSO: Tu conexión con Firebase Cloud funciona perfectamente.");
+
+    } catch (err: any) {
+      log(`\n❌ ERROR DETECTADO: ${err.message || String(err)}`);
+      console.error(err);
+      
+      const errMsg = (err.message || String(err)).toLowerCase();
+      log("\n💡 RECOMENDACIONES:");
+      if (errMsg.includes("timeout")) {
+        log("- Estás en una red móvil (5G/4G) que podría estar bloqueando WebSockets o conexiones persistentes de Firebase.");
+        log("- Intenta conectarte a una red WiFi o desactivar/activar el modo avión para refrescar la red móvil.");
+      } else if (errMsg.includes("permission") || errMsg.includes("insufficient")) {
+        log("- Firestore está rechazando el acceso. Esto puede deberse a que no has iniciado sesión con Google.");
+        log("- Ve a la sección superior de Ajustes, cierra sesión e inicia sesión con Google de nuevo.");
+      } else if (errMsg.includes("apikey") || errMsg.includes("api-key") || errMsg.includes("key")) {
+        log("- La API Key de Firebase no es válida. Revisa las variables de entorno en Vercel.");
+      } else {
+        log("- Intenta recargar la página en modo normal. Si tienes un bloqueador de publicidad o VPN, desactívalo temporalmente.");
+      }
+    } finally {
+      setRunningDiag(false);
+    }
+  };
+
   const resolverConLocal = async () => {
     if (!hogarId || !localPayload) return;
     try {
@@ -874,6 +962,60 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </form>
           </div>
         )}
+
+        {/* Panel de Diagnóstico de la Nube */}
+        <div style={{
+          marginTop: '16px',
+          padding: '12px 16px',
+          background: 'var(--game-bg, rgba(0,0,0,0.01))',
+          borderRadius: '8px',
+          border: '1px dashed rgba(0, 0, 0, 0.15)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)' }}>
+              🔧 ¿Problemas de sincronización?
+            </span>
+            <button
+              type="button"
+              onClick={runCloudDiagnostics}
+              disabled={runningDiag}
+              style={{
+                padding: '4px 10px',
+                background: 'transparent',
+                border: '1px solid var(--game-text, #666)',
+                color: 'var(--game-text, #333)',
+                borderRadius: '4px',
+                fontSize: '10px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontFamily: 'var(--game-font, sans-serif)'
+              }}
+            >
+              {runningDiag ? 'Ejecutando...' : 'Ejecutar Diagnóstico 🔍'}
+            </button>
+          </div>
+          {diagnosticLog && (
+            <pre style={{
+              margin: '8px 0 0 0',
+              padding: '10px',
+              background: '#222',
+              color: '#fff',
+              fontSize: '10.5px',
+              borderRadius: '4px',
+              overflowX: 'auto',
+              whiteSpace: 'pre-wrap',
+              textAlign: 'left',
+              maxHeight: '180px',
+              fontFamily: 'monospace',
+              border: '1px solid #111'
+            }}>
+              {diagnosticLog}
+            </pre>
+          )}
+        </div>
       </div>
 
       {/* CLAVE API DE GEMINI */}
