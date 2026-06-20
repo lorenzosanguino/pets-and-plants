@@ -67,6 +67,7 @@ export const PetPlantDashboard: React.FC = () => {
   const [nuevoHogarNombre, setNuevoHogarNombre] = useState('');
   const [joinHogarId, setJoinHogarId] = useState('');
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
+  const [syncErrorMessage, setSyncErrorMessage] = useState<string | null>(null);
   const [firebaseLoaded, setFirebaseLoaded] = useState(false);
   const [isCloudEnabled] = useState(() => {
     // Comprobación rápida sin cargar Firebase — si la config existe asumimos que está habilitado
@@ -374,66 +375,85 @@ export const PetPlantDashboard: React.FC = () => {
           ledColor = '#ff9800'; // Orange
           text = 'Error Nube';
           isPulsing = true;
-          titleTip = 'Fallo en la última comunicación con la nube. Se volverá a intentar automáticamente.';
+          titleTip = `Fallo en la comunicación con la nube. Detalles: ${syncErrorMessage || 'Error desconocido'}.`;
         }
       }
     }
 
     return (
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', margin: '4px 0' }}>
-        <button 
-          type="button"
-          title={`${titleTip} (Haz clic para forzar sincronización y comprobar la nube)`}
-          onClick={forceSyncToCloud}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '4px 12px',
-            background: uiTheme === 'gaming' ? 'rgba(0,0,0,0.5)' : 'rgba(255, 255, 255, 0.85)',
-            border: uiTheme === 'gaming' ? '1px solid var(--game-border-color)' : '1px solid #c8e6c9',
-            borderRadius: '20px',
-            fontSize: '11px',
-            fontWeight: 'bold',
-            color: 'var(--game-text-bright, #333)',
-            fontFamily: 'var(--game-font, sans-serif)',
-            cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-            transition: 'all 0.2s ease',
-            outline: 'none'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.05)';
-            if (uiTheme !== 'gaming') e.currentTarget.style.background = '#e8f5e9';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'none';
-            e.currentTarget.style.background = uiTheme === 'gaming' ? 'rgba(0,0,0,0.5)' : 'rgba(255, 255, 255, 0.85)';
-          }}
-        >
-          <span 
+      <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '4px', width: '100%' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', margin: '4px 0' }}>
+          <button 
+            type="button"
+            title={`${titleTip} (Haz clic para forzar sincronización y comprobar la nube)`}
+            onClick={forceSyncToCloud}
             style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: ledColor,
-              boxShadow: `0 0 8px ${ledColor}`,
-              display: 'inline-block',
-              animation: isPulsing ? 'ledPulse 1.5s infinite alternate' : 'none'
-            }} 
-          />
-          <span>{text}</span>
-        </button>
-        {!isOffline && hogarId && (
-          <span style={{ 
-            fontSize: '10.5px', 
-            color: 'var(--game-text, #666)', 
-            fontStyle: 'italic',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 12px',
+              background: uiTheme === 'gaming' ? 'rgba(0,0,0,0.5)' : 'rgba(255, 255, 255, 0.85)',
+              border: uiTheme === 'gaming' ? '1px solid var(--game-border-color)' : '1px solid #c8e6c9',
+              borderRadius: '20px',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              color: 'var(--game-text-bright, #333)',
+              fontFamily: 'var(--game-font, sans-serif)',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              transition: 'all 0.2s ease',
+              outline: 'none'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              if (uiTheme !== 'gaming') e.currentTarget.style.background = '#e8f5e9';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'none';
+              e.currentTarget.style.background = uiTheme === 'gaming' ? 'rgba(0,0,0,0.5)' : 'rgba(255, 255, 255, 0.85)';
+            }}
+          >
+            <span 
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: ledColor,
+                boxShadow: `0 0 8px ${ledColor}`,
+                display: 'inline-block',
+                animation: isPulsing ? 'ledPulse 1.5s infinite alternate' : 'none'
+              }} 
+            />
+            <span>{text}</span>
+          </button>
+          {!isOffline && hogarId && (
+            <span style={{ 
+              fontSize: '10.5px', 
+              color: 'var(--game-text, #666)', 
+              fontStyle: 'italic',
+              fontFamily: 'var(--game-font, sans-serif)',
+              opacity: 0.85
+            }}>
+              (Pulsar para sincronizar 🔄)
+            </span>
+          )}
+        </div>
+        {syncStatus === 'error' && syncErrorMessage && (
+          <div style={{
+            fontSize: '11px',
+            color: '#ef4444',
+            background: uiTheme === 'gaming' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(239, 68, 68, 0.05)',
+            border: uiTheme === 'gaming' ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(239, 68, 68, 0.15)',
+            borderRadius: '6px',
+            padding: '4px 10px',
+            marginTop: '2px',
             fontFamily: 'var(--game-font, sans-serif)',
-            opacity: 0.85
+            maxWidth: '280px',
+            textAlign: 'center',
+            wordBreak: 'break-word'
           }}>
-            (Pulsar para sincronizar 🔄)
-          </span>
+            ⚠️ {syncErrorMessage}
+          </div>
         )}
       </div>
     );
@@ -676,7 +696,11 @@ export const PetPlantDashboard: React.FC = () => {
       const activeHogar = localStorage.getItem('petplant_hogar_id');
       if (isLocalEdit && activeHogar && !isRemoteSyncingRef.current && localStorage.getItem('petplant_login_provider') !== 'microsoft') {
         const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Hogar Sincronizado";
-        setSyncStatus('syncing');
+        // En segundo plano: el estado de la UI se mantiene verde/sincronizado porque
+        // Firestore guarda todo en caché local IndexedDB inmediatamente.
+        setSyncStatus('synced');
+        setSyncErrorMessage(null);
+
         Promise.all([
           LocalDatabase.getEventosCalendario(),
           (async () => {
@@ -691,7 +715,7 @@ export const PetPlantDashboard: React.FC = () => {
         ]).then(async ([listEventos, chats]) => {
           try {
             const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
-            const uploadPromise = fbSync.uploadChanges(
+            fbSync.uploadChanges(
               activeHogar, 
               activeNombre, 
               listMascotas, 
@@ -700,20 +724,36 @@ export const PetPlantDashboard: React.FC = () => {
               uiTheme,
               listEventos,
               chats
-            );
-            // Evitar bloqueos permanentes con un timeout de 10 segundos
-            await Promise.race([
-              uploadPromise,
-              new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout de conexión con Firebase")), 10000))
-            ]);
-            setSyncStatus('synced');
+            ).catch((err: any) => {
+              console.error("Error al sincronizar cambios en segundo plano:", err);
+              const errMsg = err.message || String(err);
+              // Solo reportar errores definitivos de permisos o credenciales
+              if (
+                errMsg.includes('permission') || 
+                errMsg.includes('insufficient') || 
+                errMsg.includes('unauthenticated') || 
+                errMsg.includes('auth/') ||
+                errMsg.includes('not-found')
+              ) {
+                setSyncStatus('error');
+                setSyncErrorMessage(`Error de autorización en la nube: ${errMsg}`);
+              }
+            });
           } catch (err: any) {
-            console.error("Error al sincronizar cambios locales:", err);
-            setSyncStatus('error');
+            console.error("Error al iniciar auto-sync en segundo plano:", err);
+            const errMsg = err.message || String(err);
+            if (
+              errMsg.includes('permission') || 
+              errMsg.includes('insufficient') || 
+              errMsg.includes('unauthenticated') || 
+              errMsg.includes('auth/')
+            ) {
+              setSyncStatus('error');
+              setSyncErrorMessage(`Error al inicializar auto-sync: ${errMsg}`);
+            }
           }
         }).catch(err => {
           console.error("Error al cargar eventos/chats para auto-sync:", err);
-          setSyncStatus('error');
         });
       }
 
@@ -785,9 +825,10 @@ export const PetPlantDashboard: React.FC = () => {
           setSyncStatus('synced');
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error al descargar o sincronizar con OneDrive:", err);
       setSyncStatus('error');
+      setSyncErrorMessage(err.message || String(err));
     }
   };
 
@@ -818,9 +859,11 @@ export const PetPlantDashboard: React.FC = () => {
         updatedAt: Date.now()
       });
       setSyncStatus('synced');
-    } catch (err) {
+      setSyncErrorMessage(null);
+    } catch (err: any) {
       console.error("Error al subir copia a OneDrive:", err);
       setSyncStatus('error');
+      setSyncErrorMessage(err.message || String(err));
     }
   };
 
@@ -858,23 +901,33 @@ export const PetPlantDashboard: React.FC = () => {
           updatedAt: Date.now()
         });
         setSyncStatus('synced');
+        setSyncErrorMessage(null);
         alert("✔️ Sincronización exitosa: copia de seguridad subida a Microsoft OneDrive.");
       } else if (activeHogar) {
         const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
         const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Mi Hogar";
         
         console.log('Subiendo copia a Firebase...');
-        await fbSync.uploadChanges(activeHogar, activeNombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
+        
+        // Timeout de 12 segundos para la sincronización manual
+        const uploadPromise = fbSync.uploadChanges(activeHogar, activeNombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
+        await Promise.race([
+          uploadPromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout de conexión con la nube. Tus datos están a salvo localmente en el dispositivo y se sincronizarán de forma automática en segundo plano cuando vuelva la conexión.")), 12000))
+        ]);
         
         setSyncStatus('synced');
+        setSyncErrorMessage(null);
         alert(`✔️ Sincronización exitosa: datos de tu grupo hogar '${activeNombre}' subidos correctamente a Firebase Cloud.`);
       } else {
         alert("⚠️ No tienes configurado un grupo hogar activo o cuenta en la nube. Ve a 'Ajustes' para registrarte o vincularte.");
         setSyncStatus('synced');
+        setSyncErrorMessage(null);
       }
     } catch (err: any) {
       console.error("Fallo en sincronización manual:", err);
       setSyncStatus('error');
+      setSyncErrorMessage(err.message || String(err));
       alert("❌ Error en la sincronización: " + (err.message || err));
     }
   };

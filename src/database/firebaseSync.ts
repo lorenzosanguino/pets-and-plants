@@ -71,20 +71,16 @@ export class FirebaseSyncService {
    */
   static async getUserHogar(uid: string): Promise<{ hogarId: string; hogarNombre: string } | null> {
     if (this.isCloudEnabled() && db) {
-      try {
-        const docRef = doc(db, 'hogares', `user_hogar_${uid}`);
-        const snap = await getDoc(docRef);
-        if (snap.exists()) {
-          const data = snap.data();
-          if (data && data.hogarId) {
-            return {
-              hogarId: data.hogarId,
-              hogarNombre: data.hogarNombre || "Mi Hogar"
-            };
-          }
+      const docRef = doc(db, 'hogares', `user_hogar_${uid}`);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data && data.hogarId) {
+          return {
+            hogarId: data.hogarId,
+            hogarNombre: data.hogarNombre || "Mi Hogar"
+          };
         }
-      } catch (e) {
-        console.error("Error al obtener la asociación de hogar del usuario:", e);
       }
     }
     return null;
@@ -95,16 +91,12 @@ export class FirebaseSyncService {
    */
   static async saveUserHogar(uid: string, hogarId: string, hogarNombre: string): Promise<void> {
     if (this.isCloudEnabled() && db) {
-      try {
-        const docRef = doc(db, 'hogares', `user_hogar_${uid}`);
-        await setDoc(docRef, {
-          hogarId,
-          hogarNombre,
-          updatedAt: Date.now()
-        }, { merge: true });
-      } catch (e) {
-        console.error("Error al guardar la asociación de hogar del usuario:", e);
-      }
+      const docRef = doc(db, 'hogares', `user_hogar_${uid}`);
+      await setDoc(docRef, {
+        hogarId,
+        hogarNombre,
+        updatedAt: Date.now()
+      }, { merge: true });
     }
   }
 
@@ -113,16 +105,12 @@ export class FirebaseSyncService {
    */
   static async deleteUserHogar(uid: string): Promise<void> {
     if (this.isCloudEnabled() && db) {
-      try {
-        const docRef = doc(db, 'hogares', `user_hogar_${uid}`);
-        await setDoc(docRef, {
-          hogarId: "",
-          hogarNombre: "",
-          updatedAt: Date.now()
-        }, { merge: true });
-      } catch (e) {
-        console.error("Error al eliminar la asociación de hogar del usuario:", e);
-      }
+      const docRef = doc(db, 'hogares', `user_hogar_${uid}`);
+      await setDoc(docRef, {
+        hogarId: "",
+        hogarNombre: "",
+        updatedAt: Date.now()
+      }, { merge: true });
     }
   }
 
@@ -177,14 +165,10 @@ export class FirebaseSyncService {
    */
   static async getHogarData(code: string): Promise<HogarCloudData | null> {
     if (this.isCloudEnabled() && db) {
-      try {
-        const docRef = doc(db, 'hogares', code);
-        const snap = await getDoc(docRef);
-        if (snap.exists()) {
-          return snap.data() as HogarCloudData;
-        }
-      } catch (e) {
-        console.error("Error fetching Hogar from firestore:", e);
+      const docRef = doc(db, 'hogares', code);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        return snap.data() as HogarCloudData;
       }
       return null;
     } else {
@@ -219,12 +203,8 @@ export class FirebaseSyncService {
     };
 
     if (this.isCloudEnabled() && db) {
-      try {
-        const docRef = doc(db, 'hogares', code);
-        await setDoc(docRef, data, { merge: true });
-      } catch (e) {
-        console.error("Failed to upload changes to Firestore:", e);
-      }
+      const docRef = doc(db, 'hogares', code);
+      await setDoc(docRef, data, { merge: true });
     } else {
       localStorage.setItem(`mock_hogar_${code}`, JSON.stringify(data));
       // Broadcast to other tabs
