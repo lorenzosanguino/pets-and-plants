@@ -36,10 +36,6 @@ if (isFirebaseEnabled) {
       experimentalForceLongPolling: true
     });
     auth = getAuth(app);
-    // Enable multi-tab offline persistence
-    enableMultiTabIndexedDbPersistence(db).catch((err) => {
-      console.warn("Firestore persistence failed:", err.code);
-    });
   } catch (e) {
     console.error("Failed to initialize Firebase sync, falling back to mock mode:", e);
     db = null;
