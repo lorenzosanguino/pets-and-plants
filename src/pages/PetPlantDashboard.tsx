@@ -385,50 +385,62 @@ export const PetPlantDashboard: React.FC = () => {
     }
 
     return (
-      <button 
-        type="button"
-        title={`${titleTip} (Haz clic para forzar sincronización y comprobar la nube)`}
-        onClick={forceSyncToCloud}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-          padding: '4px 12px',
-          background: uiTheme === 'gaming' ? 'rgba(0,0,0,0.5)' : 'rgba(255, 255, 255, 0.85)',
-          border: uiTheme === 'gaming' ? '1px solid var(--game-border-color)' : '1px solid #c8e6c9',
-          borderRadius: '20px',
-          fontSize: '11px',
-          fontWeight: 'bold',
-          color: 'var(--game-text-bright, #333)',
-          fontFamily: 'var(--game-font, sans-serif)',
-          cursor: 'pointer',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-          transition: 'all 0.2s ease',
-          margin: '4px 0',
-          outline: 'none'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.05)';
-          if (uiTheme !== 'gaming') e.currentTarget.style.background = '#e8f5e9';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'none';
-          e.currentTarget.style.background = uiTheme === 'gaming' ? 'rgba(0,0,0,0.5)' : 'rgba(255, 255, 255, 0.85)';
-        }}
-      >
-        <span 
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', margin: '4px 0' }}>
+        <button 
+          type="button"
+          title={`${titleTip} (Haz clic para forzar sincronización y comprobar la nube)`}
+          onClick={forceSyncToCloud}
           style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            backgroundColor: ledColor,
-            boxShadow: `0 0 8px ${ledColor}`,
-            display: 'inline-block',
-            animation: isPulsing ? 'ledPulse 1.5s infinite alternate' : 'none'
-          }} 
-        />
-        <span>{text}</span>
-      </button>
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '4px 12px',
+            background: uiTheme === 'gaming' ? 'rgba(0,0,0,0.5)' : 'rgba(255, 255, 255, 0.85)',
+            border: uiTheme === 'gaming' ? '1px solid var(--game-border-color)' : '1px solid #c8e6c9',
+            borderRadius: '20px',
+            fontSize: '11px',
+            fontWeight: 'bold',
+            color: 'var(--game-text-bright, #333)',
+            fontFamily: 'var(--game-font, sans-serif)',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            transition: 'all 0.2s ease',
+            outline: 'none'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.05)';
+            if (uiTheme !== 'gaming') e.currentTarget.style.background = '#e8f5e9';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'none';
+            e.currentTarget.style.background = uiTheme === 'gaming' ? 'rgba(0,0,0,0.5)' : 'rgba(255, 255, 255, 0.85)';
+          }}
+        >
+          <span 
+            style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: ledColor,
+              boxShadow: `0 0 8px ${ledColor}`,
+              display: 'inline-block',
+              animation: isPulsing ? 'ledPulse 1.5s infinite alternate' : 'none'
+            }} 
+          />
+          <span>{text}</span>
+        </button>
+        {!isOffline && hogarId && (
+          <span style={{ 
+            fontSize: '10.5px', 
+            color: 'var(--game-text, #666)', 
+            fontStyle: 'italic',
+            fontFamily: 'var(--game-font, sans-serif)',
+            opacity: 0.85
+          }}>
+            (Pulsar para sincronizar 🔄)
+          </span>
+        )}
+      </div>
     );
   };
 
