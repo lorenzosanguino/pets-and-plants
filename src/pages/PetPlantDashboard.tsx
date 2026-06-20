@@ -2278,7 +2278,7 @@ export const PetPlantDashboard: React.FC = () => {
             {activeTab === 'dashboard' && experienceMode === 'travels' && (
               <div style={{ width: '100%', boxSizing: 'border-box' }}>
                 <Suspense fallback={<ChunkLoader height="300px" />}>
-                  <VacationAdvice mode="travels" />
+                  <VacationAdvice mode="travels" theme={uiTheme} />
                 </Suspense>
               </div>
             )}

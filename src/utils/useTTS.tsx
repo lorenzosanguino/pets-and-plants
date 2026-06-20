@@ -145,7 +145,7 @@ export const TTSButton: React.FC<TTSButtonProps> = ({ text, theme = 'nature', si
   const isSmall = size === 'small';
 
   return (
-    <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+    <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
       <button
         type="button"
         onClick={() => speak(text)}

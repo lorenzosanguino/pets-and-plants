@@ -4,9 +4,10 @@ import { TTSButton } from '../utils/useTTS';
 
 interface VacationAdviceProps {
   mode: 'plants' | 'pets' | 'exotics' | 'travels';
+  theme?: string;
 }
 
-export const VacationAdvice: React.FC<VacationAdviceProps> = ({ mode }) => {
+export const VacationAdvice: React.FC<VacationAdviceProps> = ({ mode, theme = 'nature' }) => {
   const [prevMode, setPrevMode] = useState(mode);
   const [activeTab, setActiveTab] = useState<'plants' | 'cats' | 'dogs' | 'exotics'>(() => {
     if (mode === 'plants') return 'plants';
@@ -282,10 +283,14 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({ mode }) => {
                   padding: '10px 14px',
                   borderRadius: msg.sender === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
                   background: msg.sender === 'user'
-                    ? (activeTab === 'plants' ? '#e8f5e9' : (activeTab === 'exotics' ? '#f3e5f5' : (activeTab === 'cats' ? '#e3f2fd' : '#fff3e0')))
+                    ? (theme === 'gaming'
+                      ? (activeTab === 'plants' ? 'rgba(76, 175, 80, 0.15)' : (activeTab === 'exotics' ? 'rgba(156, 39, 176, 0.15)' : (activeTab === 'cats' ? 'rgba(33, 150, 243, 0.15)' : 'rgba(255, 152, 0, 0.15)')))
+                      : (activeTab === 'plants' ? '#e8f5e9' : (activeTab === 'exotics' ? '#f3e5f5' : (activeTab === 'cats' ? '#e3f2fd' : '#fff3e0'))))
                     : 'var(--game-card-bg, #ffffff)',
                   border: '1px solid var(--game-border-color, #e0e0e0)',
-                  color: 'var(--game-text-bright, #333)',
+                  color: msg.sender === 'user'
+                    ? (theme === 'gaming' ? 'var(--game-text-bright, #66fcf1)' : '#1f2937')
+                    : 'var(--game-text-bright, #333)',
                   fontSize: '12px',
                   lineHeight: '1.4',
                   whiteSpace: 'pre-wrap',
@@ -293,14 +298,16 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({ mode }) => {
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', gap: '8px' }}>
-                  <strong style={{ fontSize: '10px', color: '#666' }}>
+                  <strong style={{ fontSize: '10px', color: msg.sender === 'user' ? (theme === 'gaming' ? '#8892b0' : '#555555') : '#666' }}>
                     {msg.sender === 'user' ? 'Tú:' : 'Asesor de Viajes IA:'}
                   </strong>
-                  {msg.sender === 'ia' && (
-                    <TTSButton text={msg.text} size="small" />
-                  )}
                 </div>
                 <span style={{ fontFamily: 'var(--game-font, sans-serif)' }}>{msg.text}</span>
+                {msg.sender === 'ia' && (
+                  <div style={{ marginTop: '6px', display: 'flex', justifyContent: 'flex-start' }}>
+                    <TTSButton text={msg.text} theme={theme} size="small" />
+                  </div>
+                )}
               </div>
             ))}
           </div>
