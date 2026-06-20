@@ -5,6 +5,7 @@ import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
 import { CardPhotoManager } from './CardPhotoManager';
 import { IAQuotaManager } from '../utils/iaQuota';
+import { ImageLightbox } from './ImageLightbox';
 import { ReportGeneratorModal } from './ReportGeneratorModal';
 import { BiometricChart } from './BiometricChart';
 import { GeminiAPIService } from '../services/geminiAPI';
@@ -23,6 +24,7 @@ const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpen
   const [localExpanded, setLocalExpanded] = useState(false);
   const expanded = isExpanded !== undefined ? isExpanded : localExpanded;
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [showAvatarLightbox, setShowAvatarLightbox] = useState(false);
 
   // Chef Nutricional para Plantas
   const [showChefModal, setShowChefModal] = useState(false);
@@ -797,10 +799,15 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                   src={planta.fotoUrl}
                   alt={planta.nombreComun}
                   loading="lazy"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowAvatarLightbox(true);
+                  }}
                   style={{
                     width: '100%',
                     height: '100%',
-                    objectFit: 'cover'
+                    objectFit: 'cover',
+                    cursor: 'zoom-in'
                   }}
                 />
               ) : (
@@ -1814,6 +1821,15 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
             </button>
           </div>
         </div>
+      )}
+
+      {showAvatarLightbox && planta.fotoUrl && (
+        <ImageLightbox
+          imageUrl={planta.fotoUrl}
+          onClose={() => setShowAvatarLightbox(false)}
+          title={planta.nombreComun}
+          theme={theme}
+        />
       )}
     </div>
   );

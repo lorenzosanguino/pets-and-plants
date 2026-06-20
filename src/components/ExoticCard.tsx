@@ -5,6 +5,7 @@ import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
 import { CardPhotoManager } from './CardPhotoManager';
 import { IAQuotaManager } from '../utils/iaQuota';
+import { ImageLightbox } from './ImageLightbox';
 import { GeminiAPIService } from '../services/geminiAPI';
 import { ReportGeneratorModal } from './ReportGeneratorModal';
 import { BiometricChart } from './BiometricChart';
@@ -24,6 +25,7 @@ const ExoticCardComponent: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onO
   const [localExpanded, setLocalExpanded] = useState(false);
   const isExpanded = propExpanded !== undefined ? propExpanded : localExpanded;
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [showAvatarLightbox, setShowAvatarLightbox] = useState(false);
 
   const toggleExpanded = () => {
     if (onToggleExpand) {
@@ -408,7 +410,21 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
               };
             })()}>
               {exotico.fotoUrl ? (
-                <img src={exotico.fotoUrl} alt={exotico.nombre} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img
+                  src={exotico.fotoUrl}
+                  alt={exotico.nombre}
+                  loading="lazy"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowAvatarLightbox(true);
+                  }}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    cursor: 'zoom-in'
+                  }}
+                />
               ) : (
                 getEspecieEmoji(exotico.especie)
               )}
@@ -1159,6 +1175,15 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
             ) : null}
           </div>
         </div>
+      )}
+
+      {showAvatarLightbox && exotico.fotoUrl && (
+        <ImageLightbox
+          imageUrl={exotico.fotoUrl}
+          onClose={() => setShowAvatarLightbox(false)}
+          title={exotico.nombre}
+          theme={theme}
+        />
       )}
     </div>
   );

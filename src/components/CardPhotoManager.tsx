@@ -2,6 +2,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { ImageOptimizer } from '../utils/imageOptimizer';
 import { PhotoEditorModal } from './PhotoEditorModal';
+import { ImageLightbox } from './ImageLightbox';
 
 interface CardPhotoManagerProps {
   currentPhotoUrl?: string;
@@ -21,6 +22,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditingPhoto, setIsEditingPhoto] = useState(false);
+  const [showLightbox, setShowLightbox] = useState(false);
 
   const handleSaveEditedPhoto = (newPhotoBase64: string) => {
     const idx = allPhotos.indexOf(activePhoto);
@@ -225,12 +227,14 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
             <img
               src={activePhoto}
               alt="Vista previa"
+              onClick={() => setShowLightbox(true)}
               style={{
                 maxWidth: 'calc(100% - 8px)',
                 maxHeight: 'calc(100% - 8px)',
                 objectFit: 'contain',
                 borderRadius: theme === 'gaming' ? '0px' : (theme === 'kawaii' ? '12px' : '8px'),
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.12)'
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.12)',
+                cursor: 'zoom-in'
               }}
             />
             {/* Gradiente de superposición para profundidad física */}
@@ -458,6 +462,14 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
           imageUrl={activePhoto}
           onSave={handleSaveEditedPhoto}
           onClose={() => setIsEditingPhoto(false)}
+          theme={theme}
+        />
+      )}
+
+      {showLightbox && activePhoto && (
+        <ImageLightbox
+          imageUrl={activePhoto}
+          onClose={() => setShowLightbox(false)}
           theme={theme}
         />
       )}

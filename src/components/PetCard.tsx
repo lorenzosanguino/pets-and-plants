@@ -6,6 +6,7 @@ import { safeUUID } from '../utils/uuid';
 import { GeminiAPIService } from '../services/geminiAPI';
 import { CardPhotoManager } from './CardPhotoManager';
 import { calcularEdadMascota } from '../utils/age';
+import { ImageLightbox } from './ImageLightbox';
 import { IAQuotaManager } from '../utils/iaQuota';
 import { ReportGeneratorModal } from './ReportGeneratorModal';
 import { BiometricChart } from './BiometricChart';
@@ -25,6 +26,7 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
   const [localExpanded, setLocalExpanded] = useState(false);
   const expanded = isExpanded !== undefined ? isExpanded : localExpanded;
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [showAvatarLightbox, setShowAvatarLightbox] = useState(false);
 
   // Innovation features states
   const [activeTrainingTrick, setActiveTrainingTrick] = useState<string | null>(null);
@@ -831,10 +833,15 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                     src={mascota.fotoUrl}
                     alt={mascota.nombre}
                     loading="lazy"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowAvatarLightbox(true);
+                    }}
                     style={{
                       width: '100%',
                       height: '100%',
-                      objectFit: 'cover'
+                      objectFit: 'cover',
+                      cursor: 'zoom-in'
                     }}
                   />
                 ) : (
@@ -1875,6 +1882,15 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
           100% { transform: translate(var(--tx), var(--ty)) scale(0.2); opacity: 0; }
         }
       `}</style>
+
+      {showAvatarLightbox && mascota.fotoUrl && (
+        <ImageLightbox
+          imageUrl={mascota.fotoUrl}
+          onClose={() => setShowAvatarLightbox(false)}
+          title={mascota.nombre}
+          theme={theme}
+        />
+      )}
     </div>
   );
 };
