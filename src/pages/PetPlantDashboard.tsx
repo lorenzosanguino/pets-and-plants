@@ -674,7 +674,7 @@ export const PetPlantDashboard: React.FC = () => {
 
       // Sincronización automática tras cambios locales con Firebase
       const activeHogar = localStorage.getItem('petplant_hogar_id');
-      if (activeHogar && !isRemoteSyncingRef.current && localStorage.getItem('petplant_login_provider') !== 'microsoft') {
+      if (isLocalEdit && activeHogar && !isRemoteSyncingRef.current && localStorage.getItem('petplant_login_provider') !== 'microsoft') {
         const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Hogar Sincronizado";
         setSyncStatus('syncing');
         Promise.all([
@@ -691,7 +691,7 @@ export const PetPlantDashboard: React.FC = () => {
         ]).then(async ([listEventos, chats]) => {
           try {
             const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
-            await fbSync.uploadChanges(
+            const uploadPromise = fbSync.uploadChanges(
               activeHogar, 
               activeNombre, 
               listMascotas, 
@@ -701,6 +701,11 @@ export const PetPlantDashboard: React.FC = () => {
               listEventos,
               chats
             );
+            // Evitar bloqueos permanentes con un timeout de 10 segundos
+            await Promise.race([
+              uploadPromise,
+              new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout de conexión con Firebase")), 10000))
+            ]);
             setSyncStatus('synced');
           } catch (err: any) {
             console.error("Error al sincronizar cambios locales:", err);
