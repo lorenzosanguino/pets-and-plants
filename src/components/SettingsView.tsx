@@ -120,9 +120,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         return;
       }
 
-      // Intentar una escritura a un hogar de prueba o al hogar actual
-      const testHogarId = hogarId || "HOGAR-DIAGNOSTIC-TEST";
-      log(`Intentando escribir en colección 'hogares' con documento '${testHogarId}'...`);
+      // Usar un ID de hogar específico y aislado para la prueba de diagnóstico de escritura/lectura
+      // para evitar por completo sobrescribir el hogar real del usuario.
+      const testHogarId = authInstance?.currentUser 
+        ? `HOGAR-DIAG-${authInstance.currentUser.uid}` 
+        : "HOGAR-DIAG-GUEST";
+      log(`Intentando escribir en colección 'hogares' con el documento de prueba '${testHogarId}'...`);
       
       const uploadPromise = FirebaseSyncServiceInstance.uploadChanges(
         testHogarId,
@@ -148,7 +151,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       );
 
       const readData = await Promise.race([readPromise, readTimeoutPromise]);
-      log(`✅ ¡Lectura completada con éxito! Nombre del hogar en la nube: "${readData?.nombre}"`);
+      log(`✅ ¡Lectura de prueba completada con éxito!`);
+      log(`Documento de prueba temporal: "${testHogarId}"`);
+      log(`Nombre del hogar en el documento de prueba: "${readData?.nombre}"`);
       log("\n🎉 DIAGNÓSTICO EXITOSO: Tu conexión con Firebase Cloud funciona perfectamente.");
 
     } catch (err: any) {

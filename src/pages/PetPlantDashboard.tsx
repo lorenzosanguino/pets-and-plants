@@ -1019,7 +1019,7 @@ export const PetPlantDashboard: React.FC = () => {
                     const localHogarId = localStorage.getItem('petplant_hogar_id') || '';
 
                     // Intentar recuperar los datos del hogar en la nube
-                    const data = await FirebaseSyncService.getHogarData(cloudHogarId);
+                    let data = await FirebaseSyncService.getHogarData(cloudHogarId);
 
                     if (data) {
                       // Vincular siempre al hogar de la nube
@@ -1027,6 +1027,28 @@ export const PetPlantDashboard: React.FC = () => {
                       localStorage.setItem('petplant_hogar_nombre', cloudHogarNombre);
                       setHogarId(cloudHogarId);
                       setHogarNombre(cloudHogarNombre);
+
+                      // CONTROL DE DAÑOS / AUTOCURACIÓN DIAGNÓSTICO:
+                      // Si por error de una versión previa del diagnóstico el nombre del hogar en la nube quedó como
+                      // "Test de Diagnóstico", restauramos de inmediato la información real de este dispositivo.
+                      if (data && (data.nombre === "Test de Diagnóstico" || !data.nombre)) {
+                        console.warn("Detectada contaminación por prueba de diagnóstico en Firestore para el hogar:", cloudHogarId);
+                        await FirebaseSyncService.uploadChanges(
+                          cloudHogarId,
+                          cloudHogarNombre,
+                          listMascotas,
+                          listPlantas,
+                          listExoticos,
+                          uiTheme,
+                          listEventos,
+                          chats
+                        );
+                        // Volver a leer para seguir el flujo normal con la información correcta
+                        const updatedData = await FirebaseSyncService.getHogarData(cloudHogarId);
+                        if (updatedData) {
+                          data = updatedData;
+                        }
+                      }
 
                       const isLocalDemo = isDatabaseDefaultDemo(listMascotas, listPlantas, listExoticos);
                       const isCloudDemo = isDatabaseDefaultDemo(data.mascotas || [], data.plantas || [], data.exoticos || []);
@@ -1099,7 +1121,7 @@ export const PetPlantDashboard: React.FC = () => {
               const localHogarId = localStorage.getItem('petplant_hogar_id');
               if (localHogarId && FirebaseSyncService.isCloudEnabled()) {
                 try {
-                  const data = await FirebaseSyncService.getHogarData(localHogarId);
+                  let data = await FirebaseSyncService.getHogarData(localHogarId);
                   if (data) {
                     const listMascotas = await LocalDatabase.getMascotas();
                     const listPlantas = await LocalDatabase.getPlantas();
@@ -1111,6 +1133,28 @@ export const PetPlantDashboard: React.FC = () => {
                     for (const id of consultantIds) {
                       const chat = await LocalDatabase.getChatHistorial(id);
                       if (chat) chats.push(chat);
+                    }
+
+                    // CONTROL DE DAÑOS / AUTOCURACIÓN DIAGNÓSTICO (modo no-auth):
+                    // Si por algún error de diagnóstico el nombre en la nube es "Test de Diagnóstico",
+                    // lo restauramos de inmediato con los datos locales.
+                    if (data && (data.nombre === "Test de Diagnóstico" || !data.nombre)) {
+                      const localHogarNombre = localStorage.getItem('petplant_hogar_nombre') || 'Mi Hogar';
+                      console.warn("Detectada contaminación por diagnóstico en Firestore (no-auth) para:", localHogarId);
+                      await FirebaseSyncService.uploadChanges(
+                        localHogarId,
+                        localHogarNombre,
+                        listMascotas,
+                        listPlantas,
+                        listExoticos,
+                        uiTheme,
+                        listEventos,
+                        chats
+                      );
+                      const updatedData = await FirebaseSyncService.getHogarData(localHogarId);
+                      if (updatedData) {
+                        data = updatedData;
+                      }
                     }
 
                     const isLocalDemo = isDatabaseDefaultDemo(listMascotas, listPlantas, listExoticos);
@@ -1307,8 +1351,13 @@ export const PetPlantDashboard: React.FC = () => {
       // Salvaguarda: si la nube tiene datos demo y local tiene datos reales, NO sobreescribir bajo ningún concepto
       const esIntentoDeMachacarConDemo = isCloudDemo && !isLocalDemo;
 
+      // Salvaguarda adicional: si la nube está vacía (0 mascotas, 0 plantas, 0 exóticos)
+      // pero el local contiene datos reales (y no demo), NO sobreescribir para evitar pérdida de datos.
+      const cloudIsEmpty = (data.mascotas || []).length === 0 && (data.plantas || []).length === 0 && (data.exoticos || []).length === 0;
+      const esIntentoDeMachacarConVacio = cloudIsEmpty && !isLocalEmpty && !isLocalDemo;
+
       // Solo sobreescribir si la actualización remota es estrictamente más nueva, si local está vacío, o si local es demo y la nube es real
-      if (!esIntentoDeMachacarConDemo && (data.updatedAt > localLastUpdated || isLocalEmpty || (isLocalDemo && !isCloudDemo))) {
+      if (!esIntentoDeMachacarConDemo && !esIntentoDeMachacarConVacio && (data.updatedAt > localLastUpdated || isLocalEmpty || (isLocalDemo && !isCloudDemo))) {
         setSyncStatus('syncing');
         try {
           isRemoteSyncingRef.current = true;
