@@ -1,3 +1,10 @@
+declare const process: {
+  env: {
+    GEMINI_API_KEY?: string;
+    [key: string]: string | undefined;
+  };
+};
+
 export const config = {
   runtime: 'edge',
 };
