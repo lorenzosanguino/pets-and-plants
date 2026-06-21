@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { GeminiAPIService } from '../services/geminiAPI';
 import { TTSButton } from '../utils/useTTS';
 import { renderMarkdownToHTML } from '../utils/markdown';
-
+import { useTranslations } from '../utils/i18n';
 interface VacationAdviceProps {
   mode: 'plants' | 'pets' | 'exotics' | 'travels';
   theme?: string;
@@ -18,6 +18,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
   plantas = [],
   exoticos = []
 }) => {
+  const { locale } = useTranslations();
   const [prevMode, setPrevMode] = useState(mode);
   const [activeTab, setActiveTab] = useState<'plants' | 'cats' | 'dogs' | 'exotics'>(() => {
     if (mode === 'plants') return 'plants';
@@ -54,16 +55,20 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
 
       if (activeTab === 'plants') {
         consultantType = 'agronomo';
-        contextLabel = 'Plantas';
+        contextLabel = locale === 'en' ? 'Plants' : 'Plantas';
       } else if (activeTab === 'exotics') {
         consultantType = 'exoticos';
-        contextLabel = 'Animales Exóticos';
+        contextLabel = locale === 'en' ? 'Exotic Animals' : 'Animales Exóticos';
       } else {
         consultantType = 'veterinario';
-        contextLabel = activeTab === 'cats' ? 'Gatos' : 'Perros';
+        contextLabel = activeTab === 'cats' 
+          ? (locale === 'en' ? 'Cats' : 'Gatos') 
+          : (locale === 'en' ? 'Dogs' : 'Perros');
       }
 
-      const promptContext = `El usuario pregunta sobre consejos de vacaciones/viaje. Ecosistema activo: ${contextLabel}. Revisa los datos de los elementos registrados por el usuario para darle consejos específicos para sus animales o plantas particulares si aplica. Pregunta: ${currentQuery}`;
+      const promptContext = locale === 'en'
+        ? `The user is asking about vacation/travel advice. Active ecosystem: ${contextLabel}. Check the registered items' data of the user to provide specific advice for their particular pets or plants if applicable. Question: ${currentQuery}`
+        : `El usuario pregunta sobre consejos de vacaciones/viaje. Ecosistema activo: ${contextLabel}. Revisa los datos de los elementos registrados por el usuario para darle consejos específicos para sus animales o plantas particulares si aplica. Pregunta: ${currentQuery}`;
       
       // Map all current messages as history
       const historyForAPI = chatMessages.map(m => ({
@@ -85,7 +90,12 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
       setChatMessages(prev => [...prev, iaMsg]);
     } catch (err) {
       console.error(err);
-      const errorMsg = { sender: 'ia' as const, text: "Lo siento, no se pudo conectar con el consultor IA en este momento. Revisa tu conexión o vuelve a intentarlo." };
+      const errorMsg = { 
+        sender: 'ia' as const, 
+        text: locale === 'en' 
+          ? "Sorry, could not connect with the AI advisor at this time. Please check your connection or try again." 
+          : "Lo siento, no se pudo conectar con el consultor IA en este momento. Revisa tu conexión o vuelve a intentarlo." 
+      };
       setChatMessages(prev => [...prev, errorMsg]);
     } finally {
       setLoading(false);

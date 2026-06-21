@@ -10,7 +10,7 @@ import { GeminiAPIService } from '../services/geminiAPI';
 import { ReportGeneratorModal } from './ReportGeneratorModal';
 import { BiometricChart } from './BiometricChart';
 import { TTSButton } from '../utils/useTTS';
-
+import { useTranslations } from '../utils/i18n';
 
 interface ExoticCardProps {
   exotico: AnimalExotico;
@@ -21,6 +21,7 @@ interface ExoticCardProps {
 }
 
 const ExoticCardComponent: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onOpenScanner, isExpanded: propExpanded, onToggleExpand }) => {
+  const { locale } = useTranslations();
   const cuota = IAQuotaManager.obtenerEstadoCuota();
   const [localExpanded, setLocalExpanded] = useState(false);
   const isExpanded = propExpanded !== undefined ? propExpanded : localExpanded;
@@ -64,7 +65,16 @@ const ExoticCardComponent: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onO
       ? exotico.registroPeso[exotico.registroPeso.length - 1].pesoKg
       : null;
 
-    const promptText = `Actúa como veterinario especialista en animales exóticos y herpetología. Diseña un plan de alimentación detallado para:
+    const promptText = locale === 'en'
+      ? `Act as an exotic animal veterinarian and herpetology specialist. Design a detailed feeding plan for:
+Name: ${exotico.nombre}
+Species: ${exotico.especie}${exotico.tipoEspecifico ? ` (${exotico.tipoEspecifico})` : ''}
+${pesoActual ? `Weight: ${pesoActual} kg` : ''}
+Terrarium temperature: ${exotico.temperaturaTerrario || 26}°C
+Terrarium humidity: ${exotico.humedadTerrario || 60}%
+Explain in English which foods are suitable, how often, and what supplements are needed. Also indicate forbidden foods.
+IMPORTANT: Be very brief, concise, and direct. Structure the response in short bullet points, omitting long introductions or comments to speed up the response.`
+      : `Actúa como veterinario especialista en animales exóticos y herpetología. Diseña un plan de alimentación detallado para:
 Nombre: ${exotico.nombre}
 Especie: ${exotico.especie}${exotico.tipoEspecifico ? ` (${exotico.tipoEspecifico})` : ''}
 ${pesoActual ? `Peso: ${pesoActual} kg` : ''}
@@ -76,13 +86,17 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
     try {
       const res = await GeminiAPIService.analizarImagen(null, 'chef_exoticos', promptText);
       setChefRecipe({
-        receta: res.diagnostico + (res.tratamiento ? `\n\nRecomendaciones adicionales:\n${res.tratamiento}` : ''),
+        receta: res.diagnostico + (res.tratamiento ? (locale === 'en' ? `\n\nAdditional recommendations:\n${res.tratamiento}` : `\n\nRecomendaciones adicionales:\n${res.tratamiento}`) : ''),
         advertencia: res.advertencia
       });
     } catch {
       setChefRecipe({
-        receta: `[Modo Offline - Guía estimada para ${exotico.especie}]\n\nConsulta a un veterinario especializado en animales exóticos para obtener una dieta personalizada.`,
-        advertencia: 'Activa la conexión o introduce tu API Key en Ajustes para obtener recomendaciones detalladas por IA.'
+        receta: locale === 'en'
+          ? `[Offline Mode - Estimated Guide for ${exotico.especie}]\n\nPlease consult an exotic animal veterinarian to obtain a personalized diet.`
+          : `[Modo Offline - Guía estimada para ${exotico.especie}]\n\nConsulta a un veterinario especializado en animales exóticos para obtener una dieta personalizada.`,
+        advertencia: locale === 'en'
+          ? 'Enable internet connection or enter your API Key in Settings to get detailed AI recommendations.'
+          : 'Activa la conexión o introduce tu API Key en Ajustes para obtener recomendaciones detalladas por IA.'
       });
     } finally {
       setChefLoading(false);

@@ -11,7 +11,7 @@ import { IAQuotaManager } from '../utils/iaQuota';
 import { ReportGeneratorModal } from './ReportGeneratorModal';
 import { BiometricChart } from './BiometricChart';
 import { TTSButton } from '../utils/useTTS';
-
+import { useTranslations } from '../utils/i18n';
 
 interface PetCardProps {
   mascota: Mascota;
@@ -22,6 +22,7 @@ interface PetCardProps {
 }
 
 const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScanner, isExpanded, onToggleExpand }) => {
+  const { locale } = useTranslations();
   const cuota = IAQuotaManager.obtenerEstadoCuota();
   const [localExpanded, setLocalExpanded] = useState(false);
   const expanded = isExpanded !== undefined ? isExpanded : localExpanded;
@@ -176,7 +177,15 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
       : 5;
 
     const especieTexto = mascota.especie === 'Felino' ? 'Gato (felino)' : mascota.especie === 'Canino' ? 'Perro (canino)' : mascota.especie;
-    const promptText = `Actúa como veterinario experto en nutrición animal. Diseña una receta casera (cocinada o BARF) detallada en gramos e indica las calorías diarias recomendadas (kcal) para:
+    const promptText = locale === 'en'
+      ? `Act as an expert veterinary animal nutritionist. Design a detailed homemade recipe (cooked or BARF) in grams and indicate the recommended daily calories (kcal) for:
+Name: ${mascota.nombre}
+Species: ${especieTexto === 'Gato (felino)' ? 'Cat (feline)' : especieTexto === 'Perro (canino)' ? 'Dog (canine)' : especieTexto}
+Weight: ${pesoActual} kg
+Activity: ${mascota.actividad || 'Moderate'}
+Explain the recipe clearly in English, detailing the proportions in grams of proteins, vegetables, and supplements. If it is a cat, take into account its taurine needs.
+IMPORTANT: Be very brief, concise, and direct. Structure the response in short bullet points, omitting long introductions or comments to speed up the response.`
+      : `Actúa como veterinario experto en nutrición animal. Diseña una receta casera (cocinada o BARF) detallada en gramos e indica las calorías diarias recomendadas (kcal) para:
 Nombre: ${mascota.nombre}
 Especie: ${especieTexto}
 Peso: ${pesoActual} kg
@@ -191,17 +200,29 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
         promptText
       );
       setChefRecipe({
-        receta: res.diagnostico + (res.tratamiento ? `\n\nInstrucciones de Preparación:\n${res.tratamiento}` : ''),
+        receta: res.diagnostico + (res.tratamiento ? (locale === 'en' ? `\n\nPreparation Instructions:\n${res.tratamiento}` : `\n\nInstrucciones de Preparación:\n${res.tratamiento}`) : ''),
         advertencia: res.advertencia
       });
     } catch (err: any) {
       console.warn("Chef IA error, using offline builder:", err);
-      const kcal = Math.round(70 * Math.pow(pesoActual, 0.75) * (mascota.actividad === 'Alta' ? 1.6 : mascota.actividad === 'Baja' ? 1.2 : 1.4));
+      const activityVal = mascota.actividad || 'Moderada';
+      const kcal = Math.round(70 * Math.pow(pesoActual, 0.75) * (activityVal === 'Alta' ? 1.6 : activityVal === 'Baja' ? 1.2 : 1.4));
       const proteina = Math.round(pesoActual * 12);
       const verduras = Math.round(pesoActual * 4);
       const carbohidratos = Math.round(pesoActual * 3);
       setChefRecipe({
-        receta: `[Modo Offline - Receta Estimada]
+        receta: locale === 'en'
+          ? `[Offline Mode - Estimated Recipe]
+Estimated daily energy requirement: ${kcal} Kcal/day.
+
+Daily recommended ingredients:
+🍗 Lean chicken or turkey: ${proteina}g
+🥕 Steamed vegetables (Carrot, Pumpkin): ${verduras}g
+🍚 Rice or cooked potato: ${carbohidratos}g
+🦴 Salmon oil / Calcium: 1 teaspoon.
+
+Instructions: Cook proteins and vegetables without salt, garlic, or onion. Mix and serve lukewarm.`
+          : `[Modo Offline - Receta Estimada]
 Requerimiento energético estimado: ${kcal} Kcal/día.
 
 Ingredientes recomendados diariamente:
@@ -211,7 +232,9 @@ Ingredientes recomendados diariamente:
 🦴 Aceite de salmón / Calcio: 1 cucharadita.
 
 Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezclar y servir templado.`,
-        advertencia: 'Esta receta es una aproximación sin conexión. Activa el internet o ingresa tu clave API para obtener sugerencias detalladas por IA.'
+        advertencia: locale === 'en'
+          ? 'This recipe is an offline approximation. Enable internet or enter your API key in Settings to get detailed AI suggestions.'
+          : 'Esta receta es una aproximación sin conexión. Activa el internet o ingresa tu clave API para obtener sugerencias detalladas por IA.'
       });
     } finally {
       setChefLoading(false);

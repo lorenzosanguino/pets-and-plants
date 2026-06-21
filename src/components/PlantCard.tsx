@@ -10,7 +10,7 @@ import { ReportGeneratorModal } from './ReportGeneratorModal';
 import { BiometricChart } from './BiometricChart';
 import { GeminiAPIService } from '../services/geminiAPI';
 import { TTSButton } from '../utils/useTTS';
-
+import { useTranslations } from '../utils/i18n';
 interface PlantCardProps {
   planta: Planta;
   onUpdate: () => void;
@@ -20,6 +20,7 @@ interface PlantCardProps {
 }
 
 const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenScanner, isExpanded, onToggleExpand }) => {
+  const { locale } = useTranslations();
   const cuota = IAQuotaManager.obtenerEstadoCuota();
   const [localExpanded, setLocalExpanded] = useState(false);
   const expanded = isExpanded !== undefined ? isExpanded : localExpanded;
@@ -37,7 +38,19 @@ const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpen
     setChefRecipe(null);
     setShowChefModal(true);
 
-    const promptText = `Actúa como agrónomo experto en botánica y nutrición vegetal. Diseña un plan de abonado y cuidado nutricional detallado para la siguiente planta:
+    const promptText = locale === 'en'
+      ? `Act as an expert agronomist in botany and plant nutrition. Design a detailed fertilization and nutritional care plan for the following plant:
+Common name: ${planta.nombreComun}
+Scientific name: ${planta.nombreCientifico || 'Not specified'}
+Location/Room: ${planta.ubicacionHabitacion}
+Current watering interval: every ${planta.intervaloRiegoDias} days
+Substrate: ${planta.grosorHoja ? `Leaves of type ${planta.grosorHoja}` : ''}
+Typical temperature: ${planta.temperaturaZona || 22}°C
+Water type: ${planta.tipoRiegoEspecifico || 'Rested tap water'}
+
+Explain in English what type of fertilizer/nutrients is needed (necessary macro and micronutrients), how often depending on the season of the year, and special substrate/watering advice.
+IMPORTANT: Be very brief, concise, and direct. Structure the response in short bullet points, omitting long introductions or comments to speed up the response.`
+      : `Actúa como agrónomo experto en botánica y nutrición vegetal. Diseña un plan de abonado y cuidado nutricional detallado para la siguiente planta:
 Nombre común: ${planta.nombreComun}
 Nombre científico: ${planta.nombreCientifico || 'No especificado'}
 Ubicación/Habitación: ${planta.ubicacionHabitacion}
@@ -52,13 +65,17 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
     try {
       const res = await GeminiAPIService.analizarImagen(null, 'agronomo', promptText);
       setChefRecipe({
-        receta: res.diagnostico + (res.tratamiento ? `\n\nRecomendaciones adicionales:\n${res.tratamiento}` : ''),
+        receta: res.diagnostico + (res.tratamiento ? (locale === 'en' ? `\n\nAdditional recommendations:\n${res.tratamiento}` : `\n\nRecomendaciones adicionales:\n${res.tratamiento}`) : ''),
         advertencia: res.advertencia
       });
     } catch {
       setChefRecipe({
-        receta: `[Modo Offline - Guía estimada para ${planta.nombreComun}]\n\nPor favor, consulta a un especialista o añade tu clave API de Gemini en Ajustes para obtener recomendaciones específicas por IA.`,
-        advertencia: 'Activa la conexión o introduce tu API Key en Ajustes para obtener recomendaciones detalladas por IA.'
+        receta: locale === 'en'
+          ? `[Offline Mode - Estimated Guide for ${planta.nombreComun}]\n\nPlease consult a specialist or add your Gemini API key in Settings to get specific recommendations by AI.`
+          : `[Modo Offline - Guía estimada para ${planta.nombreComun}]\n\nPor favor, consulta a un especialista o añade tu clave API de Gemini en Ajustes para obtener recomendaciones específicas por IA.`,
+        advertencia: locale === 'en'
+          ? 'Enable internet connection or enter your API Key in Settings to get detailed AI recommendations.'
+          : 'Activa la conexión o introduce tu API Key en Ajustes para obtener recomendaciones detalladas por IA.'
       });
     } finally {
       setChefLoading(false);
