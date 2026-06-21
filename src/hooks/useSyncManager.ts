@@ -896,6 +896,52 @@ export const useSyncManager = ({
     return () => { unsubscribe?.(); };
   }, [hogarId, firebaseLoaded]);
 
+  // Upload theme to cloud when local uiTheme state changes
+  useEffect(() => {
+    const activeHogar = localStorage.getItem('petplant_hogar_id');
+    const provider = localStorage.getItem('petplant_login_provider');
+    if (activeHogar && provider !== 'microsoft' && firebaseLoaded && !isRemoteSyncingRef.current) {
+      if (lastSyncedThemeRef.current === uiTheme) {
+        lastSyncedThemeRef.current = null;
+        return;
+      }
+      
+      const uploadTheme = async () => {
+        try {
+          const listMascotas = await LocalDatabase.getMascotas();
+          const listPlantas = await LocalDatabase.getPlantas();
+          const listExoticos = await LocalDatabase.getExoticos();
+          const listEventos = await LocalDatabase.getEventosCalendario();
+          const chats = [];
+          const consultantIds = ['veterinario', 'agronomo', 'exotico'];
+          for (const id of consultantIds) {
+            const chat = await LocalDatabase.getChatHistorial(id);
+            if (chat) chats.push(chat);
+          }
+          const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
+          const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Hogar Sincronizado";
+          await fbSync.uploadChanges(
+            activeHogar, 
+            activeNombre, 
+            listMascotas, 
+            listPlantas, 
+            listExoticos, 
+            uiTheme,
+            listEventos,
+            chats
+          );
+        } catch (err) {
+          console.error("Error uploading theme to Firebase:", err);
+        }
+      };
+      
+      const timeout = setTimeout(() => {
+        void uploadTheme();
+      }, 1000);
+      return () => clearTimeout(timeout);
+    }
+  }, [uiTheme, firebaseLoaded, hogarId]);
+
   return {
     user,
     hogarId,

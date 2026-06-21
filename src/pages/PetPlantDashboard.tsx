@@ -85,18 +85,13 @@ export const PetPlantDashboard: React.FC = () => {
   const [joinHogarId, setJoinHogarId] = useState('');
   
   // Modo de Experiencia: 'landing', 'pets', 'plants', 'exotics', 'travels', 'consultants'
-  const [experienceMode, setExperienceMode] = useState<'landing' | 'pets' | 'plants' | 'exotics' | 'travels' | 'consultants'>(() => {
-    const saved = localStorage.getItem('petplant_experience_mode');
-    return (saved === 'landing' || saved === 'pets' || saved === 'plants' || saved === 'exotics' || saved === 'travels' || saved === 'consultants')
-      ? saved as 'landing' | 'pets' | 'plants' | 'exotics' | 'travels' | 'consultants'
-      : 'landing';
-  });
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'consultants' | 'settings'>(() => {
-    const saved = localStorage.getItem('petplant_active_tab');
-    return (saved === 'dashboard' || saved === 'consultants' || saved === 'settings')
-      ? saved as 'dashboard' | 'consultants' | 'settings'
-      : 'dashboard';
-  });
+  // Al refrescar la página, siempre iniciamos en la página de inicio ('landing') y pestaña 'dashboard'
+  const [experienceMode, setExperienceMode] = useState<'landing' | 'pets' | 'plants' | 'exotics' | 'travels' | 'consultants'>('landing');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'consultants' | 'settings'>('dashboard');
+
+  useEffect(() => {
+    localStorage.setItem('petplant_game_theme', uiTheme);
+  }, [uiTheme]);
 
   useEffect(() => {
     localStorage.setItem('petplant_experience_mode', experienceMode);
