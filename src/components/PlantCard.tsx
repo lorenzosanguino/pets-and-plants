@@ -1149,11 +1149,62 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }} className="no-print">
-          {!expanded && (
-            <span style={{ fontSize: '20px', padding: '10px', color: 'var(--game-text-bright)', fontFamily: 'monospace' }}>
-              ▼
-            </span>
+          {expanded && (
+            <button 
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDeleteConfirm(true);
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '16px',
+                padding: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#c62828'
+              }}
+              title="Eliminar Planta"
+            >
+              🗑️
+            </button>
           )}
+          {expanded && (
+            <button 
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditNombreComun(planta.nombreComun);
+                setEditNombreCientifico(planta.nombreCientifico || '');
+                setEditUbicacion(planta.ubicacionHabitacion);
+                setEditIntervalo(String(planta.intervaloRiegoDias));
+                setEditToxicidadFelina(planta.toxicidadFelina);
+                setEditToxicidadCanina(planta.toxicidadCanina || 'Segura');
+                setEditCompuestosToxicos(planta.compuestosToxicos || '');
+                setIsEditing(true);
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '16px',
+                padding: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--game-text-bright)'
+              }}
+              title="Editar Planta"
+            >
+              ✏️
+            </button>
+          )}
+          <span style={{ fontSize: '20px', padding: '10px', color: 'var(--game-text-bright)', fontFamily: 'monospace' }}>
+            {expanded ? '▲' : '▼'}
+          </span>
         </div>
       </div>
 
