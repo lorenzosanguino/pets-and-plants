@@ -11,6 +11,12 @@ interface RefreshedData {
   climaActual: any;
 }
 
+// In-Memory Cache Layer for DB Reads
+let ramCacheMascotas: Mascota[] | null = null;
+let ramCachePlantas: Planta[] | null = null;
+let ramCacheExoticos: AnimalExotico[] | null = null;
+let ramCacheLastUpdated = 0;
+
 export const useAppData = (
   onDataRefreshed?: (data: RefreshedData, isLocalEdit: boolean) => void
 ) => {
@@ -28,7 +34,10 @@ export const useAppData = (
 
   const notificadosRef = useRef<Set<string>>(new Set());
 
-  const evaluarRecordatoriosYPendientes = async () => {
+  const evaluarRecordatoriosYPendientes = async (
+    prefetchedPlantas?: Planta[],
+    prefetchedExoticos?: AnimalExotico[]
+  ) => {
     try {
       const listEventos: EventoCalendario[] = await LocalDatabase.getEventosCalendario();
       
@@ -57,8 +66,8 @@ export const useAppData = (
         !notificadosRef.current.has(ev.id)
       );
 
-      const listPlantas = await LocalDatabase.getPlantas();
-      const listExoticos = await LocalDatabase.getExoticos();
+      const listPlantas = prefetchedPlantas || await LocalDatabase.getPlantas();
+      const listExoticos = prefetchedExoticos || await LocalDatabase.getExoticos();
 
       const hoyInicioDia = new Date();
       hoyInicioDia.setHours(0, 0, 0, 0);
@@ -139,9 +148,26 @@ export const useAppData = (
         localStorage.setItem('petplant_db_last_updated', Date.now().toString());
       }
 
-      const listMascotas = await LocalDatabase.getMascotas();
-      const listPlantas = await LocalDatabase.getPlantas();
-      const listExoticos = await LocalDatabase.getExoticos();
+      let listMascotas: Mascota[];
+      let listPlantas: Planta[];
+      let listExoticos: AnimalExotico[];
+
+      const now = Date.now();
+      // Cache hits for non-local edits (TTL = 2 seconds)
+      if (!isLocalEdit && ramCacheMascotas && ramCachePlantas && ramCacheExoticos && (now - ramCacheLastUpdated < 2000)) {
+        listMascotas = ramCacheMascotas;
+        listPlantas = ramCachePlantas;
+        listExoticos = ramCacheExoticos;
+      } else {
+        listMascotas = await LocalDatabase.getMascotas();
+        listPlantas = await LocalDatabase.getPlantas();
+        listExoticos = await LocalDatabase.getExoticos();
+        
+        ramCacheMascotas = listMascotas;
+        ramCachePlantas = listPlantas;
+        ramCacheExoticos = listExoticos;
+        ramCacheLastUpdated = now;
+      }
 
       setMascotas(listMascotas);
       setPlantas(listPlantas);
@@ -167,7 +193,10 @@ export const useAppData = (
         }, isLocalEdit);
       }
 
-      await evaluarRecordatoriosYPendientes();
+      // Defer the notifications evaluation asynchronously to keep the UI snappy
+      setTimeout(() => {
+        evaluarRecordatoriosYPendientes(listPlantas, listExoticos).catch(err => console.warn(err));
+      }, 100);
     } catch (err) {
       console.error("Fallo al refrescar IndexedDB:", err);
     }

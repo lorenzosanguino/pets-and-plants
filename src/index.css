@@ -1012,5 +1012,37 @@ button:active,
   }
 }
 
+/* 8. GPU Hardware Acceleration & Fluidity Compositor Fixes */
+.landing-card,
+.glass-card,
+.coexistence-banner,
+.transition-ripple,
+.greenhouse-frame,
+.weather-particle-wrapper,
+.greenhouse-frame path,
+.greenhouse-frame line,
+button,
+input,
+select {
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-delay: 0s !important;
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    scroll-behavior: auto !important;
+  }
+  .weather-particle-wrapper,
+  .greenhouse-frame,
+  svg circle,
+  svg text {
+    animation: none !important;
+  }
+}
+
 
 

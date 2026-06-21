@@ -325,6 +325,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
             <img
               src={activePhoto}
               alt="Vista previa"
+              loading="lazy"
               onClick={() => setShowLightbox(true)}
               style={{
                 maxWidth: 'calc(100% - 8px)',
@@ -518,6 +519,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
                   <img
                     src={photo}
                     alt={`Miniatura ${idx + 1}`}
+                    loading="lazy"
                     style={{
                       width: '100%',
                       height: '100%',

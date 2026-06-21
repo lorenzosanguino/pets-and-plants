@@ -220,52 +220,58 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
   useEffect(() => {
     if (dragMode === 'none' || !img) return;
 
+    let rAFId: number | null = null;
+
     const handleWindowMove = (e: MouseEvent | TouchEvent) => {
-      if (!canvasRef.current) return;
-      const rect = canvasRef.current.getBoundingClientRect();
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-      const pos = {
-        x: Math.round(clientX - rect.left),
-        y: Math.round(clientY - rect.top)
-      };
+      if (rAFId !== null) return;
+      rAFId = requestAnimationFrame(() => {
+        rAFId = null;
+        if (!canvasRef.current) return;
+        const rect = canvasRef.current.getBoundingClientRect();
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        const pos = {
+          x: Math.round(clientX - rect.left),
+          y: Math.round(clientY - rect.top)
+        };
 
-      const dx = pos.x - dragStart.current.x;
-      const dy = pos.y - dragStart.current.y;
-      const canvas = canvasRef.current;
+        const dx = pos.x - dragStart.current.x;
+        const dy = pos.y - dragStart.current.y;
+        const canvas = canvasRef.current;
 
-      const startRect = dragStart.current.rect;
-      const newRect = { ...cropRect };
+        const startRect = dragStart.current.rect;
+        const newRect = { ...cropRect };
 
-      if (dragMode === 'move') {
-        newRect.x = Math.max(0, Math.min(canvas.width - startRect.w, startRect.x + dx));
-        newRect.y = Math.max(0, Math.min(canvas.height - startRect.h, startRect.y + dy));
-      } else {
-        const minSize = 25;
-        if (dragMode === 'nw') {
-          const newX = Math.max(0, Math.min(startRect.x + startRect.w - minSize, startRect.x + dx));
-          const newY = Math.max(0, Math.min(startRect.y + startRect.h - minSize, startRect.y + dy));
-          newRect.w = startRect.x + startRect.w - newX;
-          newRect.h = startRect.y + startRect.h - newY;
-          newRect.x = newX;
-          newRect.y = newY;
-        } else if (dragMode === 'ne') {
-          const newY = Math.max(0, Math.min(startRect.y + startRect.h - minSize, startRect.y + dy));
-          newRect.w = Math.max(minSize, Math.min(canvas.width - startRect.x, startRect.w + dx));
-          newRect.h = startRect.y + startRect.h - newY;
-          newRect.y = newY;
-        } else if (dragMode === 'se') {
-          newRect.w = Math.max(minSize, Math.min(canvas.width - startRect.x, startRect.w + dx));
-          newRect.h = Math.max(minSize, Math.min(canvas.height - startRect.y, startRect.h + dy));
-        } else if (dragMode === 'sw') {
-          const newX = Math.max(0, Math.min(startRect.x + startRect.w - minSize, startRect.x + dx));
-          newRect.w = startRect.x + startRect.w - newX;
-          newRect.h = Math.max(minSize, Math.min(canvas.height - startRect.y, startRect.h + dy));
-          newRect.x = newX;
+        if (dragMode === 'move') {
+          newRect.x = Math.max(0, Math.min(canvas.width - startRect.w, startRect.x + dx));
+          newRect.y = Math.max(0, Math.min(canvas.height - startRect.h, startRect.y + dy));
+        } else {
+          const minSize = 25;
+          if (dragMode === 'nw') {
+            const newX = Math.max(0, Math.min(startRect.x + startRect.w - minSize, startRect.x + dx));
+            const newY = Math.max(0, Math.min(startRect.y + startRect.h - minSize, startRect.y + dy));
+            newRect.w = startRect.x + startRect.w - newX;
+            newRect.h = startRect.y + startRect.h - newY;
+            newRect.x = newX;
+            newRect.y = newY;
+          } else if (dragMode === 'ne') {
+            const newY = Math.max(0, Math.min(startRect.y + startRect.h - minSize, startRect.y + dy));
+            newRect.w = Math.max(minSize, Math.min(canvas.width - startRect.x, startRect.w + dx));
+            newRect.h = startRect.y + startRect.h - newY;
+            newRect.y = newY;
+          } else if (dragMode === 'se') {
+            newRect.w = Math.max(minSize, Math.min(canvas.width - startRect.x, startRect.w + dx));
+            newRect.h = Math.max(minSize, Math.min(canvas.height - startRect.y, startRect.h + dy));
+          } else if (dragMode === 'sw') {
+            const newX = Math.max(0, Math.min(startRect.x + startRect.w - minSize, startRect.x + dx));
+            newRect.w = startRect.x + startRect.w - newX;
+            newRect.h = Math.max(minSize, Math.min(canvas.height - startRect.y, startRect.h + dy));
+            newRect.x = newX;
+          }
         }
-      }
 
-      setCropRect(newRect);
+        setCropRect(newRect);
+      });
     };
 
     const handleWindowEnd = () => {
@@ -278,6 +284,7 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
     window.addEventListener('touchend', handleWindowEnd);
 
     return () => {
+      if (rAFId !== null) cancelAnimationFrame(rAFId);
       window.removeEventListener('mousemove', handleWindowMove);
       window.removeEventListener('mouseup', handleWindowEnd);
       window.removeEventListener('touchmove', handleWindowMove);

@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import type { Planta, NivelToxicidadFelina, NivelToxicidadCanina } from '../database/types';
 import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
@@ -7,7 +7,7 @@ import { CardPhotoManager } from './CardPhotoManager';
 import { IAQuotaManager } from '../utils/iaQuota';
 import { ImageLightbox } from './ImageLightbox';
 import { ReportGeneratorModal } from './ReportGeneratorModal';
-import { BiometricChart } from './BiometricChart';
+const BiometricChart = lazy(() => import('./BiometricChart').then(m => ({ default: m.BiometricChart })));
 import { GeminiAPIService } from '../services/geminiAPI';
 import { TTSButton } from '../utils/useTTS';
 import { useTranslations } from '../utils/i18n';
@@ -29,6 +29,21 @@ const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, clima, onUpdate,
   const expanded = isExpanded !== undefined ? isExpanded : localExpanded;
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [showAvatarLightbox, setShowAvatarLightbox] = useState(false);
+
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isIntersecting, setIsIntersecting] = useState(false);
+
+  useEffect(() => {
+    if (!cardRef.current) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsIntersecting(entry.isIntersecting);
+    }, {
+      rootMargin: '100px',
+      threshold: 0.01
+    });
+    observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   // Chef Nutricional para Plantas
   const [showChefModal, setShowChefModal] = useState(false);
@@ -807,6 +822,9 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
       backgroundStyle.background = 'radial-gradient(circle at 80% 80%, rgba(165, 214, 167, 0.16) 0%, rgba(129, 199, 132, 0.04) 50%, transparent 100%)';
     }
 
+    const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const showAnimations = expanded && isIntersecting && !prefersReducedMotion;
+
     // Geometric Greenhouse/Terrarium glass frame watermark
     const renderGreenhouseFrame = () => {
       const frameStyle: React.CSSProperties = {
@@ -823,14 +841,16 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
 
       return (
         <svg viewBox="0 0 100 100" style={frameStyle} className="greenhouse-frame">
-          <style>{`
-            @keyframes floatGreenhouse {
-              0% { transform: translateY(0px) rotate(-3deg); }
-              50% { transform: translateY(-4px) rotate(-1deg); }
-              100% { transform: translateY(0px) rotate(-3deg); }
-            }
-            .greenhouse-frame { animation: floatGreenhouse 8s infinite ease-in-out; }
-          `}</style>
+          {showAnimations && (
+            <style>{`
+              @keyframes floatGreenhouse {
+                0% { transform: translateY(0px) rotate(-3deg); }
+                50% { transform: translateY(-4px) rotate(-1deg); }
+                100% { transform: translateY(0px) rotate(-3deg); }
+              }
+              .greenhouse-frame { animation: floatGreenhouse 8s infinite ease-in-out; }
+            `}</style>
+          )}
           {/* Outer glass terrarium frame */}
           <path d="M50 15 L25 40 L25 75 L50 90 L75 75 L75 40 Z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           {/* Internal facets */}
@@ -849,114 +869,118 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
       <div style={backgroundStyle}>
         {renderGreenhouseFrame()}
 
-        {diasRestantes <= 0 ? (
-          <svg width="100%" height="100%" style={{ opacity: 0.18, position: 'absolute', top: 0, left: 0 }}>
-            <style>{`
-              @keyframes floatDust {
-                0% { transform: translateY(110%) translateX(0); opacity: 0; }
-                50% { opacity: 0.8; }
-                100% { transform: translateY(-10%) translateX(15px); opacity: 0; }
-              }
-              .dust1 { animation: floatDust 6s infinite ease-in-out; }
-              .dust2 { animation: floatDust 8s infinite ease-in-out; animation-delay: 2s; }
-              .dust3 { animation: floatDust 7s infinite ease-in-out; animation-delay: 4s; }
-              @keyframes heatwaveDry {
-                0% { transform: translateY(10px) skewX(3deg); opacity: 0.2; }
-                50% { transform: translateY(0px) skewX(-3deg); opacity: 0.6; }
-                100% { transform: translateY(-10px) skewX(3deg); opacity: 0.2; }
-              }
-              .hwd1 { animation: heatwaveDry 4s infinite ease-in-out; }
-              .hwd2 { animation: heatwaveDry 5s infinite ease-in-out; animation-delay: 2s; }
-            `}</style>
-            <circle className="dust1" cx="20%" cy="80%" r="3" fill="#8d6e63" />
-            <circle className="dust2" cx="50%" cy="90%" r="4.5" fill="#a1887f" />
-            <circle className="dust3" cx="80%" cy="85%" r="2.5" fill="#8d6e63" />
-            <path className="hwd1" d="M15,120 Q35,70 55,120 T95,120 T135,120" fill="none" stroke="#ffb74d" strokeWidth="1.5" />
-            <path className="hwd2" d="M105,120 Q125,70 145,120 T185,120 T225,120" fill="none" stroke="#ffa726" strokeWidth="1.5" />
-          </svg>
-        ) : (
-          <svg width="100%" height="100%" style={{ opacity: 0.18, position: 'absolute', top: 0, left: 0 }}>
-            <style>{`
-              @keyframes ripple {
-                0% { r: 5; opacity: 0.8; stroke-width: 2; }
-                100% { r: 70; opacity: 0; stroke-width: 0.5; }
-              }
-              .rip1 { animation: ripple 6s infinite cubic-bezier(0.1, 0.8, 0.3, 1); }
-              .rip2 { animation: ripple 6s infinite cubic-bezier(0.1, 0.8, 0.3, 1); animation-delay: 3s; }
-              @keyframes floatDew {
-                0% { transform: translateY(110%) scale(0.8); opacity: 0; }
-                50% { opacity: 1; }
-                100% { transform: translateY(-10%) scale(1.2); opacity: 0; }
-              }
-              .dew1 { animation: floatDew 5s infinite ease-in-out; }
-              .dew2 { animation: floatDew 6.5s infinite ease-in-out; animation-delay: 1.5s; }
-              .dew3 { animation: floatDew 5.8s infinite ease-in-out; animation-delay: 3s; }
-            `}</style>
-            <circle className="rip1" cx="80%" cy="80%" r="5" fill="none" stroke="#4db6ac" />
-            <circle className="rip2" cx="80%" cy="80%" r="5" fill="none" stroke="#80deea" />
-            <circle className="dew1" cx="20%" cy="90%" r="3.5" fill="#80deea" />
-            <circle className="dew2" cx="70%" cy="90%" r="2.5" fill="#a5d6a7" />
-            <circle className="dew3" cx="45%" cy="85%" r="4.5" fill="#81c784" />
-          </svg>
-        )}
+        {showAnimations && (
+          <>
+            {diasRestantes <= 0 ? (
+              <svg width="100%" height="100%" style={{ opacity: 0.18, position: 'absolute', top: 0, left: 0 }}>
+                <style>{`
+                  @keyframes floatDust {
+                    0% { transform: translateY(110%) translateX(0); opacity: 0; }
+                    50% { opacity: 0.8; }
+                    100% { transform: translateY(-10%) translateX(15px); opacity: 0; }
+                  }
+                  .dust1 { animation: floatDust 6s infinite ease-in-out; }
+                  .dust2 { animation: floatDust 8s infinite ease-in-out; animation-delay: 2s; }
+                  .dust3 { animation: floatDust 7s infinite ease-in-out; animation-delay: 4s; }
+                  @keyframes heatwaveDry {
+                    0% { transform: translateY(10px) skewX(3deg); opacity: 0.2; }
+                    50% { transform: translateY(0px) skewX(-3deg); opacity: 0.6; }
+                    100% { transform: translateY(-10px) skewX(3deg); opacity: 0.2; }
+                  }
+                  .hwd1 { animation: heatwaveDry 4s infinite ease-in-out; }
+                  .hwd2 { animation: heatwaveDry 5s infinite ease-in-out; animation-delay: 2s; }
+                `}</style>
+                <circle className="dust1" cx="20%" cy="80%" r="3" fill="#8d6e63" />
+                <circle className="dust2" cx="50%" cy="90%" r="4.5" fill="#a1887f" />
+                <circle className="dust3" cx="80%" cy="85%" r="2.5" fill="#8d6e63" />
+                <path className="hwd1" d="M15,120 Q35,70 55,120 T95,120 T135,120" fill="none" stroke="#ffb74d" strokeWidth="1.5" />
+                <path className="hwd2" d="M105,120 Q125,70 145,120 T185,120 T225,120" fill="none" stroke="#ffa726" strokeWidth="1.5" />
+              </svg>
+            ) : (
+              <svg width="100%" height="100%" style={{ opacity: 0.18, position: 'absolute', top: 0, left: 0 }}>
+                <style>{`
+                  @keyframes ripple {
+                    0% { r: 5; opacity: 0.8; stroke-width: 2; }
+                    100% { r: 70; opacity: 0; stroke-width: 0.5; }
+                  }
+                  .rip1 { animation: ripple 6s infinite cubic-bezier(0.1, 0.8, 0.3, 1); }
+                  .rip2 { animation: ripple 6s infinite cubic-bezier(0.1, 0.8, 0.3, 1); animation-delay: 3s; }
+                  @keyframes floatDew {
+                    0% { transform: translateY(110%) scale(0.8); opacity: 0; }
+                    50% { opacity: 1; }
+                    100% { transform: translateY(-10%) scale(1.2); opacity: 0; }
+                  }
+                  .dew1 { animation: floatDew 5s infinite ease-in-out; }
+                  .dew2 { animation: floatDew 6.5s infinite ease-in-out; animation-delay: 1.5s; }
+                  .dew3 { animation: floatDew 5.8s infinite ease-in-out; animation-delay: 3s; }
+                `}</style>
+                <circle className="rip1" cx="80%" cy="80%" r="5" fill="none" stroke="#4db6ac" />
+                <circle className="rip2" cx="80%" cy="80%" r="5" fill="none" stroke="#80deea" />
+                <circle className="dew1" cx="20%" cy="90%" r="3.5" fill="#80deea" />
+                <circle className="dew2" cx="70%" cy="90%" r="2.5" fill="#a5d6a7" />
+                <circle className="dew3" cx="45%" cy="85%" r="4.5" fill="#81c784" />
+              </svg>
+            )}
 
-        {clima && temp > 28 && (
-          <svg width="100%" height="100%" style={{ opacity: 0.08, position: 'absolute', top: 0, left: 0 }}>
-            <style>{`
-              @keyframes heatwave {
-                0% { transform: translateY(10px) skewX(2deg); opacity: 0.3; }
-                50% { transform: translateY(0px) skewX(-2deg); opacity: 0.7; }
-                100% { transform: translateY(-10px) skewX(2deg); opacity: 0.3; }
-              }
-              .hw1 { animation: heatwave 3.5s infinite ease-in-out; }
-              .hw2 { animation: heatwave 4.5s infinite ease-in-out; animation-delay: 1.5s; }
-            `}</style>
-            <path className="hw1" d="M10,120 Q30,70 50,120 T90,120 T130,120" fill="none" stroke="#ffb74d" strokeWidth="2" />
-            <path className="hw2" d="M110,120 Q130,70 150,120 T190,120 T230,120" fill="none" stroke="#ffa726" strokeWidth="2" />
-          </svg>
-        )}
+            {clima && temp > 28 && (
+              <svg width="100%" height="100%" style={{ opacity: 0.08, position: 'absolute', top: 0, left: 0 }}>
+                <style>{`
+                  @keyframes heatwave {
+                    0% { transform: translateY(10px) skewX(2deg); opacity: 0.3; }
+                    50% { transform: translateY(0px) skewX(-2deg); opacity: 0.7; }
+                    100% { transform: translateY(-10px) skewX(2deg); opacity: 0.3; }
+                  }
+                  .hw1 { animation: heatwave 3.5s infinite ease-in-out; }
+                  .hw2 { animation: heatwave 4.5s infinite ease-in-out; animation-delay: 1.5s; }
+                `}</style>
+                <path className="hw1" d="M10,120 Q30,70 50,120 T90,120 T130,120" fill="none" stroke="#ffb74d" strokeWidth="2" />
+                <path className="hw2" d="M110,120 Q130,70 150,120 T190,120 T230,120" fill="none" stroke="#ffa726" strokeWidth="2" />
+              </svg>
+            )}
 
-        {clima && temp < 15 && (
-          <svg width="100%" height="100%" style={{ opacity: 0.12, position: 'absolute', top: 0, left: 0 }}>
-            <style>{`
-              @keyframes driftSnow {
-                0% { transform: translateY(-10px) rotate(0deg); opacity: 0; }
-                50% { opacity: 0.8; }
-                100% { transform: translateY(110%) rotate(360deg); opacity: 0; }
-              }
-              .sn1 { animation: driftSnow 9s infinite linear; }
-              .sn2 { animation: driftSnow 12s infinite linear; animation-delay: 3s; }
-              .sn3 { animation: driftSnow 10s infinite linear; animation-delay: 6s; }
-            `}</style>
-            <text className="sn1" x="15%" y="-10" fontSize="10" fill="#90caf9">❄</text>
-            <text className="sn2" x="55%" y="-10" fontSize="12" fill="#bbdefb">❄</text>
-            <text className="sn3" x="85%" y="-10" fontSize="9" fill="#90caf9">❄</text>
-          </svg>
-        )}
+            {clima && temp < 15 && (
+              <svg width="100%" height="100%" style={{ opacity: 0.12, position: 'absolute', top: 0, left: 0 }}>
+                <style>{`
+                  @keyframes driftSnow {
+                    0% { transform: translateY(-10px) rotate(0deg); opacity: 0; }
+                    50% { opacity: 0.8; }
+                    100% { transform: translateY(110%) rotate(360deg); opacity: 0; }
+                  }
+                  .sn1 { animation: driftSnow 9s infinite linear; }
+                  .sn2 { animation: driftSnow 12s infinite linear; animation-delay: 3s; }
+                  .sn3 { animation: driftSnow 10s infinite linear; animation-delay: 6s; }
+                `}</style>
+                <text className="sn1" x="15%" y="-10" fontSize="10" fill="#90caf9">❄</text>
+                <text className="sn2" x="55%" y="-10" fontSize="12" fill="#bbdefb">❄</text>
+                <text className="sn3" x="85%" y="-10" fontSize="9" fill="#90caf9">❄</text>
+              </svg>
+            )}
 
-        {clima && hum > 75 && (
-          <svg width="100%" height="100%" style={{ opacity: 0.12, position: 'absolute', top: 0, left: 0 }}>
-            <style>{`
-              @keyframes fallRain {
-                0% { transform: translateY(-20px) translateX(-5px); opacity: 0; }
-                30% { opacity: 0.8; }
-                100% { transform: translateY(110%) translateX(25px); opacity: 0; }
-              }
-              .rn1 { animation: fallRain 2.2s infinite linear; }
-              .rn2 { animation: fallRain 2.8s infinite linear; animation-delay: 0.8s; }
-              .rn3 { animation: fallRain 2.4s infinite linear; animation-delay: 1.6s; }
-            `}</style>
-            <line className="rn1" x1="20%" y1="-10" x2="25%" y2="15" stroke="#90caf9" strokeWidth="1.5" />
-            <line className="rn2" x1="60%" y1="-10" x2="65%" y2="15" stroke="#90caf9" strokeWidth="1.5" />
-            <line className="rn3" x1="85%" y1="-10" x2="90%" y2="15" stroke="#90caf9" strokeWidth="1.5" />
-          </svg>
+            {clima && hum > 75 && (
+              <svg width="100%" height="100%" style={{ opacity: 0.12, position: 'absolute', top: 0, left: 0 }}>
+                <style>{`
+                  @keyframes fallRain {
+                    0% { transform: translateY(-20px) translateX(-5px); opacity: 0; }
+                    30% { opacity: 0.8; }
+                    100% { transform: translateY(110%) translateX(25px); opacity: 0; }
+                  }
+                  .rn1 { animation: fallRain 2.2s infinite linear; }
+                  .rn2 { animation: fallRain 2.8s infinite linear; animation-delay: 0.8s; }
+                  .rn3 { animation: fallRain 2.4s infinite linear; animation-delay: 1.6s; }
+                `}</style>
+                <line className="rn1" x1="20%" y1="-10" x2="25%" y2="15" stroke="#90caf9" strokeWidth="1.5" />
+                <line className="rn2" x1="60%" y1="-10" x2="65%" y2="15" stroke="#90caf9" strokeWidth="1.5" />
+                <line className="rn3" x1="85%" y1="-10" x2="90%" y2="15" stroke="#90caf9" strokeWidth="1.5" />
+              </svg>
+            )}
+          </>
         )}
       </div>
     );
   };
 
   return (
-    <div id={`card-${planta.id}`} className={`glass-card ${diasRestantes <= 0 ? 'has-critical-alert' : ''}`} style={{
+    <div ref={cardRef} id={`card-${planta.id}`} className={`glass-card ${diasRestantes <= 0 ? 'has-critical-alert' : ''}`} style={{
       background: 'var(--game-card-bg, #ffffff)',
       borderRadius: 'var(--game-radius, 16px)',
       padding: '20px',

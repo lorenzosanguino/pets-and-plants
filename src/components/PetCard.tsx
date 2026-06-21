@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import type { Mascota, EspecieMascota } from '../database/types';
 import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
@@ -9,7 +9,7 @@ import { calcularEdadMascota } from '../utils/age';
 import { ImageLightbox } from './ImageLightbox';
 import { IAQuotaManager } from '../utils/iaQuota';
 import { ReportGeneratorModal } from './ReportGeneratorModal';
-import { BiometricChart } from './BiometricChart';
+const BiometricChart = lazy(() => import('./BiometricChart').then(m => ({ default: m.BiometricChart })));
 import { TTSButton } from '../utils/useTTS';
 import { useTranslations } from '../utils/i18n';
 import { playSoundSuccess } from '../utils/audioFeedback';
@@ -30,6 +30,21 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
   const expanded = isExpanded !== undefined ? isExpanded : localExpanded;
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [showAvatarLightbox, setShowAvatarLightbox] = useState(false);
+
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isIntersecting, setIsIntersecting] = useState(false);
+
+  useEffect(() => {
+    if (!cardRef.current) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsIntersecting(entry.isIntersecting);
+    }, {
+      rootMargin: '100px',
+      threshold: 0.01
+    });
+    observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   // Innovation features states
   const [activeTrainingTrick, setActiveTrainingTrick] = useState<string | null>(null);
@@ -544,12 +559,14 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
     else if (theme === 'vintage') accentColor = '#b8860b';
 
     return (
-      <BiometricChart
-        data={chartData}
-        yLabel="Peso (kg)"
-        color={accentColor}
-        theme={theme as any}
-      />
+      <Suspense fallback={<div style={{ height: '140px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#888' }}>Cargando gráfico...</div>}>
+        <BiometricChart
+          data={chartData}
+          yLabel="Peso (kg)"
+          color={accentColor}
+          theme={theme as any}
+        />
+      </Suspense>
     );
   };
 
@@ -769,6 +786,8 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
   const renderPetMoodBackground = () => {
     const act = mascota.actividad;
     const esp = mascota.especie;
+    const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const showAnimations = expanded && isIntersecting && !prefersReducedMotion;
     
     const backgroundStyle: React.CSSProperties = {
       position: 'absolute',
@@ -850,7 +869,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
       <div style={backgroundStyle}>
         {renderSilhouette()}
         
-        {act === 'Alta' && (
+        {showAnimations && act === 'Alta' && (
           <svg width="100%" height="100%" style={{ opacity: 0.18, position: 'absolute', top: 0, left: 0 }}>
             <style>{`
               @keyframes floatEnergy {
@@ -869,7 +888,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
             <circle className="en4" cx="90%" cy="90%" r="3.5" fill="#ffd54f" />
           </svg>
         )}
-        {act === 'Baja' && (
+        {showAnimations && act === 'Baja' && (
           <svg width="100%" height="100%" style={{ opacity: 0.18, position: 'absolute', top: 0, left: 0 }}>
             <style>{`
               @keyframes floatSleep {
@@ -886,7 +905,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
             <text className="sl3" x="80%" y="90%" fontSize="11" fill="#7986cb" fontWeight="bold">Zzz</text>
           </svg>
         )}
-        {act !== 'Alta' && act !== 'Baja' && (
+        {showAnimations && act !== 'Alta' && act !== 'Baja' && (
           <svg width="100%" height="100%" style={{ opacity: 0.15, position: 'absolute', top: 0, left: 0 }}>
             <style>{`
               @keyframes floatPaws {
@@ -918,7 +937,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
   };
 
   return (
-    <div id={`card-${mascota.id}`} className={`printable-clinical-record glass-card ${checkPesoAlert() ? 'has-critical-alert' : ''}`} style={{
+    <div ref={cardRef} id={`card-${mascota.id}`} className={`printable-clinical-record glass-card ${checkPesoAlert() ? 'has-critical-alert' : ''}`} style={{
       background: 'var(--game-card-bg, #ffffff)',
       borderRadius: 'var(--game-radius, 16px)',
       padding: '20px',

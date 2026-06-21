@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, Suspense, lazy } from 'react';
 import type { AnimalExotico, EventoPasado, EntradaDiarioClinico } from '../database/types';
 import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
@@ -8,7 +8,7 @@ import { IAQuotaManager } from '../utils/iaQuota';
 import { ImageLightbox } from './ImageLightbox';
 import { GeminiAPIService } from '../services/geminiAPI';
 import { ReportGeneratorModal } from './ReportGeneratorModal';
-import { BiometricChart } from './BiometricChart';
+const BiometricChart = lazy(() => import('./BiometricChart').then(m => ({ default: m.BiometricChart })));
 import { TTSButton } from '../utils/useTTS';
 import { useTranslations } from '../utils/i18n';
 import { playSoundSuccess } from '../utils/audioFeedback';
@@ -28,6 +28,21 @@ const ExoticCardComponent: React.FC<ExoticCardProps> = ({ exotico, onUpdate, onO
   const isExpanded = propExpanded !== undefined ? propExpanded : localExpanded;
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [showAvatarLightbox, setShowAvatarLightbox] = useState(false);
+
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isIntersecting, setIsIntersecting] = useState(false);
+
+  useEffect(() => {
+    if (!cardRef.current) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsIntersecting(entry.isIntersecting);
+    }, {
+      rootMargin: '100px',
+      threshold: 0.01
+    });
+    observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   const toggleExpanded = () => {
     if (onToggleExpand) {
@@ -378,59 +393,66 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
       backgroundStyle.background = 'linear-gradient(135deg, rgba(161, 136, 127, 0.05) 0%, transparent 80%)';
     }
 
+    const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const showAnimations = isExpanded && isIntersecting && !prefersReducedMotion;
+
     return (
       <div style={backgroundStyle}>
-        {temp > 28 && (
-          <svg width="100%" height="100%" style={{ opacity: 0.08 }}>
-            <style>{`
-              @keyframes heatwave {
-                0% { transform: translateY(10px) skewX(2deg); opacity: 0.3; }
-                50% { transform: translateY(0px) skewX(-2deg); opacity: 0.7; }
-                100% { transform: translateY(-10px) skewX(2deg); opacity: 0.3; }
-              }
-              .hw1 { animation: heatwave 3.5s infinite ease-in-out; }
-              .hw2 { animation: heatwave 4.5s infinite ease-in-out; animation-delay: 1.5s; }
-            `}</style>
-            <path className="hw1" d="M10,120 Q30,70 50,120 T90,120 T130,120" fill="none" stroke="#ff8f00" strokeWidth="2" />
-            <path className="hw2" d="M110,120 Q130,70 150,120 T190,120 T230,120" fill="none" stroke="#ff6f00" strokeWidth="2" />
-          </svg>
-        )}
-        {hum > 70 && (
-          <svg width="100%" height="100%" style={{ opacity: 0.12 }}>
-            <style>{`
-              @keyframes floatMist {
-                0% { transform: translateY(110%) scale(0.8); opacity: 0; }
-                50% { opacity: 0.8; }
-                100% { transform: translateY(-10%) scale(1.4); opacity: 0; }
-              }
-              .m1 { animation: floatMist 5s infinite ease-in-out; }
-              .m2 { animation: floatMist 6s infinite ease-in-out; animation-delay: 2s; }
-            `}</style>
-            <circle className="m1" cx="30%" cy="90%" r="8" fill="#80cbc4" />
-            <circle className="m2" cx="70%" cy="90%" r="10" fill="#b2dfdb" />
-          </svg>
-        )}
-        {hum < 40 && (
-          <svg width="100%" height="100%" style={{ opacity: 0.12 }}>
-            <style>{`
-              @keyframes floatDust {
-                0% { transform: translateY(110%) translateX(0); opacity: 0; }
-                50% { opacity: 0.8; }
-                100% { transform: translateY(-10%) translateX(10px); opacity: 0; }
-              }
-              .d1 { animation: floatDust 6s infinite ease-in-out; }
-              .d2 { animation: floatDust 8s infinite ease-in-out; animation-delay: 2.5s; }
-            `}</style>
-            <circle className="d1" cx="25%" cy="85%" r="3" fill="#a1887f" />
-            <circle className="d2" cx="75%" cy="85%" r="2" fill="#8d6e63" />
-          </svg>
+        {showAnimations && (
+          <>
+            {temp > 28 && (
+              <svg width="100%" height="100%" style={{ opacity: 0.08 }}>
+                <style>{`
+                  @keyframes heatwave {
+                    0% { transform: translateY(10px) skewX(2deg); opacity: 0.3; }
+                    50% { transform: translateY(0px) skewX(-2deg); opacity: 0.7; }
+                    100% { transform: translateY(-10px) skewX(2deg); opacity: 0.3; }
+                  }
+                  .hw1 { animation: heatwave 3.5s infinite ease-in-out; }
+                  .hw2 { animation: heatwave 4.5s infinite ease-in-out; animation-delay: 1.5s; }
+                `}</style>
+                <path className="hw1" d="M10,120 Q30,70 50,120 T90,120 T130,120" fill="none" stroke="#ff8f00" strokeWidth="2" />
+                <path className="hw2" d="M110,120 Q130,70 150,120 T190,120 T230,120" fill="none" stroke="#ff6f00" strokeWidth="2" />
+              </svg>
+            )}
+            {hum > 70 && (
+              <svg width="100%" height="100%" style={{ opacity: 0.12 }}>
+                <style>{`
+                  @keyframes floatMist {
+                    0% { transform: translateY(110%) scale(0.8); opacity: 0; }
+                    50% { opacity: 0.8; }
+                    100% { transform: translateY(-10%) scale(1.4); opacity: 0; }
+                  }
+                  .m1 { animation: floatMist 5s infinite ease-in-out; }
+                  .m2 { animation: floatMist 6s infinite ease-in-out; animation-delay: 2s; }
+                `}</style>
+                <circle className="m1" cx="30%" cy="90%" r="8" fill="#80cbc4" />
+                <circle className="m2" cx="70%" cy="90%" r="10" fill="#b2dfdb" />
+              </svg>
+            )}
+            {hum < 40 && (
+              <svg width="100%" height="100%" style={{ opacity: 0.12 }}>
+                <style>{`
+                  @keyframes floatDust {
+                    0% { transform: translateY(110%) translateX(0); opacity: 0; }
+                    50% { opacity: 0.8; }
+                    100% { transform: translateY(-10%) translateX(10px); opacity: 0; }
+                  }
+                  .d1 { animation: floatDust 6s infinite ease-in-out; }
+                  .d2 { animation: floatDust 8s infinite ease-in-out; animation-delay: 2.5s; }
+                `}</style>
+                <circle className="d1" cx="25%" cy="85%" r="3" fill="#a1887f" />
+                <circle className="d2" cx="75%" cy="85%" r="2" fill="#8d6e63" />
+              </svg>
+            )}
+          </>
         )}
       </div>
     );
   };
 
   return (
-    <div id={`card-${exotico.id}`} className={`glass-card ${exotico.temperaturaTerrario > 28 || exotico.humedadTerrario < 40 ? 'has-critical-alert' : ''}`} style={{
+    <div ref={cardRef} id={`card-${exotico.id}`} className={`glass-card ${exotico.temperaturaTerrario > 28 || exotico.humedadTerrario < 40 ? 'has-critical-alert' : ''}`} style={{
       background: 'var(--game-card-bg, #ffffff)',
       borderRadius: 'var(--game-radius, 16px)',
       border: 'var(--game-border, 1.5px solid #eaeaea)',
@@ -736,7 +758,9 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                   else if (theme === 'vintage') accentColor = '#b8860b';
                   return (
                     <>
-                      <BiometricChart data={chartData} yLabel="Peso (g)" color={accentColor} theme={theme as any} />
+                      <Suspense fallback={<div style={{ height: '140px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#888' }}>Cargando gráfico...</div>}>
+                        <BiometricChart data={chartData} yLabel="Peso (g)" color={accentColor} theme={theme as any} />
+                      </Suspense>
                       <form onSubmit={registrarPeso} style={{ display: 'flex', gap: '6px', margin: '4px 0' }} className="no-print">
                         <input
                           type="number"
@@ -767,7 +791,9 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                   else if (theme === 'vintage') accentColor = '#b8860b';
                   return (
                     <>
-                      <BiometricChart data={chartData} yLabel="Longitud (cm)" color={accentColor} theme={theme as any} />
+                      <Suspense fallback={<div style={{ height: '140px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#888' }}>Cargando gráfico...</div>}>
+                        <BiometricChart data={chartData} yLabel="Longitud (cm)" color={accentColor} theme={theme as any} />
+                      </Suspense>
                       <form onSubmit={registrarCrecimiento} style={{ display: 'flex', gap: '6px', margin: '4px 0' }} className="no-print">
                         <input
                           type="number"
