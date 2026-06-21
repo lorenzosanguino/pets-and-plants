@@ -763,6 +763,8 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
 
   const renderPetMoodBackground = () => {
     const act = mascota.actividad;
+    const esp = mascota.especie;
+    
     let backgroundStyle: React.CSSProperties = {
       position: 'absolute',
       top: 0,
@@ -776,61 +778,124 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
       transition: 'background 0.5s ease'
     };
 
+    // Set theme-adaptive, rich radial gradient configurations
     if (act === 'Alta') {
-      backgroundStyle.background = 'linear-gradient(135deg, rgba(255, 213, 79, 0.05) 0%, transparent 80%)';
+      backgroundStyle.background = 'radial-gradient(circle at 80% 80%, rgba(255, 213, 79, 0.15) 0%, rgba(255, 179, 0, 0.04) 50%, transparent 100%)';
     } else if (act === 'Baja') {
-      backgroundStyle.background = 'linear-gradient(135deg, rgba(144, 164, 174, 0.05) 0%, transparent 80%)';
+      backgroundStyle.background = 'radial-gradient(circle at 80% 80%, rgba(159, 168, 218, 0.15) 0%, rgba(63, 81, 181, 0.04) 50%, transparent 100%)';
     } else {
-      backgroundStyle.background = 'linear-gradient(135deg, rgba(240, 98, 146, 0.04) 0%, transparent 80%)';
+      backgroundStyle.background = 'radial-gradient(circle at 80% 80%, rgba(244, 143, 177, 0.12) 0%, rgba(233, 30, 99, 0.03) 50%, transparent 100%)';
     }
+
+    // Determine the species silhouette to render
+    const renderSilhouette = () => {
+      const silhouetteStyle: React.CSSProperties = {
+        position: 'absolute',
+        bottom: '-10px',
+        right: '-10px',
+        width: '140px',
+        height: '140px',
+        opacity: 0.14,
+        color: 'var(--game-text, currentColor)',
+        transition: 'all 0.5s ease',
+        transform: 'rotate(-5deg)',
+      };
+
+      if (esp === 'Felino') {
+        return (
+          <svg viewBox="0 0 100 100" style={silhouetteStyle}>
+            <path 
+              d="M30 80 C30 55 45 45 45 25 C40 25 35 15 35 10 C45 15 50 22 55 22 C60 22 65 15 75 10 C75 15 70 25 65 25 C65 45 80 55 80 80 Z" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+            />
+          </svg>
+        );
+      } else if (esp === 'Canino') {
+        return (
+          <svg viewBox="0 0 100 100" style={silhouetteStyle}>
+            <path 
+              d="M25 80 C25 60 30 55 30 45 C25 45 20 50 20 60 C20 70 25 70 28 65 C28 55 35 40 40 35 C45 32 55 32 60 35 C65 40 72 55 72 65 C75 70 80 70 80 60 C80 50 75 45 70 45 C70 55 75 60 75 80 Z" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+            />
+          </svg>
+        );
+      } else {
+        // Floating/static paw silhouette
+        return (
+          <svg viewBox="0 0 100 100" style={silhouetteStyle}>
+            <path d="M35 65 C30 55 40 45 50 45 C60 45 70 55 65 65 C62 70 58 72 50 72 C42 72 38 70 35 65 Z" fill="none" stroke="currentColor" strokeWidth="2" />
+            <circle cx="28" cy="40" r="5" fill="none" stroke="currentColor" strokeWidth="2" />
+            <circle cx="42" cy="28" r="6" fill="none" stroke="currentColor" strokeWidth="2" />
+            <circle cx="58" cy="28" r="6" fill="none" stroke="currentColor" strokeWidth="2" />
+            <circle cx="72" cy="40" r="5" fill="none" stroke="currentColor" strokeWidth="2" />
+          </svg>
+        );
+      }
+    };
 
     return (
       <div style={backgroundStyle}>
+        {renderSilhouette()}
+        
         {act === 'Alta' && (
-          <svg width="100%" height="100%" style={{ opacity: 0.12 }}>
+          <svg width="100%" height="100%" style={{ opacity: 0.18, position: 'absolute', top: 0, left: 0 }}>
             <style>{`
               @keyframes floatEnergy {
                 0% { transform: translateY(110%) scale(0.6); opacity: 0; }
                 50% { opacity: 0.8; }
                 100% { transform: translateY(-10%) scale(1.2); opacity: 0; }
               }
-              .en1 { animation: floatEnergy 3s infinite ease-in-out; }
-              .en2 { animation: floatEnergy 4s infinite ease-in-out; animation-delay: 1s; }
-              .en3 { animation: floatEnergy 3.5s infinite ease-in-out; animation-delay: 2s; }
+              .en1 { animation: floatEnergy 4s infinite ease-in-out; }
+              .en2 { animation: floatEnergy 5s infinite ease-in-out; animation-delay: 1.2s; }
+              .en3 { animation: floatEnergy 4.5s infinite ease-in-out; animation-delay: 2.5s; }
+              .en4 { animation: floatEnergy 6s infinite ease-in-out; animation-delay: 0.5s; }
             `}</style>
-            <circle className="en1" cx="20%" cy="90%" r="5" fill="#ffd54f" />
-            <circle className="en2" cx="50%" cy="90%" r="4" fill="#ffb300" />
-            <circle className="en3" cx="80%" cy="90%" r="6" fill="#ffe082" />
+            <circle className="en1" cx="15%" cy="90%" r="5" fill="#ffd54f" />
+            <circle className="en2" cx="45%" cy="90%" r="4" fill="#ffb300" />
+            <circle className="en3" cx="75%" cy="90%" r="6" fill="#ffe082" />
+            <circle className="en4" cx="90%" cy="90%" r="3.5" fill="#ffd54f" />
           </svg>
         )}
         {act === 'Baja' && (
-          <svg width="100%" height="100%" style={{ opacity: 0.12 }}>
+          <svg width="100%" height="100%" style={{ opacity: 0.18, position: 'absolute', top: 0, left: 0 }}>
             <style>{`
               @keyframes floatSleep {
-                0% { transform: translateY(15px) rotate(-10deg); opacity: 0; }
-                50% { opacity: 0.7; }
-                100% { transform: translateY(-60px) rotate(10deg); opacity: 0; }
+                0% { transform: translateY(20px) rotate(-12deg); opacity: 0; }
+                50% { opacity: 0.8; }
+                100% { transform: translateY(-70px) rotate(12deg); opacity: 0; }
               }
-              .sl1 { animation: floatSleep 7s infinite ease-in-out; }
-              .sl2 { animation: floatSleep 9s infinite ease-in-out; animation-delay: 3.5s; }
+              .sl1 { animation: floatSleep 8s infinite ease-in-out; }
+              .sl2 { animation: floatSleep 10s infinite ease-in-out; animation-delay: 3s; }
+              .sl3 { animation: floatSleep 9s infinite ease-in-out; animation-delay: 5.5s; }
             `}</style>
-            <text className="sl1" x="25%" y="90%" fontSize="11" fill="#78909c" fontWeight="bold">Zzz</text>
-            <text className="sl2" x="75%" y="90%" fontSize="9" fill="#b0bec5" fontWeight="bold">Zzz</text>
+            <text className="sl1" x="20%" y="90%" fontSize="12" fill="#7986cb" fontWeight="bold">Zzz</text>
+            <text className="sl2" x="50%" y="95%" fontSize="9" fill="#9fa8da" fontWeight="bold">Zzz</text>
+            <text className="sl3" x="80%" y="90%" fontSize="11" fill="#7986cb" fontWeight="bold">Zzz</text>
           </svg>
         )}
         {act !== 'Alta' && act !== 'Baja' && (
-          <svg width="100%" height="100%" style={{ opacity: 0.08 }}>
+          <svg width="100%" height="100%" style={{ opacity: 0.15, position: 'absolute', top: 0, left: 0 }}>
             <style>{`
               @keyframes floatPaws {
-                0% { transform: translateY(110%); opacity: 0; }
-                50% { opacity: 0.6; }
-                100% { transform: translateY(-20px); opacity: 0; }
+                0% { transform: translateY(110%) scale(0.8); opacity: 0; }
+                50% { opacity: 0.7; }
+                100% { transform: translateY(-30px) scale(1.1); opacity: 0; }
               }
-              .pw1 { animation: floatPaws 6s infinite ease-in-out; }
-              .pw2 { animation: floatPaws 8s infinite ease-in-out; animation-delay: 3s; }
+              .pw1 { animation: floatPaws 7s infinite ease-in-out; }
+              .pw2 { animation: floatPaws 9s infinite ease-in-out; animation-delay: 2.5s; }
+              .pw3 { animation: floatPaws 8s infinite ease-in-out; animation-delay: 4.5s; }
             `}</style>
-            <text className="pw1" x="30%" y="90%" fontSize="12" fill="#e57373">🐾</text>
-            <text className="pw2" x="70%" y="90%" fontSize="10" fill="#f06292">🐾</text>
+            <text className="pw1" x="15%" y="90%" fontSize="13" fill="#f06292">🐾</text>
+            <text className="pw2" x="55%" y="90%" fontSize="11" fill="#f06292">♥</text>
+            <text className="pw3" x="85%" y="90%" fontSize="12" fill="#e57373">🐾</text>
           </svg>
         )}
       </div>

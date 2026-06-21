@@ -799,48 +799,102 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
       transition: 'background 0.5s ease'
     };
 
-    if (clima) {
-      if (temp > 28) {
-        backgroundStyle.background = 'linear-gradient(135deg, rgba(255, 183, 77, 0.06) 0%, transparent 80%)';
-      } else if (temp < 15) {
-        backgroundStyle.background = 'linear-gradient(135deg, rgba(129, 212, 250, 0.06) 0%, transparent 80%)';
-      } else if (hum > 75) {
-        backgroundStyle.background = 'linear-gradient(135deg, rgba(144, 202, 249, 0.06) 0%, transparent 80%)';
-      }
+    // Moisture-Adaptive Gradients
+    if (diasRestantes <= 0) {
+      backgroundStyle.background = 'radial-gradient(circle at 80% 80%, rgba(141, 110, 99, 0.16) 0%, rgba(109, 76, 65, 0.04) 50%, transparent 100%)';
+    } else {
+      backgroundStyle.background = 'radial-gradient(circle at 80% 80%, rgba(165, 214, 167, 0.16) 0%, rgba(129, 199, 132, 0.04) 50%, transparent 100%)';
     }
+
+    // Geometric Greenhouse/Terrarium glass frame watermark
+    const renderGreenhouseFrame = () => {
+      const frameStyle: React.CSSProperties = {
+        position: 'absolute',
+        bottom: '-12px',
+        right: '-12px',
+        width: '135px',
+        height: '135px',
+        opacity: 0.12,
+        color: 'var(--game-text, currentColor)',
+        transition: 'all 0.5s ease',
+        transformOrigin: 'bottom right',
+      };
+
+      return (
+        <svg viewBox="0 0 100 100" style={frameStyle} className="greenhouse-frame">
+          <style>{`
+            @keyframes floatGreenhouse {
+              0% { transform: translateY(0px) rotate(-3deg); }
+              50% { transform: translateY(-4px) rotate(-1deg); }
+              100% { transform: translateY(0px) rotate(-3deg); }
+            }
+            .greenhouse-frame { animation: floatGreenhouse 8s infinite ease-in-out; }
+          `}</style>
+          {/* Outer glass terrarium frame */}
+          <path d="M50 15 L25 40 L25 75 L50 90 L75 75 L75 40 Z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          {/* Internal facets */}
+          <line x1="50" y1="15" x2="50" y2="90" stroke="currentColor" strokeWidth="1" strokeDasharray="1 1" />
+          <line x1="25" y1="40" x2="75" y2="40" stroke="currentColor" strokeWidth="1" strokeDasharray="1 1" />
+          <line x1="25" y1="75" x2="75" y2="75" stroke="currentColor" strokeWidth="1" strokeDasharray="1 1" />
+          <line x1="50" y1="15" x2="25" y2="75" stroke="currentColor" strokeWidth="0.8" strokeDasharray="2 2" />
+          <line x1="50" y1="15" x2="75" y2="75" stroke="currentColor" strokeWidth="0.8" strokeDasharray="2 2" />
+          <line x1="25" y1="40" x2="50" y2="90" stroke="currentColor" strokeWidth="0.8" strokeDasharray="2 2" />
+          <line x1="75" y1="40" x2="50" y2="90" stroke="currentColor" strokeWidth="0.8" strokeDasharray="2 2" />
+        </svg>
+      );
+    };
 
     return (
       <div style={backgroundStyle}>
+        {renderGreenhouseFrame()}
+
         {diasRestantes <= 0 ? (
-          <svg width="100%" height="100%" style={{ opacity: 0.12 }}>
+          <svg width="100%" height="100%" style={{ opacity: 0.18, position: 'absolute', top: 0, left: 0 }}>
             <style>{`
               @keyframes floatDust {
                 0% { transform: translateY(110%) translateX(0); opacity: 0; }
                 50% { opacity: 0.8; }
                 100% { transform: translateY(-10%) translateX(15px); opacity: 0; }
               }
-              .dust1 { animation: floatDust 5s infinite ease-in-out; }
-              .dust2 { animation: floatDust 7s infinite ease-in-out; animation-delay: 1.5s; }
-              .dust3 { animation: floatDust 6s infinite ease-in-out; animation-delay: 3s; }
+              .dust1 { animation: floatDust 6s infinite ease-in-out; }
+              .dust2 { animation: floatDust 8s infinite ease-in-out; animation-delay: 2s; }
+              .dust3 { animation: floatDust 7s infinite ease-in-out; animation-delay: 4s; }
+              @keyframes heatwaveDry {
+                0% { transform: translateY(10px) skewX(3deg); opacity: 0.2; }
+                50% { transform: translateY(0px) skewX(-3deg); opacity: 0.6; }
+                100% { transform: translateY(-10px) skewX(3deg); opacity: 0.2; }
+              }
+              .hwd1 { animation: heatwaveDry 4s infinite ease-in-out; }
+              .hwd2 { animation: heatwaveDry 5s infinite ease-in-out; animation-delay: 2s; }
             `}</style>
             <circle className="dust1" cx="20%" cy="80%" r="3" fill="#8d6e63" />
             <circle className="dust2" cx="50%" cy="90%" r="4.5" fill="#a1887f" />
             <circle className="dust3" cx="80%" cy="85%" r="2.5" fill="#8d6e63" />
+            <path className="hwd1" d="M15,120 Q35,70 55,120 T95,120 T135,120" fill="none" stroke="#ffb74d" strokeWidth="1.5" />
+            <path className="hwd2" d="M105,120 Q125,70 145,120 T185,120 T225,120" fill="none" stroke="#ffa726" strokeWidth="1.5" />
           </svg>
         ) : (
-          <svg width="100%" height="100%" style={{ opacity: 0.15 }}>
+          <svg width="100%" height="100%" style={{ opacity: 0.18, position: 'absolute', top: 0, left: 0 }}>
             <style>{`
+              @keyframes ripple {
+                0% { r: 5; opacity: 0.8; stroke-width: 2; }
+                100% { r: 70; opacity: 0; stroke-width: 0.5; }
+              }
+              .rip1 { animation: ripple 6s infinite cubic-bezier(0.1, 0.8, 0.3, 1); }
+              .rip2 { animation: ripple 6s infinite cubic-bezier(0.1, 0.8, 0.3, 1); animation-delay: 3s; }
               @keyframes floatDew {
                 0% { transform: translateY(110%) scale(0.8); opacity: 0; }
                 50% { opacity: 1; }
                 100% { transform: translateY(-10%) scale(1.2); opacity: 0; }
               }
-              .dew1 { animation: floatDew 4s infinite ease-in-out; }
-              .dew2 { animation: floatDew 5.5s infinite ease-in-out; animation-delay: 1s; }
-              .dew3 { animation: floatDew 4.8s infinite ease-in-out; animation-delay: 2.5s; }
+              .dew1 { animation: floatDew 5s infinite ease-in-out; }
+              .dew2 { animation: floatDew 6.5s infinite ease-in-out; animation-delay: 1.5s; }
+              .dew3 { animation: floatDew 5.8s infinite ease-in-out; animation-delay: 3s; }
             `}</style>
-            <circle className="dew1" cx="25%" cy="90%" r="3.5" fill="#80deea" />
-            <circle className="dew2" cx="75%" cy="90%" r="2.5" fill="#a5d6a7" />
+            <circle className="rip1" cx="80%" cy="80%" r="5" fill="none" stroke="#4db6ac" />
+            <circle className="rip2" cx="80%" cy="80%" r="5" fill="none" stroke="#80deea" />
+            <circle className="dew1" cx="20%" cy="90%" r="3.5" fill="#80deea" />
+            <circle className="dew2" cx="70%" cy="90%" r="2.5" fill="#a5d6a7" />
             <circle className="dew3" cx="45%" cy="85%" r="4.5" fill="#81c784" />
           </svg>
         )}
