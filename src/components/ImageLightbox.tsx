@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ImageLightboxProps {
   imageUrl: string;
@@ -49,7 +50,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
     };
   };
 
-  return (
+  return createPortal(
     <div
       onClick={onClose}
       style={{
@@ -169,6 +170,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
