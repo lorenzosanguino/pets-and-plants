@@ -180,76 +180,19 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
         </div>
       )}
 
-      {/* Content */}
-      <div style={{ fontSize: '13px', lineHeight: '1.6', background: 'rgba(0,0,0,0.01)', padding: '16px', borderRadius: '12px', border: '1px solid #f0f0f0' }}>
-        {activeTab === 'plants' && (
-          <div>
-            <h4 style={{ margin: '0 0 10px 0', color: '#2e7d32', fontWeight: 'bold', fontSize: '14px' }}>
-              💧 Soluciones de Riego Autónomo para Ausencias
-            </h4>
-            <ul style={{ margin: '0', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li><strong>Gel de Riego (Agua Solidificada):</strong> Ideal para plantas medianas. Coloca un sobre de hidrogel en la tierra húmeda; irá liberando humedad de forma gradual durante 10 a 15 días.</li>
-              <li><strong>Autorriego por Cordón de Algodón:</strong> Coloca un recipiente elevado lleno de agua junto a tus plantas. Introduce un extremo de un cordón de algodón o lana en el agua y entierra el otro extremo en el sustrato de cada maceta.</li>
-              <li><strong>Botellas de Plástico Invertidas:</strong> Llena una botella de plástico con agua, hazle un micro-agujero en el tapón con un alfiler y clávala del revés firmemente en la tierra de la maceta.</li>
-              <li><strong>Agrupación Estratégica:</strong> Junta todas tus plantas en la habitación menos calurosa. Al agruparlas, generan un microclima con mayor humedad ambiental, reduciendo la evaporación.</li>
-            </ul>
-          </div>
-        )}
-
-        {activeTab === 'cats' && (
-          <div>
-            <h4 style={{ margin: '0 0 10px 0', color: '#1976d2', fontWeight: 'bold', fontSize: '14px' }}>
-              🐱 Directrices para dejar Gatos solos en Casa (Máx. 1 Semana)
-            </h4>
-            <ul style={{ margin: '0', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li><strong>Fuentes de Agua Eléctricas:</strong> Coloca al menos dos fuentes de agua con filtros. Los gatos prefieren el agua en movimiento y esto previene que se queden sin agua limpia si una fuente falla.</li>
-              <li><strong>Comederos Automáticos:</strong> Configura un dispensador automático de comida seca para liberar raciones controladas varias veces al día.</li>
-              <li><strong>Areneros Múltiples:</strong> Coloca al menos un arenero extra por cada gato que tengas. Es vital asegurar suficiente superficie limpia para evitar problemas de conducta.</li>
-              <li><strong>Visita de Cuidadores (Obligatorio):</strong> Aunque tengan comida y agua autónoma, encarga a un vecino o cuidador que los visite cada 48 horas como máximo para limpiar el arenero y comprobar su bienestar.</li>
-            </ul>
-          </div>
-        )}
-
-        {activeTab === 'dogs' && (
-          <div>
-            <h4 style={{ margin: '0 0 10px 0', color: '#e65100', fontWeight: 'bold', fontSize: '14px' }}>
-              🐶 Checklist y Consejos para Viajar con tu Perro
-            </h4>
-            <ul style={{ margin: '0', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li><strong>Seguridad en el Vehículo:</strong> Los perros nunca deben ir sueltos. Utiliza un arnés de seguridad homologado de doble anclaje conectado al cinturón, o un transportín.</li>
-              <li><strong>Documentación y Vacunas:</strong> Lleva su cartilla veterinaria oficial y asegúrate de que la vacuna de la Rabia y el microchip estén registrados y al día.</li>
-              <li><strong>Hidratación en Ruta:</strong> Realiza paradas cada 2 horas para que estire las patas, orine y beba agua fresca. Nunca lo dejes solo en el coche al sol.</li>
-              <li><strong>Botiquín del Viajero:</strong> Prepara un pequeño neceser con gasas, desinfectante (clorhexidina), sus medicamentos usuales y protectores para las almohadillas.</li>
-            </ul>
-          </div>
-        )}
-
-        {activeTab === 'exotics' && (
-          <div>
-            <h4 style={{ margin: '0 0 10px 0', color: '#7b1fa2', fontWeight: 'bold', fontSize: '14px' }}>
-              ⚠️ Consulta Obligatoria con un Especialista en Exóticos
-            </h4>
-            <p style={{ margin: '0 0 10px 0', fontSize: '12.5px', color: '#555', lineHeight: '1.4' }}>
-              Los animales exóticos (serpientes, ranas, geckos, arañas, etc.) dependen críticamente de condiciones específicas que no son generalizables. Te recomendamos encarecidamente consultar a un profesional antes de viajar.
-            </p>
-            <ul style={{ margin: '0', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li><strong>Parámetros Críticos del Terrario:</strong> Verifica minuciosamente los calentadores, humidificadores y lámparas UVB. Conéctalos a temporizadores digitales de confianza.</li>
-              <li><strong>Alimentación Específica:</strong> Algunas especies pueden ayunar bajo supervisión, pero los anfibios o crías requieren alimentación e hidratación diarias constantes difíciles de automatizar.</li>
-              <li><strong>Veterinario de Exóticos de Guardia:</strong> Localiza la clínica de exóticos 24 horas más cercana y deja sus datos visibles para el cuidador que supervise a los animales.</li>
-            </ul>
-          </div>
-        )}
-      </div>
-
-      {/* AI Assistant query */}
+      {/* Content - AI Travel Advisor Chat (Replaces static checklists) */}
       <div style={{
-        borderTop: '1px solid #eaeaea',
-        paddingTop: '16px'
+        fontSize: '13px',
+        lineHeight: '1.6',
+        background: 'rgba(0,0,0,0.01)',
+        padding: '16px',
+        borderRadius: '12px',
+        border: '1px solid #f0f0f0'
       }}>
-        <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 'bold' }}>
+        <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
           💬 Consultar al Asesor de Viajes IA
         </h4>
-        <form onSubmit={handleAIQuery} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <form onSubmit={handleAIQuery} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: chatMessages.length > 0 ? '16px' : 0 }}>
           <div style={{ display: 'flex', gap: '8px' }}>
             <input
               type="text"
@@ -283,11 +226,10 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
 
         {chatMessages.length > 0 && (
           <div style={{
-            marginTop: '16px',
             display: 'flex',
             flexDirection: 'column',
             gap: '10px',
-            maxHeight: '300px',
+            maxHeight: '350px',
             overflowY: 'auto',
             padding: '12px',
             background: 'var(--game-bg, rgba(0,0,0,0.02))',

@@ -19,9 +19,10 @@ interface PlantCardProps {
   onOpenScanner?: (mode: 'enfermedad_planta', assetId: string) => void;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
+  theme?: string;
 }
 
-const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, clima, onUpdate, onOpenScanner, isExpanded, onToggleExpand }) => {
+const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, clima, onUpdate, onOpenScanner, isExpanded, onToggleExpand, theme: propTheme }) => {
   const { locale } = useTranslations();
   const cuota = IAQuotaManager.obtenerEstadoCuota();
   const [localExpanded, setLocalExpanded] = useState(false);
@@ -190,7 +191,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
     onUpdate();
   };
 
-  const theme = localStorage.getItem('petplant_game_theme') || 'nature';
+  const theme = propTheme || localStorage.getItem('petplant_game_theme') || 'nature';
 
   const registrarRiego = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -1072,18 +1073,20 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
               {planta.nombreComun}
               {theme === 'kawaii' && ' (◕‿◕✿)'}
             </h3>
-            <div style={{ 
-              fontSize: '11px', 
-              color: 'var(--game-text, #888)', 
-              fontStyle: 'italic', 
-              fontFamily: 'var(--game-font, sans-serif)',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              maxWidth: '100%'
-            }} title={planta.nombreCientifico || ''}>
-              {planta.nombreCientifico || 'Sin Taxonomía Científica'}
-            </div>
+            {expanded && (
+              <div style={{ 
+                fontSize: '11px', 
+                color: 'var(--game-text, #888)', 
+                fontStyle: 'italic', 
+                fontFamily: 'var(--game-font, sans-serif)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '100%'
+              }} title={planta.nombreCientifico || ''}>
+                {planta.nombreCientifico || 'Sin Taxonomía Científica'}
+              </div>
+            )}
             
             {/* Badge de Riego Rápido */}
             {(() => {
@@ -1123,7 +1126,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                   }}>
                     {textoRiego}
                   </span>
-                  {clima && (
+                  {expanded && clima && (
                     <span style={{
                       fontSize: '10px',
                       background: 'rgba(2, 136, 209, 0.08)',
@@ -1146,62 +1149,11 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }} className="no-print">
-          {expanded && (
-            <button 
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowDeleteConfirm(true);
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '16px',
-                padding: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#c62828'
-              }}
-              title="Eliminar Planta"
-            >
-              🗑️
-            </button>
+          {!expanded && (
+            <span style={{ fontSize: '20px', padding: '10px', color: 'var(--game-text-bright)', fontFamily: 'monospace' }}>
+              ▼
+            </span>
           )}
-          {expanded && (
-            <button 
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditNombreComun(planta.nombreComun);
-                setEditNombreCientifico(planta.nombreCientifico || '');
-                setEditUbicacion(planta.ubicacionHabitacion);
-                setEditIntervalo(String(planta.intervaloRiegoDias));
-                setEditToxicidadFelina(planta.toxicidadFelina);
-                setEditToxicidadCanina(planta.toxicidadCanina || 'Segura');
-                setEditCompuestosToxicos(planta.compuestosToxicos || '');
-                setIsEditing(true);
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '16px',
-                padding: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--game-text-bright)'
-              }}
-              title="Editar Planta"
-            >
-              ✏️
-            </button>
-          )}
-          <span style={{ fontSize: '20px', padding: '10px', color: 'var(--game-text-bright)', fontFamily: 'monospace' }}>
-            {expanded ? '▲' : '▼'}
-          </span>
         </div>
       </div>
 
@@ -2079,18 +2031,8 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
 export const PlantCard = React.memo(PlantCardComponent, (prevProps, nextProps) => {
   return (
     prevProps.isExpanded === nextProps.isExpanded &&
-    prevProps.planta.id === nextProps.planta.id &&
-    prevProps.planta.nombreComun === nextProps.planta.nombreComun &&
-    prevProps.planta.nombreCientifico === nextProps.planta.nombreCientifico &&
-    prevProps.planta.grosorHoja === nextProps.planta.grosorHoja &&
-    prevProps.planta.intervaloRiegoDias === nextProps.planta.intervaloRiegoDias &&
-    prevProps.planta.ultimaFechaRiego === nextProps.planta.ultimaFechaRiego &&
-    prevProps.planta.proximaFechaRiego === nextProps.planta.proximaFechaRiego &&
-    prevProps.planta.fotoUrl === nextProps.planta.fotoUrl &&
-    JSON.stringify(prevProps.planta.fotos) === JSON.stringify(nextProps.planta.fotos) &&
-    prevProps.planta.temperaturaZona === nextProps.planta.temperaturaZona &&
-    JSON.stringify(prevProps.planta.diarioFoliar) === JSON.stringify(nextProps.planta.diarioFoliar) &&
-    JSON.stringify(prevProps.planta.diagnosticosIA) === JSON.stringify(nextProps.planta.diagnosticosIA) &&
+    prevProps.theme === nextProps.theme &&
+    JSON.stringify(prevProps.planta) === JSON.stringify(nextProps.planta) &&
     JSON.stringify(prevProps.clima) === JSON.stringify(nextProps.clima)
   );
 });

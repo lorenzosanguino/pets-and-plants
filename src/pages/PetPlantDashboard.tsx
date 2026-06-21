@@ -1454,6 +1454,7 @@ export const PetPlantDashboard: React.FC = () => {
                                 }}
                                 isExpanded={expandedCardId === m.id}
                                 onToggleExpand={() => setExpandedCardId(expandedCardId === m.id ? null : m.id)}
+                                theme={uiTheme}
                               />
                             </Suspense>
                           ))
@@ -1486,6 +1487,7 @@ export const PetPlantDashboard: React.FC = () => {
                                 }}
                                 isExpanded={expandedCardId === p.id}
                                 onToggleExpand={() => setExpandedCardId(expandedCardId === p.id ? null : p.id)}
+                                theme={uiTheme}
                               />
                             </Suspense>
                           ))

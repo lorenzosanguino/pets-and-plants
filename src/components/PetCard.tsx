@@ -20,9 +20,10 @@ interface PetCardProps {
   onOpenScanner?: (mode: 'salud_mascota', assetId: string) => void;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
+  theme?: string;
 }
 
-const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScanner, isExpanded, onToggleExpand }) => {
+const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScanner, isExpanded, onToggleExpand, theme: propTheme }) => {
   const { locale } = useTranslations();
   const cuota = IAQuotaManager.obtenerEstadoCuota();
   const [localExpanded, setLocalExpanded] = useState(false);
@@ -40,6 +41,10 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
   // Estado local para deparasitación — refleja cambios inmediatamente sin esperar al padre
   const [localVacunasChecklist, setLocalVacunasChecklist] = useState<string[]>(() => mascota.vacunasChecklist || []);
 
+  useEffect(() => {
+    setLocalVacunasChecklist(mascota.vacunasChecklist || []);
+  }, [mascota.vacunasChecklist]);
+
   const toggleExpanded = () => {
     if (onToggleExpand) {
       onToggleExpand();
@@ -55,7 +60,7 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   
-  const theme = localStorage.getItem('petplant_game_theme') || 'nature';
+  const theme = propTheme || localStorage.getItem('petplant_game_theme') || 'nature';
 
   const getSexoBadgeStyle = () => {
     const isFemale = mascota.sexo === 'Hembra';
@@ -932,23 +937,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
     }}>
       {renderPetMoodBackground()}
       {/* HUD de Nivel en Tema Gaming */}
-      {theme === 'gaming' && (
-        <div style={{
-          position: 'absolute',
-          top: '12px',
-          right: '12px',
-          background: 'rgba(0,0,0,0.5)',
-          padding: '4px 8px',
-          borderRadius: '4px',
-          fontSize: '10px',
-          color: 'var(--game-accent, #ffb300)',
-          fontWeight: 'bold',
-          border: '1px solid var(--game-border-color)',
-          zIndex: 5
-        }}>
-          LVL {((mascota.historialVacunas || []).length) + 1}
-        </div>
-      )}
+
 
       {/* Cabecera con Foto Real y Avatar Badge (Click para expandir/colapsar) */}
       <div 
@@ -1059,75 +1048,25 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                   {mascota.sexo === 'Hembra' ? '♀ Hembra' : '♂ Macho'}
                 </span>
               )}
-              {esMamifero(mascota.especie) && mascota.castrado !== undefined && (
-                <span style={{ ...getCastradoBadgeStyle(), margin: 0, fontSize: '11px', padding: '2px 6px' }}>
-                  {mascota.castrado ? '✂️ Castrado/a' : '🥚 Sin castrar'}
-                </span>
-              )}
               {mascota.fechaNacimiento && (
                 <span style={{ ...getEdadBadgeStyle(), margin: 0, fontSize: '11px', padding: '2px 6px' }}>
                   🎂 {calcularEdadMascota(mascota.fechaNacimiento)}
+                </span>
+              )}
+              {expanded && esMamifero(mascota.especie) && mascota.castrado !== undefined && (
+                <span style={{ ...getCastradoBadgeStyle(), margin: 0, fontSize: '11px', padding: '2px 6px' }}>
+                  {mascota.castrado ? '✂️ Castrado/a' : '🥚 Sin castrar'}
                 </span>
               )}
             </div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }} className="no-print">
-          {expanded && (
-            <button 
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowDeleteConfirm(true);
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '16px',
-                padding: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#c62828'
-              }}
-              title="Eliminar Mascota"
-            >
-              🗑️
-            </button>
+          {!expanded && (
+            <span style={{ fontSize: '20px', padding: '10px', color: 'var(--game-text-bright)', fontFamily: 'monospace' }}>
+              ▼
+            </span>
           )}
-          {expanded && (
-            <button 
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditNombre(mascota.nombre);
-                setEditEspecie(mascota.especie);
-                setEditRaza(mascota.raza || '');
-                setEditSexo(mascota.sexo || 'Macho');
-                setEditCastrado(mascota.castrado || false);
-                setEditEsMamifero(mascota.sexo !== undefined || mascota.castrado !== undefined);
-                setIsEditing(true);
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '16px',
-                padding: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--game-text-bright)'
-              }}
-              title="Editar Mascota"
-            >
-              ✏️
-            </button>
-          )}
-          <span style={{ fontSize: '20px', padding: '10px', color: 'var(--game-text-bright)', fontFamily: 'monospace' }}>
-            {expanded ? '▲' : '▼'}
-          </span>
         </div>
       </div>
 
@@ -2036,15 +1975,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
 export const PetCard = React.memo(PetCardComponent, (prevProps, nextProps) => {
   return (
     prevProps.isExpanded === nextProps.isExpanded &&
-    prevProps.mascota.id === nextProps.mascota.id &&
-    prevProps.mascota.nombre === nextProps.mascota.nombre &&
-    prevProps.mascota.especie === nextProps.mascota.especie &&
-    prevProps.mascota.raza === nextProps.mascota.raza &&
-    prevProps.mascota.fechaNacimiento === nextProps.mascota.fechaNacimiento &&
-    prevProps.mascota.fotoUrl === nextProps.mascota.fotoUrl &&
-    JSON.stringify(prevProps.mascota.fotos) === JSON.stringify(nextProps.mascota.fotos) &&
-    JSON.stringify(prevProps.mascota.registroPeso) === JSON.stringify(nextProps.mascota.registroPeso) &&
-    JSON.stringify(prevProps.mascota.historialVacunas) === JSON.stringify(nextProps.mascota.historialVacunas) &&
-    JSON.stringify(prevProps.mascota.diagnosticosIA) === JSON.stringify(nextProps.mascota.diagnosticosIA)
+    prevProps.theme === nextProps.theme &&
+    JSON.stringify(prevProps.mascota) === JSON.stringify(nextProps.mascota)
   );
 });
