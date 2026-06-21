@@ -1062,58 +1062,6 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }} className="no-print">
-          {expanded && (
-            <button 
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowDeleteConfirm(true);
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '16px',
-                padding: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#c62828'
-              }}
-              title="Eliminar Mascota"
-            >
-              🗑️
-            </button>
-          )}
-          {expanded && (
-            <button 
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditNombre(mascota.nombre);
-                setEditEspecie(mascota.especie);
-                setEditRaza(mascota.raza || '');
-                setEditSexo(mascota.sexo || 'Macho');
-                setEditCastrado(mascota.castrado || false);
-                setEditEsMamifero(mascota.sexo !== undefined || mascota.castrado !== undefined);
-                setIsEditing(true);
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '16px',
-                padding: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--game-text-bright)'
-              }}
-              title="Editar Mascota"
-            >
-              ✏️
-            </button>
-          )}
           <span style={{ fontSize: '20px', padding: '10px', color: 'var(--game-text-bright)', fontFamily: 'monospace' }}>
             {expanded ? '▲' : '▼'}
           </span>

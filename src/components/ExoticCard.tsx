@@ -557,55 +557,6 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }} className="no-print">
-          {isExpanded && (
-            <button 
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowDeleteConfirm(true);
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '16px',
-                padding: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#c62828'
-              }}
-              title="Eliminar Ficha"
-            >
-              🗑️
-            </button>
-          )}
-          {isExpanded && (
-            <button 
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditNombre(exotico.nombre);
-                setEditEspecie(exotico.especie);
-                setEditTipoEspecifico(exotico.tipoEspecifico);
-                setIsEditing(true);
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '16px',
-                padding: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--game-text-bright)'
-              }}
-              title="Editar Exótico"
-            >
-              ✏️
-            </button>
-          )}
           <span style={{ fontSize: '20px', padding: '10px', color: 'var(--game-text-bright)', fontFamily: 'monospace' }}>
             {isExpanded ? '▲' : '▼'}
           </span>

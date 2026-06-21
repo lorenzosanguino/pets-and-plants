@@ -1133,6 +1133,8 @@ export const PetPlantDashboard: React.FC = () => {
             uiTheme={uiTheme}
             clima={climaActual}
             onNavigate={(mode, tab, e) => triggerRippleTransition(mode, tab, e)}
+            mascotas={mascotas}
+            plantas={plantas}
           />
         </Suspense>
       )}
