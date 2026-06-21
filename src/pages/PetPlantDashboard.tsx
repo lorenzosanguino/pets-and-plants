@@ -22,6 +22,7 @@ const ManualPlantForm    = lazy(() => import('../components/ManualRegisterModal'
 const ManualExoticForm   = lazy(() => import('../components/ManualRegisterModal').then(m => ({ default: m.ManualExoticForm })));
 const LandingView        = lazy(() => import('../components/LandingView').then(m => ({ default: m.LandingView })));
 const SettingsView       = lazy(() => import('../components/SettingsView').then(m => ({ default: m.SettingsView })));
+const ConfettiOverlay    = lazy(() => import('../components/ConfettiOverlay').then(m => ({ default: m.ConfettiOverlay })));
 
 // ── Esqueleto de carga inteligente (se muestra mientras carga el componente) ──
 const ChunkLoader: React.FC<{ height?: string }> = ({ height = '120px' }) => (
@@ -131,6 +132,25 @@ export const PetPlantDashboard: React.FC = () => {
       window.removeEventListener('mousemove', handleMouseMove);
     };
   }, []);
+
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  const triggerCelebration = () => {
+    try {
+      import('../utils/audioFeedback').then(({ playSoundSuccess }) => {
+        playSoundSuccess();
+      });
+    } catch {}
+    setShowCelebration(true);
+    setTimeout(() => {
+      setShowCelebration(false);
+    }, 4000);
+  };
+
+  const handleSuccessRegister = async () => {
+    await refreshData();
+    triggerCelebration();
+  };
 
   const triggerRippleTransition = React.useCallback((
     mode: 'landing' | 'pets' | 'plants' | 'exotics' | 'travels' | 'consultants',
@@ -1659,17 +1679,17 @@ export const PetPlantDashboard: React.FC = () => {
                 {showManualRegister === 'pet' ? (
                   <ManualPetForm 
                     onClose={() => setShowManualRegister(null)}
-                    onUpdate={refreshData}
+                    onUpdate={handleSuccessRegister}
                   />
                 ) : showManualRegister === 'exotic' ? (
                   <ManualExoticForm
                     onClose={() => setShowManualRegister(null)}
-                    onUpdate={refreshData}
+                    onUpdate={handleSuccessRegister}
                   />
                 ) : (
                   <ManualPlantForm
                     onClose={() => setShowManualRegister(null)}
-                    onUpdate={refreshData}
+                    onUpdate={handleSuccessRegister}
                   />
                 )}
               </Suspense>
@@ -1754,6 +1774,12 @@ export const PetPlantDashboard: React.FC = () => {
       )}
 
 
+
+      {showCelebration && (
+        <Suspense fallback={null}>
+          <ConfettiOverlay />
+        </Suspense>
+      )}
 
     </div>
   );
