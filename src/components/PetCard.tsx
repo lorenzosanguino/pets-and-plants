@@ -765,7 +765,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
     const act = mascota.actividad;
     const esp = mascota.especie;
     
-    let backgroundStyle: React.CSSProperties = {
+    const backgroundStyle: React.CSSProperties = {
       position: 'absolute',
       top: 0,
       left: 0,

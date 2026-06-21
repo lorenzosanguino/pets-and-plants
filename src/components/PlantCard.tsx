@@ -786,7 +786,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
   }
 
   const renderMicroClimaBackground = () => {
-    let backgroundStyle: React.CSSProperties = {
+    const backgroundStyle: React.CSSProperties = {
       position: 'absolute',
       top: 0,
       left: 0,
