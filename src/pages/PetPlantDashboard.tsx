@@ -1072,6 +1072,7 @@ export const PetPlantDashboard: React.FC = () => {
         <Suspense fallback={<ChunkLoader height="300px" />}>
           <LandingView 
             uiTheme={uiTheme}
+            clima={climaActual}
             onNavigate={(mode, tab, e) => triggerRippleTransition(mode, tab, e)}
           />
         </Suspense>

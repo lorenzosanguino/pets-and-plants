@@ -1,7 +1,9 @@
 import React from 'react';
+import type { DatosClimaticos } from '../services/weatherService';
 
 interface LandingViewProps {
   uiTheme: 'gaming' | 'nature' | 'kawaii' | 'vintage';
+  clima?: DatosClimaticos | null;
   onNavigate: (
     mode: 'landing' | 'pets' | 'plants' | 'exotics' | 'travels' | 'consultants',
     tab: 'dashboard' | 'consultants' | 'settings',
@@ -9,8 +11,399 @@ interface LandingViewProps {
   ) => void;
 }
 
+export const LandingWeatherBackground: React.FC<{
+  uiTheme: 'gaming' | 'nature' | 'kawaii' | 'vintage';
+  clima?: DatosClimaticos | null;
+}> = ({ uiTheme, clima }) => {
+  const temp = clima?.temperatura ?? 20;
+  const hum = clima?.humedad ?? 50;
+
+  let weatherType: 'rain' | 'snow' | 'sun' | 'dust' | 'clear' = 'clear';
+  if (hum > 70) weatherType = 'rain';
+  else if (temp < 15) weatherType = 'snow';
+  else if (temp > 28) weatherType = 'sun';
+  else if (hum < 38) weatherType = 'dust';
+
+  const particleCount = 20;
+  const particles = Array.from({ length: particleCount }, (_, i) => ({
+    id: i,
+    left: `${Math.random() * 100}%`,
+    delay: `${Math.random() * 5}s`,
+    duration: `${3 + Math.random() * 4}s`,
+    scale: 0.5 + Math.random() * 0.8,
+  }));
+
+  const getParticleContent = (index: number) => {
+    if (uiTheme === 'gaming') {
+      if (weatherType === 'rain') return <div className="weather-particle cyber-rain" />;
+      if (weatherType === 'snow') return <div className="weather-particle cyber-snow" />;
+      if (weatherType === 'sun') return <div className="weather-particle cyber-sun" />;
+      if (weatherType === 'dust') return <div className="weather-particle cyber-dust" />;
+      return <div className="weather-particle cyber-clear" />;
+    }
+    if (uiTheme === 'kawaii') {
+      const kawaiiParticles = {
+        rain: ['💧', '🌈', '🌸', '🌦️'],
+        snow: ['❄️', '☁️', '🤍', '⭐'],
+        sun: ['☀️', '✨', '💖', '🍭'],
+        dust: ['✨', '🍃', '🧸', '🎈'],
+        clear: ['🌸', '⭐', '🎈', '🍀'],
+      };
+      const list = kawaiiParticles[weatherType];
+      return <span style={{ fontSize: '20px' }}>{list[index % list.length]}</span>;
+    }
+    if (uiTheme === 'vintage') {
+      if (weatherType === 'rain') return <div className="weather-particle vintage-rain" />;
+      if (weatherType === 'snow') return <div className="weather-particle vintage-snow" />;
+      if (weatherType === 'sun') return <div className="weather-particle vintage-sun" />;
+      if (weatherType === 'dust') return <div className="weather-particle vintage-dust" />;
+      const vintagePetals = ['🌸', '🍂', '🌾', '🌼'];
+      return <span style={{ opacity: 0.6, fontSize: '18px' }}>{vintagePetals[index % vintagePetals.length]}</span>;
+    }
+    if (weatherType === 'rain') {
+      return (
+        <svg width="8" height="24" viewBox="0 0 8 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 0C4.5 4 8 16 8 20C8 22.2091 6.20914 24 4 24C1.79086 24 0 22.2091 0 20C0 16 3.5 4 4 0Z" fill="rgba(46, 125, 50, 0.4)" />
+        </svg>
+      );
+    }
+    if (weatherType === 'snow') {
+      return <span style={{ fontSize: '16px', color: '#81c784', opacity: 0.8 }}>❄️</span>;
+    }
+    if (weatherType === 'sun') {
+      return <div className="weather-particle nature-sun-spark" />;
+    }
+    if (weatherType === 'dust') {
+      return <div className="weather-particle nature-pollen" />;
+    }
+    const natureLeaves = ['🍃', '🍂', '🍁', '🍀'];
+    return <span style={{ fontSize: '18px', opacity: 0.7 }}>{natureLeaves[index % natureLeaves.length]}</span>;
+  };
+
+  return (
+    <div className="landing-weather-background">
+      <div className={`weather-ambient-gradient theme-${uiTheme} weather-${weatherType}`} />
+      <div className="weather-particles-container">
+        {particles.map((p, idx) => (
+          <div
+            key={p.id}
+            className={`weather-particle-wrapper weather-${weatherType} theme-${uiTheme}`}
+            style={{
+              left: p.left,
+              animationDelay: p.delay,
+              animationDuration: p.duration,
+              transform: `scale(${p.scale})`,
+            }}
+          >
+            {getParticleContent(idx)}
+          </div>
+        ))}
+      </div>
+
+      <style>{`
+        .landing-weather-background {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          overflow: hidden;
+          pointer-events: none;
+          z-index: 1;
+          border-radius: inherit;
+        }
+
+        .weather-ambient-gradient {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          transition: background 1.5s ease-in-out;
+          opacity: 0.18;
+        }
+
+        .weather-ambient-gradient.theme-nature.weather-clear {
+          background: radial-gradient(circle at 80% 20%, rgba(129, 199, 132, 0.4) 0%, transparent 70%);
+        }
+        .weather-ambient-gradient.theme-nature.weather-sun {
+          background: radial-gradient(circle at 80% 20%, rgba(255, 235, 59, 0.5) 0%, transparent 60%);
+        }
+        .weather-ambient-gradient.theme-nature.weather-rain {
+          background: linear-gradient(180deg, rgba(76, 175, 80, 0.15) 0%, rgba(33, 150, 243, 0.25) 100%);
+        }
+        .weather-ambient-gradient.theme-nature.weather-snow {
+          background: linear-gradient(180deg, rgba(224, 242, 241, 0.3) 0%, rgba(128, 203, 196, 0.2) 100%);
+        }
+        .weather-ambient-gradient.theme-nature.weather-dust {
+          background: radial-gradient(circle at 50% 50%, rgba(244, 243, 236, 0.4) 0%, rgba(215, 204, 200, 0.2) 100%);
+        }
+
+        .weather-ambient-gradient.theme-gaming {
+          opacity: 0.12;
+        }
+        .weather-ambient-gradient.theme-gaming.weather-clear {
+          background: radial-gradient(circle at 80% 20%, rgba(102, 252, 241, 0.3) 0%, transparent 60%);
+        }
+        .weather-ambient-gradient.theme-gaming.weather-sun {
+          background: radial-gradient(circle at 80% 20%, rgba(255, 0, 127, 0.35) 0%, transparent 60%);
+        }
+        .weather-ambient-gradient.theme-gaming.weather-rain {
+          background: linear-gradient(180deg, rgba(10, 25, 47, 0.8) 0%, rgba(102, 252, 241, 0.2) 100%);
+        }
+        .weather-ambient-gradient.theme-gaming.weather-snow {
+          background: linear-gradient(180deg, rgba(13, 13, 26, 0.9) 0%, rgba(255, 255, 255, 0.1) 100%);
+        }
+        .weather-ambient-gradient.theme-gaming.weather-dust {
+          background: radial-gradient(circle at 50% 50%, rgba(255, 143, 0, 0.1) 0%, rgba(15, 22, 36, 0.9) 100%);
+        }
+
+        .weather-ambient-gradient.theme-kawaii.weather-clear {
+          background: radial-gradient(circle at 80% 20%, rgba(255, 224, 230, 0.6) 0%, transparent 70%);
+        }
+        .weather-ambient-gradient.theme-kawaii.weather-sun {
+          background: radial-gradient(circle at 80% 20%, rgba(255, 249, 196, 0.8) 0%, transparent 60%);
+        }
+        .weather-ambient-gradient.theme-kawaii.weather-rain {
+          background: linear-gradient(180deg, rgba(243, 229, 245, 0.4) 0%, rgba(179, 229, 252, 0.4) 100%);
+        }
+        .weather-ambient-gradient.theme-kawaii.weather-snow {
+          background: linear-gradient(180deg, rgba(236, 239, 241, 0.5) 0%, rgba(248, 187, 208, 0.3) 100%);
+        }
+        .weather-ambient-gradient.theme-kawaii.weather-dust {
+          background: radial-gradient(circle at 50% 50%, rgba(255, 243, 224, 0.5) 0%, transparent 100%);
+        }
+
+        .weather-ambient-gradient.theme-vintage.weather-clear {
+          background: radial-gradient(circle at 80% 20%, rgba(212, 175, 55, 0.25) 0%, transparent 70%);
+        }
+        .weather-ambient-gradient.theme-vintage.weather-sun {
+          background: radial-gradient(circle at 80% 20%, rgba(255, 179, 0, 0.2) 0%, transparent 60%);
+        }
+        .weather-ambient-gradient.theme-vintage.weather-rain {
+          background: linear-gradient(180deg, rgba(220, 215, 201, 0.3) 0%, rgba(109, 139, 116, 0.2) 100%);
+        }
+        .weather-ambient-gradient.theme-vintage.weather-snow {
+          background: linear-gradient(180deg, rgba(245, 245, 238, 0.4) 0%, rgba(200, 190, 170, 0.2) 100%);
+        }
+        .weather-ambient-gradient.theme-vintage.weather-dust {
+          background: radial-gradient(circle at 50% 50%, rgba(206, 179, 133, 0.2) 0%, transparent 100%);
+        }
+
+        .weather-particles-container {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          top: 0;
+          left: 0;
+        }
+
+        .weather-particle-wrapper {
+          position: absolute;
+          top: -30px;
+          opacity: 0;
+          will-change: transform, opacity;
+        }
+
+        .weather-particle-wrapper.weather-rain {
+          animation: weatherFallRain linear infinite;
+        }
+
+        @keyframes weatherFallRain {
+          0% {
+            transform: translateY(-20px) rotate(15deg);
+            opacity: 0;
+          }
+          10% {
+            opacity: 0.7;
+          }
+          90% {
+            opacity: 0.7;
+          }
+          100% {
+            transform: translateY(105vh) rotate(15deg);
+            opacity: 0;
+          }
+        }
+
+        .weather-particle.cyber-rain {
+          width: 2px;
+          height: 35px;
+          background: linear-gradient(180deg, rgba(102, 252, 241, 0.8), transparent);
+          box-shadow: 0 0 8px rgba(102, 252, 241, 0.7);
+        }
+
+        .weather-particle.vintage-rain {
+          width: 1.5px;
+          height: 25px;
+          background: linear-gradient(180deg, rgba(139, 128, 107, 0.5), transparent);
+        }
+
+        .weather-particle-wrapper.weather-snow {
+          animation: weatherFallSnow linear infinite;
+        }
+
+        @keyframes weatherFallSnow {
+          0% {
+            transform: translateY(-20px) translateX(0) rotate(0deg);
+            opacity: 0;
+          }
+          10% {
+            opacity: 0.8;
+          }
+          50% {
+            transform: translateY(50vh) translateX(25px) rotate(180deg);
+          }
+          90% {
+            opacity: 0.8;
+          }
+          100% {
+            transform: translateY(105vh) translateX(-15px) rotate(360deg);
+            opacity: 0;
+          }
+        }
+
+        .weather-particle.cyber-snow {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #fff;
+          box-shadow: 0 0 10px #66fcf1, 0 0 20px #66fcf1;
+        }
+
+        .weather-particle.vintage-snow {
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          background: rgba(220, 215, 201, 0.8);
+        }
+
+        .weather-particle-wrapper.weather-sun {
+          animation: weatherRiseSun linear infinite;
+          top: auto;
+          bottom: -30px;
+        }
+
+        @keyframes weatherRiseSun {
+          0% {
+            transform: translateY(0) scale(0.6) rotate(0deg);
+            opacity: 0;
+          }
+          15% {
+            opacity: 0.6;
+          }
+          85% {
+            opacity: 0.6;
+          }
+          100% {
+            transform: translateY(-105vh) scale(1.2) rotate(90deg);
+            opacity: 0;
+          }
+        }
+
+        .weather-particle.nature-sun-spark {
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(255, 235, 59, 0.8) 0%, rgba(255, 193, 7, 0) 70%);
+          filter: blur(1px);
+        }
+
+        .weather-particle.cyber-sun {
+          width: 12px;
+          height: 12px;
+          border-radius: 3px;
+          background: #ff007f;
+          box-shadow: 0 0 10px #ff007f, 0 0 20px rgba(255, 0, 127, 0.5);
+        }
+
+        .weather-particle.vintage-sun {
+          width: 10px;
+          height: 10px;
+          background: rgba(212, 175, 55, 0.5);
+          clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+        }
+
+        .weather-particle-wrapper.weather-dust {
+          animation: weatherDriftDust linear infinite;
+        }
+
+        @keyframes weatherDriftDust {
+          0% {
+            transform: translateY(-20px) translateX(0) scale(0.7);
+            opacity: 0;
+          }
+          20% {
+            opacity: 0.5;
+          }
+          80% {
+            opacity: 0.5;
+          }
+          100% {
+            transform: translateY(105vh) translateX(60px) scale(1.1);
+            opacity: 0;
+          }
+        }
+
+        .weather-particle.nature-pollen {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: rgba(139, 195, 74, 0.6);
+          filter: blur(0.5px);
+        }
+
+        .weather-particle.cyber-dust {
+          width: 6px;
+          height: 6px;
+          background: #ff8f00;
+          box-shadow: 0 0 8px #ff8f00;
+        }
+
+        .weather-particle.vintage-dust {
+          width: 4px;
+          height: 4px;
+          border-radius: 50%;
+          background: rgba(206, 179, 133, 0.6);
+        }
+
+        .weather-particle-wrapper.weather-clear {
+          animation: weatherRiseClear linear infinite;
+          top: auto;
+          bottom: -30px;
+        }
+
+        @keyframes weatherRiseClear {
+          0% {
+            transform: translateY(0) translateX(0) rotate(0deg);
+            opacity: 0;
+          }
+          10% {
+            opacity: 0.6;
+          }
+          90% {
+            opacity: 0.6;
+          }
+          100% {
+            transform: translateY(-105vh) translateX(30px) rotate(180deg);
+            opacity: 0;
+          }
+        }
+
+        .weather-particle.cyber-clear {
+          width: 8px;
+          height: 2px;
+          background: #66fcf1;
+          box-shadow: 0 0 6px #66fcf1;
+        }
+      `}</style>
+    </div>
+  );
+};
+
 export const LandingView: React.FC<LandingViewProps> = ({
   uiTheme,
+  clima,
   onNavigate,
 }) => {
   return (
@@ -29,6 +422,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
       justifyContent: 'center',
       zIndex: 2
     }}>
+      {/* Ambiente Meteorológico de Fondo */}
+      <LandingWeatherBackground uiTheme={uiTheme} clima={clima} />
       {/* Elementos decorativos */}
       <div className="landing-decorator" style={{ position: 'absolute', top: '10px', left: '10px', fontSize: '32px' }}>🌿</div>
       <div className="landing-decorator-delay" style={{ position: 'absolute', top: '120px', left: '30px', fontSize: '28px' }}>🐾</div>
