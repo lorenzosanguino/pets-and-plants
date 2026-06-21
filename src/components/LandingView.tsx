@@ -2,14 +2,16 @@ import React from 'react';
 
 interface LandingViewProps {
   uiTheme: 'gaming' | 'nature' | 'kawaii' | 'vintage';
-  setExperienceMode: (mode: 'landing' | 'pets' | 'plants' | 'exotics' | 'travels' | 'consultants') => void;
-  setActiveTab: (tab: 'dashboard' | 'consultants' | 'settings') => void;
+  onNavigate: (
+    mode: 'landing' | 'pets' | 'plants' | 'exotics' | 'travels' | 'consultants',
+    tab: 'dashboard' | 'consultants' | 'settings',
+    e: React.MouseEvent
+  ) => void;
 }
 
 export const LandingView: React.FC<LandingViewProps> = ({
   uiTheme,
-  setExperienceMode,
-  setActiveTab,
+  onNavigate,
 }) => {
   return (
     <div className="landing-view-wrapper" style={{
@@ -62,7 +64,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             border: 'var(--game-border, 1px solid #e3f2fd)',
             boxShadow: 'var(--game-shadow, 0 8px 30px rgba(33, 150, 243, 0.05))',
           }}
-          onClick={() => { setExperienceMode('pets'); setActiveTab('dashboard'); }}
+          onClick={(e) => onNavigate('pets', 'dashboard', e)}
           onMouseEnter={(e) => {
             if (window.innerWidth > 600) {
               e.currentTarget.style.transform = 'translateY(-8px)';
@@ -118,7 +120,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             border: 'var(--game-border, 1px solid #e8f5e9)',
             boxShadow: 'var(--game-shadow, 0 8px 30px rgba(76, 175, 80, 0.05))',
           }}
-          onClick={() => { setExperienceMode('plants'); setActiveTab('dashboard'); }}
+          onClick={(e) => onNavigate('plants', 'dashboard', e)}
           onMouseEnter={(e) => {
             if (window.innerWidth > 600) {
               e.currentTarget.style.transform = 'translateY(-8px)';
@@ -174,7 +176,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             border: 'var(--game-border, 1px solid #fff8e1)',
             boxShadow: 'var(--game-shadow, 0 8px 30px rgba(255, 143, 0, 0.05))',
           }}
-          onClick={() => { setExperienceMode('exotics'); setActiveTab('dashboard'); }}
+          onClick={(e) => onNavigate('exotics', 'dashboard', e)}
           onMouseEnter={(e) => {
             if (window.innerWidth > 600) {
               e.currentTarget.style.transform = 'translateY(-8px)';

@@ -795,4 +795,33 @@ button {
   }
 }
 
+/* Efecto de Onda de Transición de Página (Ripple Transition) */
+.page-ripple-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999999;
+  pointer-events: none;
+  background: var(--ripple-bg, #2e7d32);
+  clip-path: circle(0% at var(--ripple-x, 50%) var(--ripple-y, 50%));
+  animation: pageRippleAnimation 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+}
+
+@keyframes pageRippleAnimation {
+  0% {
+    clip-path: circle(0% at var(--ripple-x, 50%) var(--ripple-y, 50%));
+    opacity: 1;
+  }
+  60% {
+    clip-path: circle(145% at var(--ripple-x, 50%) var(--ripple-y, 50%));
+    opacity: 1;
+  }
+  100% {
+    clip-path: circle(145% at var(--ripple-x, 50%) var(--ripple-y, 50%));
+    opacity: 0;
+  }
+}
+
 

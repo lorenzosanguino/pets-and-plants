@@ -89,6 +89,55 @@ export const PetPlantDashboard: React.FC = () => {
   const [experienceMode, setExperienceMode] = useState<'landing' | 'pets' | 'plants' | 'exotics' | 'travels' | 'consultants'>('landing');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'consultants' | 'settings'>('dashboard');
 
+  // Page transition ripple states
+  const [rippleX, setRippleX] = useState(0);
+  const [rippleY, setRippleY] = useState(0);
+  const [rippleColor, setRippleColor] = useState('#2e7d32');
+  const [isRippling, setIsRippling] = useState(false);
+
+  const triggerRippleTransition = React.useCallback((
+    mode: 'landing' | 'pets' | 'plants' | 'exotics' | 'travels' | 'consultants',
+    tab: 'dashboard' | 'consultants' | 'settings',
+    e?: React.MouseEvent | MouseEvent
+  ) => {
+    try { playSoundClick(); } catch {}
+
+    let x = window.innerWidth / 2;
+    let y = window.innerHeight / 2;
+    if (e && typeof e.clientX === 'number' && typeof e.clientY === 'number') {
+      x = e.clientX;
+      y = e.clientY;
+    }
+
+    setRippleX(x);
+    setRippleY(y);
+
+    let color = '#2e7d32';
+    if (mode === 'pets') color = '#1976d2';
+    else if (mode === 'exotics') color = '#ff8f00';
+    else if (mode === 'travels') color = '#0284c7';
+    else if (mode === 'consultants') color = '#7b1fa2';
+    else if (mode === 'plants') color = '#2e7d32';
+    else {
+      if (uiTheme === 'gaming') color = '#0f1624';
+      else if (uiTheme === 'kawaii') color = '#ffb6c1';
+      else if (uiTheme === 'vintage') color = '#fedcb5';
+      else color = '#2e7d32';
+    }
+    
+    setRippleColor(color);
+    setIsRippling(true);
+
+    setTimeout(() => {
+      setExperienceMode(mode);
+      setActiveTab(tab);
+    }, 250);
+
+    setTimeout(() => {
+      setIsRippling(false);
+    }, 600);
+  }, [uiTheme]);
+
   useEffect(() => {
     localStorage.setItem('petplant_game_theme', uiTheme);
   }, [uiTheme]);
@@ -223,10 +272,8 @@ export const PetPlantDashboard: React.FC = () => {
 
   const handleNavigateToAsset = (tipo: 'mascota' | 'planta' | 'exotico', id: string) => {
     void id;
-    if (tipo === 'mascota') setExperienceMode('pets');
-    else if (tipo === 'planta') setExperienceMode('plants');
-    else if (tipo === 'exotico') setExperienceMode('exotics');
-    setActiveTab('dashboard');
+    const mode = tipo === 'mascota' ? 'pets' : tipo === 'planta' ? 'plants' : 'exotics';
+    triggerRippleTransition(mode, 'dashboard');
   };
 
   // Interceptar botón de Atrás en Android (popstate)
@@ -246,21 +293,16 @@ export const PetPlantDashboard: React.FC = () => {
         window.history.pushState({ mode: experienceMode, tab: activeTab }, '');
       } else {
         if (!e.state || e.state.mode === 'landing') {
-          setExperienceMode('landing');
+          triggerRippleTransition('landing', 'dashboard');
         } else {
-          if (e.state.mode && e.state.mode !== experienceMode) {
-            setExperienceMode(e.state.mode);
-          }
-          if (e.state.tab && e.state.tab !== activeTab) {
-            setActiveTab(e.state.tab);
-          }
+          triggerRippleTransition(e.state.mode, e.state.tab || 'dashboard');
         }
       }
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [experienceMode, activeTab, showScanner, showManualRegister]);
+  }, [experienceMode, activeTab, showScanner, showManualRegister, triggerRippleTransition]);
 
   // Limpieza agresiva de Service Workers y cachés antiguas para corregir fichas en móviles
   // Adicionalmente redirigimos si el usuario está en una URL de previsualización antigua de Vercel
@@ -483,14 +525,14 @@ export const PetPlantDashboard: React.FC = () => {
         const idx = parseInt(e.key) - 1;
         const targetTab = tabs[idx];
         if (targetTab) {
-          setActiveTab(targetTab);
+          triggerRippleTransition(experienceMode, targetTab);
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [uiTheme, experienceMode]);
+  }, [uiTheme, experienceMode, triggerRippleTransition]);
 
 
 
@@ -518,6 +560,18 @@ export const PetPlantDashboard: React.FC = () => {
         boxSizing: 'border-box'
       }}
     >
+      {/* Ripple overlay */}
+      {isRippling && (
+        <div 
+          className="page-ripple-overlay" 
+          style={{ 
+            '--ripple-x': `${rippleX}px`, 
+            '--ripple-y': `${rippleY}px`, 
+            '--ripple-bg': rippleColor 
+          } as React.CSSProperties} 
+        />
+      )}
+
       {/* Notificaciones flotantes de estado de red */}
       {networkNotification.message && (
         <div style={{
@@ -1018,8 +1072,7 @@ export const PetPlantDashboard: React.FC = () => {
         <Suspense fallback={<ChunkLoader height="300px" />}>
           <LandingView 
             uiTheme={uiTheme}
-            setExperienceMode={setExperienceMode}
-            setActiveTab={setActiveTab}
+            onNavigate={(mode, tab, e) => triggerRippleTransition(mode, tab, e)}
           />
         </Suspense>
       )}
@@ -1084,7 +1137,7 @@ export const PetPlantDashboard: React.FC = () => {
               }}>
                 <button 
                   disabled={experienceMode === 'pets'}
-                  onClick={() => { setExperienceMode('pets'); setActiveTab('dashboard'); try { playSoundClick(); } catch {} }}
+                  onClick={(e) => triggerRippleTransition('pets', 'dashboard', e)}
                   style={{
                     flex: 1,
                     minWidth: '80px',
@@ -1103,7 +1156,7 @@ export const PetPlantDashboard: React.FC = () => {
                 </button>
                 <button 
                   disabled={experienceMode === 'plants'}
-                  onClick={() => { setExperienceMode('plants'); setActiveTab('dashboard'); try { playSoundClick(); } catch {} }}
+                  onClick={(e) => triggerRippleTransition('plants', 'dashboard', e)}
                   style={{
                     flex: 1,
                     minWidth: '80px',
@@ -1122,7 +1175,7 @@ export const PetPlantDashboard: React.FC = () => {
                 </button>
                 <button 
                   disabled={experienceMode === 'exotics'}
-                  onClick={() => { setExperienceMode('exotics'); setActiveTab('dashboard'); try { playSoundClick(); } catch {} }}
+                  onClick={(e) => triggerRippleTransition('exotics', 'dashboard', e)}
                   style={{
                     flex: 1,
                     minWidth: '80px',
@@ -1142,7 +1195,7 @@ export const PetPlantDashboard: React.FC = () => {
               </div>
               <button 
                 disabled={experienceMode === 'travels'}
-                onClick={() => { setExperienceMode('travels'); setActiveTab('dashboard'); try { playSoundClick(); } catch {} }}
+                onClick={(e) => triggerRippleTransition('travels', 'dashboard', e)}
                 style={{
                   width: '100%',
                   padding: '8px 12px',
@@ -1164,7 +1217,7 @@ export const PetPlantDashboard: React.FC = () => {
               </button>
               <button 
                 disabled={experienceMode === 'consultants'}
-                onClick={() => { setExperienceMode('consultants'); setActiveTab('dashboard'); try { playSoundClick(); } catch {} }}
+                onClick={(e) => triggerRippleTransition('consultants', 'dashboard', e)}
                 style={{
                   width: '100%',
                   padding: '8px 12px',
@@ -1197,7 +1250,7 @@ export const PetPlantDashboard: React.FC = () => {
             WebkitOverflowScrolling: 'touch'
           }}>
             <button
-              onClick={() => { setActiveTab('dashboard'); try { playSoundClick(); } catch {} }}
+              onClick={(e) => triggerRippleTransition(experienceMode, 'dashboard', e)}
               style={{
                 padding: '12px 16px',
                 background: 'none',
@@ -1214,11 +1267,8 @@ export const PetPlantDashboard: React.FC = () => {
               {t('tabDashboard')}
             </button>
             
-
-
-            
             <button
-              onClick={() => { setActiveTab('settings'); try { playSoundClick(); } catch {} }}
+              onClick={(e) => triggerRippleTransition(experienceMode, 'settings', e)}
               style={{
                 padding: '12px 16px',
                 background: 'none',
