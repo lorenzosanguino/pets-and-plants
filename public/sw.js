@@ -7,6 +7,22 @@ const ASSETS = [
   '/icons.svg'
 ];
 
+// Limita el tamaño de la caché eliminando las entradas más antiguas (FIFO)
+function limitCacheSize(cacheName, maxItems) {
+  return caches.open(cacheName).then((cache) => {
+    return cache.keys().then((keys) => {
+      if (keys.length > maxItems) {
+        const numberToRemove = keys.length - maxItems;
+        const deletePromises = [];
+        for (let i = 0; i < numberToRemove; i++) {
+          deletePromises.push(cache.delete(keys[i]));
+        }
+        return Promise.all(deletePromises);
+      }
+    });
+  });
+}
+
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -65,7 +81,11 @@ self.addEventListener('fetch', (e) => {
           ) {
             const clone = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
-              cache.put(e.request, clone);
+              cache.put(e.request, clone).then(() => {
+                if (isImage) {
+                  limitCacheSize(CACHE_NAME, 50);
+                }
+              });
             });
           }
           return networkResponse;
@@ -155,6 +175,20 @@ self.addEventListener('message', (e) => {
       }
     };
     self.registration.showNotification(e.data.title || 'Push Simulada', options);
+  }
+});
+
+// Escuchar el evento de sincronización en segundo plano (Background Sync)
+self.addEventListener('sync', (e) => {
+  if (e.tag === 'sync-offline-mutations') {
+    e.waitUntil(
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+        const promises = clientList.map((client) => {
+          return client.postMessage({ type: 'TRIGGER_BACKGROUND_SYNC' });
+        });
+        return Promise.all(promises);
+      })
+    );
   }
 });
 

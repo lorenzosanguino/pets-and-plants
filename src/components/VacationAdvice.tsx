@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GeminiAPIService } from '../services/geminiAPI';
 import { TTSButton } from '../utils/useTTS';
+import { renderMarkdownToHTML } from '../utils/markdown';
 
 interface VacationAdviceProps {
   mode: 'plants' | 'pets' | 'exotics' | 'travels';
@@ -311,7 +312,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
                     {msg.sender === 'user' ? 'Tú:' : 'Asesor de Viajes IA:'}
                   </strong>
                 </div>
-                <span style={{ fontFamily: 'var(--game-font, sans-serif)' }}>{msg.text}</span>
+                <div dangerouslySetInnerHTML={{ __html: renderMarkdownToHTML(msg.text) }} style={{ fontFamily: 'var(--game-font, sans-serif)' }} />
                 {msg.sender === 'ia' && (
                   <div style={{ marginTop: '6px', display: 'flex', justifyContent: 'flex-start' }}>
                     <TTSButton text={msg.text} theme={theme} size="small" />

@@ -74,16 +74,26 @@ export class IAQuotaManager {
    * Obtiene el tiempo restante en milisegundos para que se libere al menos una petición de la cuota local.
    */
   static obtenerTiempoRestanteMs(): number {
-    const historialReciente = this.getHistorialUso();
-    if (historialReciente.length === 0) return 0;
-    
     const ahora = Date.now();
+    const historialReciente = this.getHistorialUso();
     
-    // El elemento más antiguo es el que primero saldrá de la ventana de 24 horas
-    const masAntiguo = Math.min(...historialReciente);
-    const tiempoParaLiberarse = masAntiguo + 24 * 60 * 60 * 1000;
+    let msRestante = 0;
+    if (historialReciente.length > 0) {
+      const masAntiguo = Math.min(...historialReciente);
+      const tiempoParaLiberarse = masAntiguo + 24 * 60 * 60 * 1000;
+      msRestante = Math.max(0, tiempoParaLiberarse - ahora);
+    }
     
-    return Math.max(0, tiempoParaLiberarse - ahora);
+    // Si el tiempo restante es 0 o menor a 5 minutos, estimamos el tiempo restante
+    // hasta la medianoche local para asegurar que se muestren horas y minutos legibles.
+    if (msRestante < 5 * 60 * 1000) {
+      const ahoraDate = new Date();
+      const medianoche = new Date(ahoraDate);
+      medianoche.setHours(24, 0, 0, 0); // Siguiente medianoche
+      msRestante = medianoche.getTime() - ahoraDate.getTime();
+    }
+    
+    return msRestante;
   }
 
   /**
@@ -144,23 +154,29 @@ export class IAQuotaManager {
       ? `Te quedan ${status.restantes} de ${status.limite} consultas gratuitas hoy.`
       : `Límite gratuito de hoy alcanzado.`;
     
+    const tiempoRestablecimientoMsg = status.esIlimitado 
+      ? '' 
+      : `Tiempo restante para restablecer la cuota diaria: ${tiempoRenovacion}.`;
+
+    const esErrorCuotaExcedida = errorStr.includes("429") || 
+                                 errorStr.toLowerCase().includes("quota") || 
+                                 errorStr.includes("RESOURCE_EXHAUSTED") ||
+                                 status.restantes === 0;
+
+    // Si es un error de cuota o se alcanzó el límite diario, mostramos las horas y minutos restantes de forma prioritaria
+    if (esErrorCuotaExcedida) {
+      return `Límite de consultas de IA alcanzado. Estará disponible de nuevo en ${tiempoRenovacion}. [${infoCuota}] (Si este aviso persiste, se ha agotado el cupo diario compartido; puedes configurar tu propia API Key gratuita en Ajustes ⚙️ para usar la app sin esperas). Mientras tanto, cargamos datos simulados de demostración. 🐾`;
+    }
+
     const retryMatch = errorStr.match(/retry\s+in\s+([\d.]+)\s*s/i) || 
                        errorStr.match(/retryDelay["']?:\s*["']?(\d+)/i) ||
                        errorStr.match(/retry\s+after\s+(\d+)/i);
-    
-    const tiempoRestablecimientoMsg = status.esIlimitado 
-      ? '' 
-      : `Tiempo restante para restablecer tu cuota diaria: ${tiempoRenovacion}.`;
 
     if (retryMatch) {
       const segundosFloat = parseFloat(retryMatch[1]);
       const segundos = Math.max(1, Math.round(segundosFloat));
       const tiempoTexto = this.formatearSegundos(segundos);
-      return `Google Gemini está descansando un momento por exceso de peticiones. Estará listo en ${tiempoTexto}. ${tiempoRestablecimientoMsg} [${infoCuota}] (Si este aviso persiste tras la espera, es probable que se haya alcanzado el límite diario global compartido; puedes configurar tu propia API Key gratuita en Ajustes ⚙️ para usar la app sin esperas). Mientras tanto, cargamos datos simulados de demostración. 🐾`;
-    }
-
-    if (errorStr.includes("429") || errorStr.toLowerCase().includes("quota") || errorStr.includes("RESOURCE_EXHAUSTED")) {
-      return `Google Gemini ha agotado el límite de peticiones compartidas o está saturado en este momento. ${tiempoRestablecimientoMsg} [${infoCuota}] Configura tu propia API Key gratuita en Ajustes ⚙️ para uso ilimitado y sin esperas. Mientras tanto, cargamos datos simulados de demostración. 🐾`;
+      return `Google Gemini está descansando un momento por exceso de peticiones. Estará listo en ${tiempoTexto}. ${tiempoRestablecimientoMsg} [${infoCuota}] (Puedes configurar tu propia API Key gratuita en Ajustes ⚙️ para evitar esperas). Mientras tanto, cargamos datos simulados de demostración. 🐾`;
     }
 
     return `Conexión limitada (${errorStr}). ${tiempoRestablecimientoMsg} [${infoCuota}] Cargando datos simulados de demostración. 🐾`;

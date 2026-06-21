@@ -1,9 +1,6 @@
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
-import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
-import { LocalDatabase } from '../database/db';
-import type { Mascota, Planta, AnimalExotico, EventoCalendario } from '../database/types';
-import { initFirebase, getFirebaseCached } from '../database/firebaseLazy';
-import { MicrosoftSyncService } from '../services/microsoftSync';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { useAppData } from '../hooks/useAppData';
+import { useSyncManager } from '../hooks/useSyncManager';
 import { NotificationManager } from '../utils/notificationManager';
 import { usePWAManager } from '../hooks/usePWAManager';
 import { useGPSWeather } from '../hooks/useGPSWeather';
@@ -45,129 +42,21 @@ const ChunkLoader: React.FC<{ height?: string }> = ({ height = '120px' }) => (
 );
 
 
-const getNowTimestamp = (): number => Date.now();
-
-const isDatabaseDefaultDemo = (mascotas: Mascota[], plantas: Planta[], exoticos: AnimalExotico[]) => {
-  return (
-    mascotas.length === 1 &&
-    mascotas[0].id === 'mascota-luna-id' &&
-    plantas.length === 1 &&
-    plantas[0].id === 'planta-fern-id' &&
-    exoticos.length === 1 &&
-    exoticos[0].id === 'exotico-tarantula-id'
-  );
-};
+// Helper functions moved to custom hooks
 
 export const PetPlantDashboard: React.FC = () => {
   const { t } = useTranslations();
-  const isRemoteSyncingRef = useRef(false);
-  const msSyncTimeoutRef = useRef<any>(null);
+  
+  const [uiTheme, setUiTheme] = useState<'gaming' | 'nature' | 'kawaii' | 'vintage'>(() => {
+    const saved = localStorage.getItem('petplant_game_theme');
+    return (saved === 'gaming' || saved === 'nature' || saved === 'kawaii' || saved === 'vintage')
+      ? saved as 'gaming' | 'nature' | 'kawaii' | 'vintage'
+      : 'nature';
+  });
 
-  // Estados para Grupo Hogar
-  const [hogarId, setHogarId] = useState<string>(() => localStorage.getItem('petplant_hogar_id') || '');
-  const [hogarNombre, setHogarNombre] = useState<string>(() => localStorage.getItem('petplant_hogar_nombre') || '');
   const [nuevoHogarNombre, setNuevoHogarNombre] = useState('');
   const [joinHogarId, setJoinHogarId] = useState('');
-  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
-  const [syncErrorMessage, setSyncErrorMessage] = useState<string | null>(null);
-  const [firebaseLoaded, setFirebaseLoaded] = useState(false);
-  const [isCloudEnabled] = useState(() => {
-    // Comprobación rápida sin cargar Firebase — si la config existe asumimos que está habilitado
-    const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDGQWW8tVP8kk6Nss-GCutohfD6IouLzp0";
-    return !!apiKey && !apiKey.includes('dummy') && localStorage.getItem('petplant_mock_auth') !== 'true';
-  });
-
-  const [joinedHogares, setJoinedHogares] = useState<Array<{ id: string; nombre: string }>>(() => {
-    try {
-      const saved = localStorage.getItem('petplant_joined_hogares');
-      const parsed = saved ? JSON.parse(saved) : [];
-      const activeId = localStorage.getItem('petplant_hogar_id') || '';
-      const activeNombre = localStorage.getItem('petplant_hogar_nombre') || '';
-      if (activeId && activeNombre && !parsed.some((h: any) => h.id === activeId)) {
-        parsed.push({ id: activeId, nombre: activeNombre });
-        localStorage.setItem('petplant_joined_hogares', JSON.stringify(parsed));
-      }
-      return parsed;
-    } catch {
-      return [];
-    }
-  });
-
-
-
-  const [climaActual, setClimaActual] = useState<any>(() => {
-    try {
-      const saved = localStorage.getItem('petplant_last_gps_weather');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
-
-  const [mascotas, setMascotas] = useState<Mascota[]>([]);
-  const [plantas, setPlantas] = useState<Planta[]>([]);
-  const [exoticos, setExoticos] = useState<AnimalExotico[]>([]);
   
-
-  const getAccentColor = () => {
-    if (experienceMode === 'pets') return '#1976d2';
-    if (experienceMode === 'exotics') return '#ff8f00';
-    if (experienceMode === 'travels') return '#0284c7';
-    if (experienceMode === 'consultants') return '#7b1fa2';
-    return '#2e7d32'; // plants
-  };
-
-  const [showScanner, setShowScanner] = useState(false);
-  const [showManualRegister, setShowManualRegister] = useState<'pet' | 'plant' | 'exotic' | null>(null);
-  const [dbError, setDbError] = useState<string | null>(null);
-  
-  const [isLoading, setIsLoading] = useState(true);
-  const [isFading, setIsFading] = useState(false);
-  
-  // Google Sign-in / Microsoft session state unified
-  const [user, setUser] = useState<{ name: string; email: string; photoURL?: string } | null>(null);
-
-  const handleContinue = () => {
-    setIsFading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      if (localStorage.getItem('petplant_gps_sync_enabled') === 'true') {
-        sincronizarTodasLasPlantasPorGPS();
-      }
-      // Precargar chunks lazy en segundo plano para que la primera navegación sea instantánea
-      setTimeout(() => {
-        import('../components/PetCard').catch(() => {});
-        import('../components/PlantCard').catch(() => {});
-        import('../components/ExoticCard').catch(() => {});
-        import('../components/IAConsultantsView').catch(() => {});
-        import('../components/ScannerModal').catch(() => {});
-      }, 1500);
-    }, 500);
-  };
-
-  const {
-    deferredPrompt,
-    isOffline,
-    dismissedInstallBanner,
-    setDismissedInstallBanner,
-    networkNotification,
-    handleInstallPWA
-  } = usePWAManager();
-
-  const refreshDataRef = useRef<any>(null);
-
-  const {
-    loadingGPS,
-    gpsSyncSuccess,
-    gpsSyncEnabled,
-    handleGPSToggle,
-    sincronizarTodasLasPlantasPorGPS
-  } = useGPSWeather(async (force) => {
-    if (refreshDataRef.current) {
-      await refreshDataRef.current(force);
-    }
-  });
-
   // Modo de Experiencia: 'landing', 'pets', 'plants', 'exotics', 'travels', 'consultants'
   const [experienceMode, setExperienceMode] = useState<'landing' | 'pets' | 'plants' | 'exotics' | 'travels' | 'consultants'>(() => {
     const saved = localStorage.getItem('petplant_experience_mode');
@@ -190,66 +79,133 @@ export const PetPlantDashboard: React.FC = () => {
     localStorage.setItem('petplant_active_tab', activeTab);
   }, [activeTab]);
 
+  const [showScanner, setShowScanner] = useState(false);
+  const [showManualRegister, setShowManualRegister] = useState<'pet' | 'plant' | 'exotic' | null>(null);
+  const [dbError, setDbError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFading, setIsFading] = useState(false);
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
-
-  const handleNavigateToAsset = (tipo: 'mascota' | 'planta' | 'exotico', id: string) => {
-    if (tipo === 'mascota') setExperienceMode('pets');
-    else if (tipo === 'planta') setExperienceMode('plants');
-    else if (tipo === 'exotico') setExperienceMode('exotics');
-
-    setActiveTab('dashboard');
-    setExpandedCardId(id);
-  };
-
+  const [customApiKey, setCustomApiKey] = useState<string>(() => localStorage.getItem('petplant_gemini_api_key') || '');
+  const [showApiKey, setShowApiKey] = useState<boolean>(false);
   const [scannerMode, setScannerMode] = useState<'registrar_mascota' | 'salud_mascota' | 'registrar_planta' | 'enfermedad_planta' | 'registrar_exotico' | 'salud_exotico' | null>(null);
   const [scannerAssetId, setScannerAssetId] = useState<string | null>(null);
 
+  const {
+    deferredPrompt,
+    isOffline,
+    dismissedInstallBanner,
+    setDismissedInstallBanner,
+    networkNotification,
+    handleInstallPWA
+  } = usePWAManager();
 
-
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (showManualRegister) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [showManualRegister]);
-
-
-
-  const [uiTheme, setUiTheme] = useState<'gaming' | 'nature' | 'kawaii' | 'vintage'>(() => {
-    const saved = localStorage.getItem('petplant_game_theme');
-    return (saved === 'gaming' || saved === 'nature' || saved === 'kawaii' || saved === 'vintage')
-      ? saved as 'gaming' | 'nature' | 'kawaii' | 'vintage'
-      : 'nature';
+  // Instantiate Cloud Sync hook
+  const syncManager = useSyncManager({
+    uiTheme,
+    setUiTheme,
+    isOffline,
+    onCloudDataReceived: async () => {
+      await appData.refreshData(false);
+    }
   });
 
-  const lastSyncedThemeRef = useRef<string | null>(null);
-  const isInitialThemeMount = useRef(true);
+  // Instantiate Local Database state hook
+  const appData = useAppData((data, isLocalEdit) => {
+    syncManager.handleLocalDataChanged(data, isLocalEdit);
+  });
 
-  useEffect(() => {
-    localStorage.setItem('petplant_game_theme', uiTheme);
+  const {
+    user,
+    hogarId,
+    hogarNombre,
+    joinedHogares,
+    syncStatus,
+    syncErrorMessage,
+    isCloudEnabled,
+    forceSyncToCloud,
+    crearHogar: crearHogarSync,
+    unirseAHogar: unirseAHogarSync,
+    desvincularHogar,
+    cambiarHogar,
+    abandonarHogar,
+    handleGoogleSignIn,
+    handleMicrosoftSignIn,
+    handleLogout
+  } = syncManager;
 
-    if (isInitialThemeMount.current) {
-      isInitialThemeMount.current = false;
-      return;
+  const crearHogar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nuevoHogarNombre.trim()) return;
+    try {
+      await crearHogarSync(nuevoHogarNombre);
+      setNuevoHogarNombre('');
+    } catch (err: any) {
+      alert("Error al crear hogar: " + err.message);
     }
+  };
 
-    if (lastSyncedThemeRef.current === uiTheme) {
-      lastSyncedThemeRef.current = null;
-      return;
+  const unirseAHogar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!joinHogarId.trim()) return;
+    try {
+      await unirseAHogarSync(joinHogarId);
+      setJoinHogarId('');
+    } catch (err: any) {
+      alert("Error al unirse al hogar: " + err.message);
     }
+  };
 
-    const activeHogar = localStorage.getItem('petplant_hogar_id');
-    if (activeHogar && localStorage.getItem('petplant_login_provider') !== 'microsoft') {
-      refreshDataRef.current?.(true);
-    }
-  }, [uiTheme]);
+  const {
+    mascotas,
+    plantas,
+    exoticos,
+    climaActual,
+    refreshData,
+    exportarCopiaSeguridad,
+    importarCopiaSeguridad
+  } = appData;
 
-  const [customApiKey, setCustomApiKey] = useState<string>(() => localStorage.getItem('petplant_gemini_api_key') || '');
-  const [showApiKey, setShowApiKey] = useState<boolean>(false);
+  // Instantiate GPS sync hook
+  const {
+    loadingGPS,
+    gpsSyncSuccess,
+    gpsSyncEnabled,
+    handleGPSToggle,
+    sincronizarTodasLasPlantasPorGPS
+  } = useGPSWeather(appData.refreshData);
+
+  const getAccentColor = () => {
+    if (experienceMode === 'pets') return '#1976d2';
+    if (experienceMode === 'exotics') return '#ff8f00';
+    if (experienceMode === 'travels') return '#0284c7';
+    if (experienceMode === 'consultants') return '#7b1fa2';
+    return '#2e7d32'; // plants
+  };
+
+  const handleContinue = () => {
+    setIsFading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+      if (localStorage.getItem('petplant_gps_sync_enabled') === 'true') {
+        sincronizarTodasLasPlantasPorGPS();
+      }
+      setTimeout(() => {
+        import('../components/PetCard').catch(() => {});
+        import('../components/PlantCard').catch(() => {});
+        import('../components/ExoticCard').catch(() => {});
+        import('../components/IAConsultantsView').catch(() => {});
+        import('../components/ScannerModal').catch(() => {});
+      }, 1500);
+    }, 500);
+  };
+
+  const handleNavigateToAsset = (tipo: 'mascota' | 'planta' | 'exotico', id: string) => {
+    void id;
+    if (tipo === 'mascota') setExperienceMode('pets');
+    else if (tipo === 'planta') setExperienceMode('plants');
+    else if (tipo === 'exotico') setExperienceMode('exotics');
+    setActiveTab('dashboard');
+  };
 
   // Interceptar botón de Atrás en Android (popstate)
   useEffect(() => {
@@ -474,1127 +430,13 @@ export const PetPlantDashboard: React.FC = () => {
     void tipo;
   };
 
-  const notificadosRef = useRef<Set<string>>(new Set());
 
-  const evaluarRecordatoriosYPendientes = async () => {
-    try {
-      const listEventos: EventoCalendario[] = await LocalDatabase.getEventosCalendario();
-      
-      const mañana = new Date();
-      mañana.setDate(mañana.getDate() + 1);
-      const añoM = mañana.getFullYear();
-      const mesM = String(mañana.getMonth() + 1).padStart(2, '0');
-      const diaM = String(mañana.getDate()).padStart(2, '0');
-      const mañanaStr = `${añoM}-${mesM}-${diaM}`;
 
-      const eventosMañana = listEventos.filter(ev => 
-        ev.fecha === mañanaStr && 
-        !ev.completado && 
-        !notificadosRef.current.has(ev.id)
-      );
 
-      const hoy = new Date();
-      const añoH = hoy.getFullYear();
-      const mesH = String(hoy.getMonth() + 1).padStart(2, '0');
-      const diaH = String(hoy.getDate()).padStart(2, '0');
-      const hoyStr = `${añoH}-${mesH}-${diaH}`;
 
-      const eventosHoy = listEventos.filter(ev => 
-        ev.fecha === hoyStr && 
-        !ev.completado && 
-        !notificadosRef.current.has(ev.id)
-      );
 
-      const listPlantas = await LocalDatabase.getPlantas();
-      const listExoticos = await LocalDatabase.getExoticos();
 
-      const hoyInicioDia = new Date();
-      hoyInicioDia.setHours(0, 0, 0, 0);
 
-      const plantasPendientes = listPlantas.filter(p => {
-        if (!p.proximaFechaRiego) return false;
-        const prox = new Date(p.proximaFechaRiego);
-        prox.setHours(0, 0, 0, 0);
-        return prox <= hoyInicioDia && !notificadosRef.current.has(`riego-${p.id}`);
-      });
-
-      const exoticosPendientes = listExoticos.filter(ex => {
-        if (!ex.ultimaAlimentacion || !ex.intervaloAlimentacionDias) return false;
-        const ult = new Date(ex.ultimaAlimentacion);
-        ult.setHours(0, 0, 0, 0);
-        const proxAlimentacion = new Date(ult.getTime() + ex.intervaloAlimentacionDias * 24 * 3600 * 1000);
-        proxAlimentacion.setHours(0, 0, 0, 0);
-        return proxAlimentacion <= hoyInicioDia && !notificadosRef.current.has(`alimentacion-${ex.id}`);
-      });
-
-      const totalAlertas = eventosMañana.length + eventosHoy.length + plantasPendientes.length + exoticosPendientes.length;
-      if (totalAlertas === 0) return;
-
-      const permisoConcedido = await NotificationManager.requestPermission();
-      if (!permisoConcedido) return;
-
-      for (const ev of eventosHoy) {
-        notificadosRef.current.add(ev.id);
-        let prefijo = '📅 Recordatorio Hoy';
-        if (ev.categoria === 'veterinario') prefijo = '🐾 Veterinaria Hoy';
-        else if (ev.categoria === 'riego') prefijo = '💧 Riego Hoy';
-        else if (ev.categoria === 'medicacion') prefijo = '💊 Medicación Hoy';
-        else if (ev.categoria === 'abono') prefijo = '🌿 Abono Hoy';
-
-        await NotificationManager.sendNotification(
-          prefijo,
-          ev.texto
-        );
-      }
-
-      for (const ev of eventosMañana) {
-        notificadosRef.current.add(ev.id);
-        let prefijo = '📅 Recordatorio Mañana';
-        if (ev.categoria === 'veterinario') prefijo = '🐾 Veterinaria Mañana';
-        else if (ev.categoria === 'riego') prefijo = '💧 Riego Mañana';
-        else if (ev.categoria === 'medicacion') prefijo = '💊 Medicación Mañana';
-        else if (ev.categoria === 'abono') prefijo = '🌿 Abono Mañana';
-
-        await NotificationManager.sendNotification(
-          prefijo,
-          ev.texto
-        );
-      }
-
-      for (const p of plantasPendientes) {
-        notificadosRef.current.add(`riego-${p.id}`);
-        await NotificationManager.sendNotification(
-          `💧 Riego Pendiente`,
-          `¡Es hora de regar tu ${p.nombreComun}! (${p.ubicacionHabitacion})`
-        );
-      }
-
-      for (const ex of exoticosPendientes) {
-        notificadosRef.current.add(`alimentacion-${ex.id}`);
-        await NotificationManager.sendNotification(
-          `🦎 Alimentación Pendiente`,
-          `¡Es hora de alimentar a ${ex.nombre} (${ex.tipoEspecifico})!`
-        );
-      }
-    } catch (err) {
-      console.warn("Error al evaluar recordatorios y tareas pendientes:", err);
-    }
-  };
-
-  const exportarCopiaSeguridad = async () => {
-    try {
-      const listMascotas = await LocalDatabase.getMascotas();
-      const listPlantas = await LocalDatabase.getPlantas();
-      const listExoticos = await LocalDatabase.getExoticos();
-      const listEventos = await LocalDatabase.getEventosCalendario();
-      
-      const chats = [];
-      const consultantIds = ['veterinario', 'agronomo', 'exotico'];
-      for (const id of consultantIds) {
-        const chat = await LocalDatabase.getChatHistorial(id);
-        if (chat) chats.push(chat);
-      }
-
-      const backupData = {
-        mascotas: listMascotas,
-        plantas: listPlantas,
-        exoticos: listExoticos,
-        eventos: listEventos,
-        chats: chats,
-        exportadoEn: new Date().toISOString(),
-        version: 2
-      };
-
-      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      const fechaStr = new Date().toISOString().slice(0, 10);
-      a.download = `copia-seguridad-ecosistema-${fechaStr}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      alert("Copia de seguridad exportada con éxito. Revisa tus descargas.");
-    } catch (err) {
-      console.error("Fallo al exportar copia de seguridad:", err);
-      alert("Error al exportar la copia de seguridad. Revisa la consola para más detalles.");
-    }
-  };
-
-  const importarCopiaSeguridad = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const confirmacion = window.confirm(
-      "ATENCIÓN: Importar esta copia de seguridad sobrescribirá todos tus datos locales de mascotas, plantas, exóticos, eventos de calendario y chats. ¿Seguro que deseas continuar?"
-    );
-    if (!confirmacion) {
-      e.target.value = '';
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      try {
-        const content = evt.target?.result as string;
-        const data = JSON.parse(content);
-
-        // Validación básica
-        if (!data || (!Array.isArray(data.mascotas) && !Array.isArray(data.plantas) && !Array.isArray(data.exoticos))) {
-          throw new Error("El archivo JSON no tiene un formato de copia de seguridad válido.");
-        }
-
-        const importMascotas = Array.isArray(data.mascotas) ? data.mascotas : [];
-        const importPlantas = Array.isArray(data.plantas) ? data.plantas : [];
-        const importExoticos = Array.isArray(data.exoticos) ? data.exoticos : [];
-        const importEventos = Array.isArray(data.eventos) ? data.eventos : [];
-        const importChats = Array.isArray(data.chats) ? data.chats : [];
-
-        await LocalDatabase.overwriteFullDatabase(
-          importMascotas,
-          importPlantas,
-          importExoticos,
-          importEventos,
-          importChats
-        );
-
-        await refreshData(true);
-        alert("¡Copia de seguridad importada correctamente!");
-      } catch (err: any) {
-        console.error("Error al importar copia de seguridad:", err);
-        alert(`Fallo al importar: ${err.message || 'Formato de archivo inválido'}`);
-      } finally {
-        e.target.value = '';
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  async function refreshData(isLocalEdit = true) {
-    try {
-      if (isLocalEdit) {
-        localStorage.setItem('petplant_db_last_updated', getNowTimestamp().toString());
-      }
-
-      const listMascotas = await LocalDatabase.getMascotas();
-      const listPlantas = await LocalDatabase.getPlantas();
-      const listExoticos = await LocalDatabase.getExoticos();
-      
-      setMascotas(listMascotas);
-      setPlantas(listPlantas);
-      setExoticos(listExoticos);
-
-      const savedClima = localStorage.getItem('petplant_last_gps_weather');
-      if (savedClima) {
-        try {
-          setClimaActual(JSON.parse(savedClima));
-        } catch (e) {
-          console.error(e);
-        }
-      }
-
-      // Sincronización automática tras cambios locales con Microsoft OneDrive
-      if (isLocalEdit && localStorage.getItem('petplant_login_provider') === 'microsoft') {
-        queueOneDriveSync();
-      }
-
-      // Sincronización automática tras cambios locales con Firebase
-      const activeHogar = localStorage.getItem('petplant_hogar_id');
-      if (isLocalEdit && activeHogar && !isRemoteSyncingRef.current && localStorage.getItem('petplant_login_provider') !== 'microsoft') {
-        const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Hogar Sincronizado";
-        // En segundo plano: el estado de la UI se mantiene verde/sincronizado porque
-        // Firestore guarda todo en caché local IndexedDB inmediatamente.
-        setSyncStatus('synced');
-        setSyncErrorMessage(null);
-
-        Promise.all([
-          LocalDatabase.getEventosCalendario(),
-          (async () => {
-            const chats = [];
-            const consultantIds = ['veterinario', 'agronomo', 'exotico'];
-            for (const id of consultantIds) {
-              const chat = await LocalDatabase.getChatHistorial(id);
-              if (chat) chats.push(chat);
-            }
-            return chats;
-          })()
-        ]).then(async ([listEventos, chats]) => {
-          try {
-            const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
-            fbSync.uploadChanges(
-              activeHogar, 
-              activeNombre, 
-              listMascotas, 
-              listPlantas, 
-              listExoticos, 
-              uiTheme,
-              listEventos,
-              chats
-            ).catch((err: any) => {
-              console.error("Error al sincronizar cambios en segundo plano:", err);
-              const errMsg = err.message || String(err);
-              // Solo reportar errores definitivos de permisos o credenciales
-              if (
-                errMsg.includes('permission') || 
-                errMsg.includes('insufficient') || 
-                errMsg.includes('unauthenticated') || 
-                errMsg.includes('auth/') ||
-                errMsg.includes('not-found')
-              ) {
-                setSyncStatus('error');
-                setSyncErrorMessage(`Error de autorización en la nube: ${errMsg}`);
-              }
-            });
-          } catch (err: any) {
-            console.error("Error al iniciar auto-sync en segundo plano:", err);
-            const errMsg = err.message || String(err);
-            if (
-              errMsg.includes('permission') || 
-              errMsg.includes('insufficient') || 
-              errMsg.includes('unauthenticated') || 
-              errMsg.includes('auth/')
-            ) {
-              setSyncStatus('error');
-              setSyncErrorMessage(`Error al inicializar auto-sync: ${errMsg}`);
-            }
-          }
-        }).catch(err => {
-          console.error("Error al cargar eventos/chats para auto-sync:", err);
-        });
-      }
-
-      // Evaluar recordatorios de agenda y tareas pendientes de manera asíncrona
-      evaluarRecordatoriosYPendientes();
-    } catch (err) {
-      console.error("Fallo al refrescar IndexedDB:", err);
-    }
-  };
-
-  useEffect(() => {
-    refreshDataRef.current = refreshData;
-  }, [refreshData]);
-
-  // ── Microsoft & Google Cloud Sync & Auth Helpers ───────────────────────────
-  const syncFromOneDrive = async () => {
-    setSyncStatus('syncing');
-    try {
-      const backup = await MicrosoftSyncService.downloadBackup();
-      
-      const listMascotas = await LocalDatabase.getMascotas();
-      const listPlantas = await LocalDatabase.getPlantas();
-      const listExoticos = await LocalDatabase.getExoticos();
-      
-      const isLocalDemo = isDatabaseDefaultDemo(listMascotas, listPlantas, listExoticos);
-      const isLocalEmpty = listMascotas.length === 0 && listPlantas.length === 0 && listExoticos.length === 0;
-
-      if (backup) {
-        const isCloudDemo = isDatabaseDefaultDemo(backup.mascotas || [], backup.plantas || [], backup.exoticos || []);
-        const localLastUpdated = Number(localStorage.getItem('petplant_db_last_updated') || 0);
-        const remoteIsNewer = backup.updatedAt > localLastUpdated;
-        
-        // Safeguard: if cloud has demo and local has real, do NOT overwrite local. Instead, upload local to cloud.
-        if (!isLocalDemo && isCloudDemo) {
-          console.log("OneDrive: Local has real data, cloud has demo. Uploading local data.");
-          await triggerOneDriveSyncDirect();
-          setSyncStatus('synced');
-        } else if (!isLocalDemo && !isCloudDemo && !remoteIsNewer) {
-          // Both have real data, but local is newer or equal -> upload local to cloud
-          console.log("OneDrive: Local is newer or equal. Uploading local data.");
-          await triggerOneDriveSyncDirect();
-          setSyncStatus('synced');
-        } else {
-          // Cloud has real data and is newer, or local is empty, or local is demo. Overwrite local.
-          console.log("OneDrive: Cloud is newer or local is demo/empty. Downloading cloud data.");
-          isRemoteSyncingRef.current = true;
-          await LocalDatabase.overwriteFullDatabase(
-            backup.mascotas || [],
-            backup.plantas || [],
-            backup.exoticos || [],
-            backup.eventos || [],
-            backup.chats || []
-          );
-          isRemoteSyncingRef.current = false;
-          await refreshData(false);
-          setSyncStatus('synced');
-        }
-      } else {
-        // No backup found on OneDrive
-        if (!isLocalDemo && !isLocalEmpty) {
-          // Local has real data -> upload to OneDrive to create the backup file
-          console.log("OneDrive: No remote backup found, but local has real data. Uploading local data.");
-          await triggerOneDriveSyncDirect();
-          setSyncStatus('synced');
-        } else {
-          // Local is demo or empty -> reset local to demo and upload to create the backup file
-          console.log("OneDrive: No remote backup and local is empty/demo. Seeding demo and uploading.");
-          isRemoteSyncingRef.current = true;
-          await LocalDatabase.resetToDemo();
-          isRemoteSyncingRef.current = false;
-          await refreshData(false);
-          await triggerOneDriveSyncDirect();
-          setSyncStatus('synced');
-        }
-      }
-    } catch (err: any) {
-      console.error("Error al descargar o sincronizar con OneDrive:", err);
-      setSyncStatus('error');
-      setSyncErrorMessage(err.message || String(err));
-    }
-  };
-
-  const triggerOneDriveSyncDirect = async () => {
-    try {
-      const activeMsUser = await MicrosoftSyncService.getActiveUser();
-      if (!activeMsUser) return;
-
-      setSyncStatus('syncing');
-      const listMascotas = await LocalDatabase.getMascotas();
-      const listPlantas = await LocalDatabase.getPlantas();
-      const listExoticos = await LocalDatabase.getExoticos();
-      const listEventos = await LocalDatabase.getEventosCalendario();
-      
-      const chats = [];
-      const consultantIds = ['veterinario', 'agronomo', 'exotico'];
-      for (const id of consultantIds) {
-        const chat = await LocalDatabase.getChatHistorial(id);
-        if (chat) chats.push(chat);
-      }
-
-      await MicrosoftSyncService.uploadBackup({
-        mascotas: listMascotas,
-        plantas: listPlantas,
-        exoticos: listExoticos,
-        eventos: listEventos,
-        chats: chats,
-        updatedAt: getNowTimestamp()
-      });
-      setSyncStatus('synced');
-      setSyncErrorMessage(null);
-    } catch (err: any) {
-      console.error("Error al subir copia a OneDrive:", err);
-      setSyncStatus('error');
-      setSyncErrorMessage(err.message || String(err));
-    }
-  };
-
-  const forceSyncToCloud = async () => {
-    if (isOffline) {
-      alert("No se puede sincronizar: estás sin conexión a internet.");
-      return;
-    }
-
-    const provider = localStorage.getItem('petplant_login_provider');
-    const activeHogar = localStorage.getItem('petplant_hogar_id');
-
-    setSyncStatus('syncing');
-    try {
-      const listMascotas = await LocalDatabase.getMascotas();
-      const listPlantas = await LocalDatabase.getPlantas();
-      const listExoticos = await LocalDatabase.getExoticos();
-      const listEventos = await LocalDatabase.getEventosCalendario();
-      
-      const chats = [];
-      const consultantIds = ['veterinario', 'agronomo', 'exotico'];
-      for (const id of consultantIds) {
-        const chat = await LocalDatabase.getChatHistorial(id);
-        if (chat) chats.push(chat);
-      }
-
-      if (provider === 'microsoft') {
-        console.log('Subiendo copia a OneDrive...');
-        await MicrosoftSyncService.uploadBackup({
-          mascotas: listMascotas,
-          plantas: listPlantas,
-          exoticos: listExoticos,
-          eventos: listEventos,
-          chats: chats,
-          updatedAt: getNowTimestamp()
-        });
-        setSyncStatus('synced');
-        setSyncErrorMessage(null);
-        alert("✔️ Sincronización exitosa: copia de seguridad subida a Microsoft OneDrive.");
-      } else if (activeHogar) {
-        const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
-        const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Mi Hogar";
-        
-        console.log('Subiendo copia a Firebase...');
-        
-        // Timeout de 12 segundos para la sincronización manual
-        const uploadPromise = fbSync.uploadChanges(activeHogar, activeNombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
-        await Promise.race([
-          uploadPromise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout de conexión con la nube. Tus datos están a salvo localmente en el dispositivo y se sincronizarán de forma automática en segundo plano cuando vuelva la conexión.")), 12000))
-        ]);
-        
-        setSyncStatus('synced');
-        setSyncErrorMessage(null);
-        alert(`✔️ Sincronización exitosa: datos de tu grupo hogar '${activeNombre}' subidos correctamente a Firebase Cloud.`);
-      } else {
-        alert("⚠️ No tienes configurado un grupo hogar activo o cuenta en la nube. Ve a 'Ajustes' para registrarte o vincularte.");
-        setSyncStatus('synced');
-        setSyncErrorMessage(null);
-      }
-    } catch (err: any) {
-      console.error("Fallo en sincronización manual:", err);
-      setSyncStatus('error');
-      setSyncErrorMessage(err.message || String(err));
-      alert("❌ Error en la sincronización: " + (err.message || err));
-    }
-  };
-
-  const queueOneDriveSync = () => {
-    if (msSyncTimeoutRef.current) {
-      clearTimeout(msSyncTimeoutRef.current);
-    }
-    msSyncTimeoutRef.current = setTimeout(() => {
-      triggerOneDriveSyncDirect();
-    }, 3000); // 3 seconds debounce
-  };
-
-  useEffect(() => {
-    const initSessions = async () => {
-      const provider = localStorage.getItem('petplant_login_provider');
-
-      if (provider === 'microsoft') {
-        try {
-          await MicrosoftSyncService.init();
-          const activeMsUser = await MicrosoftSyncService.getActiveUser();
-          if (activeMsUser) {
-            setUser({
-              name: activeMsUser.name,
-              email: activeMsUser.email,
-              photoURL: activeMsUser.avatarUrl
-            });
-            await syncFromOneDrive();
-          } else {
-            // MSAL session expired or not found
-            setUser(null);
-            localStorage.removeItem('petplant_login_provider');
-            localStorage.removeItem('petplant_user_session');
-            alert("Tu sesión de Microsoft OneDrive ha expirado. Vuelve a iniciar sesión para continuar sincronizando tus datos.");
-            await refreshData(false);
-          }
-        } catch (err) {
-          console.error("Error al inicializar sesión de Microsoft:", err);
-        }
-      } else {
-        // Google/Firebase session initialization
-        initFirebase().then(({ auth, FirebaseSyncService, onAuthStateChanged }) => {
-          setFirebaseLoaded(true);
-          if (!auth) {
-            const saved = localStorage.getItem('petplant_user_session');
-            if (saved) {
-              setUser(JSON.parse(saved));
-            }
-            return;
-          }
-
-          const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-            if (firebaseUser) {
-              const u = {
-                name: firebaseUser.displayName || "Usuario de Google",
-                email: firebaseUser.email || "",
-                photoURL: firebaseUser.photoURL || undefined
-              };
-              setUser(u);
-              localStorage.setItem('petplant_user_session', JSON.stringify(u));
-              localStorage.setItem('petplant_login_provider', 'google');
-
-              // Cargar hogar asociado en Firestore e iniciar sincronización bidireccional inmediata
-              if (FirebaseSyncService.isCloudEnabled()) {
-                try {
-                  const userHogar = await FirebaseSyncService.getUserHogar(firebaseUser.uid);
-                  const listMascotas = await LocalDatabase.getMascotas();
-                  const listPlantas = await LocalDatabase.getPlantas();
-                  const listExoticos = await LocalDatabase.getExoticos();
-                  const listEventos = await LocalDatabase.getEventosCalendario();
-                  
-                  const chats = [];
-                  const consultantIds = ['veterinario', 'agronomo', 'exotico'];
-                  for (const id of consultantIds) {
-                    const chat = await LocalDatabase.getChatHistorial(id);
-                    if (chat) chats.push(chat);
-                  }
-
-                  if (userHogar) {
-                    const { hogarId: cloudHogarId, hogarNombre: cloudHogarNombre } = userHogar;
-
-                    setJoinedHogares(prev => {
-                      if (prev.some(x => x.id === cloudHogarId)) return prev;
-                      const updated = [...prev, { id: cloudHogarId, nombre: cloudHogarNombre }];
-                      localStorage.setItem('petplant_joined_hogares', JSON.stringify(updated));
-                      return updated;
-                    });
-
-                    // Intentar recuperar los datos del hogar en la nube
-                    let data = await FirebaseSyncService.getHogarData(cloudHogarId);
-
-                    if (data) {
-                      // Vincular siempre al hogar de la nube
-                      localStorage.setItem('petplant_hogar_id', cloudHogarId);
-                      localStorage.setItem('petplant_hogar_nombre', cloudHogarNombre);
-                      setHogarId(cloudHogarId);
-                      setHogarNombre(cloudHogarNombre);
-
-                      // CONTROL DE DAÑOS / AUTOCURACIÓN DIAGNÓSTICO:
-                      // Si por error de una versión previa del diagnóstico el nombre del hogar en la nube quedó como
-                      // "Test de Diagnóstico", restauramos de inmediato la información real de este dispositivo.
-                      if (data && (data.nombre === "Test de Diagnóstico" || !data.nombre)) {
-                        console.warn("Detectada contaminación por prueba de diagnóstico en Firestore para el hogar:", cloudHogarId);
-                        await FirebaseSyncService.uploadChanges(
-                          cloudHogarId,
-                          cloudHogarNombre,
-                          listMascotas,
-                          listPlantas,
-                          listExoticos,
-                          uiTheme,
-                          listEventos,
-                          chats
-                        );
-                        // Volver a leer para seguir el flujo normal con la información correcta
-                        const updatedData = await FirebaseSyncService.getHogarData(cloudHogarId);
-                        if (updatedData) {
-                          data = updatedData;
-                        }
-                      }
-
-                      const isLocalDemo = isDatabaseDefaultDemo(listMascotas, listPlantas, listExoticos);
-                      const isCloudDemo = isDatabaseDefaultDemo(data.mascotas || [], data.plantas || [], data.exoticos || []);
-                      const cloudHasRealData = !isCloudDemo && (data.mascotas?.length > 0 || data.plantas?.length > 0 || data.exoticos?.length > 0);
-
-                      const localLastUpdated = Number(localStorage.getItem('petplant_db_last_updated') || 0);
-                      const isLocalEmpty = listMascotas.length === 0 && listPlantas.length === 0 && listExoticos.length === 0;
-                      const remoteIsNewer = data.updatedAt > localLastUpdated;
-
-                      if (!isLocalDemo && isCloudDemo) {
-                        // Local tiene datos reales, nube solo tiene demo → subir local a la nube
-                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
-                      } else if (cloudHasRealData && (remoteIsNewer || isLocalEmpty || isLocalDemo)) {
-                        // Descargar de la nube si es más nueva, si local está vacío o si local es demo
-                        isRemoteSyncingRef.current = true;
-                        await LocalDatabase.overwriteFullDatabase(
-                          data.mascotas || [],
-                          data.plantas || [],
-                          data.exoticos || [],
-                          data.eventos,
-                          data.chats
-                        );
-                        isRemoteSyncingRef.current = false;
-                        await refreshData(false);
-                      } else {
-                        // Si el local es más nuevo o contiene cambios reales no presentes en la nube, subir local a la nube
-                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
-                      }
-
-                      // Aplicar tema de la nube si existe y es válido
-                      if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'vintage')) {
-                        lastSyncedThemeRef.current = data.theme || null;
-                        setUiTheme(data.theme as any);
-                      }
-                    } else {
-                      // Si no hay datos en la nube para este hogarId pero tenemos datos locales, los subimos de inmediato
-                      if (listMascotas.length > 0 || listPlantas.length > 0 || listExoticos.length > 0) {
-                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
-                      }
-                    }
-                  } else {
-                    const localHogarId = localStorage.getItem('petplant_hogar_id') || '';
-                    const localHogarNombre = localStorage.getItem('petplant_hogar_nombre') || 'Mi Hogar';
-                    if (localHogarId) {
-                      await FirebaseSyncService.saveUserHogar(firebaseUser.uid, localHogarId, localHogarNombre);
-                      // Subir los datos locales actuales para asegurar que el hogar en la nube esté creado
-                      await FirebaseSyncService.uploadChanges(localHogarId, localHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
-                    } else {
-                      // Crear automáticamente un hogar nuevo si el usuario no tiene ninguno local ni remoto
-                      const nuevoCodigo = await FirebaseSyncService.createHogar("Mi Hogar", listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
-                      localStorage.setItem('petplant_hogar_id', nuevoCodigo);
-                      localStorage.setItem('petplant_hogar_nombre', "Mi Hogar");
-                      setHogarId(nuevoCodigo);
-                      setHogarNombre("Mi Hogar");
-                      await FirebaseSyncService.saveUserHogar(firebaseUser.uid, nuevoCodigo, "Mi Hogar");
-                    }
-                  }
-                } catch (err) {
-                  console.error("Error al recuperar o sincronizar asociación de hogar:", err);
-                }
-              }
-            } else {
-              if (localStorage.getItem('petplant_login_provider') === 'google') {
-                setUser(null);
-                localStorage.removeItem('petplant_login_provider');
-                localStorage.removeItem('petplant_user_session');
-              }
-
-              // Sincronización bidireccional para usuarios no autenticados que tienen un código de hogar
-              const localHogarId = localStorage.getItem('petplant_hogar_id');
-              if (localHogarId && FirebaseSyncService.isCloudEnabled()) {
-                try {
-                  let data = await FirebaseSyncService.getHogarData(localHogarId);
-                  if (data) {
-                    const listMascotas = await LocalDatabase.getMascotas();
-                    const listPlantas = await LocalDatabase.getPlantas();
-                    const listExoticos = await LocalDatabase.getExoticos();
-                    const listEventos = await LocalDatabase.getEventosCalendario();
-                    
-                    const chats = [];
-                    const consultantIds = ['veterinario', 'agronomo', 'exotico'];
-                    for (const id of consultantIds) {
-                      const chat = await LocalDatabase.getChatHistorial(id);
-                      if (chat) chats.push(chat);
-                    }
-
-                    // CONTROL DE DAÑOS / AUTOCURACIÓN DIAGNÓSTICO (modo no-auth):
-                    // Si por algún error de diagnóstico el nombre en la nube es "Test de Diagnóstico",
-                    // lo restauramos de inmediato con los datos locales.
-                    if (data && (data.nombre === "Test de Diagnóstico" || !data.nombre)) {
-                      const localHogarNombre = localStorage.getItem('petplant_hogar_nombre') || 'Mi Hogar';
-                      console.warn("Detectada contaminación por diagnóstico en Firestore (no-auth) para:", localHogarId);
-                      await FirebaseSyncService.uploadChanges(
-                        localHogarId,
-                        localHogarNombre,
-                        listMascotas,
-                        listPlantas,
-                        listExoticos,
-                        uiTheme,
-                        listEventos,
-                        chats
-                      );
-                      const updatedData = await FirebaseSyncService.getHogarData(localHogarId);
-                      if (updatedData) {
-                        data = updatedData;
-                      }
-                    }
-
-                    const isLocalDemo = isDatabaseDefaultDemo(listMascotas, listPlantas, listExoticos);
-                    const isCloudDemo = isDatabaseDefaultDemo(data.mascotas || [], data.plantas || [], data.exoticos || []);
-                    const cloudHasRealData = !isCloudDemo && (data.mascotas?.length > 0 || data.plantas?.length > 0 || data.exoticos?.length > 0);
-
-                    const localLastUpdated = Number(localStorage.getItem('petplant_db_last_updated') || 0);
-                    const isLocalEmpty = listMascotas.length === 0 && listPlantas.length === 0 && listExoticos.length === 0;
-                    const remoteIsNewer = data.updatedAt > localLastUpdated;
-
-                    if (!isLocalDemo && isCloudDemo) {
-                      await FirebaseSyncService.uploadChanges(localHogarId, data.nombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
-                    } else if (cloudHasRealData && (remoteIsNewer || isLocalEmpty || isLocalDemo)) {
-                      isRemoteSyncingRef.current = true;
-                      await LocalDatabase.overwriteFullDatabase(
-                        data.mascotas || [],
-                        data.plantas || [],
-                        data.exoticos || [],
-                        data.eventos,
-                        data.chats
-                      );
-                      isRemoteSyncingRef.current = false;
-                      await refreshData(false);
-                    } else {
-                      await FirebaseSyncService.uploadChanges(localHogarId, data.nombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
-                    }
-
-                    if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'vintage')) {
-                      lastSyncedThemeRef.current = data.theme || null;
-                      setUiTheme(data.theme as any);
-                    }
-                  }
-                } catch (err) {
-                  console.error("Error al sincronizar hogar no-auth al iniciar:", err);
-                }
-              }
-            }
-          });
-
-          return () => unsubscribe();
-        });
-      }
-    };
-
-    initSessions();
-  }, []);
-
-  const handleGoogleSignIn = async () => {
-    localStorage.setItem('petplant_login_provider', 'google');
-    const { auth, GoogleAuthProvider, signInWithPopup } = await initFirebase();
-    if (auth) {
-      try {
-        const provider = new GoogleAuthProvider();
-        await signInWithPopup(auth, provider);
-      } catch (err: any) {
-        console.error("Error al iniciar sesión con Google:", err);
-        alert("Error al iniciar sesión con Google: " + err.message);
-      }
-    } else {
-      const simulatedUser = {
-        name: "Lorenzo Sanguino (Simulado)",
-        email: "lorenzo@sanguino.com"
-      };
-      localStorage.setItem('petplant_user_session', JSON.stringify(simulatedUser));
-      setUser(simulatedUser);
-    }
-  };
-
-  const handleMicrosoftSignIn = async () => {
-    localStorage.setItem('petplant_login_provider', 'microsoft');
-    try {
-      const loggedUser = await MicrosoftSyncService.login();
-      setUser({
-        name: loggedUser.name,
-        email: loggedUser.email,
-        photoURL: loggedUser.avatarUrl
-      });
-      await syncFromOneDrive();
-    } catch (err: any) {
-      console.error("Error al iniciar sesión con Microsoft:", err);
-      alert("Error al iniciar sesión con Microsoft.");
-    }
-  };
-
-  const handleMicrosoftLogout = async () => {
-    try {
-      await MicrosoftSyncService.logout();
-    } catch (err) {
-      console.error("Error al cerrar sesión de Microsoft:", err);
-    }
-    setUser(null);
-    localStorage.removeItem('petplant_ms_session');
-    localStorage.removeItem('petplant_login_provider');
-    localStorage.removeItem('petplant_user_session');
-
-    try {
-      await LocalDatabase.resetToDemo();
-      await refreshData(false);
-    } catch (err) {
-      console.error("Error al limpiar IndexedDB en logout:", err);
-    }
-
-    setHogarId('');
-    setHogarNombre('');
-    setMascotas([]);
-    setPlantas([]);
-    setExoticos([]);
-    setIsLoading(true);
-    setIsFading(false);
-  };
-
-  const handleLogout = async () => {
-    const provider = localStorage.getItem('petplant_login_provider');
-    if (provider === 'microsoft') {
-      await handleMicrosoftLogout();
-      return;
-    }
-
-    const cached = getFirebaseCached();
-    if (cached?.auth) {
-      try {
-        const { signOut } = await import('firebase/auth');
-        await signOut(cached.auth);
-      } catch (err) {
-        console.error("Error al cerrar sesión de Google:", err);
-      }
-    }
-    // Limpiar toda la información local de sesión e IndexedDB para evitar fugas
-    localStorage.removeItem('petplant_user_session');
-    localStorage.removeItem('petplant_login_provider');
-    localStorage.removeItem('petplant_hogar_id');
-    localStorage.removeItem('petplant_hogar_nombre');
-    localStorage.removeItem('petplant_last_gps_weather');
-    localStorage.removeItem('petplant_db_recordatorios');
-    localStorage.removeItem('petplant_seed_done');
-
-    try {
-      await LocalDatabase.clear();
-      await LocalDatabase.seedInitialData();
-    } catch (dbErr) {
-      console.error("Error al limpiar IndexedDB en logout:", dbErr);
-    }
-
-    setHogarId('');
-    setHogarNombre('');
-    setMascotas([]);
-    setPlantas([]);
-    setExoticos([]);
-    setUser(null);
-    setIsLoading(true);
-    setIsFading(false);
-  };
-
-  useEffect(() => {
-    const initDB = async () => {
-      try {
-        // Solo hacer seed si NO estamos vinculados a un Hogar
-        const hasHogar = !!localStorage.getItem('petplant_hogar_id');
-        if (!hasHogar) {
-          await LocalDatabase.seedInitialData();
-        }
-        await refreshData(false);
-      } catch (err) {
-        console.error("Fallo al inicializar base de datos:", err);
-      }
-    };
-    initDB();
-  }, []);
-
-  // Suscripción en tiempo real a cambios de Grupo Hogar con validación de timestamps
-  useEffect(() => {
-    const provider = localStorage.getItem('petplant_login_provider');
-    if (!hogarId || provider === 'microsoft') {
-      return;
-    }
-
-    const cachedFb = getFirebaseCached();
-    if (!cachedFb) return;
-
-    setSyncStatus('synced');
-    const unsubscribe = cachedFb.FirebaseSyncService.listenToHogar(hogarId, async (data) => {
-      const localLastUpdated = Number(localStorage.getItem('petplant_db_last_updated') || 0);
-      
-      // Comprobar si la base de datos local está totalmente vacía
-      const localMascotas = await LocalDatabase.getMascotas();
-      const localPlantas = await LocalDatabase.getPlantas();
-      const localExoticos = await LocalDatabase.getExoticos();
-      const isLocalEmpty = localMascotas.length === 0 && localPlantas.length === 0 && localExoticos.length === 0;
-
-      const isLocalDemo = isDatabaseDefaultDemo(localMascotas, localPlantas, localExoticos);
-      const isCloudDemo = isDatabaseDefaultDemo(data.mascotas || [], data.plantas || [], data.exoticos || []);
-
-      // Salvaguarda: si la nube tiene datos demo y local tiene datos reales, NO sobreescribir bajo ningún concepto
-      const esIntentoDeMachacarConDemo = isCloudDemo && !isLocalDemo;
-
-      // Salvaguarda adicional: si la nube está vacía (0 mascotas, 0 plantas, 0 exóticos)
-      // pero el local contiene datos reales (y no demo), NO sobreescribir para evitar pérdida de datos.
-      const cloudIsEmpty = (data.mascotas || []).length === 0 && (data.plantas || []).length === 0 && (data.exoticos || []).length === 0;
-      const esIntentoDeMachacarConVacio = cloudIsEmpty && !isLocalEmpty && !isLocalDemo;
-
-      // Solo sobreescribir si la actualización remota es estrictamente más nueva, si local está vacío, o si local es demo y la nube es real
-      if (!esIntentoDeMachacarConDemo && !esIntentoDeMachacarConVacio && (data.updatedAt > localLastUpdated || isLocalEmpty || (isLocalDemo && !isCloudDemo))) {
-        setSyncStatus('syncing');
-        try {
-          isRemoteSyncingRef.current = true;
-          await LocalDatabase.overwriteFullDatabase(
-            data.mascotas || [],
-            data.plantas || [],
-            data.exoticos || [],
-            data.eventos,
-            data.chats
-          );
-          await refreshData(false);
-          setSyncStatus('synced');
-          dispararLogroVisual("SINCRO HOGAR", "Datos del hogar actualizados en vivo.", 'lvl_up');
-        } catch (err) {
-          console.error("Error escribiendo actualización remota en base de datos:", err);
-          setSyncStatus('error');
-        } finally {
-          isRemoteSyncingRef.current = false;
-        }
-      }
-
-      // Aplicar el tema visual de la nube si existe y es diferente
-      if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'vintage')) {
-        setUiTheme(prevTheme => {
-          if (prevTheme !== data.theme) {
-            lastSyncedThemeRef.current = data.theme || null;
-            return data.theme as any;
-          }
-          return prevTheme;
-        });
-      }
-    });
-
-    return () => { unsubscribe?.(); };
-  }, [hogarId, firebaseLoaded]);
-
-  const crearHogar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!nuevoHogarNombre.trim()) return;
-    setSyncStatus('syncing');
-    try {
-      const listEventos = await LocalDatabase.getEventosCalendario();
-      const chats = [];
-      const consultantIds = ['veterinario', 'agronomo', 'exotico'];
-      for (const id of consultantIds) {
-        const chat = await LocalDatabase.getChatHistorial(id);
-        if (chat) chats.push(chat);
-      }
-      
-      const code = await (getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService).createHogar(
-        nuevoHogarNombre.trim(), 
-        mascotas, 
-        plantas, 
-        exoticos, 
-        uiTheme,
-        listEventos,
-        chats
-      );
-      setHogarId(code);
-      setHogarNombre(nuevoHogarNombre.trim());
-      localStorage.setItem('petplant_hogar_id', code);
-      localStorage.setItem('petplant_hogar_nombre', nuevoHogarNombre.trim());
-
-      const cachedFb = getFirebaseCached();
-      if (cachedFb?.auth && cachedFb.auth.currentUser) {
-        await cachedFb.FirebaseSyncService.saveUserHogar(cachedFb.auth.currentUser.uid, code, nuevoHogarNombre.trim());
-      }
-
-      const h = { id: code, nombre: nuevoHogarNombre.trim() };
-      setJoinedHogares(prev => {
-        const updated = [...prev.filter(x => x.id !== code), h];
-        localStorage.setItem('petplant_joined_hogares', JSON.stringify(updated));
-        return updated;
-      });
-
-      setNuevoHogarNombre('');
-      setSyncStatus('synced');
-      dispararLogroVisual("¡HOGAR CREADO!", `Código compartido: ${code}`, 'lvl_up');
-    } catch (err) {
-      console.error(err);
-      setSyncStatus('error');
-    }
-  };
-
-  const unirseAHogar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanCode = joinHogarId.trim().toUpperCase();
-    if (!cleanCode) return;
-    setSyncStatus('syncing');
-    try {
-      const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
-      const data = await fbSync.getHogarData(cleanCode);
-      if (data) {
-        setHogarId(cleanCode);
-        setHogarNombre(data.nombre);
-        localStorage.setItem('petplant_hogar_id', cleanCode);
-        localStorage.setItem('petplant_hogar_nombre', data.nombre);
-
-        const cachedFb2 = getFirebaseCached();
-        if (cachedFb2?.auth && cachedFb2.auth.currentUser) {
-          await cachedFb2.FirebaseSyncService.saveUserHogar(cachedFb2.auth.currentUser.uid, cleanCode, data.nombre);
-        }
-        
-        await LocalDatabase.overwriteFullDatabase(
-          data.mascotas || [],
-          data.plantas || [],
-          data.exoticos || [],
-          data.eventos,
-          data.chats
-        );
-        isRemoteSyncingRef.current = false;
-
-        const h = { id: cleanCode, nombre: data.nombre };
-        setJoinedHogares(prev => {
-          const updated = [...prev.filter(x => x.id !== cleanCode), h];
-          localStorage.setItem('petplant_joined_hogares', JSON.stringify(updated));
-          return updated;
-        });
-
-        // Aplicar el tema visual si está presente en el hogar al que nos unimos
-        if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'vintage')) {
-          lastSyncedThemeRef.current = data.theme || null;
-          setUiTheme(data.theme as any);
-        }
-        
-        setJoinHogarId('');
-        setSyncStatus('synced');
-        await refreshData(false);
-        dispararLogroVisual("¡HOGAR VINCULADO!", `Descargados los datos de tu hogar.`, 'victory');
-      } else {
-        alert("Código de hogar inválido o no encontrado.");
-        setSyncStatus('error');
-      }
-    } catch (err) {
-      console.error(err);
-      setSyncStatus('error');
-    }
-  };
-
-  const desvincularHogar = async () => {
-    const cachedFb3 = getFirebaseCached();
-    if (cachedFb3?.auth && cachedFb3.auth.currentUser) {
-      try {
-        await cachedFb3.FirebaseSyncService.deleteUserHogar(cachedFb3.auth.currentUser.uid);
-      } catch (err) {
-        console.error("Error al desvincular hogar del usuario en la nube:", err);
-      }
-    }
-    setHogarId('');
-    setHogarNombre('');
-    localStorage.removeItem('petplant_hogar_id');
-    localStorage.removeItem('petplant_hogar_nombre');
-    setSyncStatus('idle');
-    dispararLogroVisual("DESVINCULADO", "Revertido a base de datos local.", 'lvl_up');
-  };
-
-  const cambiarHogar = async (code: string) => {
-    if (code === hogarId) return;
-    setSyncStatus('syncing');
-    try {
-      if (!code) {
-        setHogarId('');
-        setHogarNombre('');
-        localStorage.removeItem('petplant_hogar_id');
-        localStorage.removeItem('petplant_hogar_nombre');
-        setSyncStatus('idle');
-        await refreshData(false);
-        dispararLogroVisual("MODO LOCAL", "Cargada base de datos local.", 'lvl_up');
-        return;
-      }
-
-      const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
-      const data = await fbSync.getHogarData(code);
-      if (data) {
-        setHogarId(code);
-        setHogarNombre(data.nombre);
-        localStorage.setItem('petplant_hogar_id', code);
-        localStorage.setItem('petplant_hogar_nombre', data.nombre);
-
-        const cachedFb = getFirebaseCached();
-        if (cachedFb?.auth && cachedFb.auth.currentUser) {
-          await cachedFb.FirebaseSyncService.saveUserHogar(cachedFb.auth.currentUser.uid, code, data.nombre);
-        }
-
-        isRemoteSyncingRef.current = true;
-        await LocalDatabase.overwriteFullDatabase(
-          data.mascotas || [],
-          data.plantas || [],
-          data.exoticos || [],
-          data.eventos,
-          data.chats
-        );
-        isRemoteSyncingRef.current = false;
-
-        if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'vintage')) {
-          lastSyncedThemeRef.current = data.theme;
-          setUiTheme(data.theme as any);
-        }
-
-        setSyncStatus('synced');
-        await refreshData(false);
-        dispararLogroVisual("HOGAR CAMBIADO", `Conectado a: ${data.nombre}`, 'victory');
-      } else {
-        alert("No se pudieron descargar los datos del hogar seleccionado.");
-        setSyncStatus('error');
-      }
-    } catch (err) {
-      console.error(err);
-      setSyncStatus('error');
-    }
-  };
-
-  const abandonarHogar = async (code: string) => {
-    const confirmacion = window.confirm("¿Estás seguro de que deseas eliminar este hogar de tu lista de accesos rápidos?");
-    if (!confirmacion) return;
-
-    setJoinedHogares(prev => {
-      const updated = prev.filter(h => h.id !== code);
-      localStorage.setItem('petplant_joined_hogares', JSON.stringify(updated));
-      return updated;
-    });
-
-    if (code === hogarId) {
-      await cambiarHogar('');
-    } else {
-      dispararLogroVisual("HOGAR REMOVIDO", "Se quitó de la lista de accesos rápidos.", 'lvl_up');
-    }
-  };
 
 
 

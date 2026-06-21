@@ -5,6 +5,7 @@ import { safeUUID } from '../utils/uuid';
 import { LocalDatabase } from '../database/db';
 import { TTSButton } from '../utils/useTTS';
 import type { ChatMensaje } from '../database/types';
+import { renderMarkdownToHTML } from '../utils/markdown';
 
 interface ChatMessage {
   id: string;
@@ -562,7 +563,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
               <img src={m.imageUrl} alt="Adjunto" style={{ width: '100%', display: 'block', objectFit: 'contain', height: 'auto', maxHeight: '220px' }} />
             </div>
           )}
-          <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{m.text}</div>
+          <div dangerouslySetInnerHTML={{ __html: renderMarkdownToHTML(m.text) }} style={{ lineHeight: '1.4' }} />
           {m.sender === 'ia' && (
             <div style={{ marginTop: '6px' }}>
               <TTSButton text={getSpeechText(m)} theme={theme} size="small" />
@@ -593,7 +594,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
               <img src={m.imageUrl} alt="Adjunto" style={{ width: '100%', display: 'block', objectFit: 'contain', height: 'auto', maxHeight: '220px', filter: 'grayscale(100%) brightness(80%) sepia(100%) hue-rotate(50deg) saturate(1000%)' }} />
             </div>
           )}
-          <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{m.text}</div>
+          <div dangerouslySetInnerHTML={{ __html: renderMarkdownToHTML(m.text) }} style={{ lineHeight: '1.4' }} />
           {m.sender === 'ia' && <TTSButton text={getSpeechText(m)} theme={theme} size="small" />}
           {renderTratamientoIA(m)}
           <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '6px', textAlign: 'right' }}>
@@ -628,7 +629,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
             <img src={m.imageUrl} alt="Adjunto" style={{ width: '100%', display: 'block', objectFit: 'contain', height: 'auto', maxHeight: '240px' }} />
           </div>
         )}
-        <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{m.text}</div>
+        <div dangerouslySetInnerHTML={{ __html: renderMarkdownToHTML(m.text) }} style={{ lineHeight: '1.4' }} />
         {m.sender === 'ia' && (
           <div style={{ marginTop: '6px' }}>
             <TTSButton text={getSpeechText(m)} theme={theme} size="small" />
