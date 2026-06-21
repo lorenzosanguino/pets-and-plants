@@ -12,6 +12,7 @@ import { ReportGeneratorModal } from './ReportGeneratorModal';
 import { BiometricChart } from './BiometricChart';
 import { TTSButton } from '../utils/useTTS';
 import { useTranslations } from '../utils/i18n';
+import { playSoundSuccess } from '../utils/audioFeedback';
 
 interface PetCardProps {
   mascota: Mascota;
@@ -263,6 +264,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
 
     await LocalDatabase.saveMascota(mascotaActualizada);
     localStorage.setItem('petplant_db_last_updated', Date.now().toString());
+    try { playSoundSuccess(); } catch {}
     onUpdate();
 
     if (nuevoProgreso === 100 && progresoActual < 100) {
@@ -291,6 +293,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
     };
 
     await LocalDatabase.saveMascota(mascotaActualizada);
+    try { playSoundSuccess(); } catch {}
     setNuevoPeso('');
     onUpdate();
   };
@@ -497,6 +500,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
     };
 
     await LocalDatabase.saveMascota(mascotaActualizada);
+    try { playSoundSuccess(); } catch {}
     onUpdate();
   };
 
@@ -757,8 +761,84 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
 
   unifiedHistory.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
 
+  const renderPetMoodBackground = () => {
+    const act = mascota.actividad;
+    let backgroundStyle: React.CSSProperties = {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 0,
+      pointerEvents: 'none',
+      overflow: 'hidden',
+      borderRadius: 'inherit',
+      transition: 'background 0.5s ease'
+    };
+
+    if (act === 'Alta') {
+      backgroundStyle.background = 'linear-gradient(135deg, rgba(255, 213, 79, 0.05) 0%, transparent 80%)';
+    } else if (act === 'Baja') {
+      backgroundStyle.background = 'linear-gradient(135deg, rgba(144, 164, 174, 0.05) 0%, transparent 80%)';
+    } else {
+      backgroundStyle.background = 'linear-gradient(135deg, rgba(240, 98, 146, 0.04) 0%, transparent 80%)';
+    }
+
+    return (
+      <div style={backgroundStyle}>
+        {act === 'Alta' && (
+          <svg width="100%" height="100%" style={{ opacity: 0.12 }}>
+            <style>{`
+              @keyframes floatEnergy {
+                0% { transform: translateY(110%) scale(0.6); opacity: 0; }
+                50% { opacity: 0.8; }
+                100% { transform: translateY(-10%) scale(1.2); opacity: 0; }
+              }
+              .en1 { animation: floatEnergy 3s infinite ease-in-out; }
+              .en2 { animation: floatEnergy 4s infinite ease-in-out; animation-delay: 1s; }
+              .en3 { animation: floatEnergy 3.5s infinite ease-in-out; animation-delay: 2s; }
+            `}</style>
+            <circle className="en1" cx="20%" cy="90%" r="5" fill="#ffd54f" />
+            <circle className="en2" cx="50%" cy="90%" r="4" fill="#ffb300" />
+            <circle className="en3" cx="80%" cy="90%" r="6" fill="#ffe082" />
+          </svg>
+        )}
+        {act === 'Baja' && (
+          <svg width="100%" height="100%" style={{ opacity: 0.12 }}>
+            <style>{`
+              @keyframes floatSleep {
+                0% { transform: translateY(15px) rotate(-10deg); opacity: 0; }
+                50% { opacity: 0.7; }
+                100% { transform: translateY(-60px) rotate(10deg); opacity: 0; }
+              }
+              .sl1 { animation: floatSleep 7s infinite ease-in-out; }
+              .sl2 { animation: floatSleep 9s infinite ease-in-out; animation-delay: 3.5s; }
+            `}</style>
+            <text className="sl1" x="25%" y="90%" fontSize="11" fill="#78909c" fontWeight="bold">Zzz</text>
+            <text className="sl2" x="75%" y="90%" fontSize="9" fill="#b0bec5" fontWeight="bold">Zzz</text>
+          </svg>
+        )}
+        {act !== 'Alta' && act !== 'Baja' && (
+          <svg width="100%" height="100%" style={{ opacity: 0.08 }}>
+            <style>{`
+              @keyframes floatPaws {
+                0% { transform: translateY(110%); opacity: 0; }
+                50% { opacity: 0.6; }
+                100% { transform: translateY(-20px); opacity: 0; }
+              }
+              .pw1 { animation: floatPaws 6s infinite ease-in-out; }
+              .pw2 { animation: floatPaws 8s infinite ease-in-out; animation-delay: 3s; }
+            `}</style>
+            <text className="pw1" x="30%" y="90%" fontSize="12" fill="#e57373">🐾</text>
+            <text className="pw2" x="70%" y="90%" fontSize="10" fill="#f06292">🐾</text>
+          </svg>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div id={`card-${mascota.id}`} className="printable-clinical-record" style={{
+    <div id={`card-${mascota.id}`} className="printable-clinical-record glass-card" style={{
       background: 'var(--game-card-bg, #ffffff)',
       borderRadius: 'var(--game-radius, 16px)',
       padding: '20px',
@@ -775,6 +855,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
       overflowWrap: 'break-word',
       maxWidth: '100%'
     }}>
+      {renderPetMoodBackground()}
       {/* HUD de Nivel en Tema Gaming */}
       {theme === 'gaming' && (
         <div style={{
@@ -1436,7 +1517,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
 
           {/* MODAL DE DOBLE CONFIRMACIÓN DE BORRADO */}
           {showDeleteConfirm && (
-            <div style={{
+            <div className="modal-backdrop" style={{
               position: 'fixed',
               top: 0, left: 0, right: 0, bottom: 0,
               background: 'rgba(0,0,0,0.6)',
@@ -1447,7 +1528,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
               padding: '16px',
               overflowY: 'auto'
             }} onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(false); }}>
-              <div style={{
+              <div className="confirm-modal-content" style={{
                 background: 'var(--game-card-bg, #ffffff)',
                 borderRadius: 'var(--game-radius, 16px)',
                 border: 'var(--game-border, 1px solid #f0f0f0)',
@@ -1512,7 +1593,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
 
           {/* VENTANA EMERGENTE (MODAL) PARA REPORTE DE IA */}
           {iaReporteModal && (
-            <div style={{
+            <div className="modal-backdrop" style={{
               position: 'fixed',
               top: 0,
               left: 0,
@@ -1527,7 +1608,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
               padding: '20px',
               boxSizing: 'border-box'
             }} onClick={() => setIaReporteModal(null)}>
-              <div style={{
+              <div className="report-modal-content" style={{
                 background: 'var(--game-card-bg, #ffffff)',
                 borderRadius: '16px',
                 padding: '24px',
@@ -1637,8 +1718,8 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
           background: 'rgba(8,6,13,0.7)', backdropFilter: 'blur(8px)',
           zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: '20px', boxSizing: 'border-box'
-        }} className="no-print">
-          <div style={{
+        }} className="modal-backdrop no-print">
+          <div className="chef-modal-content" style={{
             background: 'var(--bg, #fff)',
             border: '1px solid var(--border, #e5e4e7)',
             borderRadius: '16px',
@@ -1751,8 +1832,8 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
           background: 'rgba(8,6,13,0.7)', backdropFilter: 'blur(8px)',
           zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: '20px', boxSizing: 'border-box'
-        }} className="no-print">
-          <div style={{
+        }} className="modal-backdrop no-print">
+          <div className="training-modal-content" style={{
             background: 'var(--bg, #fff)',
             border: '1px solid var(--border, #e5e4e7)',
             borderRadius: '16px',

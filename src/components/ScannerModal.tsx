@@ -479,7 +479,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
       : 'var(--game-accent, #2e7d32)';
 
   return (
-    <div style={{
+    <div className="modal-backdrop" style={{
       position: 'fixed',
       top: 0, left: 0, right: 0, bottom: 0,
       background: 'rgba(0, 0, 0, 0.5)',
@@ -491,7 +491,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
       overflowY: 'auto',
       overflowX: 'hidden'
     }}>
-      <div style={{
+      <div className="scanner-modal-content" style={{
         background: 'var(--game-card-bg, #ffffff)',
         borderRadius: 'var(--game-radius, 16px)',
         border: 'var(--game-border, 1px solid #f0f0f0)',

@@ -109,7 +109,7 @@ export const ManualPetForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{
+    <form onSubmit={handleSubmit} className="manual-register-form" style={{
       background: 'var(--game-card-bg, #fff)',
       borderRadius: 'var(--game-radius, 16px)',
       border: 'var(--game-border, 1px solid #f0f0f0)',
@@ -397,7 +397,7 @@ export const ManualPlantForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{
+    <form onSubmit={handleSubmit} className="manual-register-form" style={{
       background: 'var(--game-card-bg, #fff)',
       borderRadius: 'var(--game-radius, 16px)',
       border: 'var(--game-border, 1px solid #f0f0f0)',
@@ -629,7 +629,7 @@ export const ManualExoticForm: React.FC<FormProps> = ({ onClose, onUpdate }) => 
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{
+    <form onSubmit={handleSubmit} className="manual-register-form" style={{
       background: 'var(--game-card-bg, #fff)',
       borderRadius: 'var(--game-radius, 16px)',
       border: 'var(--game-border, 1px solid #f0f0f0)',

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { triggerHaptic } from '../utils/audioFeedback';
 
 interface BiometricDataPoint {
   fecha: string;
@@ -18,6 +19,8 @@ export const BiometricChart: React.FC<BiometricChartProps> = ({
   color,
   theme = 'nature'
 }) => {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
   // Sort data chronologically
   const sortedData = [...data].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
 
@@ -43,7 +46,7 @@ export const BiometricChart: React.FC<BiometricChartProps> = ({
   const minVal = Math.min(...values);
   const maxVal = Math.max(...values);
 
-  // Add a 10% safety margin to Y scale
+  // Add a 15% safety margin to Y scale
   const valRange = maxVal - minVal;
   const minY = valRange === 0 ? Math.max(0, minVal - 5) : Math.max(0, minVal - valRange * 0.15);
   const maxY = valRange === 0 ? maxVal + 5 : maxVal + valRange * 0.15;
@@ -86,7 +89,8 @@ export const BiometricChart: React.FC<BiometricChartProps> = ({
       borderRadius: theme === 'gaming' ? '0px' : '12px',
       border: '1px solid rgba(0,0,0,0.05)',
       padding: '12px',
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      position: 'relative' // Required for absolute tooltip alignment
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '11px', color: 'var(--game-text)' }}>
         <strong>Evolución ({yLabel})</strong>
@@ -154,17 +158,32 @@ export const BiometricChart: React.FC<BiometricChartProps> = ({
             />
           ) : null}
 
+          {/* Vertical dashed guide line on hover */}
+          {hoveredIndex !== null && points[hoveredIndex] && (
+            <line
+              x1={points[hoveredIndex].x}
+              y1={paddingTop}
+              x2={points[hoveredIndex].x}
+              y2={height - paddingBottom}
+              stroke={color}
+              strokeWidth="1"
+              strokeDasharray="3 3"
+              opacity="0.6"
+              pointerEvents="none"
+            />
+          )}
+
           {/* Data Points */}
           {points.map((p, i) => (
             <g key={i}>
-              {/* Pulsing ring for hover effect */}
+              {/* Outer pulsing ring */}
               <circle 
                 cx={p.x} 
                 cy={p.y} 
-                r="7" 
+                r={hoveredIndex === i ? "9" : "7"} 
                 fill={color} 
-                opacity="0.15" 
-                style={{ transition: 'all 0.2s', transformOrigin: `${p.x}px ${p.y}px` }}
+                opacity={hoveredIndex === i ? "0.3" : "0.12"} 
+                style={{ transition: 'all 0.15s ease-out', transformOrigin: `${p.x}px ${p.y}px` }}
               />
               {/* Core circle */}
               <circle 
@@ -175,27 +194,45 @@ export const BiometricChart: React.FC<BiometricChartProps> = ({
                 stroke={color} 
                 strokeWidth="2.5" 
               />
-              {/* Value tag */}
-              <text 
-                x={p.x} 
-                y={p.y - 10} 
-                textAnchor="middle" 
-                fontSize="9px" 
-                fontWeight="bold" 
-                fill="var(--game-text-bright, #333)"
-              >
-                {p.val}
-              </text>
+              {/* Value tag (shown only if not hovered, to prevent overlap with tooltip) */}
+              {hoveredIndex !== i && (
+                <text 
+                  x={p.x} 
+                  y={p.y - 10} 
+                  textAnchor="middle" 
+                  fontSize="9px" 
+                  fontWeight="bold" 
+                  fill="var(--game-text-bright, #333)"
+                >
+                  {p.val}
+                </text>
+              )}
               {/* X Date tag */}
               <text 
                 x={p.x} 
                 y={height - paddingBottom + 16} 
                 textAnchor="middle" 
                 fontSize="9px" 
-                fill="#999"
+                fill={hoveredIndex === i ? color : "#999"}
+                fontWeight={hoveredIndex === i ? "bold" : "normal"}
+                style={{ transition: 'color 0.15s' }}
               >
                 {p.date}
               </text>
+
+              {/* Large invisible interactive hover target */}
+              <circle 
+                cx={p.x} 
+                cy={p.y} 
+                r="18" 
+                fill="transparent" 
+                style={{ cursor: 'pointer' }}
+                onMouseEnter={() => {
+                  setHoveredIndex(i);
+                  triggerHaptic(10);
+                }}
+                onMouseLeave={() => setHoveredIndex(null)}
+              />
             </g>
           ))}
 
@@ -210,6 +247,45 @@ export const BiometricChart: React.FC<BiometricChartProps> = ({
           />
         </svg>
       </div>
+
+      {/* Absolutely positioned HTML Tooltip Box */}
+      {hoveredIndex !== null && points[hoveredIndex] && (
+        <div style={{
+          position: 'absolute',
+          left: `${(points[hoveredIndex].x / width) * 100}%`,
+          top: `${(points[hoveredIndex].y / height) * 100 - 15}%`,
+          transform: 'translate(-50%, -100%)',
+          background: 'var(--game-card-bg, #ffffff)',
+          border: `1.5px solid ${color}`,
+          borderRadius: theme === 'gaming' ? '0px' : '8px',
+          padding: '6px 10px',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.15)',
+          fontSize: '11px',
+          color: 'var(--game-text-bright, #333)',
+          fontFamily: 'var(--game-font, sans-serif)',
+          pointerEvents: 'none',
+          whiteSpace: 'nowrap',
+          zIndex: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '2px',
+          animation: 'tooltipFadeIn 0.15s ease-out'
+        }}>
+          <strong style={{ fontSize: '12px', color }}>{points[hoveredIndex].val} {yLabel}</strong>
+          <span style={{ fontSize: '9px', opacity: 0.75 }}>
+            Registrado: {new Date(sortedData[hoveredIndex].fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
+          </span>
+        </div>
+      )}
+
+      {/* Animation definition for tooltip fading */}
+      <style>{`
+        @keyframes tooltipFadeIn {
+          from { opacity: 0; transform: translate(-50%, -95%) scale(0.95); }
+          to { opacity: 1; transform: translate(-50%, -100%) scale(1); }
+        }
+      `}</style>
     </div>
   );
 };

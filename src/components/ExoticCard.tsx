@@ -11,6 +11,7 @@ import { ReportGeneratorModal } from './ReportGeneratorModal';
 import { BiometricChart } from './BiometricChart';
 import { TTSButton } from '../utils/useTTS';
 import { useTranslations } from '../utils/i18n';
+import { playSoundSuccess } from '../utils/audioFeedback';
 
 interface ExoticCardProps {
   exotico: AnimalExotico;
@@ -141,6 +142,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
     };
 
     await LocalDatabase.saveExotico(exoticoActualizado);
+    try { playSoundSuccess(); } catch {}
     setNuevoPeso('');
     onUpdate();
   };
@@ -161,6 +163,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
     };
 
     await LocalDatabase.saveExotico(exoticoActualizado);
+    try { playSoundSuccess(); } catch {}
     setNuevoCrecimiento('');
     onUpdate();
   };
@@ -350,8 +353,84 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
     );
   }
 
+  const renderExoticMicroClimaBackground = () => {
+    const temp = exotico.temperaturaTerrario;
+    const hum = exotico.humedadTerrario;
+
+    let backgroundStyle: React.CSSProperties = {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 0,
+      pointerEvents: 'none',
+      overflow: 'hidden',
+      borderRadius: 'inherit',
+      transition: 'background 0.5s ease'
+    };
+
+    if (temp > 28) {
+      backgroundStyle.background = 'linear-gradient(135deg, rgba(244, 81, 30, 0.05) 0%, transparent 80%)';
+    } else if (hum > 70) {
+      backgroundStyle.background = 'linear-gradient(135deg, rgba(38, 166, 154, 0.04) 0%, transparent 80%)';
+    } else if (hum < 40) {
+      backgroundStyle.background = 'linear-gradient(135deg, rgba(161, 136, 127, 0.05) 0%, transparent 80%)';
+    }
+
+    return (
+      <div style={backgroundStyle}>
+        {temp > 28 && (
+          <svg width="100%" height="100%" style={{ opacity: 0.08 }}>
+            <style>{`
+              @keyframes heatwave {
+                0% { transform: translateY(10px) skewX(2deg); opacity: 0.3; }
+                50% { transform: translateY(0px) skewX(-2deg); opacity: 0.7; }
+                100% { transform: translateY(-10px) skewX(2deg); opacity: 0.3; }
+              }
+              .hw1 { animation: heatwave 3.5s infinite ease-in-out; }
+              .hw2 { animation: heatwave 4.5s infinite ease-in-out; animation-delay: 1.5s; }
+            `}</style>
+            <path className="hw1" d="M10,120 Q30,70 50,120 T90,120 T130,120" fill="none" stroke="#ff8f00" strokeWidth="2" />
+            <path className="hw2" d="M110,120 Q130,70 150,120 T190,120 T230,120" fill="none" stroke="#ff6f00" strokeWidth="2" />
+          </svg>
+        )}
+        {hum > 70 && (
+          <svg width="100%" height="100%" style={{ opacity: 0.12 }}>
+            <style>{`
+              @keyframes floatMist {
+                0% { transform: translateY(110%) scale(0.8); opacity: 0; }
+                50% { opacity: 0.8; }
+                100% { transform: translateY(-10%) scale(1.4); opacity: 0; }
+              }
+              .m1 { animation: floatMist 5s infinite ease-in-out; }
+              .m2 { animation: floatMist 6s infinite ease-in-out; animation-delay: 2s; }
+            `}</style>
+            <circle className="m1" cx="30%" cy="90%" r="8" fill="#80cbc4" />
+            <circle className="m2" cx="70%" cy="90%" r="10" fill="#b2dfdb" />
+          </svg>
+        )}
+        {hum < 40 && (
+          <svg width="100%" height="100%" style={{ opacity: 0.12 }}>
+            <style>{`
+              @keyframes floatDust {
+                0% { transform: translateY(110%) translateX(0); opacity: 0; }
+                50% { opacity: 0.8; }
+                100% { transform: translateY(-10%) translateX(10px); opacity: 0; }
+              }
+              .d1 { animation: floatDust 6s infinite ease-in-out; }
+              .d2 { animation: floatDust 8s infinite ease-in-out; animation-delay: 2.5s; }
+            `}</style>
+            <circle className="d1" cx="25%" cy="85%" r="3" fill="#a1887f" />
+            <circle className="d2" cx="75%" cy="85%" r="2" fill="#8d6e63" />
+          </svg>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div id={`card-${exotico.id}`} style={{
+    <div id={`card-${exotico.id}`} className="glass-card" style={{
       background: 'var(--game-card-bg, #ffffff)',
       borderRadius: 'var(--game-radius, 16px)',
       border: 'var(--game-border, 1.5px solid #eaeaea)',
@@ -363,8 +442,11 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
       width: '100%',
       boxSizing: 'border-box',
       transition: 'transform 0.2s',
-      color: 'var(--game-text, #333)'
+      color: 'var(--game-text, #333)',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
+      {renderExoticMicroClimaBackground()}
       <div 
         onClick={toggleExpanded}
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none' }}
@@ -941,7 +1023,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
 
       {/* Modal Confirmación de Eliminación */}
       {showDeleteConfirm && (
-        <div style={{
+        <div className="modal-backdrop" style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(0,0,0,0.6)',
@@ -952,7 +1034,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
           padding: '16px',
           overflowY: 'auto'
         }} onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(false); }}>
-          <div style={{
+          <div className="confirm-modal-content" style={{
             background: 'var(--game-card-bg, #ffffff)',
             borderRadius: '12px',
             padding: '24px',
@@ -1005,7 +1087,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
 
       {/* VENTANA EMERGENTE (MODAL) PARA REPORTE DE IA */}
       {iaReporteModal && (
-        <div style={{
+        <div className="modal-backdrop" style={{
           position: 'fixed',
           top: 0,
           left: 0,
@@ -1019,9 +1101,9 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
           zIndex: 9999,
           padding: '20px',
           boxSizing: 'border-box'
-        }} onClick={() => setIaReporteModal(null)}>
-          <div style={{
-            background: 'var(--game-card-bg, #ffffff)',
+            }} onClick={() => setIaReporteModal(null)}>
+              <div className="report-modal-content" style={{
+                background: 'var(--game-card-bg, #ffffff)',
             borderRadius: '16px',
             padding: '24px',
             maxWidth: '500px',
@@ -1123,8 +1205,8 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
 
       {/* MODAL CHEF NUTRICIONAL IA — EXÓTICOS */}
       {showChefModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setShowChefModal(false)}>
-          <div style={{ background: 'var(--game-card-bg, #fff)', borderRadius: theme === 'gaming' ? '0px' : '16px', padding: '24px', maxWidth: '480px', width: '90%', maxHeight: '80vh', overflowY: 'auto', border: 'var(--game-border, none)', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
+        <div className="modal-backdrop" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setShowChefModal(false)}>
+          <div className="chef-modal-content" style={{ background: 'var(--game-card-bg, #fff)', borderRadius: theme === 'gaming' ? '0px' : '16px', padding: '24px', maxWidth: '480px', width: '90%', maxHeight: '80vh', overflowY: 'auto', border: 'var(--game-border, none)', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <strong style={{ fontSize: '15px', color: 'var(--game-text-bright)', fontFamily: 'var(--game-font, sans-serif)' }}>🍽️ Chef Nutricional IA — {exotico.nombre}</strong>
               <button type="button" onClick={() => setShowChefModal(false)} style={{ background: 'transparent', border: 'none', fontSize: '18px', cursor: 'pointer', color: 'var(--game-text)' }}>✕</button>

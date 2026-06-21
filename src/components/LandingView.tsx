@@ -57,7 +57,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
       <div className="landing-container">
         {/* Panel de Entrada Mascotas */}
         <div 
-          className="landing-card"
+          className="landing-card landing-card-animation"
           style={{
             border: 'var(--game-border, 1px solid #e3f2fd)',
             boxShadow: 'var(--game-shadow, 0 8px 30px rgba(33, 150, 243, 0.05))',
@@ -113,7 +113,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
 
         {/* Panel de Entrada Plantas */}
         <div 
-          className="landing-card"
+          className="landing-card landing-card-animation"
           style={{
             border: 'var(--game-border, 1px solid #e8f5e9)',
             boxShadow: 'var(--game-shadow, 0 8px 30px rgba(76, 175, 80, 0.05))',
@@ -169,7 +169,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
 
         {/* Panel de Entrada Exóticos */}
         <div 
-          className="landing-card"
+          className="landing-card landing-card-animation"
           style={{
             border: 'var(--game-border, 1px solid #fff8e1)',
             boxShadow: 'var(--game-shadow, 0 8px 30px rgba(255, 143, 0, 0.05))',

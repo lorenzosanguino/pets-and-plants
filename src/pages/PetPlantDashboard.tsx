@@ -6,6 +6,7 @@ import { usePWAManager } from '../hooks/usePWAManager';
 import { useGPSWeather } from '../hooks/useGPSWeather';
 import { useTranslations } from '../utils/i18n';
 import { ExtremeWeatherPanel } from '../components/ExtremeWeatherPanel';
+import { playSoundClick } from '../utils/audioFeedback';
 
 
 // ── Lazy-loaded components (se descargan solo cuando se necesitan) ──────────
@@ -22,22 +23,48 @@ const ManualExoticForm   = lazy(() => import('../components/ManualRegisterModal'
 const LandingView        = lazy(() => import('../components/LandingView').then(m => ({ default: m.LandingView })));
 const SettingsView       = lazy(() => import('../components/SettingsView').then(m => ({ default: m.SettingsView })));
 
-// ── Spinner de carga mínimo (se muestra mientras el chunk carga) ────────────
+// ── Esqueleto de carga inteligente (se muestra mientras carga el componente) ──
 const ChunkLoader: React.FC<{ height?: string }> = ({ height = '120px' }) => (
   <div style={{
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    height, width: '100%', flexDirection: 'column', gap: '10px',
-    color: 'var(--game-text, #888)', fontSize: '13px'
+    height, width: '100%', 
+    background: 'var(--game-card-bg, #ffffff)',
+    borderRadius: 'var(--game-radius, 16px)',
+    border: 'var(--game-border, 1px solid #f0f0f0)',
+    padding: '16px',
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    gap: '12px',
+    overflow: 'hidden',
+    position: 'relative'
   }}>
-    <div style={{
-      width: '28px', height: '28px',
-      border: '3px solid var(--game-border-color, #ccc)',
-      borderTopColor: 'var(--game-accent, #1976d2)',
-      borderRadius: '50%',
-      animation: 'spin 0.7s linear infinite'
-    }} />
-    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    Cargando...
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      {/* Circular skeleton (avatar) */}
+      <div className="skeleton-item" style={{ width: '48px', height: '48px', borderRadius: '50%' }} />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {/* Title skeleton */}
+        <div className="skeleton-item" style={{ width: '40%', height: '14px', borderRadius: '4px' }} />
+        {/* Subtitle skeleton */}
+        <div className="skeleton-item" style={{ width: '70%', height: '10px', borderRadius: '4px' }} />
+      </div>
+    </div>
+    {/* Body text skeleton */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, marginTop: '8px' }}>
+      <div className="skeleton-item" style={{ width: '100%', height: '8px', borderRadius: '3px' }} />
+      <div className="skeleton-item" style={{ width: '92%', height: '8px', borderRadius: '3px' }} />
+    </div>
+    <style>{`
+      .skeleton-item {
+        background: linear-gradient(90deg, var(--border, #eaeaea) 25%, var(--code-bg, #f4f3ec) 50%, var(--border, #eaeaea) 75%);
+        background-size: 200% 100%;
+        animation: loadingShimmer 1.5s infinite linear;
+      }
+      @keyframes loadingShimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+    `}</style>
   </div>
 );
 
@@ -476,6 +503,7 @@ export const PetPlantDashboard: React.FC = () => {
   return (
     <div 
       data-game-theme={uiTheme}
+      className="dashboard-root"
       style={{ 
         background: 'var(--game-bg, #fcfcfc)', 
         backgroundImage: 'var(--game-bg-image)',
@@ -600,7 +628,7 @@ export const PetPlantDashboard: React.FC = () => {
       )}
 
       {isLoading && (
-        <div style={{
+        <div className="loading-overlay-root" style={{
           position: 'fixed',
           top: 0,
           left: 0,
@@ -1061,7 +1089,7 @@ export const PetPlantDashboard: React.FC = () => {
               }}>
                 <button 
                   disabled={experienceMode === 'pets'}
-                  onClick={() => { setExperienceMode('pets'); setActiveTab('dashboard'); }}
+                  onClick={() => { setExperienceMode('pets'); setActiveTab('dashboard'); try { playSoundClick(); } catch {} }}
                   style={{
                     flex: 1,
                     minWidth: '80px',
@@ -1080,7 +1108,7 @@ export const PetPlantDashboard: React.FC = () => {
                 </button>
                 <button 
                   disabled={experienceMode === 'plants'}
-                  onClick={() => { setExperienceMode('plants'); setActiveTab('dashboard'); }}
+                  onClick={() => { setExperienceMode('plants'); setActiveTab('dashboard'); try { playSoundClick(); } catch {} }}
                   style={{
                     flex: 1,
                     minWidth: '80px',
@@ -1099,7 +1127,7 @@ export const PetPlantDashboard: React.FC = () => {
                 </button>
                 <button 
                   disabled={experienceMode === 'exotics'}
-                  onClick={() => { setExperienceMode('exotics'); setActiveTab('dashboard'); }}
+                  onClick={() => { setExperienceMode('exotics'); setActiveTab('dashboard'); try { playSoundClick(); } catch {} }}
                   style={{
                     flex: 1,
                     minWidth: '80px',
@@ -1119,7 +1147,7 @@ export const PetPlantDashboard: React.FC = () => {
               </div>
               <button 
                 disabled={experienceMode === 'travels'}
-                onClick={() => { setExperienceMode('travels'); setActiveTab('dashboard'); }}
+                onClick={() => { setExperienceMode('travels'); setActiveTab('dashboard'); try { playSoundClick(); } catch {} }}
                 style={{
                   width: '100%',
                   padding: '8px 12px',
@@ -1141,7 +1169,7 @@ export const PetPlantDashboard: React.FC = () => {
               </button>
               <button 
                 disabled={experienceMode === 'consultants'}
-                onClick={() => { setExperienceMode('consultants'); setActiveTab('dashboard'); }}
+                onClick={() => { setExperienceMode('consultants'); setActiveTab('dashboard'); try { playSoundClick(); } catch {} }}
                 style={{
                   width: '100%',
                   padding: '8px 12px',
@@ -1165,7 +1193,7 @@ export const PetPlantDashboard: React.FC = () => {
           </div>
 
           {/* Navigation Bar (Tabs Filtradas) */}
-          <div style={{
+          <div className="dashboard-tabs-container" style={{
             display: 'flex',
             gap: '4px',
             borderBottom: '1px solid #eaeaea',
@@ -1174,7 +1202,7 @@ export const PetPlantDashboard: React.FC = () => {
             WebkitOverflowScrolling: 'touch'
           }}>
             <button
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => { setActiveTab('dashboard'); try { playSoundClick(); } catch {} }}
               style={{
                 padding: '12px 16px',
                 background: 'none',
@@ -1195,7 +1223,7 @@ export const PetPlantDashboard: React.FC = () => {
 
             
             <button
-              onClick={() => setActiveTab('settings')}
+              onClick={() => { setActiveTab('settings'); try { playSoundClick(); } catch {} }}
               style={{
                 padding: '12px 16px',
                 background: 'none',
@@ -1218,7 +1246,7 @@ export const PetPlantDashboard: React.FC = () => {
             {activeTab === 'dashboard' && experienceMode !== 'travels' && experienceMode !== 'consultants' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {/* Barra de Acciones de Registro Glassmorphism */}
-                <div style={{
+                <div className="dashboard-actions-bar" style={{
                   background: 'var(--game-card-bg, rgba(255, 255, 255, 0.65))',
                   backdropFilter: 'blur(12px)',
                   WebkitBackdropFilter: 'blur(12px)',
@@ -1295,7 +1323,7 @@ export const PetPlantDashboard: React.FC = () => {
                 </div>
 
                 {/* Cuadrícula Principal */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))', gap: '24px', width: '100%', boxSizing: 'border-box' }}>
+                <div className="main-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))', gap: '24px', width: '100%', boxSizing: 'border-box' }}>
                   
                   {/* Tarjetas según el ecosistema */}
                   {experienceMode === 'pets' && (
@@ -1344,6 +1372,7 @@ export const PetPlantDashboard: React.FC = () => {
                             <Suspense key={p.id} fallback={<ChunkLoader height="80px" />}>
                               <PlantCard
                                 planta={p}
+                                clima={climaActual}
                                 onUpdate={refreshData}
                                 onOpenScanner={(mode, assetId) => {
                                   setScannerMode(mode);
@@ -1419,7 +1448,7 @@ export const PetPlantDashboard: React.FC = () => {
             )}
 
             {activeTab === 'dashboard' && experienceMode === 'travels' && (
-              <div style={{ width: '100%', boxSizing: 'border-box' }}>
+              <div className="page-transition-enter" style={{ width: '100%', boxSizing: 'border-box' }}>
                 <Suspense fallback={<ChunkLoader height="300px" />}>
                   <VacationAdvice 
                     mode="travels" 
@@ -1433,7 +1462,7 @@ export const PetPlantDashboard: React.FC = () => {
             )}
 
             {activeTab === 'dashboard' && experienceMode === 'consultants' && (
-              <div style={{ width: '100%', boxSizing: 'border-box' }}>
+              <div className="page-transition-enter" style={{ width: '100%', boxSizing: 'border-box' }}>
                 <Suspense fallback={<ChunkLoader height="300px" />}>
                   <IAConsultantsView 
                     hideSelector={false} 
@@ -1448,60 +1477,64 @@ export const PetPlantDashboard: React.FC = () => {
 
             {/* 2.4 Tab Consultor IA Filtrado */}
             {activeTab === 'consultants' && (
-              <Suspense fallback={<ChunkLoader height="300px" />}>
-                <IAConsultantsView 
-                  forceConsultant={
-                    experienceMode === 'pets' 
-                      ? 'veterinario' 
-                      : experienceMode === 'exotics' 
-                      ? 'exoticos' 
-                      : 'agronomo'
-                  } 
-                  hideSelector={true} 
-                  onNavigateToAsset={handleNavigateToAsset}
-                  onUpdate={refreshData}
-                />
-              </Suspense>
+              <div className="page-transition-enter" style={{ width: '100%' }}>
+                <Suspense fallback={<ChunkLoader height="300px" />}>
+                  <IAConsultantsView 
+                    forceConsultant={
+                      experienceMode === 'pets' 
+                        ? 'veterinario' 
+                        : experienceMode === 'exotics' 
+                        ? 'exoticos' 
+                        : 'agronomo'
+                    } 
+                    hideSelector={true} 
+                    onNavigateToAsset={handleNavigateToAsset}
+                    onUpdate={refreshData}
+                  />
+                </Suspense>
+              </div>
             )}
 
             {/* 2.6 Tab Ajustes */}
             {activeTab === 'settings' && (
-              <Suspense fallback={<ChunkLoader height="300px" />}>
-                <SettingsView 
-                  uiTheme={uiTheme}
-                  setUiTheme={setUiTheme}
-                  loadingGPS={loadingGPS}
-                  gpsSyncSuccess={gpsSyncSuccess}
-                  sincronizarTodasLasPlantasPorGPS={sincronizarTodasLasPlantasPorGPS}
-                  hogarId={hogarId}
-                  hogarNombre={hogarNombre}
-                  syncStatus={syncStatus}
-                  isCloudEnabled={isCloudEnabled}
-                  dispararLogroVisual={dispararLogroVisual}
-                  desvincularHogar={desvincularHogar}
-                  nuevoHogarNombre={nuevoHogarNombre}
-                  setNuevoHogarNombre={setNuevoHogarNombre}
-                  crearHogar={crearHogar}
-                  joinHogarId={joinHogarId}
-                  setJoinHogarId={setJoinHogarId}
-                  unirseAHogar={unirseAHogar}
-                  joinedHogares={joinedHogares}
-                  cambiarHogar={cambiarHogar}
-                  abandonarHogar={abandonarHogar}
-                  customApiKey={customApiKey}
-                  setCustomApiKey={setCustomApiKey}
-                  showApiKey={showApiKey}
-                  setShowApiKey={setShowApiKey}
-                  user={user}
-                  handleLogout={handleLogout}
-                  handleGoogleSignIn={handleGoogleSignIn}
-                  handleMicrosoftSignIn={handleMicrosoftSignIn}
-                  deferredPrompt={deferredPrompt}
-                  handleInstallPWA={handleInstallPWA}
-                  exportarCopiaSeguridad={exportarCopiaSeguridad}
-                  importarCopiaSeguridad={importarCopiaSeguridad}
-                />
-              </Suspense>
+              <div className="page-transition-enter" style={{ width: '100%' }}>
+                <Suspense fallback={<ChunkLoader height="300px" />}>
+                  <SettingsView 
+                    uiTheme={uiTheme}
+                    setUiTheme={setUiTheme}
+                    loadingGPS={loadingGPS}
+                    gpsSyncSuccess={gpsSyncSuccess}
+                    sincronizarTodasLasPlantasPorGPS={sincronizarTodasLasPlantasPorGPS}
+                    hogarId={hogarId}
+                    hogarNombre={hogarNombre}
+                    syncStatus={syncStatus}
+                    isCloudEnabled={isCloudEnabled}
+                    dispararLogroVisual={dispararLogroVisual}
+                    desvincularHogar={desvincularHogar}
+                    nuevoHogarNombre={nuevoHogarNombre}
+                    setNuevoHogarNombre={setNuevoHogarNombre}
+                    crearHogar={crearHogar}
+                    joinHogarId={joinHogarId}
+                    setJoinHogarId={setJoinHogarId}
+                    unirseAHogar={unirseAHogar}
+                    joinedHogares={joinedHogares}
+                    cambiarHogar={cambiarHogar}
+                    abandonarHogar={abandonarHogar}
+                    customApiKey={customApiKey}
+                    setCustomApiKey={setCustomApiKey}
+                    showApiKey={showApiKey}
+                    setShowApiKey={setShowApiKey}
+                    user={user}
+                    handleLogout={handleLogout}
+                    handleGoogleSignIn={handleGoogleSignIn}
+                    handleMicrosoftSignIn={handleMicrosoftSignIn}
+                    deferredPrompt={deferredPrompt}
+                    handleInstallPWA={handleInstallPWA}
+                    exportarCopiaSeguridad={exportarCopiaSeguridad}
+                    importarCopiaSeguridad={importarCopiaSeguridad}
+                  />
+                </Suspense>
+              </div>
             )}
 
           </div>
@@ -1525,7 +1558,7 @@ export const PetPlantDashboard: React.FC = () => {
           )}
 
           {showManualRegister && (
-            <div style={{
+            <div className="modal-backdrop" style={{
               position: 'fixed',
               top: 0, left: 0, right: 0, bottom: 0,
               background: 'rgba(0, 0, 0, 0.5)',
@@ -1559,7 +1592,7 @@ export const PetPlantDashboard: React.FC = () => {
           )}
 
           {dbError && (
-            <div style={{
+            <div className="modal-backdrop" style={{
               position: 'fixed',
               top: 0, left: 0, right: 0, bottom: 0,
               background: 'rgba(0, 0, 0, 0.6)',

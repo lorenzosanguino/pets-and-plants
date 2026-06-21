@@ -20,6 +20,13 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [brightness, setBrightness] = useState<number>(100);
   const [contrast, setContrast] = useState<number>(100);
+  const [saturation, setSaturation] = useState<number>(100);
+  const [exposure, setExposure] = useState<number>(100);
+  const [grayscale, setGrayscale] = useState<boolean>(false);
+  const [invert, setInvert] = useState<boolean>(false);
+  const [rotation, setRotation] = useState<number>(0);
+  const [flipH, setFlipH] = useState<boolean>(false);
+  const [flipY, setFlipY] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,20 +49,6 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
     image.onload = () => {
       setImg(image);
       setIsLoading(false);
-      
-      // Calculate initial crop box (80% of image size, centered)
-      const maxDisplayWidth = Math.min(window.innerWidth - 40, 500);
-      const maxDisplayHeight = 350;
-      const scale = Math.min(maxDisplayWidth / image.width, maxDisplayHeight / image.height, 1);
-      const displayW = image.width * scale;
-      const displayH = image.height * scale;
-
-      const w = Math.round(displayW * 0.8);
-      const h = Math.round(displayH * 0.8);
-      const x = Math.round((displayW - w) / 2);
-      const y = Math.round((displayH - h) / 2);
-      
-      setCropRect({ x, y, w, h });
     };
     image.onerror = () => {
       setError("No se pudo cargar la imagen para editar.");
@@ -64,6 +57,27 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
     image.src = imageUrl;
   }, [imageUrl]);
 
+  // Adjust crop box to fit within new canvas size when image or rotation changes
+  useEffect(() => {
+    if (!img) return;
+    const isRotated90 = rotation === 90 || rotation === 270;
+    const visualW = isRotated90 ? img.height : img.width;
+    const visualH = isRotated90 ? img.width : img.height;
+    
+    const maxDisplayWidth = Math.min(window.innerWidth - 40, 500);
+    const maxDisplayHeight = 350;
+    const scale = Math.min(maxDisplayWidth / visualW, maxDisplayHeight / visualH, 1);
+    const displayW = visualW * scale;
+    const displayH = visualH * scale;
+
+    const w = Math.round(displayW * 0.8);
+    const h = Math.round(displayH * 0.8);
+    const x = Math.round((displayW - w) / 2);
+    const y = Math.round((displayH - h) / 2);
+    
+    setCropRect({ x, y, w, h });
+  }, [img, rotation]);
+
   // Redraw Canvas on changes
   useEffect(() => {
     if (!img || !canvasRef.current) return;
@@ -71,12 +85,16 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const isRotated90 = rotation === 90 || rotation === 270;
+    const visualW = isRotated90 ? img.height : img.width;
+    const visualH = isRotated90 ? img.width : img.height;
+
     // Scale canvas to fit container
     const maxDisplayWidth = Math.min(window.innerWidth - 40, 500);
     const maxDisplayHeight = 350;
-    const scale = Math.min(maxDisplayWidth / img.width, maxDisplayHeight / img.height, 1);
-    const displayW = img.width * scale;
-    const displayH = img.height * scale;
+    const scale = Math.min(maxDisplayWidth / visualW, maxDisplayHeight / visualH, 1);
+    const displayW = visualW * scale;
+    const displayH = visualH * scale;
 
     canvas.width = displayW;
     canvas.height = displayH;
@@ -84,9 +102,24 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
     // Draw main image
     ctx.clearRect(0, 0, displayW, displayH);
     ctx.save();
+    
     // Apply filters
-    ctx.filter = `brightness(${brightness}%) contrast(${contrast}%)`;
-    ctx.drawImage(img, 0, 0, displayW, displayH);
+    const combinedBrightness = (brightness * exposure) / 100;
+    ctx.filter = `brightness(${combinedBrightness}%) contrast(${contrast}%) saturate(${saturation}%) ${grayscale ? 'grayscale(100%)' : ''} ${invert ? 'invert(100%)' : ''}`;
+
+    // Translate to center, apply flip and rotation, draw image
+    ctx.translate(displayW / 2, displayH / 2);
+    
+    const scaleX = flipH ? -1 : 1;
+    const scaleY = flipY ? -1 : 1;
+    ctx.scale(scaleX, scaleY);
+    
+    ctx.rotate((rotation * Math.PI) / 180);
+    
+    const imgDrawW = img.width * scale;
+    const imgDrawH = img.height * scale;
+    ctx.drawImage(img, -imgDrawW / 2, -imgDrawH / 2, imgDrawW, imgDrawH);
+    
     ctx.restore();
 
     // Draw dark shaded overlay outside of crop rect
@@ -142,7 +175,7 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
     ctx.lineTo(cropRect.x + cropRect.w, cropRect.y + (cropRect.h * 2) / 3);
     ctx.stroke();
 
-  }, [img, brightness, contrast, cropRect, accentColor]);
+  }, [img, brightness, contrast, saturation, exposure, grayscale, invert, rotation, flipH, flipY, cropRect, accentColor]);
 
   // Handle Drag / Resize Mouse Events
   const getMousePos = (e: React.MouseEvent | React.TouchEvent | TouchEvent | MouseEvent) => {
@@ -255,9 +288,13 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
   const handleSave = () => {
     if (!img || !canvasRef.current) return;
     try {
-      // Calculate crop metrics relative to original image dimensions
       const canvas = canvasRef.current;
-      const scale = canvas.width / img.width;
+      
+      const isRotated90 = rotation === 90 || rotation === 270;
+      const visualW = isRotated90 ? img.height : img.width;
+      const visualH = isRotated90 ? img.width : img.height;
+      
+      const scale = canvas.width / visualW;
 
       const origX = cropRect.x / scale;
       const origY = cropRect.y / scale;
@@ -275,9 +312,20 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
         return;
       }
 
-      // Draw cropped section with brightness & contrast filters
-      ctx.filter = `brightness(${brightness}%) contrast(${contrast}%)`;
-      ctx.drawImage(img, origX, origY, origW, origH, 0, 0, origW, origH);
+      // Draw cropped section with all filters
+      const combinedBrightness = (brightness * exposure) / 100;
+      ctx.filter = `brightness(${combinedBrightness}%) contrast(${contrast}%) saturate(${saturation}%) ${grayscale ? 'grayscale(100%)' : ''} ${invert ? 'invert(100%)' : ''}`;
+
+      // Translate by (-origX, -origY) and then center the rotation/flip
+      ctx.translate(-origX + visualW / 2, -origY + visualH / 2);
+      
+      const scaleX = flipH ? -1 : 1;
+      const scaleY = flipY ? -1 : 1;
+      ctx.scale(scaleX, scaleY);
+      
+      ctx.rotate((rotation * Math.PI) / 180);
+      
+      ctx.drawImage(img, -img.width / 2, -img.height / 2, img.width, img.height);
 
       const editedDataUrl = offscreen.toDataURL('image/jpeg', 0.9);
       onSave(editedDataUrl);
@@ -288,7 +336,7 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
   };
 
   return (
-    <div style={{
+    <div className="modal-backdrop" style={{
       position: 'fixed',
       top: 0, left: 0, right: 0, bottom: 0,
       background: 'rgba(0,0,0,0.8)',
@@ -300,6 +348,7 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
     }}>
       <div 
         ref={containerRef}
+        className="photo-editor-modal-content"
         style={{
           background: 'var(--game-card-bg, #ffffff)',
           borderRadius: theme === 'gaming' ? '4px' : '16px',
@@ -377,42 +426,188 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
         {img && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontFamily: 'var(--game-font, sans-serif)' }}>
             
-            {/* Brightness Adjustment */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: '12px', color: 'var(--game-text-bright)' }}>
-                <span>☀️ Brillo Clínico</span>
-                <strong>{brightness}%</strong>
-              </div>
-              <input 
-                type="range"
-                min="50"
-                max="150"
-                value={brightness}
-                onChange={(e) => setBrightness(Number(e.target.value))}
+            {/* Botones de Transformación Rápida */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '4px' }}>
+              <button
+                type="button"
+                onClick={() => setRotation((prev) => (prev + 90) % 360)}
                 style={{
-                  accentColor: accentColor,
-                  width: '100%'
+                  padding: '6px 4px',
+                  background: 'rgba(0,0,0,0.04)',
+                  border: '1px solid rgba(0,0,0,0.1)',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  color: 'var(--game-text-bright)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px'
                 }}
-              />
+              >
+                🔄 Girar 90°
+              </button>
+              <button
+                type="button"
+                onClick={() => setFlipH((prev) => !prev)}
+                style={{
+                  padding: '6px 4px',
+                  background: 'rgba(0,0,0,0.04)',
+                  border: '1px solid rgba(0,0,0,0.1)',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  color: 'var(--game-text-bright)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px'
+                }}
+              >
+                ↔️ Voltear H
+              </button>
+              <button
+                type="button"
+                onClick={() => setFlipY((prev) => !prev)}
+                style={{
+                  padding: '6px 4px',
+                  background: 'rgba(0,0,0,0.04)',
+                  border: '1px solid rgba(0,0,0,0.1)',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  color: 'var(--game-text-bright)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px'
+                }}
+              >
+                ↕️ Voltear V
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setBrightness(100);
+                  setContrast(100);
+                  setSaturation(100);
+                  setExposure(100);
+                  setGrayscale(false);
+                  setInvert(false);
+                  setRotation(0);
+                  setFlipH(false);
+                  setFlipY(false);
+                }}
+                style={{
+                  padding: '6px 4px',
+                  background: 'rgba(211, 47, 47, 0.08)',
+                  border: '1px solid rgba(211, 47, 47, 0.2)',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  color: '#c62828',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px'
+                }}
+              >
+                🧹 Limpiar
+              </button>
             </div>
 
-            {/* Contrast Adjustment */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', fontSize: '12px', color: 'var(--game-text-bright)' }}>
-                <span>🌗 Contraste Diagnóstico</span>
-                <strong>{contrast}%</strong>
+            {/* Sliders Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              {/* Brillo */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--game-text-bright)' }}>
+                  <span>☀️ Brillo</span>
+                  <strong>{brightness}%</strong>
+                </div>
+                <input 
+                  type="range"
+                  min="50"
+                  max="150"
+                  value={brightness}
+                  onChange={(e) => setBrightness(Number(e.target.value))}
+                  style={{ accentColor: accentColor, width: '100%' }}
+                />
               </div>
-              <input 
-                type="range"
-                min="50"
-                max="150"
-                value={contrast}
-                onChange={(e) => setContrast(Number(e.target.value))}
-                style={{
-                  accentColor: accentColor,
-                  width: '100%'
-                }}
-              />
+
+              {/* Contraste */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--game-text-bright)' }}>
+                  <span>🌗 Contraste</span>
+                  <strong>{contrast}%</strong>
+                </div>
+                <input 
+                  type="range"
+                  min="50"
+                  max="150"
+                  value={contrast}
+                  onChange={(e) => setContrast(Number(e.target.value))}
+                  style={{ accentColor: accentColor, width: '100%' }}
+                />
+              </div>
+
+              {/* Exposición */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--game-text-bright)' }}>
+                  <span>🌟 Exposición</span>
+                  <strong>{exposure}%</strong>
+                </div>
+                <input 
+                  type="range"
+                  min="50"
+                  max="150"
+                  value={exposure}
+                  onChange={(e) => setExposure(Number(e.target.value))}
+                  style={{ accentColor: accentColor, width: '100%' }}
+                />
+              </div>
+
+              {/* Saturación */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--game-text-bright)' }}>
+                  <span>🌈 Saturación</span>
+                  <strong>{saturation}%</strong>
+                </div>
+                <input 
+                  type="range"
+                  min="0"
+                  max="200"
+                  value={saturation}
+                  onChange={(e) => setSaturation(Number(e.target.value))}
+                  style={{ accentColor: accentColor, width: '100%' }}
+                />
+              </div>
+            </div>
+
+            {/* Toggles */}
+            <div style={{ display: 'flex', gap: '16px', marginTop: '4px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer', color: 'var(--game-text-bright)', fontWeight: 'bold' }}>
+                <input 
+                  type="checkbox"
+                  checked={grayscale}
+                  onChange={(e) => setGrayscale(e.target.checked)}
+                  style={{ accentColor: accentColor }}
+                />
+                🪙 Blanco y Negro
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer', color: 'var(--game-text-bright)', fontWeight: 'bold' }}>
+                <input 
+                  type="checkbox"
+                  checked={invert}
+                  onChange={(e) => setInvert(e.target.checked)}
+                  style={{ accentColor: accentColor }}
+                />
+                🧪 Invertir Colores (Negativo)
+              </label>
             </div>
 
             {/* Manual Crop Rect Ajustes (as fallback/fine tuning) */}

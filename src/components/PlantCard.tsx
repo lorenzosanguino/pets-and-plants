@@ -11,15 +11,17 @@ import { BiometricChart } from './BiometricChart';
 import { GeminiAPIService } from '../services/geminiAPI';
 import { TTSButton } from '../utils/useTTS';
 import { useTranslations } from '../utils/i18n';
+import { playSoundWater } from '../utils/audioFeedback';
 interface PlantCardProps {
   planta: Planta;
+  clima?: any;
   onUpdate: () => void;
   onOpenScanner?: (mode: 'enfermedad_planta', assetId: string) => void;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
 }
 
-const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, onUpdate, onOpenScanner, isExpanded, onToggleExpand }) => {
+const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, clima, onUpdate, onOpenScanner, isExpanded, onToggleExpand }) => {
   const { locale } = useTranslations();
   const cuota = IAQuotaManager.obtenerEstadoCuota();
   const [localExpanded, setLocalExpanded] = useState(false);
@@ -212,6 +214,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
     try {
       await LocalDatabase.savePlanta(plantaActualizada);
       localStorage.setItem('petplant_db_last_updated', Date.now().toString());
+      try { playSoundWater(); } catch {}
       onUpdate();
     } catch (err) {
       console.error("Error al registrar riego:", err);
@@ -331,13 +334,61 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
     setShowDeleteConfirm(false);
   };
 
+  const calcularAjusteClimatico = () => {
+    if (!clima) return { factor: 1.0, motivos: [] as string[], temp: 22, hum: 50 };
+    
+    const temp = clima.temperatura;
+    const hum = clima.humedad;
+    
+    let factor = 1.0;
+    const motivos: string[] = [];
+    
+    if (temp > 28) {
+      const reduccion = Math.min(0.4, ((temp - 28) / 12) * 0.4);
+      factor -= reduccion;
+      motivos.push(`temperatura alta (${Math.round(temp)}°C)`);
+    } else if (temp < 15) {
+      const incremento = Math.min(0.5, ((15 - temp) / 15) * 0.5);
+      factor += incremento;
+      motivos.push(`temperatura baja (${Math.round(temp)}°C)`);
+    }
+    
+    if (hum < 35) {
+      factor -= 0.15;
+      motivos.push(`baja humedad (${Math.round(hum)}%)`);
+    } else if (hum > 75) {
+      factor += 0.20;
+      motivos.push(`alta humedad (${Math.round(hum)}%)`);
+    }
+    
+    factor = Math.max(0.5, Math.min(1.7, factor));
+    
+    return { factor, motivos, temp, hum };
+  };
+
+  const { factor, motivos, temp, hum } = calcularAjusteClimatico();
+  const baseIntervalo = planta.intervaloRiegoBase || planta.intervaloRiegoDias || 7;
+  const intervaloAjustado = clima ? Math.max(2, Math.round(baseIntervalo * factor)) : baseIntervalo;
+
   const calcularDiasRestantes = () => {
     if (!currentProxima) return 0;
     const proximo = new Date(currentProxima).getTime();
     if (isNaN(proximo)) return 0;
     const hoy = new Date().getTime();
     const diferenciaMs = proximo - hoy;
-    return Math.ceil(diferenciaMs / (1000 * 60 * 60 * 24));
+    const diasBase = Math.ceil(diferenciaMs / (1000 * 60 * 60 * 24));
+    
+    if (clima) {
+      if (currentUltima) {
+        const ultima = new Date(currentUltima).getTime();
+        const proximoAjustado = ultima + (intervaloAjustado * 24 * 3600 * 1000);
+        return Math.ceil((proximoAjustado - hoy) / (1000 * 60 * 60 * 24));
+      } else {
+        const factorAjuste = baseIntervalo > 0 ? (intervaloAjustado / baseIntervalo) : 1;
+        return Math.max(0, Math.round(diasBase * factorAjuste));
+      }
+    }
+    return diasBase;
   };
 
   const diasRestantes = calcularDiasRestantes();
@@ -529,9 +580,10 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
   };
 
   const renderMedidorHidratacion = () => {
+    const divisor = clima ? intervaloAjustado : (planta.intervaloRiegoDias || 7);
     if (theme === 'gaming') {
       const totalHearts = 5;
-      const filled = Math.max(0, Math.min(5, Math.ceil((diasRestantes / planta.intervaloRiegoDias) * 5)));
+      const filled = Math.max(0, Math.min(5, Math.ceil((diasRestantes / divisor) * 5)));
       return (
         <div style={{ display: 'flex', gap: '4px', fontSize: '18px' }}>
           {Array.from({ length: totalHearts }).map((_, i) => (
@@ -541,7 +593,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
       );
     }
 
-    const percent = Math.max(0, Math.min(100, Math.round((diasRestantes / planta.intervaloRiegoDias) * 100)));
+    const percent = Math.max(0, Math.min(100, Math.round((diasRestantes / divisor) * 100)));
     const isKawaii = theme === 'kawaii';
     
     const barColor = isKawaii
@@ -733,8 +785,123 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
     );
   }
 
+  const renderMicroClimaBackground = () => {
+    let backgroundStyle: React.CSSProperties = {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 0,
+      pointerEvents: 'none',
+      overflow: 'hidden',
+      borderRadius: 'inherit',
+      transition: 'background 0.5s ease'
+    };
+
+    if (clima) {
+      if (temp > 28) {
+        backgroundStyle.background = 'linear-gradient(135deg, rgba(255, 183, 77, 0.06) 0%, transparent 80%)';
+      } else if (temp < 15) {
+        backgroundStyle.background = 'linear-gradient(135deg, rgba(129, 212, 250, 0.06) 0%, transparent 80%)';
+      } else if (hum > 75) {
+        backgroundStyle.background = 'linear-gradient(135deg, rgba(144, 202, 249, 0.06) 0%, transparent 80%)';
+      }
+    }
+
+    return (
+      <div style={backgroundStyle}>
+        {diasRestantes <= 0 ? (
+          <svg width="100%" height="100%" style={{ opacity: 0.12 }}>
+            <style>{`
+              @keyframes floatDust {
+                0% { transform: translateY(110%) translateX(0); opacity: 0; }
+                50% { opacity: 0.8; }
+                100% { transform: translateY(-10%) translateX(15px); opacity: 0; }
+              }
+              .dust1 { animation: floatDust 5s infinite ease-in-out; }
+              .dust2 { animation: floatDust 7s infinite ease-in-out; animation-delay: 1.5s; }
+              .dust3 { animation: floatDust 6s infinite ease-in-out; animation-delay: 3s; }
+            `}</style>
+            <circle className="dust1" cx="20%" cy="80%" r="3" fill="#8d6e63" />
+            <circle className="dust2" cx="50%" cy="90%" r="4.5" fill="#a1887f" />
+            <circle className="dust3" cx="80%" cy="85%" r="2.5" fill="#8d6e63" />
+          </svg>
+        ) : (
+          <svg width="100%" height="100%" style={{ opacity: 0.15 }}>
+            <style>{`
+              @keyframes floatDew {
+                0% { transform: translateY(110%) scale(0.8); opacity: 0; }
+                50% { opacity: 1; }
+                100% { transform: translateY(-10%) scale(1.2); opacity: 0; }
+              }
+              .dew1 { animation: floatDew 4s infinite ease-in-out; }
+              .dew2 { animation: floatDew 5.5s infinite ease-in-out; animation-delay: 1s; }
+              .dew3 { animation: floatDew 4.8s infinite ease-in-out; animation-delay: 2.5s; }
+            `}</style>
+            <circle className="dew1" cx="25%" cy="90%" r="3.5" fill="#80deea" />
+            <circle className="dew2" cx="75%" cy="90%" r="2.5" fill="#a5d6a7" />
+            <circle className="dew3" cx="45%" cy="85%" r="4.5" fill="#81c784" />
+          </svg>
+        )}
+
+        {clima && temp > 28 && (
+          <svg width="100%" height="100%" style={{ opacity: 0.08, position: 'absolute', top: 0, left: 0 }}>
+            <style>{`
+              @keyframes heatwave {
+                0% { transform: translateY(10px) skewX(2deg); opacity: 0.3; }
+                50% { transform: translateY(0px) skewX(-2deg); opacity: 0.7; }
+                100% { transform: translateY(-10px) skewX(2deg); opacity: 0.3; }
+              }
+              .hw1 { animation: heatwave 3.5s infinite ease-in-out; }
+              .hw2 { animation: heatwave 4.5s infinite ease-in-out; animation-delay: 1.5s; }
+            `}</style>
+            <path className="hw1" d="M10,120 Q30,70 50,120 T90,120 T130,120" fill="none" stroke="#ffb74d" strokeWidth="2" />
+            <path className="hw2" d="M110,120 Q130,70 150,120 T190,120 T230,120" fill="none" stroke="#ffa726" strokeWidth="2" />
+          </svg>
+        )}
+
+        {clima && temp < 15 && (
+          <svg width="100%" height="100%" style={{ opacity: 0.12, position: 'absolute', top: 0, left: 0 }}>
+            <style>{`
+              @keyframes driftSnow {
+                0% { transform: translateY(-10px) rotate(0deg); opacity: 0; }
+                50% { opacity: 0.8; }
+                100% { transform: translateY(110%) rotate(360deg); opacity: 0; }
+              }
+              .sn1 { animation: driftSnow 9s infinite linear; }
+              .sn2 { animation: driftSnow 12s infinite linear; animation-delay: 3s; }
+              .sn3 { animation: driftSnow 10s infinite linear; animation-delay: 6s; }
+            `}</style>
+            <text className="sn1" x="15%" y="-10" fontSize="10" fill="#90caf9">❄</text>
+            <text className="sn2" x="55%" y="-10" fontSize="12" fill="#bbdefb">❄</text>
+            <text className="sn3" x="85%" y="-10" fontSize="9" fill="#90caf9">❄</text>
+          </svg>
+        )}
+
+        {clima && hum > 75 && (
+          <svg width="100%" height="100%" style={{ opacity: 0.12, position: 'absolute', top: 0, left: 0 }}>
+            <style>{`
+              @keyframes fallRain {
+                0% { transform: translateY(-20px) translateX(-5px); opacity: 0; }
+                30% { opacity: 0.8; }
+                100% { transform: translateY(110%) translateX(25px); opacity: 0; }
+              }
+              .rn1 { animation: fallRain 2.2s infinite linear; }
+              .rn2 { animation: fallRain 2.8s infinite linear; animation-delay: 0.8s; }
+              .rn3 { animation: fallRain 2.4s infinite linear; animation-delay: 1.6s; }
+            `}</style>
+            <line className="rn1" x1="20%" y1="-10" x2="25%" y2="15" stroke="#90caf9" strokeWidth="1.5" />
+            <line className="rn2" x1="60%" y1="-10" x2="65%" y2="15" stroke="#90caf9" strokeWidth="1.5" />
+            <line className="rn3" x1="85%" y1="-10" x2="90%" y2="15" stroke="#90caf9" strokeWidth="1.5" />
+          </svg>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div id={`card-${planta.id}`} style={{
+    <div id={`card-${planta.id}`} className="glass-card" style={{
       background: 'var(--game-card-bg, #ffffff)',
       borderRadius: 'var(--game-radius, 16px)',
       padding: '20px',
@@ -751,6 +918,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
       overflowWrap: 'break-word',
       maxWidth: '100%'
     }}>
+      {renderMicroClimaBackground()}
       {/* Cabecera (Click para expandir/colapsar) */}
       <div 
         onClick={toggleExpanded}
@@ -901,6 +1069,23 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                   }}>
                     {textoRiego}
                   </span>
+                  {clima && (
+                    <span style={{
+                      fontSize: '10px',
+                      background: 'rgba(2, 136, 209, 0.08)',
+                      color: '#0288d1',
+                      border: '1.5px solid #0288d1',
+                      padding: '2px 8px',
+                      borderRadius: theme === 'kawaii' ? '12px' : '6px',
+                      fontWeight: 'bold',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontFamily: 'var(--game-font, sans-serif)'
+                    }} title={`Ajuste por clima activo: ${factor.toFixed(2)}x`}>
+                      ⛅ Clima: {intervaloAjustado}d ({factor.toFixed(2)}x)
+                    </span>
+                  )}
                 </div>
               );
             })()}
@@ -1049,6 +1234,32 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
               </span>
             </div>
             {renderMedidorHidratacion()}
+            {clima && (
+              <div style={{
+                marginTop: '10px',
+                padding: '8px 10px',
+                borderRadius: '8px',
+                background: 'rgba(2, 136, 209, 0.08)',
+                border: '1px solid rgba(2, 136, 209, 0.2)',
+                fontSize: '11px',
+                color: '#0288d1',
+                fontFamily: 'var(--game-font, sans-serif)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+                  <span>⛅ Ajuste Climático Dinámico</span>
+                  <span>Factor: {factor.toFixed(2)}x</span>
+                </div>
+                <div>
+                  Riego ajustado a <strong>{intervaloAjustado} días</strong> (base: {baseIntervalo} días) debido a {motivos.length > 0 ? motivos.join(' y ') : 'clima templado'}.
+                </div>
+                <div style={{ fontSize: '10px', opacity: 0.8, fontStyle: 'italic' }}>
+                  Sensor GPS: {Math.round(temp)}°C | {Math.round(hum)}% HR
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Botón de Regar Planta (Ubicado entre Nivel de Hidratación y Algoritmo Climático) */}
@@ -1458,7 +1669,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
 
           {/* MODAL DE DOBLE CONFIRMACIÓN DE BORRADO */}
           {showDeleteConfirm && (
-            <div style={{
+            <div className="modal-backdrop" style={{
               position: 'fixed',
               top: 0, left: 0, right: 0, bottom: 0,
               background: 'rgba(0,0,0,0.6)',
@@ -1469,7 +1680,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
               padding: '16px',
               overflowY: 'auto'
             }} onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(false); }}>
-              <div style={{
+              <div className="confirm-modal-content" style={{
                 background: 'var(--game-card-bg, #ffffff)',
                 borderRadius: 'var(--game-radius, 16px)',
                 border: 'var(--game-border, 1px solid #f0f0f0)',
@@ -1534,7 +1745,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
 
           {/* VENTANA EMERGENTE (MODAL) PARA REPORTE DE IA */}
           {iaReporteModal && (
-            <div style={{
+            <div className="modal-backdrop" style={{
               position: 'fixed',
               top: 0,
               left: 0,
@@ -1549,7 +1760,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
               padding: '20px',
               boxSizing: 'border-box'
             }} onClick={() => setIaReporteModal(null)}>
-              <div style={{
+              <div className="report-modal-content" style={{
                 background: 'var(--game-card-bg, #ffffff)',
                 borderRadius: '16px',
                 padding: '24px',
@@ -1654,8 +1865,8 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
 
       {/* MODAL CHEF NUTRICIONAL IA — PLANTAS */}
       {showChefModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setShowChefModal(false)}>
-          <div style={{ background: 'var(--game-card-bg, #fff)', borderRadius: theme === 'gaming' ? '0px' : '16px', padding: '24px', maxWidth: '480px', width: '90%', maxHeight: '80vh', overflowY: 'auto', border: 'var(--game-border, none)', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
+        <div className="modal-backdrop" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setShowChefModal(false)}>
+          <div className="chef-modal-content" style={{ background: 'var(--game-card-bg, #fff)', borderRadius: theme === 'gaming' ? '0px' : '16px', padding: '24px', maxWidth: '480px', width: '90%', maxHeight: '80vh', overflowY: 'auto', border: 'var(--game-border, none)', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <strong style={{ fontSize: '15px', color: 'var(--game-text-bright)', fontFamily: 'var(--game-font, sans-serif)' }}>🍽️ Chef Nutricional IA — {planta.nombreComun}</strong>
               <button type="button" onClick={() => setShowChefModal(false)} style={{ background: 'transparent', border: 'none', fontSize: '18px', cursor: 'pointer', color: 'var(--game-text)' }}>✕</button>
@@ -1687,8 +1898,8 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
           background: 'rgba(8,6,13,0.7)', backdropFilter: 'blur(8px)',
           zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: '20px', boxSizing: 'border-box'
-        }} className="no-print">
-          <div style={{
+        }} className="modal-backdrop no-print">
+          <div className="luxometer-modal-content" style={{
             background: 'var(--bg, #fff)',
             border: '1px solid var(--border, #e5e4e7)',
             borderRadius: '16px',
@@ -1825,6 +2036,7 @@ export const PlantCard = React.memo(PlantCardComponent, (prevProps, nextProps) =
     JSON.stringify(prevProps.planta.fotos) === JSON.stringify(nextProps.planta.fotos) &&
     prevProps.planta.temperaturaZona === nextProps.planta.temperaturaZona &&
     JSON.stringify(prevProps.planta.diarioFoliar) === JSON.stringify(nextProps.planta.diarioFoliar) &&
-    JSON.stringify(prevProps.planta.diagnosticosIA) === JSON.stringify(nextProps.planta.diagnosticosIA)
+    JSON.stringify(prevProps.planta.diagnosticosIA) === JSON.stringify(nextProps.planta.diagnosticosIA) &&
+    JSON.stringify(prevProps.clima) === JSON.stringify(nextProps.clima)
   );
 });

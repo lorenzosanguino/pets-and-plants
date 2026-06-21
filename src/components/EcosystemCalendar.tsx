@@ -262,7 +262,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
   const selectedDayEvents = eventos.filter(ev => ev.fecha === selectedDayStr);
 
   return (
-    <div style={{
+    <div className="glass-card" style={{
       background: 'var(--game-card-bg, #ffffff)',
       borderRadius: '16px',
       border: 'var(--game-border, 1.5px solid #eaeaea)',

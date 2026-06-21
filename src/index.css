@@ -440,4 +440,359 @@ button {
   }
 }
 
+/* ==========================================================================
+   TEMA GLASSMORPHISM DE ALTO RENDIMIENTO (GLOBAL)
+   ========================================================================== */
+.glass-card {
+  background: var(--game-card-bg, rgba(255, 255, 255, 0.45)) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: var(--game-border, 1px solid rgba(255, 255, 255, 0.35)) !important;
+  box-shadow: var(--game-shadow, 0 8px 32px 0 rgba(31, 38, 135, 0.04)) !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease !important;
+}
+
+[data-game-theme="gaming"] .glass-card {
+  background: rgba(15, 22, 36, 0.65) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(102, 252, 241, 0.25) !important;
+  box-shadow: 0 0 15px rgba(102, 252, 241, 0.2) !important;
+}
+
+[data-game-theme="nature"] .glass-card {
+  background: rgba(255, 255, 255, 0.65) !important;
+  border: 1px solid rgba(46, 125, 50, 0.12) !important;
+}
+
+[data-game-theme="kawaii"] .glass-card {
+  background: rgba(255, 255, 255, 0.5) !important;
+  border: 2px dashed rgba(255, 182, 193, 0.6) !important;
+}
+
+[data-game-theme="vintage"] .glass-card {
+  background: rgba(254, 252, 248, 0.82) !important;
+  border: 1.5px solid rgba(205, 162, 80, 0.4) !important;
+}
+
+/* ==========================================================================
+   OPTIMIZACIONES PARA ORIENTACIÓN HORIZONTAL (LANDSCAPE) EN MÓVILES Y TABLETS
+   ========================================================================== */
+
+@media (orientation: landscape) and (max-height: 768px) {
+  /* Raíz y contenedor principal */
+  .dashboard-root {
+    padding: 12px 16px !important;
+  }
+
+  /* Header del Ecosistema */
+  .ecosystem-header-responsive {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    text-align: left !important;
+    padding: 10px 16px !important;
+    margin-bottom: 12px !important;
+    gap: 12px !important;
+  }
+
+  .ecosystem-header-responsive h1 {
+    font-size: 18px !important;
+    margin: 0 !important;
+    text-align: left !important;
+  }
+
+  .ecosystem-header-responsive p {
+    font-size: 11px !important;
+    text-align: left !important;
+    margin: 2px 0 !important;
+  }
+
+  .ecosystem-buttons-responsive {
+    flex-direction: row !important;
+    width: auto !important;
+    gap: 6px !important;
+    align-items: center !important;
+  }
+
+  .ecosystem-buttons-responsive button {
+    padding: 6px 10px !important;
+    font-size: 10.5px !important;
+    min-width: auto !important;
+    width: auto !important;
+  }
+
+  /* Tabs de navegación */
+  .dashboard-tabs-container {
+    margin-bottom: 16px !important;
+  }
+
+  .dashboard-tabs-container button {
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+  }
+
+  /* Barra de acciones de Registro */
+  .dashboard-actions-bar {
+    padding: 10px 16px !important;
+    gap: 12px !important;
+  }
+
+  .dashboard-actions-bar > div {
+    gap: 2px !important;
+  }
+
+  .dashboard-actions-bar button {
+    padding: 8px 14px !important;
+    font-size: 12px !important;
+  }
+
+  /* Cuadrícula de tarjetas */
+  .main-dashboard-grid {
+    gap: 16px !important;
+  }
+
+  /* Chat del Consultor IA */
+  .ia-view-wrapper {
+    gap: 12px !important;
+  }
+
+  .ia-chat-container {
+    height: calc(100vh - 220px) !important;
+    max-height: 400px !important;
+    min-height: 220px !important;
+    padding: 12px !important;
+  }
+
+  /* Modales y Ventanas Emergentes */
+  .modal-backdrop {
+    padding: 8px !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Contenido interno de modales */
+  .manual-register-form,
+  .scanner-modal-content,
+  .photo-editor-modal-content,
+  .chef-modal-content,
+  .confirm-modal-content,
+  .report-modal-content,
+  .training-modal-content,
+  .luxometer-modal-content {
+    max-height: 94vh !important;
+    padding: 16px 20px !important;
+    gap: 10px !important;
+    margin: auto !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25) !important;
+  }
+
+  /* Ajustar cuadrículas internas de formularios en landscape */
+  .manual-register-form div[style*="gridTemplateColumns"],
+  .scanner-modal-content div[style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Títulos de modales */
+  .manual-register-form h3,
+  .scanner-modal-content h2,
+  .photo-editor-modal-content h3,
+  .chef-modal-content strong {
+    font-size: 16px !important;
+    padding-bottom: 6px !important;
+  }
+  
+  /* Ajuste para reportes de diagnóstico lado a lado en landscape */
+  .report-modal-card {
+    flex-direction: row !important;
+    height: 95vh !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+  /* Landing Splash View compacta en landscape */
+  .landing-view-wrapper {
+    min-height: 100vh !important;
+    padding: 12px 10px !important;
+    gap: 8px !important;
+    justify-content: center !important;
+  }
+
+  .landing-decorator,
+  .landing-decorator-delay {
+    display: none !important;
+  }
+
+  .landing-title-block h1 {
+    font-size: 24px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .landing-title-block p {
+    font-size: 11px !important;
+  }
+
+  .landing-container {
+    margin-top: 8px !important;
+    gap: 12px !important;
+  }
+
+  .landing-card {
+    padding: 10px 8px !important;
+    border-radius: 12px !important;
+    gap: 4px !important;
+  }
+
+  .landing-card div[class^="premium-logo"] {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 24px !important;
+    border-width: 2px !important;
+  }
+
+  .landing-card-title {
+    font-size: 13px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .landing-card-desc {
+    font-size: 9.5px !important;
+    line-height: 1.2 !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .landing-card-button {
+    padding: 4px 10px !important;
+    font-size: 9.5px !important;
+    margin-top: 4px !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  /* Ajustes extra para móviles en landscape estrecho */
+  .dashboard-root {
+    padding: 8px 10px !important;
+  }
+
+  /* Loading Screen horizontal */
+  .loading-overlay-root {
+    padding: 12px 10px !important;
+    gap: 8px !important;
+    justify-content: center !important;
+  }
+
+  .loading-overlay-root h2 {
+    font-size: 20px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .loading-overlay-root p {
+    font-size: 12px !important;
+  }
+
+  .loading-overlay-root div[style*="maxWidth: 340px"] {
+    max-width: 480px !important;
+    padding: 8px 12px !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+  }
+
+  .loading-overlay-root div[style*="maxWidth: 340px"] > div {
+    flex: 1 1 50% !important;
+  }
+
+  .loading-overlay-root div[style*="maxWidth: 340px"] button {
+    padding: 6px 10px !important;
+    font-size: 11.5px !important;
+  }
+
+  /* Modales reducidos en altura */
+  .manual-register-form,
+  .scanner-modal-content,
+  .photo-editor-modal-content,
+  .chef-modal-content,
+  .confirm-modal-content,
+  .report-modal-content,
+  .training-modal-content,
+  .luxometer-modal-content {
+    max-height: 96vh !important;
+    padding: 12px 16px !important;
+    gap: 8px !important;
+  }
+
+  /* Compactar inputs y labels */
+  .manual-register-form label,
+  .scanner-modal-content label {
+    margin-bottom: 2px !important;
+    font-size: 11px !important;
+  }
+
+  .manual-register-form input,
+  .manual-register-form select,
+  .scanner-modal-content input,
+  .scanner-modal-content select {
+    padding: 5px 8px !important;
+    font-size: 12px !important;
+  }
+
+  /* IA Chat View */
+  .ia-chat-container {
+    height: calc(100vh - 160px) !important;
+    min-height: 180px !important;
+  }
+}
+
+/* ==========================================================================
+   TRANSICIONES DE PÁGINAS Y TARJETAS ANIMADAS PREMIUM (GLOBAL)
+   ========================================================================== */
+
+/* Entrada suave de páginas */
+.page-transition-enter {
+  animation: pageSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pageSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Animación de entrada secuencial escalonada para las tarjetas de la landing */
+.landing-card-animation {
+  opacity: 0;
+  animation: cardScaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1) forwards;
+}
+
+.landing-card-animation:nth-child(1) {
+  animation-delay: 0.08s;
+}
+
+.landing-card-animation:nth-child(2) {
+  animation-delay: 0.18s;
+}
+
+.landing-card-animation:nth-child(3) {
+  animation-delay: 0.28s;
+}
+
+@keyframes cardScaleIn {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.93);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 
