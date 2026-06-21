@@ -837,8 +837,18 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
     );
   };
 
+  const checkPesoAlert = () => {
+    const list = mascota.registroPeso || [];
+    if (list.length >= 2) {
+      const prev = list[list.length - 2].pesoKg;
+      const curr = list[list.length - 1].pesoKg;
+      return curr < prev * 0.9;
+    }
+    return false;
+  };
+
   return (
-    <div id={`card-${mascota.id}`} className="printable-clinical-record glass-card" style={{
+    <div id={`card-${mascota.id}`} className={`printable-clinical-record glass-card ${checkPesoAlert() ? 'has-critical-alert' : ''}`} style={{
       background: 'var(--game-card-bg, #ffffff)',
       borderRadius: 'var(--game-radius, 16px)',
       padding: '20px',
@@ -1454,7 +1464,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                     
                     {/* Barra de progreso */}
                     <div style={{ width: '100%', height: '5px', background: '#cbd5e1', borderRadius: '3px', overflow: 'hidden' }}>
-                      <div style={{ width: `${progreso}%`, height: '100%', background: progreso === 100 ? '#16a34a' : 'var(--accent, #8f20e6)', transition: 'width 0.3s' }} />
+                      <div className="liquid-progress-bar" style={{ width: `${progreso}%`, height: '100%', background: progreso === 100 ? '#16a34a' : 'var(--accent, #8f20e6)', transition: 'width 0.3s' }} />
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2px' }}>

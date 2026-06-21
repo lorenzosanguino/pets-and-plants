@@ -430,7 +430,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
   };
 
   return (
-    <div id={`card-${exotico.id}`} className="glass-card" style={{
+    <div id={`card-${exotico.id}`} className={`glass-card ${exotico.temperaturaTerrario > 28 || exotico.humedadTerrario < 40 ? 'has-critical-alert' : ''}`} style={{
       background: 'var(--game-card-bg, #ffffff)',
       borderRadius: 'var(--game-radius, 16px)',
       border: 'var(--game-border, 1.5px solid #eaeaea)',

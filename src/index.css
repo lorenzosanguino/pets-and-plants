@@ -824,4 +824,182 @@ button {
   }
 }
 
+/* ==========================================================================
+   GLOBAL UI/UX OVERHAUL ENHANCEMENTS
+   ========================================================================== */
+
+/* 1. Táctil Orgánica (Micro-escalas en Clic) */
+button,
+.landing-card,
+.dashboard-tabs-container button,
+.theme-button-item,
+.glass-card,
+.ia-chat-container button,
+.modal-backdrop button {
+  transition: transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.15s ease, background-color 0.15s ease !important;
+}
+
+button:active,
+.landing-card:active,
+.dashboard-tabs-container button:active,
+.theme-button-item:active {
+  transform: scale(0.96) !important;
+}
+
+/* 2. Ciclo de Iluminación Solar Dinámico (Modo Noche/Crepúsculo) */
+.dashboard-root {
+  position: relative;
+}
+
+.dashboard-root::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 999999;
+  opacity: 0;
+  transition: opacity 3s ease-in-out, background-color 3s ease-in-out;
+}
+
+.dashboard-root[data-solar-cycle="sunset"]::after {
+  background: linear-gradient(135deg, rgba(255, 87, 34, 0.07) 0%, rgba(103, 58, 183, 0.07) 100%);
+  mix-blend-mode: overlay;
+  opacity: 1;
+}
+
+.dashboard-root[data-solar-cycle="night"]::after {
+  background: linear-gradient(180deg, rgba(13, 27, 42, 0.22) 0%, rgba(27, 38, 59, 0.12) 100%);
+  mix-blend-mode: multiply;
+  opacity: 1;
+}
+
+.dashboard-root[data-solar-cycle="sunrise"]::after {
+  background: linear-gradient(45deg, rgba(255, 112, 67, 0.05) 0%, rgba(255, 238, 88, 0.03) 100%);
+  mix-blend-mode: overlay;
+  opacity: 1;
+}
+
+/* 3. Barras de Progreso e Indicadores Líquidos (Liquid Wave) */
+.liquid-progress-bar {
+  position: relative;
+  overflow: hidden;
+  background-image: 
+    repeating-linear-gradient(
+      -45deg,
+      rgba(255, 255, 255, 0.15) 0px,
+      rgba(255, 255, 255, 0.15) 8px,
+      rgba(255, 255, 255, 0) 8px,
+      rgba(255, 255, 255, 0) 16px
+    ),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.2), rgba(0, 0, 0, 0.08)) !important;
+  background-size: 32px 32px, 100% 100% !important;
+  animation: liquidWaveMove 1.2s infinite linear !important;
+}
+
+@keyframes liquidWaveMove {
+  0% {
+    background-position: 0 0, 0 0;
+  }
+  100% {
+    background-position: 32px 0, 0 0;
+  }
+}
+
+/* 4. Scrollbars y Contenedores con Desvanecimiento Gradual (Scroll Fade Masks) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--game-border-color, rgba(0, 0, 0, 0.12));
+  border-radius: 6px;
+  transition: background 0.25s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--game-text, rgba(0, 0, 0, 0.28));
+}
+
+.ia-chat-container,
+.manual-register-form,
+.scanner-modal-content,
+.photo-editor-modal-content,
+.chef-modal-content,
+.report-modal-content,
+.training-modal-content,
+.luxometer-modal-content {
+  mask-image: linear-gradient(to bottom, transparent 0%, black 12px, black calc(100% - 12px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 12px, black calc(100% - 12px), transparent 100%);
+}
+
+/* 5. Transición Cinematic-Resorte al Abrir Modales (Spring Modals & Blur Backdrop) */
+.modal-backdrop {
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.manual-register-form,
+.scanner-modal-content,
+.photo-editor-modal-content,
+.chef-modal-content,
+.confirm-modal-content,
+.report-modal-content,
+.training-modal-content,
+.luxometer-modal-content {
+  animation: modalSpringEntry 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  transform-origin: center;
+}
+
+@keyframes modalSpringEntry {
+  0% {
+    transform: scale(0.9) translateY(24px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 6. Esqueletos de Carga con Efecto Escarcha de Cristal (Glassmorphic Shimmer) */
+.skeleton-item {
+  background: linear-gradient(
+    90deg, 
+    var(--game-card-bg, rgba(255, 255, 255, 0.2)) 25%, 
+    var(--game-border-color, rgba(255, 255, 255, 0.45)) 50%, 
+    var(--game-card-bg, rgba(255, 255, 255, 0.2)) 75%
+  ) !important;
+  background-size: 200% 100% !important;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
+  animation: loadingShimmer 1.5s infinite linear !important;
+}
+
+/* 7. Halos de Alerta Pulsantes por Gravedad de Estado (Ambient Status Glow) */
+.has-critical-alert {
+  box-shadow: 0 0 4px rgba(244, 67, 54, 0.15), 0 0 16px rgba(244, 67, 54, 0.1) !important;
+  border: 1.5px solid rgba(244, 67, 54, 0.35) !important;
+  animation: warningPulseGlow 2s infinite alternate ease-in-out !important;
+}
+
+@keyframes warningPulseGlow {
+  0% {
+    box-shadow: 0 0 4px rgba(244, 67, 54, 0.15), 0 0 12px rgba(244, 67, 54, 0.1) !important;
+    border-color: rgba(244, 67, 54, 0.35) !important;
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(244, 67, 54, 0.3), 0 0 24px rgba(244, 67, 54, 0.2) !important;
+    border-color: rgba(244, 67, 54, 0.6) !important;
+  }
+}
+
+
 

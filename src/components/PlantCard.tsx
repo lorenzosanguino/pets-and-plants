@@ -634,7 +634,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
           boxSizing: 'border-box',
           overflow: 'hidden'
         }}>
-          <div style={{ 
+          <div className="liquid-progress-bar" style={{ 
             width: `${percent}%`, 
             height: '100%', 
             background: barColor,
@@ -901,7 +901,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
   };
 
   return (
-    <div id={`card-${planta.id}`} className="glass-card" style={{
+    <div id={`card-${planta.id}`} className={`glass-card ${diasRestantes <= 0 ? 'has-critical-alert' : ''}`} style={{
       background: 'var(--game-card-bg, #ffffff)',
       borderRadius: 'var(--game-radius, 16px)',
       padding: '20px',

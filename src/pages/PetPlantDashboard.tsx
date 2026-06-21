@@ -95,6 +95,43 @@ export const PetPlantDashboard: React.FC = () => {
   const [rippleColor, setRippleColor] = useState('#2e7d32');
   const [isRippling, setIsRippling] = useState(false);
 
+  // Solar cycle state
+  const [solarCycle, setSolarCycle] = useState<'day' | 'sunset' | 'night' | 'sunrise'>(() => {
+    const hours = new Date().getHours();
+    if (hours >= 21 || hours < 6) return 'night';
+    if (hours >= 19 && hours < 21) return 'sunset';
+    if (hours >= 6 && hours < 8) return 'sunrise';
+    return 'day';
+  });
+
+  // Parallax background coordinate offsets
+  const [bgOffsetX, setBgOffsetX] = useState(0);
+  const [bgOffsetY, setBgOffsetY] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const hours = new Date().getHours();
+      if (hours >= 21 || hours < 6) setSolarCycle('night');
+      else if (hours >= 19 && hours < 21) setSolarCycle('sunset');
+      else if (hours >= 6 && hours < 8) setSolarCycle('sunrise');
+      else setSolarCycle('day');
+    }, 10 * 60 * 1000);
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (window.innerWidth <= 600) return;
+      const x = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
+      const y = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+      setBgOffsetX(-x * 15);
+      setBgOffsetY(-y * 15);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
+
   const triggerRippleTransition = React.useCallback((
     mode: 'landing' | 'pets' | 'plants' | 'exotics' | 'travels' | 'consultants',
     tab: 'dashboard' | 'consultants' | 'settings',
@@ -540,13 +577,15 @@ export const PetPlantDashboard: React.FC = () => {
   return (
     <div 
       data-game-theme={uiTheme}
+      data-solar-cycle={solarCycle}
       className="dashboard-root"
       style={{ 
         background: 'var(--game-bg, #fcfcfc)', 
         backgroundImage: 'var(--game-bg-image)',
         backgroundRepeat: 'no-repeat',
         backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        backgroundPosition: `calc(50% + ${bgOffsetX}px) calc(50% + ${bgOffsetY}px)`,
+        transition: 'background-position 0.1s ease-out',
         backgroundAttachment: 'fixed',
         minHeight: '100vh', 
         height: isLoading ? '100svh' : 'auto',
