@@ -1224,6 +1224,19 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
               await LocalDatabase.savePlanta(plantaActualizada);
               onUpdate();
             }}
+            onEditCard={() => {
+              setEditNombreComun(planta.nombreComun);
+              setEditNombreCientifico(planta.nombreCientifico || '');
+              setEditUbicacion(planta.ubicacionHabitacion);
+              setEditIntervalo(String(planta.intervaloRiegoDias));
+              setEditToxicidadFelina(planta.toxicidadFelina);
+              setEditToxicidadCanina(planta.toxicidadCanina || 'Segura');
+              setEditCompuestosToxicos(planta.compuestosToxicos || '');
+              setIsEditing(true);
+            }}
+            onDeleteCard={() => {
+              setShowDeleteConfirm(true);
+            }}
           />
 
           {/* Nivel de Seguridad de Mascotas (Felina y Canina) */}

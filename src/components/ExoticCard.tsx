@@ -677,6 +677,15 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
               await LocalDatabase.saveExotico(exoticoActualizado);
               onUpdate();
             }}
+            onEditCard={() => {
+              setEditNombre(exotico.nombre);
+              setEditEspecie(exotico.especie);
+              setEditTipoEspecifico(exotico.tipoEspecifico);
+              setIsEditing(true);
+            }}
+            onDeleteCard={() => {
+              setShowDeleteConfirm(true);
+            }}
           />
 
           {/* Registro del Chip */}

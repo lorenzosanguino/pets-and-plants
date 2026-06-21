@@ -9,13 +9,17 @@ interface CardPhotoManagerProps {
   photos?: string[];
   onPhotosChange: (updatedPhotos: string[], newPrimaryUrl: string) => void;
   theme?: string;
+  onEditCard?: () => void;
+  onDeleteCard?: () => void;
 }
 
 export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
   currentPhotoUrl = '',
   photos = [],
   onPhotosChange,
-  theme = 'nature'
+  theme = 'nature',
+  onEditCard,
+  onDeleteCard
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activePhoto, setActivePhoto] = useState<string>(currentPhotoUrl || (photos.length > 0 ? photos[0] : ''));
@@ -118,6 +122,55 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
   // Theme-specific colors
   const accentColor = theme === 'gaming' ? '#00ff7f' : (theme === 'kawaii' ? '#ff6b8b' : '#2e7d32');
 
+  // Theme-specific styles for edit/delete buttons
+  const editBg = theme === 'gaming'
+    ? 'rgba(0, 255, 127, 0.15)'
+    : theme === 'kawaii'
+    ? '#fff5f7'
+    : theme === 'vintage'
+    ? '#fdfaf2'
+    : '#e8f5e9';
+
+  const editColor = theme === 'gaming'
+    ? '#00ff7f'
+    : theme === 'kawaii'
+    ? '#ff6b8b'
+    : theme === 'vintage'
+    ? '#b8860b'
+    : '#2e7d32';
+
+  const editBorder = theme === 'gaming'
+    ? '#00ff7f'
+    : theme === 'kawaii'
+    ? '#ff6b8b'
+    : theme === 'vintage'
+    ? '#b8860b'
+    : '#2e7d32';
+
+  const deleteBg = theme === 'gaming'
+    ? 'rgba(255, 76, 76, 0.15)'
+    : theme === 'kawaii'
+    ? '#fff0f0'
+    : theme === 'vintage'
+    ? '#faf0ef'
+    : '#ffebee';
+
+  const deleteColor = theme === 'gaming'
+    ? '#ff5252'
+    : theme === 'kawaii'
+    ? '#ff4081'
+    : theme === 'vintage'
+    ? '#b71c1c'
+    : '#d32f2f';
+
+  const deleteBorder = theme === 'gaming'
+    ? '#ff5252'
+    : theme === 'kawaii'
+    ? '#ff4081'
+    : theme === 'vintage'
+    ? '#b71c1c'
+    : '#d32f2f';
+
   return (
     <div style={{
       display: 'flex',
@@ -162,6 +215,51 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
           {loading ? 'Subiendo...' : '+ Añadir Foto 📷'}
         </button>
       </div>
+
+      {(onEditCard || onDeleteCard) && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0', marginTop: '2px', marginBottom: '2px', width: '100%', boxSizing: 'border-box' }}>
+          {onEditCard ? (
+            <button
+              type="button"
+              onClick={onEditCard}
+              style={{
+                padding: '6px 14px',
+                background: editBg,
+                color: editColor,
+                border: `1px solid ${editBorder}`,
+                borderRadius: '20px',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                fontFamily: 'var(--game-font, sans-serif)'
+              }}
+            >
+              ✏️ Editar Ficha
+            </button>
+          ) : <div />}
+          {onDeleteCard ? (
+            <button
+              type="button"
+              onClick={onDeleteCard}
+              style={{
+                padding: '6px 14px',
+                background: deleteBg,
+                color: deleteColor,
+                border: `1px solid ${deleteBorder}`,
+                borderRadius: '20px',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                fontFamily: 'var(--game-font, sans-serif)'
+              }}
+            >
+              🗑️ Eliminar Ficha
+            </button>
+          ) : <div />}
+        </div>
+      )}
 
       {error && (
         <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 'bold', padding: '0' }}>⚠️ {error}</span>

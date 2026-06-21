@@ -1136,6 +1136,18 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
               await LocalDatabase.saveMascota(mascotaActualizada);
               onUpdate();
             }}
+            onEditCard={() => {
+              setEditNombre(mascota.nombre);
+              setEditEspecie(mascota.especie);
+              setEditRaza(mascota.raza || '');
+              setEditSexo(mascota.sexo || 'Macho');
+              setEditCastrado(mascota.castrado || false);
+              setEditEsMamifero(mascota.sexo !== undefined || mascota.castrado !== undefined);
+              setIsEditing(true);
+            }}
+            onDeleteCard={() => {
+              setShowDeleteConfirm(true);
+            }}
           />
 
           {/* Raza en Detalles */}
