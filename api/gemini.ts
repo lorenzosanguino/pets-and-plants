@@ -33,9 +33,18 @@ export default async function handler(req: Request) {
     );
   }
 
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return new Response(
+      JSON.stringify({ error: 'El cuerpo de la petición no es un JSON válido.' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-    const body = await req.json();
     
     const response = await fetch(endpoint, {
       method: 'POST',

@@ -157,7 +157,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
     };
 
     await LocalDatabase.saveExotico(exoticoActualizado);
-    try { playSoundSuccess(); } catch {}
+    try { playSoundSuccess(); } catch { /* Ignore audio playback error */ }
     setNuevoPeso('');
     onUpdate();
   };
@@ -178,7 +178,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
     };
 
     await LocalDatabase.saveExotico(exoticoActualizado);
-    try { playSoundSuccess(); } catch {}
+    try { playSoundSuccess(); } catch { /* Ignore audio playback error */ }
     setNuevoCrecimiento('');
     onUpdate();
   };

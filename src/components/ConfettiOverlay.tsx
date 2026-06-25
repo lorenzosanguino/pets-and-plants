@@ -1,17 +1,19 @@
 import React from 'react';
 
 export const ConfettiOverlay: React.FC = () => {
-  const particleCount = 45;
-  const particles = Array.from({ length: particleCount }, (_, i) => ({
-    id: i,
-    left: `${Math.random() * 100}%`,
-    delay: `${Math.random() * 1.5}s`,
-    duration: `${2 + Math.random() * 2}s`,
-    rotation: `${Math.random() * 360}deg`,
-    color: ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#009688', '#4caf50', '#ffeb3b', '#ff9800'][Math.floor(Math.random() * 10)],
-    shape: Math.random() > 0.5 ? 'circle' : 'square',
-    scale: 0.4 + Math.random() * 0.8,
-  }));
+  const [particles] = React.useState(() => {
+    const particleCount = 45;
+    return Array.from({ length: particleCount }, (_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      delay: `${Math.random() * 1.5}s`,
+      duration: `${2 + Math.random() * 2}s`,
+      rotation: `${Math.random() * 360}deg`,
+      color: ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#009688', '#4caf50', '#ffeb3b', '#ff9800'][Math.floor(Math.random() * 10)],
+      shape: Math.random() > 0.5 ? 'circle' : 'square',
+      scale: 0.4 + Math.random() * 0.8,
+    }));
+  });
 
   return (
     <div className="confetti-celebration-container">

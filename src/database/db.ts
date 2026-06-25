@@ -186,6 +186,9 @@ function openDB(): Promise<IDBDatabase> {
 }
 
 export class LocalDatabase {
+  /** Cuando es true, los métodos save* NO añaden acciones a la cola de sincronización.
+   * Se activa exclusivamente durante seedInitialData() para evitar propagar datos demo a la nube. */
+  private static _isSeedingInProgress = false;
   static async getMascotas(): Promise<Mascota[]> {
     const db = await openDB();
     return new Promise((resolve, reject) => {
@@ -207,9 +210,11 @@ export class LocalDatabase {
       store.put(mascota);
 
       tx.oncomplete = () => {
-        import('../services/syncQueue').then(({ SyncQueueService }) => {
-          SyncQueueService.enqueue('save_mascota', mascota).catch(err => console.error(err));
-        });
+        if (!LocalDatabase._isSeedingInProgress) {
+          import('../services/syncQueue').then(({ SyncQueueService }) => {
+            SyncQueueService.enqueue('save_mascota', mascota).catch(err => console.error(err));
+          });
+        }
         resolve();
       };
       tx.onerror = () => reject(tx.error);
@@ -238,9 +243,11 @@ export class LocalDatabase {
       store.put(planta);
 
       tx.oncomplete = () => {
-        import('../services/syncQueue').then(({ SyncQueueService }) => {
-          SyncQueueService.enqueue('save_planta', planta).catch(err => console.error(err));
-        });
+        if (!LocalDatabase._isSeedingInProgress) {
+          import('../services/syncQueue').then(({ SyncQueueService }) => {
+            SyncQueueService.enqueue('save_planta', planta).catch(err => console.error(err));
+          });
+        }
         resolve();
       };
       tx.onerror = () => reject(tx.error);
@@ -267,9 +274,11 @@ export class LocalDatabase {
       const store = tx.objectStore('exoticos');
       store.put(exotico);
       tx.oncomplete = () => {
-        import('../services/syncQueue').then(({ SyncQueueService }) => {
-          SyncQueueService.enqueue('save_exotico', exotico).catch(err => console.error(err));
-        });
+        if (!LocalDatabase._isSeedingInProgress) {
+          import('../services/syncQueue').then(({ SyncQueueService }) => {
+            SyncQueueService.enqueue('save_exotico', exotico).catch(err => console.error(err));
+          });
+        }
         resolve();
       };
       tx.onerror = () => reject(tx.error);
@@ -411,6 +420,10 @@ export class LocalDatabase {
       if (seedDone === 'true') return;
     }
 
+    // Activar el flag para que las escrituras de seed NO se propaguen a la nube
+    LocalDatabase._isSeedingInProgress = true;
+    try {
+
     const mascotas = await this.getMascotas();
     if (mascotas.length === 0) {
       await this.saveMascota({
@@ -487,8 +500,12 @@ export class LocalDatabase {
       });
     }
 
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('petplant_seed_done', 'true');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('petplant_seed_done', 'true');
+      }
+    } finally {
+      // Desactivar el flag una vez terminado el seed
+      LocalDatabase._isSeedingInProgress = false;
     }
   }
 

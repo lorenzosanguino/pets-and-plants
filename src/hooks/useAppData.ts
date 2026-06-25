@@ -32,7 +32,34 @@ export const useAppData = (
     }
   });
 
-  const notificadosRef = useRef<Set<string>>(new Set());
+  // Persistir IDs ya notificados en localStorage para evitar re-disparos al recargar la página.
+  // La clave incluye la fecha del día para limpiar automáticamente al día siguiente.
+  const notificadosRef = useRef<Set<string>>(
+    (() => {
+      const today = new Date().toISOString().slice(0, 10);
+      const key = `petplant_notificados_${today}`;
+      try {
+        const saved = localStorage.getItem(key);
+        return saved ? new Set<string>(JSON.parse(saved)) : new Set<string>();
+      } catch {
+        return new Set<string>();
+      }
+    })()
+  );
+
+  // Helper para añadir un ID al set y persistirlo
+  const markNotificado = (id: string) => {
+    notificadosRef.current.add(id);
+    const today = new Date().toISOString().slice(0, 10);
+    const key = `petplant_notificados_${today}`;
+    try {
+      localStorage.setItem(key, JSON.stringify([...notificadosRef.current]));
+    } catch { /* cuota de localStorage llena, continuar sin persistir */ }
+    // Limpiar entradas de días anteriores
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('petplant_notificados_') && k !== key)
+      .forEach(k => localStorage.removeItem(k));
+  };
 
   const evaluarRecordatoriosYPendientes = async (
     prefetchedPlantas?: Planta[],
@@ -95,7 +122,7 @@ export const useAppData = (
       if (!permisoConcedido) return;
 
       for (const ev of eventosHoy) {
-        notificadosRef.current.add(ev.id);
+        markNotificado(ev.id);
         let prefijo = '📅 Recordatorio Hoy';
         if (ev.categoria === 'veterinario') prefijo = '🐾 Veterinaria Hoy';
         else if (ev.categoria === 'riego') prefijo = '💧 Riego Hoy';
@@ -109,7 +136,7 @@ export const useAppData = (
       }
 
       for (const ev of eventosMañana) {
-        notificadosRef.current.add(ev.id);
+        markNotificado(ev.id);
         let prefijo = '📅 Recordatorio Mañana';
         if (ev.categoria === 'veterinario') prefijo = '🐾 Veterinaria Mañana';
         else if (ev.categoria === 'riego') prefijo = '💧 Riego Mañana';
@@ -123,7 +150,7 @@ export const useAppData = (
       }
 
       for (const p of plantasPendientes) {
-        notificadosRef.current.add(`riego-${p.id}`);
+        markNotificado(`riego-${p.id}`);
         await NotificationManager.sendNotification(
           `💧 Riego Pendiente`,
           `¡Es hora de regar tu ${p.nombreComun}! (${p.ubicacionHabitacion})`
@@ -131,7 +158,7 @@ export const useAppData = (
       }
 
       for (const ex of exoticosPendientes) {
-        notificadosRef.current.add(`alimentacion-${ex.id}`);
+        markNotificado(`alimentacion-${ex.id}`);
         await NotificationManager.sendNotification(
           `🦎 Alimentación Pendiente`,
           `¡Es hora de alimentar a ${ex.nombre} (${ex.tipoEspecifico})!`

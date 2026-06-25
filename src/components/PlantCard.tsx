@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef, lazy } from 'react';
 import type { Planta, NivelToxicidadFelina, NivelToxicidadCanina } from '../database/types';
 import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
@@ -230,7 +230,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
     try {
       await LocalDatabase.savePlanta(plantaActualizada);
       localStorage.setItem('petplant_db_last_updated', Date.now().toString());
-      try { playSoundWater(); } catch {}
+      try { playSoundWater(); } catch { /* Ignore audio playback error */ }
       onUpdate();
     } catch (err) {
       console.error("Error al registrar riego:", err);

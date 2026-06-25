@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { DatosClimaticos } from '../services/weatherService';
 import type { Mascota, Planta } from '../database/types';
 
@@ -27,14 +27,16 @@ export const LandingWeatherBackground: React.FC<{
   else if (temp > 28) weatherType = 'sun';
   else if (hum < 38) weatherType = 'dust';
 
-  const particleCount = 20;
-  const particles = Array.from({ length: particleCount }, (_, i) => ({
-    id: i,
-    left: `${Math.random() * 100}%`,
-    delay: `${Math.random() * 5}s`,
-    duration: `${3 + Math.random() * 4}s`,
-    scale: 0.5 + Math.random() * 0.8,
-  }));
+  const [particles] = React.useState(() => {
+    const particleCount = 20;
+    return Array.from({ length: particleCount }, (_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      delay: `${Math.random() * 5}s`,
+      duration: `${3 + Math.random() * 4}s`,
+      scale: 0.5 + Math.random() * 0.8,
+    }));
+  });
 
   const getParticleContent = (index: number) => {
     if (uiTheme === 'gaming') {
@@ -409,12 +411,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
   clima,
   onNavigate
 }) => {
-  const getThemeAccentColor = () => {
-    if (uiTheme === 'gaming') return '#66fcf1';
-    if (uiTheme === 'kawaii') return '#ff6b8b';
-    if (uiTheme === 'vintage') return '#b8860b';
-    return '#2e7d32';
-  };
+
 
   return (
     <div className="landing-view-wrapper" style={{

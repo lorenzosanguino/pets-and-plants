@@ -6,7 +6,7 @@ import { usePWAManager } from '../hooks/usePWAManager';
 import { useGPSWeather } from '../hooks/useGPSWeather';
 import { useTranslations } from '../utils/i18n';
 import { ExtremeWeatherPanel } from '../components/ExtremeWeatherPanel';
-import { playSoundClick } from '../utils/audioFeedback';
+import { playSoundClick, playSoundSuccess } from '../utils/audioFeedback';
 
 
 // ── Lazy-loaded components (se descargan solo cuando se necesitan) ──────────
@@ -134,13 +134,14 @@ export const PetPlantDashboard: React.FC = () => {
   }, []);
 
   const [showCelebration, setShowCelebration] = useState(false);
+  const [achievement, setAchievement] = useState<{ title: string; subtitle: string; tipo: 'lvl_up' | 'victory' } | null>(null);
 
   const triggerCelebration = () => {
     try {
-      import('../utils/audioFeedback').then(({ playSoundSuccess }) => {
-        playSoundSuccess();
-      });
-    } catch {}
+      playSoundSuccess();
+    } catch {
+      /* Ignore audio playback error */
+    }
     setShowCelebration(true);
     setTimeout(() => {
       setShowCelebration(false);
@@ -157,7 +158,7 @@ export const PetPlantDashboard: React.FC = () => {
     tab: 'dashboard' | 'consultants' | 'settings',
     e?: React.MouseEvent | MouseEvent
   ) => {
-    try { playSoundClick(); } catch {}
+    try { playSoundClick(); } catch { /* Ignore audio playback error */ }
 
     let x = window.innerWidth / 2;
     let y = window.innerHeight / 2;
@@ -169,7 +170,7 @@ export const PetPlantDashboard: React.FC = () => {
     setRippleX(x);
     setRippleY(y);
 
-    let color = '#2e7d32';
+    let color: string;
     if (mode === 'pets') color = '#1976d2';
     else if (mode === 'exotics') color = '#ff8f00';
     else if (mode === 'travels') color = '#0284c7';
@@ -328,9 +329,10 @@ export const PetPlantDashboard: React.FC = () => {
   };
 
   const handleNavigateToAsset = (tipo: 'mascota' | 'planta' | 'exotico', id: string) => {
-    void id;
     const mode = tipo === 'mascota' ? 'pets' : tipo === 'planta' ? 'plants' : 'exotics';
     triggerRippleTransition(mode, 'dashboard');
+    // Abrir la ficha del asset concreto tras la transición de página
+    setTimeout(() => setExpandedCardId(id), 300);
   };
 
   // Interceptar botón de Atrás en Android (popstate)
@@ -545,10 +547,16 @@ export const PetPlantDashboard: React.FC = () => {
   };
 
   const dispararLogroVisual = (texto: string, subtitulo: string, tipo: 'lvl_up' | 'victory') => {
-    // No-op para desactivar mensajes de level up
-    void texto;
-    void subtitulo;
-    void tipo;
+    setAchievement({ title: texto, subtitle: subtitulo, tipo });
+    // Para logros de victoria, lanzar también confetti
+    if (tipo === 'victory') {
+      triggerCelebration();
+    } else {
+      // Para lvl_up, reproducir sonido de éxito sin confetti
+      try { playSoundSuccess(); } catch { /* ignore */ }
+    }
+    // Auto-ocultar el toast de logro tras 3.5 segundos
+    setTimeout(() => setAchievement(null), 3500);
   };
 
 
@@ -1783,6 +1791,40 @@ export const PetPlantDashboard: React.FC = () => {
         <Suspense fallback={null}>
           <ConfettiOverlay />
         </Suspense>
+      )}
+
+      {/* Toast de Logro Visual (dispararLogroVisual) */}
+      {achievement && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '32px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: achievement.tipo === 'victory'
+              ? 'linear-gradient(135deg, #1a237e, #311b92)'
+              : 'linear-gradient(135deg, #1b5e20, #2e7d32)',
+            color: '#fff',
+            padding: '14px 28px',
+            borderRadius: '16px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
+            zIndex: 9999999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '14px',
+            animation: 'fadeInSlide 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+            fontFamily: 'var(--game-font, sans-serif)',
+            minWidth: '260px',
+            maxWidth: '90vw',
+            border: achievement.tipo === 'victory' ? '1.5px solid #7c4dff' : '1.5px solid #66bb6a',
+          }}
+        >
+          <span style={{ fontSize: '28px' }}>{achievement.tipo === 'victory' ? '🏆' : '⬆️'}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <strong style={{ fontSize: '14px', letterSpacing: '0.5px' }}>{achievement.title}</strong>
+            <span style={{ fontSize: '12px', opacity: 0.85 }}>{achievement.subtitle}</span>
+          </div>
+        </div>
       )}
 
     </div>

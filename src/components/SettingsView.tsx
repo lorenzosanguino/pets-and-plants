@@ -200,7 +200,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     if (!hogarId || !remotePayload) return;
     try {
       setConflictLoading(true);
-      await LocalDatabase.overwriteDatabase(remotePayload.mascotas, remotePayload.plantas, remotePayload.exoticos);
+      await LocalDatabase.overwriteFullDatabase(
+        remotePayload.mascotas,
+        remotePayload.plantas,
+        remotePayload.exoticos,
+        remotePayload.eventos || [],
+        remotePayload.chats || []
+      );
       localStorage.setItem('petplant_db_last_updated', (remoteDataInfo.timestamp || getNowTimestamp()).toString());
       setShowConflictModal(false);
       dispararLogroVisual("CONFLICTO RESUELTO", "Se han descargado los datos de la nube.", "victory");
@@ -245,7 +251,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         return localW >= remoteW ? a : b;
       });
 
-      await LocalDatabase.overwriteDatabase(mergedM, mergedP, mergedE);
+      await LocalDatabase.overwriteFullDatabase(mergedM, mergedP, mergedE);
       
       const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
       const now = getNowTimestamp();

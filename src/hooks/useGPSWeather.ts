@@ -105,15 +105,29 @@ export const useGPSWeather = (refreshData: (force?: boolean) => Promise<void>) =
         `¡Sincronizado con éxito! Clima: ${Math.round(clima.temperatura)}°C, HR: ${clima.humedad}%`
       );
     } catch (err: any) {
-      console.warn('Fallo GPS en hook useGPSWeather, usando simulación de Madrid:', err);
+      console.warn('Fallo GPS en hook useGPSWeather:', err);
       try {
-        const climaSimulado = await WeatherService.obtenerClimaEnVivo(40.4167, -3.7037);
+        // Prioridad 1: reusar el último clima en caché si existe (puede tener coords reales del usuario)
+        const cachedWeather = localStorage.getItem('petplant_last_gps_weather');
+        let climaSimulado;
 
-        // Guardar clima simulado obtenido en caché local con timestamp
-        localStorage.setItem('petplant_last_gps_weather', JSON.stringify(climaSimulado));
-        localStorage.setItem('petplant_last_gps_time', Date.now().toString());
+        if (cachedWeather) {
+          console.log('GPS sin acceso, usando último clima guardado en caché.');
+          climaSimulado = JSON.parse(cachedWeather);
+        } else {
+          // Prioridad 2: estimar clima genérico basado únicamente en el mes (sin coords fijas)
+          console.log('GPS sin acceso y sin caché. Usando estimación climática por mes.');
+          // Usamos coordenadas neutrales (lat=40 genérica) — WeatherService ya tiene fallback por mes/estación
+          climaSimulado = await WeatherService.obtenerClimaEnVivo(40, 0).catch(() =>
+            // Última opción: objeto climático mínimo seguro
+            ({ latitud: 0, longitud: 0, temperatura: 20, humedad: 55, estacion: 'Primavera/Otoño' as const, mesNombre: 'Desconocido' })
+          );
+          // Guardar en caché para próximas sesiones
+          localStorage.setItem('petplant_last_gps_weather', JSON.stringify(climaSimulado));
+          localStorage.setItem('petplant_last_gps_time', Date.now().toString());
+        }
 
-        // Evaluar y notificar clima extremo (simulado)
+        // Evaluar y notificar clima extremo
         evaluarYNotificarClimaExtremo(climaSimulado);
 
         const listPlantas = await LocalDatabase.getPlantas();
@@ -136,9 +150,7 @@ export const useGPSWeather = (refreshData: (force?: boolean) => Promise<void>) =
         }
         await refreshData(true);
         setGpsSyncSuccess(
-          `¡Sincronizado con éxito! (Clima simulado): ${Math.round(
-            climaSimulado.temperatura
-          )}°C, HR: ${climaSimulado.humedad}%`
+          `¡Sincronizado! (Clima estimado): ${Math.round(climaSimulado.temperatura)}°C, HR: ${climaSimulado.humedad}%`
         );
       } catch (innerErr) {
         console.warn('No se pudo realizar la sincronización climática GPS:', innerErr);

@@ -284,7 +284,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
 
     await LocalDatabase.saveMascota(mascotaActualizada);
     localStorage.setItem('petplant_db_last_updated', Date.now().toString());
-    try { playSoundSuccess(); } catch {}
+    try { playSoundSuccess(); } catch { /* Ignore audio playback error */ }
     onUpdate();
 
     if (nuevoProgreso === 100 && progresoActual < 100) {
@@ -313,7 +313,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
     };
 
     await LocalDatabase.saveMascota(mascotaActualizada);
-    try { playSoundSuccess(); } catch {}
+    try { playSoundSuccess(); } catch { /* Ignore audio playback error */ }
     setNuevoPeso('');
     onUpdate();
   };
@@ -520,7 +520,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
     };
 
     await LocalDatabase.saveMascota(mascotaActualizada);
-    try { playSoundSuccess(); } catch {}
+    try { playSoundSuccess(); } catch { /* Ignore audio playback error */ }
     onUpdate();
   };
 
