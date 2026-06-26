@@ -24,3 +24,8 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Lighthouse audit artifacts
+lh-tmp/
+lh-result.json
+lighthouse-result.json
