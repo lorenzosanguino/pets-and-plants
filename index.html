@@ -29,6 +29,8 @@
 
     <!-- ④ Skeleton inline: se renderiza ANTES de que React cargue → FCP instantáneo -->
     <style>
+      /* Skeleton sin background-image para FCP instantáneo.
+         La imagen preloaded carga en paralelo pero no bloquea el primer paint. */
       #app-skeleton {
         position: fixed;
         inset: 0;
@@ -37,7 +39,7 @@
         align-items: center;
         justify-content: center;
         gap: 16px;
-        background: #f3f7f4 url('/flow_lab_imagenes/carga_nature.webp') center/cover no-repeat;
+        background: #f3f7f4;
         font-family: 'Outfit', system-ui, sans-serif;
         z-index: 99999;
         transition: opacity 0.4s ease;
@@ -53,19 +55,24 @@
         font-size: 22px;
         font-weight: 700;
         color: #1b5e20;
-        text-shadow: 0 1px 6px rgba(255,255,255,0.8);
+        letter-spacing: -0.5px;
+      }
+      .sk-sub {
+        font-size: 13px;
+        color: #4caf50;
+        opacity: 0.8;
       }
       .sk-bar-wrap {
         width: 160px;
         height: 4px;
-        background: rgba(46,125,50,0.2);
+        background: rgba(46,125,50,0.15);
         border-radius: 999px;
         overflow: hidden;
       }
       .sk-bar {
         height: 100%;
         width: 40%;
-        background: #4caf50;
+        background: linear-gradient(90deg, #81c784, #2e7d32);
         border-radius: 999px;
         animation: sk-slide 1.2s ease-in-out infinite;
       }
@@ -84,6 +91,7 @@
     <div id="app-skeleton" aria-hidden="true">
       <div class="sk-emojis">🐶🌿🐱🌱</div>
       <div class="sk-title">Pet &amp; Plant Pro</div>
+      <div class="sk-sub">Cargando tu ecosistema...</div>
       <div class="sk-bar-wrap"><div class="sk-bar"></div></div>
     </div>
 
