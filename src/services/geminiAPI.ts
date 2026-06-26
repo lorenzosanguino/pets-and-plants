@@ -199,16 +199,76 @@ export class GeminiAPIService {
            ''; // Sin clave de API fallback por motivos de seguridad
   }
 
+  // ---- Caché de respuestas de Gemini (sessionStorage) ----
+  private static readonly CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 horas
+  private static readonly CACHE_PREFIX = 'gemini_cache_';
+
+  /** Genera una clave de caché simple a partir de un string */
+  private static hashKey(text: string): string {
+    let hash = 0;
+    for (let i = 0; i < Math.min(text.length, 2048); i++) {
+      hash = (hash << 5) - hash + text.charCodeAt(i);
+      hash |= 0;
+    }
+    return `${this.CACHE_PREFIX}${Math.abs(hash)}`;
+  }
+
+  /** Intenta leer una respuesta cacheada en sessionStorage */
+  private static getCached(key: string): string | null {
+    try {
+      const raw = sessionStorage.getItem(key);
+      if (!raw) return null;
+      const { ts, data } = JSON.parse(raw);
+      if (Date.now() - ts > this.CACHE_TTL_MS) {
+        sessionStorage.removeItem(key);
+        return null;
+      }
+      return data;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Guarda una respuesta en sessionStorage */
+  private static setCached(key: string, data: string): void {
+    try {
+      sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+    } catch {
+      // sessionStorage puede estar lleno; ignorar silenciosamente
+    }
+  }
+
   /**
-   * Envía una petición HTTP a la API de Gemini (directamente o a través del proxy seguro)
+   * Envía una petición HTTP a la API de Gemini (directamente o a través del proxy seguro).
+   * Las peticiones de texto puro (sin imagen) se cachean en sessionStorage por 4 horas.
    */
   static async requestGemini(payload: any, signal: AbortSignal): Promise<Response> {
+    // Intentar caché solo en peticiones sin imagen (para que sean deterministas)
+    const hasImage = payload?.contents?.some((c: any) =>
+      c?.parts?.some((p: any) => p?.inlineData)
+    );
+
+    let cacheKey: string | null = null;
+    if (!hasImage) {
+      const payloadText = JSON.stringify(payload);
+      cacheKey = this.hashKey(payloadText);
+      const cached = this.getCached(cacheKey);
+      if (cached) {
+        // Devolver una Response sintética con el cuerpo cacheado
+        return new Response(cached, {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', 'X-Gemini-Cache': 'HIT' }
+        });
+      }
+    }
+
     const customKey = typeof window !== 'undefined' ? localStorage.getItem('petplant_gemini_api_key') : null;
-    
+
+    let response: Response;
     if (customKey) {
       // Si el usuario introdujo su propia API key, llamamos directamente a Google Gemini
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${customKey}`;
-      return fetch(endpoint, {
+      response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -220,22 +280,30 @@ export class GeminiAPIService {
       const devKey = import.meta.env.VITE_GEMINI_API_KEY;
       if (typeof window !== 'undefined' && window.location.hostname === 'localhost' && devKey) {
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${devKey}`;
-        return fetch(endpoint, {
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal
+        });
+      } else {
+        const endpoint = '/api/gemini';
+        response = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
           signal
         });
       }
-      
-      const endpoint = '/api/gemini';
-      return fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal
-      });
     }
+
+    // Cachear respuestas exitosas de texto puro
+    if (cacheKey && response.ok) {
+      const cloned = response.clone();
+      cloned.text().then(text => this.setCached(cacheKey!, text)).catch(() => {});
+    }
+
+    return response;
   }
 
   /**

@@ -4,12 +4,13 @@ import { useTranslations } from '../utils/i18n';
 import { LocalDatabase } from '../database/db';
 import type { Mascota, Planta, AnimalExotico } from '../database/types';
 import { initFirebase, getFirebaseCached } from '../database/firebaseLazy';
+import { QRCodeSVG } from 'qrcode.react';
 
 const getNowTimestamp = (): number => Date.now();
 
 interface SettingsViewProps {
-  uiTheme: 'gaming' | 'nature' | 'kawaii' | 'vintage';
-  setUiTheme: (theme: 'gaming' | 'nature' | 'kawaii' | 'vintage') => void;
+  uiTheme: 'gaming' | 'nature' | 'kawaii';
+  setUiTheme: (theme: 'gaming' | 'nature' | 'kawaii') => void;
   loadingGPS: boolean;
   gpsSyncSuccess: string | null;
   sincronizarTodasLasPlantasPorGPS: () => void;
@@ -77,6 +78,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   abandonarHogar
 }) => {
   const { locale, setLocale, t } = useTranslations();
+
+  // QR code toggle
+  const [showQR, setShowQR] = useState(false);
 
   // Conflict resolution states
   const [showConflictModal, setShowConflictModal] = useState(false);
@@ -413,35 +417,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
 
 
-          {/* Tema 5: Vintage Botanical */}
-          <div 
-            className="theme-button-item"
-            onClick={() => setUiTheme('vintage')}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                setUiTheme('vintage');
-              }
-            }}
-            tabIndex={0}
-            role="button"
-            style={{
-              padding: '10px 16px',
-              background: uiTheme === 'vintage' ? 'var(--game-accent-light, rgba(205, 162, 80, 0.15))' : 'transparent',
-              borderRadius: '10px',
-              border: uiTheme === 'vintage' 
-                ? '2px solid var(--game-border-color, #cda250)' 
-                : '1px solid rgba(128, 128, 128, 0.3)',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-          >
-            <span style={{ fontSize: '20px' }}>📜</span>
-            <strong style={{ fontSize: '13px', color: 'var(--game-text-bright, #111)', fontFamily: 'var(--game-font, sans-serif)' }}>{t('themeVintage')}</strong>
-          </div>
 
         </div>
       </div>
@@ -769,26 +744,81 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <p style={{ margin: '0', fontSize: '11px', color: 'var(--game-text, #666)' }}>Código de invitación para tu familia:</p>
                 <strong style={{ fontSize: '16px', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, monospace)' }}>{hogarId}</strong>
               </div>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(hogarId);
-                  dispararLogroVisual("CÓDIGO COPIADO", "Compártelo con tu familia por chat", 'lvl_up');
-                }}
-                style={{
-                  padding: '6px 12px',
-                  background: 'var(--game-accent, #1a1a1a)',
-                  color: uiTheme === 'gaming' ? '#000' : '#fff',
-                  border: 'none',
-                  borderRadius: uiTheme === 'gaming' ? '0px' : '6px',
-                  fontSize: '11px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  fontFamily: 'var(--game-font, sans-serif)'
-                }}
-              >
-                Copiar Código
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(hogarId!);
+                    dispararLogroVisual("CÓDIGO COPIADO", "Compártelo con tu familia por chat", 'lvl_up');
+                  }}
+                  style={{
+                    padding: '6px 12px',
+                    background: 'var(--game-accent, #1a1a1a)',
+                    color: uiTheme === 'gaming' ? '#000' : '#fff',
+                    border: 'none',
+                    borderRadius: uiTheme === 'gaming' ? '0px' : '6px',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--game-font, sans-serif)'
+                  }}
+                >
+                  Copiar Código
+                </button>
+                <button
+                  onClick={() => setShowQR(prev => !prev)}
+                  aria-expanded={showQR}
+                  aria-label={showQR ? 'Ocultar código QR de invitación' : 'Mostrar código QR de invitación'}
+                  style={{
+                    padding: '6px 12px',
+                    background: 'transparent',
+                    color: 'var(--game-text-bright, #333)',
+                    border: '1px solid var(--game-border-color, #ccc)',
+                    borderRadius: uiTheme === 'gaming' ? '0px' : '6px',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--game-font, sans-serif)'
+                  }}
+                >
+                  {showQR ? '🙈 Ocultar QR' : '📱 Ver QR'}
+                </button>
+              </div>
             </div>
+
+            {/* QR Code para compartir el código de invitación */}
+            {showQR && hogarId && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '20px',
+                background: 'var(--game-bg, #fff)',
+                border: 'var(--game-border, 1px solid #e0e0e0)',
+                borderRadius: 'var(--game-radius, 8px)',
+              }}>
+                <p style={{ margin: '0', fontSize: '12px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
+                  Escanea este QR para unirte al hogar <strong style={{ color: 'var(--game-text-bright)' }}>{hogarNombre}</strong>
+                </p>
+                <div style={{
+                  padding: '12px',
+                  background: '#fff',
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}>
+                  <QRCodeSVG
+                    value={`petplant_hogar:${hogarId}`}
+                    size={180}
+                    level="M"
+                    includeMargin={false}
+                    aria-label={`Código QR para unirse al hogar ${hogarNombre}`}
+                  />
+                </div>
+                <p style={{ margin: '0', fontSize: '10px', color: '#999', fontFamily: 'monospace', textAlign: 'center' }}>
+                  petplant_hogar:{hogarId}
+                </p>
+              </div>
+            )}
 
 
             <button

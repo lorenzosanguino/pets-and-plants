@@ -42,7 +42,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
         borderRadius: radius,
       };
     }
-    return { // nature / vintage
+    return { // nature
       border: '8px solid #ffffff',
       outline: '1.5px solid rgba(0, 0, 0, 0.1)',
       boxShadow: '0 10px 40px rgba(46, 125, 50, 0.3), 0 15px 50px rgba(0,0,0,0.6)',

@@ -755,7 +755,6 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                   let accentColor = '#ff8f00'; // exotics orange
                   if (theme === 'kawaii') accentColor = '#ff6b8b';
                   else if (theme === 'gaming') accentColor = '#66fcf1';
-                  else if (theme === 'vintage') accentColor = '#b8860b';
                   return (
                     <>
                       <Suspense fallback={<div style={{ height: '140px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#888' }}>Cargando gráfico...</div>}>
@@ -788,7 +787,6 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                   let accentColor = '#ff8f00';
                   if (theme === 'kawaii') accentColor = '#ff6b8b';
                   else if (theme === 'gaming') accentColor = '#66fcf1';
-                  else if (theme === 'vintage') accentColor = '#b8860b';
                   return (
                     <>
                       <Suspense fallback={<div style={{ height: '140px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#888' }}>Cargando gráfico...</div>}>

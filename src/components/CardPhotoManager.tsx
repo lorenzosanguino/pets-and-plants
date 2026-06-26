@@ -127,48 +127,36 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
     ? 'rgba(0, 255, 127, 0.15)'
     : theme === 'kawaii'
     ? '#fff5f7'
-    : theme === 'vintage'
-    ? '#fdfaf2'
     : '#e8f5e9';
 
   const editColor = theme === 'gaming'
     ? '#00ff7f'
     : theme === 'kawaii'
     ? '#ff6b8b'
-    : theme === 'vintage'
-    ? '#b8860b'
     : '#2e7d32';
 
   const editBorder = theme === 'gaming'
     ? '#00ff7f'
     : theme === 'kawaii'
     ? '#ff6b8b'
-    : theme === 'vintage'
-    ? '#b8860b'
     : '#2e7d32';
 
   const deleteBg = theme === 'gaming'
     ? 'rgba(255, 76, 76, 0.15)'
     : theme === 'kawaii'
     ? '#fff0f0'
-    : theme === 'vintage'
-    ? '#faf0ef'
     : '#ffebee';
 
   const deleteColor = theme === 'gaming'
     ? '#ff5252'
     : theme === 'kawaii'
     ? '#ff4081'
-    : theme === 'vintage'
-    ? '#b71c1c'
     : '#d32f2f';
 
   const deleteBorder = theme === 'gaming'
     ? '#ff5252'
     : theme === 'kawaii'
     ? '#ff4081'
-    : theme === 'vintage'
-    ? '#b71c1c'
     : '#d32f2f';
 
   return (

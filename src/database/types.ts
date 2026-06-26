@@ -16,7 +16,9 @@ export interface RegistroVacuna {
   vacuna: 'Trivalente' | 'Leucemia' | 'Rabia' | 'Otras';
   lote: string;
   proximaDosis?: string; // ISO Date para medicina preventiva
+  vacunaPersonalizada?: string; // Nombre libre cuando vacuna === 'Otras'
 }
+
 
 export interface EntradaDiarioClinico {
   id: string;

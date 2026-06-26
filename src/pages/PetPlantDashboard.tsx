@@ -2,6 +2,7 @@ import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useAppData } from '../hooks/useAppData';
 import { useSyncManager } from '../hooks/useSyncManager';
 import { NotificationManager } from '../utils/notificationManager';
+import { StatsView } from '../components/StatsView';
 import { usePWAManager } from '../hooks/usePWAManager';
 import { useGPSWeather } from '../hooks/useGPSWeather';
 import { useTranslations } from '../utils/i18n';
@@ -75,11 +76,12 @@ const ChunkLoader: React.FC<{ height?: string }> = ({ height = '120px' }) => (
 export const PetPlantDashboard: React.FC = () => {
   const { t } = useTranslations();
   
-  const [uiTheme, setUiTheme] = useState<'gaming' | 'nature' | 'kawaii' | 'vintage'>(() => {
+  const [uiTheme, setUiTheme] = useState<'gaming' | 'nature' | 'kawaii'>(() => {
     const saved = localStorage.getItem('petplant_game_theme');
-    return (saved === 'gaming' || saved === 'nature' || saved === 'kawaii' || saved === 'vintage')
-      ? saved as 'gaming' | 'nature' | 'kawaii' | 'vintage'
-      : 'nature';
+    if (saved === 'gaming' || saved === 'nature' || saved === 'kawaii') {
+      return saved as 'gaming' | 'nature' | 'kawaii';
+    }
+    return 'nature';
   });
 
   const [nuevoHogarNombre, setNuevoHogarNombre] = useState('');
@@ -88,7 +90,16 @@ export const PetPlantDashboard: React.FC = () => {
   // Modo de Experiencia: 'landing', 'pets', 'plants', 'exotics', 'travels', 'consultants'
   // Al refrescar la página, siempre iniciamos en la página de inicio ('landing') y pestaña 'dashboard'
   const [experienceMode, setExperienceMode] = useState<'landing' | 'pets' | 'plants' | 'exotics' | 'travels' | 'consultants'>('landing');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'consultants' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'stats' | 'consultants' | 'settings'>('dashboard');
+
+  // Estados para Búsqueda y Filtros (P3)
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterSubtype, setFilterSubtype] = useState('all');
+
+  useEffect(() => {
+    setSearchQuery('');
+    setFilterSubtype('all');
+  }, [experienceMode]);
 
   // Page transition ripple states
   const [rippleX, setRippleX] = useState(0);
@@ -155,7 +166,7 @@ export const PetPlantDashboard: React.FC = () => {
 
   const triggerRippleTransition = React.useCallback((
     mode: 'landing' | 'pets' | 'plants' | 'exotics' | 'travels' | 'consultants',
-    tab: 'dashboard' | 'consultants' | 'settings',
+    tab: 'dashboard' | 'stats' | 'consultants' | 'settings',
     e?: React.MouseEvent | MouseEvent
   ) => {
     try { playSoundClick(); } catch { /* Ignore audio playback error */ }
@@ -179,7 +190,6 @@ export const PetPlantDashboard: React.FC = () => {
     else {
       if (uiTheme === 'gaming') color = '#0f1624';
       else if (uiTheme === 'kawaii') color = '#ffb6c1';
-      else if (uiTheme === 'vintage') color = '#fedcb5';
       else color = '#2e7d32';
     }
     
@@ -275,9 +285,13 @@ export const PetPlantDashboard: React.FC = () => {
 
   const unirseAHogar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!joinHogarId.trim()) return;
+    let code = joinHogarId.trim();
+    if (code.startsWith('petplant_hogar:')) {
+      code = code.replace('petplant_hogar:', '');
+    }
+    if (!code) return;
     try {
-      await unirseAHogarSync(joinHogarId);
+      await unirseAHogarSync(code);
       setJoinHogarId('');
     } catch (err: any) {
       alert("Error al unirse al hogar: " + err.message);
@@ -404,6 +418,11 @@ export const PetPlantDashboard: React.FC = () => {
           console.error('Error al registrar Service Worker:', err);
         });
     }
+
+    // Solicitar permiso de notificaciones push al inicio
+    NotificationManager.requestPermission().catch((err) => {
+      console.error('Error al solicitar permiso de notificaciones:', err);
+    });
 
     import('../services/syncQueue').then(({ SyncQueueService }) => {
       SyncQueueService.processQueue().catch((err) => {
@@ -582,11 +601,11 @@ export const PetPlantDashboard: React.FC = () => {
         return;
       }
 
-      const tabs: ('dashboard' | 'consultants' | 'settings')[] = [
-        'dashboard', 'consultants', 'settings'
+      const tabs: ('dashboard' | 'stats' | 'consultants' | 'settings')[] = [
+        'dashboard', 'stats', 'consultants', 'settings'
       ];
 
-      if (e.key >= '1' && e.key <= '3') {
+      if (e.key >= '1' && e.key <= '4') {
         const idx = parseInt(e.key) - 1;
         const targetTab = tabs[idx];
         if (targetTab) {
@@ -1311,7 +1330,7 @@ export const PetPlantDashboard: React.FC = () => {
           </div>
 
           {/* Navigation Bar (Tabs Filtradas) */}
-          <div className="dashboard-tabs-container" style={{
+          <div className="dashboard-tabs-container" role="tablist" aria-label="Navegación principal" style={{
             display: 'flex',
             gap: '4px',
             borderBottom: '1px solid #eaeaea',
@@ -1320,6 +1339,8 @@ export const PetPlantDashboard: React.FC = () => {
             WebkitOverflowScrolling: 'touch'
           }}>
             <button
+              role="tab"
+              aria-selected={activeTab === 'dashboard'}
               onClick={(e) => triggerRippleTransition(experienceMode, 'dashboard', e)}
               style={{
                 padding: '12px 16px',
@@ -1336,8 +1357,30 @@ export const PetPlantDashboard: React.FC = () => {
             >
               {t('tabDashboard')}
             </button>
+
+            <button
+              role="tab"
+              aria-selected={activeTab === 'stats'}
+              onClick={(e) => triggerRippleTransition(experienceMode, 'stats', e)}
+              style={{
+                padding: '12px 16px',
+                background: 'none',
+                border: 'none',
+                borderBottom: activeTab === 'stats' ? `3px solid ${getAccentColor()}` : '3px solid transparent',
+                color: activeTab === 'stats' ? getAccentColor() : '#666',
+                fontWeight: activeTab === 'stats' ? 'bold' : 'normal',
+                cursor: 'pointer',
+                fontSize: '14px',
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {t('tabStats')}
+            </button>
             
             <button
+              role="tab"
+              aria-selected={activeTab === 'settings'}
               onClick={(e) => triggerRippleTransition(experienceMode, 'settings', e)}
               style={{
                 padding: '12px 16px',
@@ -1437,6 +1480,55 @@ export const PetPlantDashboard: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Panel de Búsqueda y Filtros (P3) */}
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '12px',
+                  width: '100%',
+                  marginBottom: '20px',
+                  background: 'var(--game-card-bg, #ffffff)',
+                  border: 'var(--game-border, 1px solid #f0f0f0)',
+                  borderRadius: '12px',
+                  padding: '12px 16px',
+                  boxSizing: 'border-box',
+                  alignItems: 'center'
+                }} className="no-print">
+                  <div style={{ flex: 1, minWidth: '200px', display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.02)', border: '1px solid #ccc', borderRadius: '8px', padding: '6px 12px' }}>
+                    <span style={{ cursor: 'default' }}>🔍</span>
+                    <input 
+                      type="text" 
+                      placeholder={experienceMode === 'pets' ? "Buscar por nombre o raza..." : experienceMode === 'plants' ? "Buscar por nombre..." : "Buscar por nombre o tipo..."}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '13px', color: 'var(--game-text)' }}
+                    />
+                    {searchQuery && (
+                      <button type="button" onClick={() => setSearchQuery('')} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '12px', color: '#888' }}>✕</button>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text)' }}>Filtrar:</span>
+                    <select
+                      value={filterSubtype}
+                      onChange={(e) => setFilterSubtype(e.target.value)}
+                      style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid #ccc', background: '#fff', color: '#000', cursor: 'pointer' }}
+                    >
+                      <option value="all">Todos</option>
+                      {experienceMode === 'pets' && Array.from(new Set(mascotas.map(m => m.especie))).map(esp => (
+                        <option key={esp} value={esp}>{esp}</option>
+                      ))}
+                      {experienceMode === 'plants' && Array.from(new Set(plantas.map(p => p.ubicacionHabitacion))).filter(Boolean).map(room => (
+                        <option key={room} value={room}>{room}</option>
+                      ))}
+                      {experienceMode === 'exotics' && Array.from(new Set(exoticos.map(e => e.especie))).map(esp => (
+                        <option key={esp} value={esp}>{esp}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
                 {/* Cuadrícula Principal */}
                 <div className="main-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))', gap: '24px', width: '100%', boxSizing: 'border-box' }}>
                   
@@ -1449,10 +1541,17 @@ export const PetPlantDashboard: React.FC = () => {
                       </div>
                       
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', boxSizing: 'border-box' }}>
-                        {mascotas.length === 0 ? (
-                          <p style={{ fontSize: '12px', color: 'var(--game-text, #888)', fontStyle: 'italic', textAlign: 'center', padding: '12px', fontFamily: 'var(--game-font, sans-serif)' }}>No hay mascotas registradas.</p>
-                        ) : (
-                          mascotas.map(m => (
+                        {(() => {
+                          const filtered = mascotas.filter(m => {
+                            const matchesSearch = m.nombre.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                                  (m.raza && m.raza.toLowerCase().includes(searchQuery.toLowerCase()));
+                            const matchesFilter = filterSubtype === 'all' || m.especie === filterSubtype;
+                            return matchesSearch && matchesFilter;
+                          });
+                          if (filtered.length === 0) {
+                            return <p style={{ fontSize: '12px', color: 'var(--game-text, #888)', fontStyle: 'italic', textAlign: 'center', padding: '12px', fontFamily: 'var(--game-font, sans-serif)' }}>No se encontraron mascotas.</p>;
+                          }
+                          return filtered.map(m => (
                             <Suspense key={m.id} fallback={<ChunkLoader height="80px" />}>
                               <PetCard
                                 mascota={m}
@@ -1467,8 +1566,8 @@ export const PetPlantDashboard: React.FC = () => {
                                 theme={uiTheme}
                               />
                             </Suspense>
-                          ))
-                        )}
+                          ));
+                        })()}
                       </div>
                     </div>
                   )}
@@ -1481,10 +1580,17 @@ export const PetPlantDashboard: React.FC = () => {
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', boxSizing: 'border-box' }}>
-                        {plantas.length === 0 ? (
-                          <p style={{ fontSize: '12px', color: 'var(--game-text, #888)', fontStyle: 'italic', textAlign: 'center', padding: '12px', fontFamily: 'var(--game-font, sans-serif)' }}>No hay plantas registradas.</p>
-                        ) : (
-                          plantas.map(p => (
+                        {(() => {
+                          const filtered = plantas.filter(p => {
+                            const matchesSearch = p.nombreComun.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                                  (p.nombreCientifico && p.nombreCientifico.toLowerCase().includes(searchQuery.toLowerCase()));
+                            const matchesFilter = filterSubtype === 'all' || p.ubicacionHabitacion === filterSubtype;
+                            return matchesSearch && matchesFilter;
+                          });
+                          if (filtered.length === 0) {
+                            return <p style={{ fontSize: '12px', color: 'var(--game-text, #888)', fontStyle: 'italic', textAlign: 'center', padding: '12px', fontFamily: 'var(--game-font, sans-serif)' }}>No se encontraron plantas.</p>;
+                          }
+                          return filtered.map(p => (
                             <Suspense key={p.id} fallback={<ChunkLoader height="80px" />}>
                               <PlantCard
                                 planta={p}
@@ -1500,8 +1606,8 @@ export const PetPlantDashboard: React.FC = () => {
                                 theme={uiTheme}
                               />
                             </Suspense>
-                          ))
-                        )}
+                          ));
+                        })()}
                       </div>
                     </div>
                   )}
@@ -1514,10 +1620,17 @@ export const PetPlantDashboard: React.FC = () => {
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', boxSizing: 'border-box' }}>
-                        {exoticos.length === 0 ? (
-                          <p style={{ fontSize: '12px', color: 'var(--game-text, #888)', fontStyle: 'italic', textAlign: 'center', padding: '12px', fontFamily: 'var(--game-font, sans-serif)' }}>No hay animales exóticos registrados.</p>
-                        ) : (
-                          exoticos.map(e => (
+                        {(() => {
+                          const filtered = exoticos.filter(e => {
+                            const matchesSearch = e.nombre.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                                  e.tipoEspecifico.toLowerCase().includes(searchQuery.toLowerCase());
+                            const matchesFilter = filterSubtype === 'all' || e.especie === filterSubtype;
+                            return matchesSearch && matchesFilter;
+                          });
+                          if (filtered.length === 0) {
+                            return <p style={{ fontSize: '12px', color: 'var(--game-text, #888)', fontStyle: 'italic', textAlign: 'center', padding: '12px', fontFamily: 'var(--game-font, sans-serif)' }}>No se encontraron animales exóticos.</p>;
+                          }
+                          return filtered.map(e => (
                             <Suspense key={e.id} fallback={<ChunkLoader height="80px" />}>
                               <ExoticCard
                                 exotico={e}
@@ -1531,8 +1644,8 @@ export const PetPlantDashboard: React.FC = () => {
                                 onToggleExpand={() => setExpandedCardId(expandedCardId === e.id ? null : e.id)}
                               />
                             </Suspense>
-                          ))
-                        )}
+                          ));
+                        })()}
                       </div>
                     </div>
                   )}
@@ -1609,6 +1722,18 @@ export const PetPlantDashboard: React.FC = () => {
                     onUpdate={refreshData}
                   />
                 </Suspense>
+              </div>
+            )}
+
+            {/* Tab Estadísticas */}
+            {activeTab === 'stats' && (
+              <div className="page-transition-enter" style={{ width: '100%' }}>
+                <StatsView 
+                  mascotas={mascotas}
+                  plantas={plantas}
+                  exoticos={exoticos}
+                  uiTheme={uiTheme}
+                />
               </div>
             )}
 

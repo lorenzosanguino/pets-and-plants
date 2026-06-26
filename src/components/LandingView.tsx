@@ -3,11 +3,11 @@ import type { DatosClimaticos } from '../services/weatherService';
 import type { Mascota, Planta } from '../database/types';
 
 interface LandingViewProps {
-  uiTheme: 'gaming' | 'nature' | 'kawaii' | 'vintage';
+  uiTheme: 'gaming' | 'nature' | 'kawaii';
   clima?: DatosClimaticos | null;
   onNavigate: (
     mode: 'landing' | 'pets' | 'plants' | 'exotics' | 'travels' | 'consultants',
-    tab: 'dashboard' | 'consultants' | 'settings',
+    tab: 'dashboard' | 'stats' | 'consultants' | 'settings',
     e: React.MouseEvent
   ) => void;
   mascotas?: Mascota[];
@@ -15,7 +15,7 @@ interface LandingViewProps {
 }
 
 export const LandingWeatherBackground: React.FC<{
-  uiTheme: 'gaming' | 'nature' | 'kawaii' | 'vintage';
+  uiTheme: 'gaming' | 'nature' | 'kawaii';
   clima?: DatosClimaticos | null;
 }> = ({ uiTheme, clima }) => {
   const temp = clima?.temperatura ?? 20;
@@ -57,14 +57,7 @@ export const LandingWeatherBackground: React.FC<{
       const list = kawaiiParticles[weatherType];
       return <span style={{ fontSize: '20px' }}>{list[index % list.length]}</span>;
     }
-    if (uiTheme === 'vintage') {
-      if (weatherType === 'rain') return <div className="weather-particle vintage-rain" />;
-      if (weatherType === 'snow') return <div className="weather-particle vintage-snow" />;
-      if (weatherType === 'sun') return <div className="weather-particle vintage-sun" />;
-      if (weatherType === 'dust') return <div className="weather-particle vintage-dust" />;
-      const vintagePetals = ['🌸', '🍂', '🌾', '🌼'];
-      return <span style={{ opacity: 0.6, fontSize: '18px' }}>{vintagePetals[index % vintagePetals.length]}</span>;
-    }
+
     if (weatherType === 'rain') {
       return (
         <svg width="8" height="24" viewBox="0 0 8 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -179,21 +172,7 @@ export const LandingWeatherBackground: React.FC<{
           background: radial-gradient(circle at 50% 50%, rgba(255, 243, 224, 0.5) 0%, transparent 100%);
         }
 
-        .weather-ambient-gradient.theme-vintage.weather-clear {
-          background: radial-gradient(circle at 80% 20%, rgba(212, 175, 55, 0.25) 0%, transparent 70%);
-        }
-        .weather-ambient-gradient.theme-vintage.weather-sun {
-          background: radial-gradient(circle at 80% 20%, rgba(255, 179, 0, 0.2) 0%, transparent 60%);
-        }
-        .weather-ambient-gradient.theme-vintage.weather-rain {
-          background: linear-gradient(180deg, rgba(220, 215, 201, 0.3) 0%, rgba(109, 139, 116, 0.2) 100%);
-        }
-        .weather-ambient-gradient.theme-vintage.weather-snow {
-          background: linear-gradient(180deg, rgba(245, 245, 238, 0.4) 0%, rgba(200, 190, 170, 0.2) 100%);
-        }
-        .weather-ambient-gradient.theme-vintage.weather-dust {
-          background: radial-gradient(circle at 50% 50%, rgba(206, 179, 133, 0.2) 0%, transparent 100%);
-        }
+
 
         .weather-particles-container {
           position: absolute;
@@ -238,11 +217,7 @@ export const LandingWeatherBackground: React.FC<{
           box-shadow: 0 0 8px rgba(102, 252, 241, 0.7);
         }
 
-        .weather-particle.vintage-rain {
-          width: 1.5px;
-          height: 25px;
-          background: linear-gradient(180deg, rgba(139, 128, 107, 0.5), transparent);
-        }
+
 
         .weather-particle-wrapper.weather-snow {
           animation: weatherFallSnow linear infinite;
@@ -276,12 +251,7 @@ export const LandingWeatherBackground: React.FC<{
           box-shadow: 0 0 10px #66fcf1, 0 0 20px #66fcf1;
         }
 
-        .weather-particle.vintage-snow {
-          width: 5px;
-          height: 5px;
-          border-radius: 50%;
-          background: rgba(220, 215, 201, 0.8);
-        }
+
 
         .weather-particle-wrapper.weather-sun {
           animation: weatherRiseSun linear infinite;
@@ -322,12 +292,7 @@ export const LandingWeatherBackground: React.FC<{
           box-shadow: 0 0 10px #ff007f, 0 0 20px rgba(255, 0, 127, 0.5);
         }
 
-        .weather-particle.vintage-sun {
-          width: 10px;
-          height: 10px;
-          background: rgba(212, 175, 55, 0.5);
-          clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-        }
+
 
         .weather-particle-wrapper.weather-dust {
           animation: weatherDriftDust linear infinite;
@@ -365,12 +330,7 @@ export const LandingWeatherBackground: React.FC<{
           box-shadow: 0 0 8px #ff8f00;
         }
 
-        .weather-particle.vintage-dust {
-          width: 4px;
-          height: 4px;
-          border-radius: 50%;
-          background: rgba(206, 179, 133, 0.6);
-        }
+
 
         .weather-particle-wrapper.weather-clear {
           animation: weatherRiseClear linear infinite;

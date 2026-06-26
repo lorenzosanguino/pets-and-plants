@@ -19,8 +19,8 @@ const isDatabaseDefaultDemo = (mascotas: Mascota[], plantas: Planta[], exoticos:
 };
 
 interface UseSyncManagerProps {
-  uiTheme: 'gaming' | 'nature' | 'kawaii' | 'vintage';
-  setUiTheme: React.Dispatch<React.SetStateAction<'gaming' | 'nature' | 'kawaii' | 'vintage'>>;
+  uiTheme: 'gaming' | 'nature' | 'kawaii';
+  setUiTheme: React.Dispatch<React.SetStateAction<'gaming' | 'nature' | 'kawaii'>>;
   onCloudDataReceived: () => Promise<void>;
   isOffline: boolean;
 }
@@ -393,7 +393,7 @@ export const useSyncManager = ({
           return updated;
         });
 
-        if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'vintage')) {
+        if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii')) {
           lastSyncedThemeRef.current = data.theme || null;
           setUiTheme(data.theme as any);
         }
@@ -465,7 +465,7 @@ export const useSyncManager = ({
         );
         isRemoteSyncingRef.current = false;
 
-        if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'vintage')) {
+        if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii')) {
           lastSyncedThemeRef.current = data.theme;
           setUiTheme(data.theme as any);
         }
@@ -718,7 +718,7 @@ export const useSyncManager = ({
                         await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
                       }
 
-                      if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'vintage')) {
+                      if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii')) {
                         lastSyncedThemeRef.current = data.theme || null;
                         setUiTheme(data.theme as any);
                       }
@@ -814,7 +814,7 @@ export const useSyncManager = ({
                       await FirebaseSyncService.uploadChanges(localHogarId, data.nombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
                     }
 
-                    if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'vintage')) {
+                    if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii')) {
                       lastSyncedThemeRef.current = data.theme || null;
                       setUiTheme(data.theme as any);
                     }
@@ -882,11 +882,11 @@ export const useSyncManager = ({
         }
       }
 
-      if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii' || data.theme === 'vintage')) {
-        setUiTheme((prevTheme: 'gaming' | 'nature' | 'kawaii' | 'vintage') => {
+      if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii')) {
+        setUiTheme((prevTheme: 'gaming' | 'nature' | 'kawaii') => {
           if (prevTheme !== data.theme) {
             lastSyncedThemeRef.current = data.theme || null;
-            return data.theme as 'gaming' | 'nature' | 'kawaii' | 'vintage';
+            return data.theme as 'gaming' | 'nature' | 'kawaii';
           }
           return prevTheme;
         });

@@ -177,26 +177,95 @@ code {
   transform: scale(0.95);
 }
 
+/* ── Modo Oscuro Automático (P8) ─────────────────────────────────────────
+   Cuando el sistema operativo usa modo oscuro y el usuario tiene seleccionado
+   el tema Nature o Kawaii, adaptamos los colores automáticamente para
+   mejorar legibilidad sin forzar el tema Gaming.
+   El tema Gaming ya es oscuro por defecto y no necesita ajuste.
+────────────────────────────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  [data-game-theme="nature"] {
+    --bg: #0d1a0f;
+    --game-bg: #0d1a0f;
+    --game-card-bg: rgba(18, 36, 20, 0.92);
+    --game-border-color: #4caf50;
+    --game-border: 1px solid #2e7d32;
+    --game-text: #a5d6a7;
+    --game-text-bright: #c8e6c9;
+    --game-accent: #66bb6a;
+    --game-accent-light: rgba(76, 175, 80, 0.15);
+    --game-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0,0,0,0.2);
+    --game-bg-image: linear-gradient(rgba(13, 26, 15, 0.85), rgba(13, 26, 15, 0.85)), url("/flow_lab_imagenes/carga_nature.webp");
+  }
 
-
-/* Tema Vintage Botanical (Enciclopedia e invernadero clásico) */
-[data-game-theme="vintage"] {
-  --bg: #f5efe3;
-  --game-bg: #f5efe3;
-  --game-card-bg: rgba(254, 252, 248, 0.96);
-  --game-border-color: #cda250;
-  --game-border: 2px solid #cda250;
-  --game-text: #2f4f4f;
-  --game-text-bright: #1c3b2b;
-  --game-accent: #b8860b;
-  --game-font: 'Georgia', 'Playfair Display', serif;
-  --game-accent-light: rgba(205, 162, 80, 0.12);
-  --game-radius: 6px;
-  --game-shadow: 0 8px 24px rgba(47, 79, 79, 0.09);
-  --game-bg-image: linear-gradient(rgba(245, 239, 227, 0.88), rgba(245, 239, 227, 0.88)), url("/flow_lab_imagenes/carga_vintage.webp");
+  [data-game-theme="kawaii"] {
+    --bg: #1a0a10;
+    --game-bg: #1a0a10;
+    --game-card-bg: rgba(38, 14, 22, 0.92);
+    --game-border-color: #f48fb1;
+    --game-border: 2px dashed #c2185b;
+    --game-text: #f48fb1;
+    --game-text-bright: #fce4ec;
+    --game-accent: #e91e8c;
+    --game-accent-light: rgba(244, 143, 177, 0.15);
+    --game-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    --game-bg-image: linear-gradient(rgba(26, 10, 16, 0.88), rgba(26, 10, 16, 0.88)), url("/flow_lab_imagenes/carga_kawaii.webp");
+  }
 }
 
 
+
+
+/* ── Accesibilidad (P9) ──────────────────────────────────────────────────
+   - focus-visible: anillo de foco visible solo con teclado (no con ratón)
+   - prefers-reduced-motion: desactiva animaciones para usuarios sensibles
+   - prefers-contrast: mejora legibilidad en modo alto contraste
+────────────────────────────────────────────────────────────────────────── */
+
+/* Ocultar outline por defecto pero mostrarlo en navegación por teclado */
+*:focus {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 3px solid var(--game-border-color, #4caf50);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+[data-game-theme="gaming"] *:focus-visible {
+  outline-color: #66fcf1;
+  box-shadow: 0 0 0 3px rgba(102, 252, 241, 0.35);
+}
+
+[data-game-theme="kawaii"] *:focus-visible {
+  outline-color: #da70d6;
+  box-shadow: 0 0 0 3px rgba(218, 112, 214, 0.35);
+}
+
+/* Reducir movimiento para usuarios con vestibular disorders */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Alto contraste */
+@media (prefers-contrast: high) {
+  [data-game-theme="nature"],
+  [data-game-theme="kawaii"] {
+    --game-border: 2px solid currentColor;
+    --game-card-bg: Canvas;
+    --game-bg: Canvas;
+    --game-text: CanvasText;
+    --game-text-bright: CanvasText;
+  }
+}
 
 /* Animaciones de Logros de Videojuegos */
 @keyframes skyrimLevelUp {
@@ -470,10 +539,7 @@ button {
   border: 2px dashed rgba(255, 182, 193, 0.6) !important;
 }
 
-[data-game-theme="vintage"] .glass-card {
-  background: rgba(254, 252, 248, 0.82) !important;
-  border: 1.5px solid rgba(205, 162, 80, 0.4) !important;
-}
+
 
 /* ==========================================================================
    OPTIMIZACIONES PARA ORIENTACIÓN HORIZONTAL (LANDSCAPE) EN MÓVILES Y TABLETS

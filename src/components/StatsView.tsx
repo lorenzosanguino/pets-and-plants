@@ -1,0 +1,525 @@
+import React from 'react';
+import type { Mascota, Planta, AnimalExotico } from '../database/types';
+
+interface StatsViewProps {
+  mascotas: Mascota[];
+  plantas: Planta[];
+  exoticos: AnimalExotico[];
+  uiTheme: 'gaming' | 'nature' | 'kawaii';
+}
+
+export const StatsView: React.FC<StatsViewProps> = ({
+  mascotas = [],
+  plantas = [],
+  exoticos = [],
+  uiTheme: _uiTheme
+}) => {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  // 1. Próximos Riegos (próximos 7 días)
+  const proximosRiegos = plantas
+    .filter(p => {
+      if (!p.proximaFechaRiego) return false;
+      const fRiego = new Date(p.proximaFechaRiego);
+      fRiego.setHours(0, 0, 0, 0);
+      const diffTime = fRiego.getTime() - hoy.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays >= -2 && diffDays <= 7; // Incluir vencidos de hace 2 días para recordar
+    })
+    .map(p => {
+      const fRiego = new Date(p.proximaFechaRiego);
+      fRiego.setHours(0, 0, 0, 0);
+      const diffDays = Math.ceil((fRiego.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+      return {
+        id: p.id,
+        nombre: p.nombreComun,
+        tipoRiego: p.tipoRiegoEspecifico || 'Agua del grifo reposada',
+        dias: diffDays,
+        fecha: p.proximaFechaRiego.split('T')[0]
+      };
+    })
+    .sort((a, b) => a.dias - b.dias);
+
+  // 2. Próximas Vacunas (próximos 30 días)
+  const proximasVacunas = mascotas
+    .flatMap(m => {
+      const vacunas = m.historialVacunas || [];
+      return vacunas
+        .filter(v => {
+          if (!v.proximaDosis) return false;
+          const fVacuna = new Date(v.proximaDosis);
+          fVacuna.setHours(0, 0, 0, 0);
+          const diffTime = fVacuna.getTime() - hoy.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          return diffDays >= -7 && diffDays <= 30; // Incluir vencidos recientes
+        })
+        .map(v => {
+          const fVacuna = new Date(v.proximaDosis!);
+          fVacuna.setHours(0, 0, 0, 0);
+          const diffDays = Math.ceil((fVacuna.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+          return {
+            mascotaId: m.id,
+            mascotaNombre: m.nombre,
+            vacunaNombre: v.vacuna === 'Otras' ? (v.vacunaPersonalizada || 'Vacuna Especial') : v.vacuna,
+            dias: diffDays,
+            fecha: v.proximaDosis!.split('T')[0]
+          };
+        });
+    })
+    .sort((a, b) => a.dias - b.dias);
+
+  // 3. Alertas de Toxicidad Cruzada
+  const tieneFelino = mascotas.some(m => m.especie === 'Felino');
+  const tieneCanino = mascotas.some(m => m.especie === 'Canino');
+  
+  const plantasToxicas = plantas.filter(p => {
+    const felinoPeligro = tieneFelino && p.toxicidadFelina && p.toxicidadFelina !== 'Segura';
+    const caninoPeligro = tieneCanino && p.toxicidadCanina && p.toxicidadCanina !== 'Segura';
+    return felinoPeligro || caninoPeligro;
+  });
+
+  // 4. Tendencia de Peso
+  const obtenerTendencia = (registro: { fecha: string; pesoKg?: number; pesoG?: number; alturaCm?: number; peso?: number }[] = []) => {
+    if (registro.length < 2) return null;
+    // Ordenar de más antiguo a más reciente
+    const regOrdenado = [...registro].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+    const ultimo = regOrdenado[regOrdenado.length - 1];
+    const penultimo = regOrdenado[regOrdenado.length - 2];
+    
+    // Obtener valor (soportar pesoKg o pesoG o alturaCm)
+    const valUltimo = 'pesoKg' in ultimo ? (ultimo as any).pesoKg : ('alturaCm' in ultimo ? (ultimo as any).alturaCm : 0);
+    const valPenultimo = 'pesoKg' in penultimo ? (penultimo as any).pesoKg : ('alturaCm' in penultimo ? (penultimo as any).alturaCm : 0);
+    
+    if (valUltimo > valPenultimo) return { dir: 'up', emoji: '↑', texto: 'subiendo', color: '#4caf50' };
+    if (valUltimo < valPenultimo) return { dir: 'down', emoji: '↓', texto: 'bajando', color: '#ff5722' };
+    return { dir: 'stable', emoji: '→', texto: 'estable', color: '#9e9e9e' };
+  };
+
+  const tendenciasMascotas = mascotas
+    .map(m => {
+      const tend = obtenerTendencia(m.registroPeso);
+      if (!tend) return null;
+      const ultimo = [...m.registroPeso].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime()).pop();
+      return {
+        nombre: m.nombre,
+        emoji: '🐾',
+        tipo: 'Mascota',
+        tendencia: tend,
+        ultimoValor: `${ultimo?.pesoKg} kg`
+      };
+    })
+    .filter(Boolean) as { nombre: string; emoji: string; tipo: string; tendencia: any; ultimoValor: string }[];
+
+  // 5. Alimentación de Exóticos
+  const proximasComidasExoticos = exoticos
+    .map(e => {
+      if (!e.ultimaAlimentacion) return null;
+      const ultAlim = new Date(e.ultimaAlimentacion);
+      ultAlim.setHours(0, 0, 0, 0);
+      const proxAlim = new Date(ultAlim);
+      proxAlim.setDate(proxAlim.getDate() + (e.intervaloAlimentacionDias || 1));
+      proxAlim.setHours(0, 0, 0, 0);
+      
+      const diffTime = proxAlim.getTime() - hoy.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      return {
+        id: e.id,
+        nombre: e.nombre,
+        especie: e.especie,
+        tipo: e.tipoEspecifico,
+        dias: diffDays,
+        fecha: proxAlim.toISOString().split('T')[0]
+      };
+    })
+    .filter(Boolean)
+    .filter(item => item!.dias <= 3) // Vencidos o dentro de los próximos 3 días
+    .sort((a, b) => a!.dias - b!.dias) as { id: string; nombre: string; especie: string; tipo: string; dias: number; fecha: string }[];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', paddingBottom: '30px' }}>
+      
+      {/* 1. COUNTERS ROW */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+        gap: '16px',
+        width: '100%'
+      }}>
+        <div style={{
+          background: 'var(--game-card-bg)',
+          border: 'var(--game-border)',
+          borderRadius: 'var(--game-radius)',
+          boxShadow: 'var(--game-shadow)',
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '8px',
+          transition: 'transform 0.2s',
+        }}>
+          <span style={{ fontSize: '28px' }}>🐾</span>
+          <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--game-accent)' }}>{mascotas.length}</span>
+          <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text)', opacity: 0.8 }}>Mascotas</span>
+        </div>
+
+        <div style={{
+          background: 'var(--game-card-bg)',
+          border: 'var(--game-border)',
+          borderRadius: 'var(--game-radius)',
+          boxShadow: 'var(--game-shadow)',
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '8px',
+          transition: 'transform 0.2s',
+        }}>
+          <span style={{ fontSize: '28px' }}>🌿</span>
+          <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--game-accent)' }}>{plantas.length}</span>
+          <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text)', opacity: 0.8 }}>Plantas</span>
+        </div>
+
+        <div style={{
+          background: 'var(--game-card-bg)',
+          border: 'var(--game-border)',
+          borderRadius: 'var(--game-radius)',
+          boxShadow: 'var(--game-shadow)',
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '8px',
+          transition: 'transform 0.2s',
+        }}>
+          <span style={{ fontSize: '28px' }}>🦎</span>
+          <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--game-accent)' }}>{exoticos.length}</span>
+          <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text)', opacity: 0.8 }}>Exóticos</span>
+        </div>
+      </div>
+
+      {/* GRID DE ESTADÍSTICAS Y ALERTAS */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gap: '20px',
+        width: '100%'
+      }}>
+
+        {/* COLUMNA 1 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          {/* Próximos Riegos */}
+          <div style={{
+            background: 'var(--game-card-bg)',
+            border: 'var(--game-border)',
+            borderRadius: 'var(--game-radius)',
+            boxShadow: 'var(--game-shadow)',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}>
+            <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid var(--game-border-color, #e0e0e0)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>💧</span> Próximos Riegos
+            </h3>
+            {proximosRiegos.length === 0 ? (
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>No hay riegos pendientes en los próximos 7 días.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {proximosRiegos.map(r => {
+                  const isOverdue = r.dias < 0;
+                  const label = r.dias === 0 ? 'Hoy' : r.dias === 1 ? 'Mañana' : isOverdue ? `Hace ${Math.abs(r.dias)} días` : `En ${r.dias} días`;
+                  return (
+                    <div key={r.id} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      background: 'rgba(0,0,0,0.02)',
+                      border: '1px solid rgba(0,0,0,0.05)'
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--game-text-bright, #111)' }}>{r.nombre}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--game-text)', opacity: 0.7 }}>{r.tipoRiego}</span>
+                      </div>
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        background: isOverdue ? '#ffebee' : r.dias === 0 ? '#e3f2fd' : 'rgba(0,0,0,0.05)',
+                        color: isOverdue ? '#c62828' : r.dias === 0 ? '#1565c0' : 'var(--game-text)'
+                      }}>
+                        {label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Próximas Vacunas/Citas */}
+          <div style={{
+            background: 'var(--game-card-bg)',
+            border: 'var(--game-border)',
+            borderRadius: 'var(--game-radius)',
+            boxShadow: 'var(--game-shadow)',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}>
+            <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid var(--game-border-color, #e0e0e0)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>💉</span> Vacunas y Revisiones (30d)
+            </h3>
+            {proximasVacunas.length === 0 ? (
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>Sin vacunas ni revisiones pendientes en los próximos 30 días.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {proximasVacunas.map((v, idx) => {
+                  const isOverdue = v.dias < 0;
+                  const label = v.dias === 0 ? 'Hoy' : v.dias === 1 ? 'Mañana' : isOverdue ? `Hace ${Math.abs(v.dias)} días` : `En ${v.dias} días`;
+                  return (
+                    <div key={idx} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      background: 'rgba(0,0,0,0.02)',
+                      border: '1px solid rgba(0,0,0,0.05)'
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--game-text-bright, #111)' }}>{v.mascotaNombre}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--game-text)', opacity: 0.8 }}>{v.vacunaNombre}</span>
+                      </div>
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        background: isOverdue ? '#ffebee' : v.dias === 0 ? '#e3f2fd' : 'rgba(0,0,0,0.05)',
+                        color: isOverdue ? '#c62828' : v.dias === 0 ? '#1565c0' : 'var(--game-text)'
+                      }}>
+                        {label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+        </div>
+
+        {/* COLUMNA 2 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+          {/* Alertas de Toxicidad Cruzada */}
+          <div style={{
+            background: 'var(--game-card-bg)',
+            border: 'var(--game-border)',
+            borderRadius: 'var(--game-radius)',
+            boxShadow: 'var(--game-shadow)',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}>
+            <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid var(--game-border-color, #e0e0e0)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>⚠️</span> Convivencia y Toxicidad Cruzada
+            </h3>
+            {!tieneFelino && !tieneCanino ? (
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>Añade perros o gatos para comprobar la toxicidad cruzada con tus plantas.</p>
+            ) : plantasToxicas.length === 0 ? (
+              <div style={{
+                padding: '10px 12px',
+                borderRadius: '8px',
+                background: '#e8f5e9',
+                border: '1px solid #c8e6c9',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <span style={{ fontSize: '18px' }}>✅</span>
+                <span style={{ fontSize: '12.5px', color: '#2e7d32', fontWeight: 'bold' }}>¡Hogar seguro! Ninguna planta de tu hogar es tóxica para tus mascotas.</span>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  background: '#fff3e0',
+                  border: '1px solid #ffe0b2',
+                  fontSize: '11px',
+                  color: '#e65100',
+                  fontWeight: 'bold',
+                  marginBottom: '4px'
+                }}>
+                  ⚠️ Detectamos plantas potencialmente peligrosas para tus animales:
+                </div>
+                {plantasToxicas.map(p => {
+                  const esFelinoTox = tieneFelino && p.toxicidadFelina && p.toxicidadFelina !== 'Segura';
+                  const esCaninoTox = tieneCanino && p.toxicidadCanina && p.toxicidadCanina !== 'Segura';
+                  return (
+                    <div key={p.id} style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      background: 'rgba(255, 82, 82, 0.04)',
+                      border: '1px solid rgba(255, 82, 82, 0.15)'
+                    }}>
+                      <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--game-text-bright, #111)' }}>{p.nombreComun} ({p.nombreCientifico || 'S/C'})</span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '2px' }}>
+                        {esFelinoTox && (
+                          <span style={{
+                            fontSize: '10px',
+                            fontWeight: 'bold',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            background: p.toxicidadFelina.includes('Altamente') ? '#ffebee' : '#fff3e0',
+                            color: p.toxicidadFelina.includes('Altamente') ? '#c62828' : '#e65100'
+                          }}>
+                            🐱 Felinos: {p.toxicidadFelina}
+                          </span>
+                        )}
+                        {esCaninoTox && (
+                          <span style={{
+                            fontSize: '10px',
+                            fontWeight: 'bold',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            background: p.toxicidadCanina?.includes('Altamente') ? '#ffebee' : '#fff3e0',
+                            color: p.toxicidadCanina?.includes('Altamente') ? '#c62828' : '#e65100'
+                          }}>
+                            🐶 Caninos: {p.toxicidadCanina}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Tendencia de Peso */}
+          <div style={{
+            background: 'var(--game-card-bg)',
+            border: 'var(--game-border)',
+            borderRadius: 'var(--game-radius)',
+            boxShadow: 'var(--game-shadow)',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}>
+            <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid var(--game-border-color, #e0e0e0)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>⚖️</span> Curvas y Tendencias de Peso
+            </h3>
+            {tendenciasMascotas.length === 0 ? (
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>Añade al menos 2 registros de peso en tus mascotas para analizar la tendencia.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {tendenciasMascotas.map((t, idx) => (
+                  <div key={idx} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    background: 'rgba(0,0,0,0.02)',
+                    border: '1px solid rgba(0,0,0,0.05)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '18px' }}>{t.emoji}</span>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--game-text-bright, #111)' }}>{t.nombre}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--game-text)', opacity: 0.7 }}>Último peso: {t.ultimoValor}</span>
+                      </div>
+                    </div>
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      background: t.tendencia.dir === 'up' ? '#e8f5e9' : t.tendencia.dir === 'down' ? '#fbe9e7' : '#f5f5f5',
+                      color: t.tendencia.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      <span>{t.tendencia.emoji}</span> {t.tendencia.texto}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Alimentación de Exóticos */}
+          {exoticos.length > 0 && (
+            <div style={{
+              background: 'var(--game-card-bg)',
+              border: 'var(--game-border)',
+              borderRadius: 'var(--game-radius)',
+              boxShadow: 'var(--game-shadow)',
+              padding: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}>
+              <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid var(--game-border-color, #e0e0e0)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>🦗</span> Alimentación de Exóticos
+              </h3>
+              {proximasComidasExoticos.length === 0 ? (
+                <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>Todos tus exóticos han sido alimentados recientemente.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {proximasComidasExoticos.map(e => {
+                    const isOverdue = e.dias < 0;
+                    const label = e.dias === 0 ? 'Hoy' : e.dias === 1 ? 'Mañana' : isOverdue ? `Atrasado por ${Math.abs(e.dias)} días` : `En ${e.dias} días`;
+                    return (
+                      <div key={e.id} style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        background: 'rgba(0,0,0,0.02)',
+                        border: '1px solid rgba(0,0,0,0.05)'
+                      }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--game-text-bright, #111)' }}>{e.nombre} ({e.tipo})</span>
+                          <span style={{ fontSize: '11px', color: 'var(--game-text)', opacity: 0.7 }}>{e.especie}</span>
+                        </div>
+                        <span style={{
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          background: isOverdue ? '#ffebee' : e.dias === 0 ? '#e3f2fd' : 'rgba(0,0,0,0.05)',
+                          color: isOverdue ? '#c62828' : e.dias === 0 ? '#1565c0' : 'var(--game-text)'
+                        }}>
+                          {label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+        </div>
+
+      </div>
+    </div>
+  );
+};

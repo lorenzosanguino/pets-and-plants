@@ -70,7 +70,12 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
 
   const [nuevoPeso, setNuevoPeso] = useState('');
 
-
+  // States for Vaccine Form (P4)
+  const [vacunaTipo, setVacunaTipo] = useState<'Trivalente' | 'Leucemia' | 'Rabia' | 'Otras'>('Trivalente');
+  const [vacunaPersonalizada, setVacunaPersonalizada] = useState('');
+  const [vacunaLote, setVacunaLote] = useState('');
+  const [vacunaFecha, setVacunaFecha] = useState('');
+  const [vacunaProxima, setVacunaProxima] = useState('');
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -426,7 +431,43 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
     const updated = [...current, vName];
     const mascotaActualizada: Mascota = { ...mascota, vacunasChecklist: updated };
     await LocalDatabase.saveMascota(mascotaActualizada);
+  };
+
+  const agregarRegistroVacuna = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!vacunaLote.trim() || !vacunaFecha) {
+      alert("Por favor rellena la fecha y el número de lote.");
+      return;
+    }
+    if (vacunaTipo === 'Otras' && !vacunaPersonalizada.trim()) {
+      alert("Por favor especifica el nombre de la vacuna.");
+      return;
+    }
+
+    const nuevaVacuna = {
+      fecha: new Date(vacunaFecha).toISOString(),
+      vacuna: vacunaTipo,
+      lote: vacunaLote,
+      proximaDosis: vacunaProxima ? new Date(vacunaProxima).toISOString() : undefined,
+      vacunaPersonalizada: vacunaTipo === 'Otras' ? vacunaPersonalizada : undefined
+    };
+
+    const historialActualizado = [...(mascota.historialVacunas || []), nuevaVacuna];
+    const mascotaActualizada: Mascota = {
+      ...mascota,
+      historialVacunas: historialActualizado
+    };
+
+    await LocalDatabase.saveMascota(mascotaActualizada);
+    
+    // Reset form states
+    setVacunaPersonalizada('');
+    setVacunaLote('');
+    setVacunaFecha('');
+    setVacunaProxima('');
+    
     onUpdate();
+    alert("Vacuna registrada con éxito en el historial.");
   };
 
   const getDewormingInfo = (vName: 'Desparasitación Interna' | 'Desparasitación Externa') => {
@@ -556,7 +597,6 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
     if (theme === 'nature') accentColor = '#2e7d32';
     else if (theme === 'kawaii') accentColor = '#ff6b8b';
     else if (theme === 'gaming') accentColor = '#66fcf1';
-    else if (theme === 'vintage') accentColor = '#b8860b';
 
     return (
       <Suspense fallback={<div style={{ height: '140px', background: 'rgba(0,0,0,0.02)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#888' }}>Cargando gráfico...</div>}>
@@ -1285,6 +1325,129 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Historial de Vacunas Formales */}
+              <div style={{ marginTop: '16px', background: 'rgba(0,0,0,0.01)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', display: 'block', marginBottom: '8px' }}>
+                  📜 Historial Clínico de Vacunas
+                </span>
+                
+                {(!mascota.historialVacunas || mascota.historialVacunas.length === 0) ? (
+                  <p style={{ margin: '0 0 12px 0', fontSize: '11px', color: 'var(--game-text)', opacity: 0.7 }}>
+                    No hay vacunas registradas en el historial formal.
+                  </p>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginBottom: '12px', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
+                        <th style={{ padding: '4px' }}>Vacuna</th>
+                        <th style={{ padding: '4px' }}>Fecha</th>
+                        <th style={{ padding: '4px' }}>Lote</th>
+                        <th style={{ padding: '4px' }}>Próxima Dosis</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {mascota.historialVacunas.map((v, idx) => {
+                        const vName = v.vacuna === 'Otras' ? (v.vacunaPersonalizada || 'Otras') : v.vacuna;
+                        const fechaFormateada = v.fecha ? v.fecha.split('T')[0] : 'S/F';
+                        const proximaFormateada = v.proximaDosis ? v.proximaDosis.split('T')[0] : 'No';
+                        return (
+                          <tr key={idx} style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                            <td style={{ padding: '4px', fontWeight: 'bold' }}>{vName}</td>
+                            <td style={{ padding: '4px' }}>{fechaFormateada}</td>
+                            <td style={{ padding: '4px' }}>{v.lote}</td>
+                            <td style={{ padding: '4px', color: 'var(--game-accent)' }}>{proximaFormateada}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+
+                {/* Formulario Registrar Nueva Vacuna */}
+                <form onSubmit={agregarRegistroVacuna} style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px dashed rgba(0,0,0,0.1)', paddingTop: '10px' }} className="no-print">
+                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>Registrar nueva dosis:</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Tipo:</label>
+                      <select 
+                        value={vacunaTipo} 
+                        onChange={(e) => setVacunaTipo(e.target.value as any)}
+                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                      >
+                        <option value="Trivalente">Trivalente</option>
+                        <option value="Leucemia">Leucemia</option>
+                        <option value="Rabia">Rabia</option>
+                        <option value="Otras">Otras</option>
+                      </select>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Lote:</label>
+                      <input 
+                        type="text" 
+                        value={vacunaLote}
+                        onChange={(e) => setVacunaLote(e.target.value)}
+                        placeholder="Ej: LT-4819"
+                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                      />
+                    </div>
+                  </div>
+
+                  {vacunaTipo === 'Otras' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Especificar Vacuna:</label>
+                      <input 
+                        type="text" 
+                        value={vacunaPersonalizada}
+                        onChange={(e) => setVacunaPersonalizada(e.target.value)}
+                        placeholder="Ej: Nobivac KC, Tos de las Perreras..."
+                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                      />
+                    </div>
+                  )}
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Fecha colocación:</label>
+                      <input 
+                        type="date" 
+                        value={vacunaFecha}
+                        onChange={(e) => setVacunaFecha(e.target.value)}
+                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Próxima dosis (Opcional):</label>
+                      <input 
+                        type="date" 
+                        value={vacunaProxima}
+                        onChange={(e) => setVacunaProxima(e.target.value)}
+                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                      />
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit"
+                    style={{
+                      padding: '6px 10px',
+                      background: 'var(--game-accent, #1976d2)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      marginTop: '4px',
+                      alignSelf: 'flex-start'
+                    }}
+                  >
+                    Registrar Vacuna
+                  </button>
+                </form>
               </div>
             </div>
           )}

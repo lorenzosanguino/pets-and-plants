@@ -1411,7 +1411,6 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
               let accentColor = '#2e7d32'; // nature
               if (theme === 'kawaii') accentColor = '#ff6b8b';
               else if (theme === 'gaming') accentColor = '#66fcf1';
-              else if (theme === 'vintage') accentColor = '#b8860b';
 
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

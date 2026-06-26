@@ -136,6 +136,55 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
     loadEvents();
   }, []);
 
+  const exportarICS = () => {
+    if (eventos.length === 0) {
+      alert("No hay eventos en el calendario para exportar.");
+      return;
+    }
+
+    let icsContent = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//PetPlantApp//Ecosystem Calendar//ES",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH"
+    ];
+
+    eventos.forEach(ev => {
+      const dateParts = ev.fecha.split('-');
+      if (dateParts.length !== 3) return;
+      const dateStr = dateParts.join(''); // YYYYMMDD
+
+      const cleanSummary = ev.texto.replace(/[\,]/g, '\\,').replace(/[\;]/g, '\\;');
+      const categoryLabel = ev.categoria.toUpperCase();
+
+      icsContent.push("BEGIN:VEVENT");
+      icsContent.push(`UID:${ev.id}@petplantapp`);
+      icsContent.push(`DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`);
+      icsContent.push(`DTSTART;VALUE=DATE:${dateStr}`);
+      
+      const nextDay = new Date(ev.fecha);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const nextDayStr = `${nextDay.getFullYear()}${String(nextDay.getMonth() + 1).padStart(2, '0')}${String(nextDay.getDate()).padStart(2, '0')}`;
+      icsContent.push(`DTEND;VALUE=DATE:${nextDayStr}`);
+      icsContent.push(`SUMMARY:[${categoryLabel}] ${cleanSummary}`);
+      icsContent.push(`DESCRIPTION:Categoría: ${ev.categoria}`);
+      icsContent.push("END:VEVENT");
+    });
+
+    icsContent.push("END:VCALENDAR");
+
+    const blob = new Blob([icsContent.join("\r\n")], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `calendario_ecosistema_${new Date().toISOString().split('T')[0]}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const handlePrevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
     setSelectedDayStr(null);
@@ -279,6 +328,28 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
           📅 Agenda y Calendario del Ecosistema
         </h3>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button 
+            type="button"
+            onClick={exportarICS}
+            style={{
+              padding: '6px 12px',
+              background: 'var(--game-accent, #2e7d32)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              fontSize: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              marginRight: '4px'
+            }}
+            title="Exportar calendario a formato iCal (.ics)"
+            className="no-print"
+          >
+            📅 Exportar iCal
+          </button>
           <button 
             onClick={handlePrevMonth}
             style={{ padding: '6px 12px', background: '#f0f0f0', border: '1px solid #ccc', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', color: '#000' }}
