@@ -835,7 +835,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <div className="responsive-form-grid-2" style={{ gap: '10px' }}>
             <div>
               <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Especie:</label>
               <select 
@@ -891,7 +891,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
           </div>
 
           {(['Felino', 'Canino', 'Hamster', 'Conejo', 'Cobaya'].includes(editEspecie) || (editEspecie === 'Otro' && editEsMamifero)) && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div className="responsive-form-grid-2" style={{ gap: '10px' }}>
               <div>
                 <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Sexo:</label>
                 <select 
@@ -1634,7 +1634,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                 {/* Formulario Registrar Nuevo Medicamento */}
                 <form onSubmit={agregarMedicacion} style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px dashed rgba(0,0,0,0.1)', paddingTop: '10px' }} className="no-print">
                   <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>Añadir nuevo tratamiento:</span>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div className="responsive-form-grid-2">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Nombre:</label>
                       <input 
@@ -1657,7 +1657,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div className="responsive-form-grid-2">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Frecuencia:</label>
                       <select 
@@ -1687,7 +1687,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                     )}
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                  <div className="responsive-form-grid-3">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Fecha inicio:</label>
                       <input 
@@ -1777,7 +1777,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                 {/* Formulario Registrar Nueva Vacuna */}
                 <form onSubmit={agregarRegistroVacuna} style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px dashed rgba(0,0,0,0.1)', paddingTop: '10px' }} className="no-print">
                   <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>Registrar nueva dosis:</span>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div className="responsive-form-grid-2">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Tipo:</label>
                       <select 
@@ -1817,7 +1817,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                     </div>
                   )}
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div className="responsive-form-grid-2">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Fecha colocación:</label>
                       <input 

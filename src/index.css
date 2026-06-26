@@ -1,3 +1,35 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+input, select, textarea {
+  max-width: 100%;
+}
+
+/* Responsive Form Grid Helpers */
+.responsive-form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.responsive-form-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .responsive-form-grid-2,
+  .responsive-form-grid-3 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 :root {
   --text: #6b6375;
   --text-h: #08060d;

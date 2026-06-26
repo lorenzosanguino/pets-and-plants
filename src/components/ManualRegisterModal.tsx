@@ -155,7 +155,7 @@ export const ManualPetForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
         />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+      <div className="responsive-form-grid-2" style={{ gap: '10px' }}>
         <div>
           <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Especie:</label>
           <select value={especie} onChange={handleEspecieChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}>
@@ -209,7 +209,7 @@ export const ManualPetForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
       )}
 
       {(esEspecieMamifero(especie) || (especie === 'Otro' && esOtroMamifero)) && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+        <div className="responsive-form-grid-2" style={{ gap: '10px' }}>
           <div>
             <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Sexo:</label>
             <select value={sexo} onChange={(e) => setSexo(e.target.value as any)} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}>
@@ -227,7 +227,7 @@ export const ManualPetForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+      <div className="responsive-form-grid-2" style={{ gap: '10px' }}>
         <div>
           <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Peso (kg):</label>
           <input 
@@ -452,7 +452,7 @@ export const ManualPlantForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
         />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+      <div className="responsive-form-grid-2" style={{ gap: '10px' }}>
         <div>
           <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Ubicación:</label>
           <input 
@@ -499,7 +499,7 @@ export const ManualPlantForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
         </select>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+      <div className="responsive-form-grid-2" style={{ gap: '10px' }}>
         <div>
           <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Seguridad Felina:</label>
           <select value={toxicidad} onChange={(e) => setToxicidad(e.target.value as any)} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)', fontSize: '12px' }}>
@@ -663,7 +663,7 @@ export const ManualExoticForm: React.FC<FormProps> = ({ onClose, onUpdate }) => 
         />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+      <div className="responsive-form-grid-2" style={{ gap: '10px' }}>
         <div>
           <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Especie Exótica:</label>
           <select value={especie} onChange={(e) => setEspecie(e.target.value as any)} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}>
@@ -686,7 +686,7 @@ export const ManualExoticForm: React.FC<FormProps> = ({ onClose, onUpdate }) => 
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+      <div className="responsive-form-grid-3" style={{ gap: '10px' }}>
         <div>
           <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Temp (°C):</label>
           <input 
