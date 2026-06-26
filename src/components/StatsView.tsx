@@ -69,6 +69,37 @@ export const StatsView: React.FC<StatsViewProps> = ({
     })
     .sort((a, b) => a.dias - b.dias);
 
+  // 2.5. Medicación Pendiente Hoy / Atrasada (próximas 24 horas)
+  const medicamentosAlertas = mascotas
+    .flatMap(m => {
+      const meds = m.medicamentos || [];
+      return meds
+        .filter(med => {
+          if (!med.activo || !med.proximaDosis) return false;
+          const fDosis = new Date(med.proximaDosis);
+          const diffTime = fDosis.getTime() - new Date().getTime();
+          const diffHours = diffTime / (1000 * 60 * 60);
+          return diffHours <= 24; // Vencidas o próximas 24 horas
+        })
+        .map(med => {
+          const fDosis = new Date(med.proximaDosis!);
+          const diffTime = fDosis.getTime() - new Date().getTime();
+          const diffMinutes = Math.round(diffTime / 60000);
+          
+          return {
+            mascotaId: m.id,
+            mascotaNombre: m.nombre,
+            medId: med.id,
+            nombre: med.nombre,
+            dosis: med.dosis,
+            frecuencia: med.frecuencia,
+            minutos: diffMinutes,
+            fecha: med.proximaDosis!
+          };
+        });
+    })
+    .sort((a, b) => a.minutos - b.minutos);
+
   // 3. Alertas de Toxicidad Cruzada
   const tieneFelino = mascotas.some(m => m.especie === 'Felino');
   const tieneCanino = mascotas.some(m => m.especie === 'Canino');
@@ -252,6 +283,72 @@ export const StatsView: React.FC<StatsViewProps> = ({
                         borderRadius: '6px',
                         background: isOverdue ? '#ffebee' : r.dias === 0 ? '#e3f2fd' : 'rgba(0,0,0,0.05)',
                         color: isOverdue ? '#c62828' : r.dias === 0 ? '#1565c0' : 'var(--game-text)'
+                      }}>
+                        {label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Alertas de Medicación */}
+          <div style={{
+            background: 'var(--game-card-bg)',
+            border: 'var(--game-border)',
+            borderRadius: 'var(--game-radius)',
+            boxShadow: 'var(--game-shadow)',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}>
+            <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid var(--game-border-color, #e0e0e0)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>💊</span> Medicación Pendiente (24h)
+            </h3>
+            {medicamentosAlertas.length === 0 ? (
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>Sin dosis pendientes para hoy.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {medicamentosAlertas.map((med, idx) => {
+                  const isOverdue = med.minutos < 0;
+                  let label = '';
+                  if (isOverdue) {
+                    const absMin = Math.abs(med.minutos);
+                    if (absMin < 60) {
+                      label = `Atrasado ${absMin}m`;
+                    } else {
+                      label = `Atrasado ${Math.round(absMin / 60)}h`;
+                    }
+                  } else {
+                    if (med.minutos < 60) {
+                      label = `En ${med.minutos}m`;
+                    } else {
+                      label = `En ${Math.round(med.minutos / 60)}h`;
+                    }
+                  }
+                  return (
+                    <div key={idx} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      background: 'rgba(0,0,0,0.02)',
+                      border: '1px solid rgba(0,0,0,0.05)'
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--game-text-bright, #111)' }}>{med.mascotaNombre}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--game-text)', opacity: 0.8 }}>{med.nombre} ({med.dosis}) - {med.frecuencia}</span>
+                      </div>
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        background: isOverdue ? '#ffebee' : '#e3f2fd',
+                        color: isOverdue ? '#c62828' : '#1565c0'
                       }}>
                         {label}
                       </span>

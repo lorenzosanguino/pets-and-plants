@@ -29,3 +29,7 @@ dist-ssr
 lh-tmp/
 lh-result.json
 lighthouse-result.json
+
+# Playwright
+playwright-report/
+test-results/

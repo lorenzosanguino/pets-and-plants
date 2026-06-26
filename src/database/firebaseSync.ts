@@ -155,6 +155,19 @@ export class FirebaseSyncService {
     return isFirebaseEnabled && db !== null;
   }
 
+  static async savePushSubscription(hogarId: string, subscription: any): Promise<void> {
+    if (this.isCloudEnabled() && db) {
+      const endpoint = subscription.endpoint;
+      const hash = simpleHash(endpoint);
+      const docRef = doc(db, 'push_subscriptions', `sub_${hash}`);
+      await setDoc(docRef, {
+        hogarId,
+        subscription: JSON.parse(JSON.stringify(subscription)),
+        updatedAt: Date.now()
+      }, { merge: true });
+    }
+  }
+
   /**
    * Obtiene el hogar vinculado a un usuario desde la colección /hogares/user_hogar_{uid}
    */

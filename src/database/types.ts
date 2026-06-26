@@ -19,6 +19,17 @@ export interface RegistroVacuna {
   vacunaPersonalizada?: string; // Nombre libre cuando vacuna === 'Otras'
 }
 
+export interface MedicamentoRegistro {
+  id: string; // UUID
+  nombre: string;
+  dosis: string;
+  frecuencia: string; // ej: "Cada 12 horas", "Diario", etc.
+  fechaInicio: string; // YYYY-MM-DD
+  fechaFin?: string; // YYYY-MM-DD
+  activo: boolean;
+  proximaDosis?: string; // ISO Date o YYYY-MM-DD HH:mm
+  historialTomas?: string[]; // Fechas ISO de cuándo se tomó
+}
 
 export interface EntradaDiarioClinico {
   id: string;
@@ -64,6 +75,7 @@ export interface Mascota {
   historialPasado?: EventoPasado[]; // Historial de enfermedades/parásitos
   diagnosticosIA?: RegistroDiagnosticoIA[]; // Historial de diagnósticos IA
   adiestramientoProgress?: Record<string, number>; // Progreso de adiestramiento (truco -> porcentaje)
+  medicamentos?: MedicamentoRegistro[];
 }
 
 export type TipoRiego = 'Agua del grifo reposada' | 'Agua blanda reposada' | 'Agua destilada' | 'Agua de lluvia';

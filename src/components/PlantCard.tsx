@@ -232,6 +232,17 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
       localStorage.setItem('petplant_db_last_updated', Date.now().toString());
       try { playSoundWater(); } catch { /* Ignore audio playback error */ }
       onUpdate();
+
+      const activeHogarId = localStorage.getItem('petplant_hogar_id');
+      if (activeHogarId) {
+        import('../utils/notificationManager').then(({ NotificationManager }) => {
+          NotificationManager.triggerCloudPushNotification(
+            activeHogarId,
+            `💧 Riego registrado — ${planta.nombreComun}`,
+            `La planta "${planta.nombreComun}" ha sido regada.`
+          );
+        }).catch(err => console.error(err));
+      }
     } catch (err) {
       console.error("Error al registrar riego:", err);
       // Deshacer cambios locales en caso de error

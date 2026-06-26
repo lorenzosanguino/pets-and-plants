@@ -13,5 +13,10 @@ service cloud.firestore {
       // Solo el propio usuario puede leer y escribir su asociación de hogar
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
+
+    // Reglas para la colección 'push_subscriptions'
+    match /push_subscriptions/{subId} {
+      allow read, write: if request.auth != null;
+    }
   }
 }

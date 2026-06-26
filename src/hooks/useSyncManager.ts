@@ -845,6 +845,10 @@ export const useSyncManager = ({
     if (!cachedFb) return;
 
     setSyncStatus('synced');
+    import('../utils/notificationManager').then(({ NotificationManager }) => {
+      NotificationManager.subscribeUserToPush(hogarId);
+    }).catch(err => console.error("Error subscribing to push:", err));
+
     const unsubscribe = cachedFb.FirebaseSyncService.listenToHogar(hogarId, async (data) => {
       const localLastUpdated = Number(localStorage.getItem('petplant_db_last_updated') || 0);
       

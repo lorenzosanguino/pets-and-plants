@@ -185,4 +185,92 @@ export class NotificationManager {
       console.error('Error al comprobar recordatorios de deparasitación:', err);
     }
   }
+
+  static async subscribeUserToPush(hogarId: string): Promise<boolean> {
+    const permission = await this.requestPermission();
+    if (!permission) return false;
+    
+    if (!('serviceWorker' in navigator)) return false;
+    
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      if (!reg.pushManager) {
+        console.warn("Push notifications not supported in this browser's service worker");
+        return false;
+      }
+      
+      const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+      if (!vapidPublicKey) {
+        console.warn("VITE_VAPID_PUBLIC_KEY not set");
+        return false;
+      }
+      
+      const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
+      
+      const subscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey
+      });
+      
+      console.log("Subscribed successfully to Web Push", subscription);
+      
+      const { FirebaseSyncService } = await import('../database/firebaseSync');
+      if (FirebaseSyncService.isCloudEnabled()) {
+        await FirebaseSyncService.savePushSubscription(hogarId, subscription);
+        console.log("Subscription saved to Firestore cloud successfully.");
+      } else {
+        localStorage.setItem(`mock_push_subscription_${hogarId}`, JSON.stringify(subscription));
+        console.log("Mock subscription saved to LocalStorage.");
+      }
+      
+      return true;
+    } catch (err) {
+      console.error("Failed to subscribe to Web Push:", err);
+      return false;
+    }
+  }
+
+  static async triggerCloudPushNotification(hogarId: string, title: string, body: string) {
+    const { FirebaseSyncService, auth } = await import('../database/firebaseSync');
+    if (!FirebaseSyncService.isCloudEnabled() || !auth?.currentUser) {
+      console.log("Mock push broadcast (offline):", title, body);
+      return;
+    }
+    
+    try {
+      const idToken = await auth.currentUser.getIdToken();
+      const response = await fetch('/api/push', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ hogarId, title, body })
+      });
+      
+      if (!response.ok) {
+        console.error("Failed to trigger cloud push:", await response.text());
+      } else {
+        console.log("Cloud push triggered successfully.");
+      }
+    } catch (err) {
+      console.error("Error triggering cloud push:", err);
+    }
+  }
 }
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/\-/g, '+')
+    .replace(/_/g, '/');
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+

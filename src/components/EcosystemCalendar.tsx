@@ -94,6 +94,28 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
         }
       });
 
+      // Medicación programada activa para el día seleccionado
+      mascotas.forEach(m => {
+        const meds = m.medicamentos || [];
+        meds.forEach((med: any) => {
+          if (med.activo && med.proximaDosis) {
+            const medDate = med.proximaDosis.split('T')[0];
+            if (medDate === dateStr) {
+              const timeStr = new Date(med.proximaDosis).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              tareas.push({
+                type: 'medicacion',
+                title: `${med.nombre} (${med.dosis}) para ${m.nombre}`,
+                detail: `Hora programada: ${timeStr} - Frecuencia: ${med.frecuencia}`,
+                emoji: '💊',
+                color: '#d32f2f',
+                targetId: m.id,
+                medId: med.id
+              } as any);
+            }
+          }
+        });
+      });
+
       // Vacunas / Desparasitaciones pendientes (Deshabilitado por solicitud del usuario: prefiere añadir vacunas a mano)
       /*
       mascotas.forEach(m => {
@@ -583,7 +605,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                   <span style={{ fontSize: '10px', color: '#666' }}>{t.detail}</span>
                 </div>
                 
-                {(t.type === 'riego' || t.type === 'vacuna' || t.type === 'peso' || t.type === 'peso-exotico') && (
+                {(t.type === 'riego' || t.type === 'vacuna' || t.type === 'peso' || t.type === 'peso-exotico' || t.type === 'medicacion') && (
                   <button
                     onClick={async () => {
                       if (t.type === 'riego') {
@@ -613,6 +635,87 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                               ...m,
                               vacunasChecklist: updated
                             });
+                          }
+                        }
+                      } else if (t.type === 'medicacion') {
+                        const m = mascotas.find(item => item.id === t.targetId);
+                        if (m) {
+                          const medId = (t as any).medId;
+                          const med = (m.medicamentos || []).find((item: any) => item.id === medId);
+                          if (med) {
+                            const confirmar = window.confirm(`¿Quieres registrar la toma de ${med.nombre} (${med.dosis}) para ${m.nombre} ahora?`);
+                            if (!confirmar) return;
+
+                            const now = new Date();
+                            const nowISO = now.toISOString();
+
+                            let hoursToAdd = 24;
+                            const freq = med.frecuencia.toLowerCase();
+                            if (freq.includes('8 horas') || freq.includes('8h')) {
+                              hoursToAdd = 8;
+                            } else if (freq.includes('12 horas') || freq.includes('12h')) {
+                              hoursToAdd = 12;
+                            } else if (freq.includes('6 horas') || freq.includes('6h')) {
+                              hoursToAdd = 6;
+                            } else if (freq.includes('4 horas') || freq.includes('4h')) {
+                              hoursToAdd = 4;
+                            } else if (freq.includes('diario') || freq.includes('cada día') || freq.includes('24 horas') || freq.includes('24h')) {
+                              hoursToAdd = 24;
+                            } else if (freq.includes('semanal') || freq.includes('semana') || freq.includes('7 días') || freq.includes('7 dias')) {
+                              hoursToAdd = 24 * 7;
+                            } else {
+                              const numMatch = freq.match(/(\d+)\s*(horas|h)/);
+                              if (numMatch) {
+                                hoursToAdd = parseInt(numMatch[1], 10);
+                              }
+                            }
+
+                            const nextDoseDate = new Date(now.getTime() + hoursToAdd * 60 * 60 * 1000);
+                            const updatedHistory = [...(med.historialTomas || []), nowISO];
+
+                            let activo = med.activo;
+                            if (med.fechaFin) {
+                              const finDate = new Date(med.fechaFin);
+                              finDate.setHours(23, 59, 59, 999);
+                              if (nextDoseDate > finDate) {
+                                activo = false;
+                              }
+                            }
+
+                            const medActualizado = {
+                              ...med,
+                              activo,
+                              proximaDosis: activo ? nextDoseDate.toISOString() : undefined,
+                              historialTomas: updatedHistory
+                            };
+
+                            const medsActualizados = (m.medicamentos || []).map((item: any) => item.id === medId ? medActualizado : item);
+
+                            const nuevoEvento = {
+                              id: safeUUID(),
+                              fecha: nowISO.split('T')[0],
+                              tipo: 'Tratamiento' as const,
+                              descripcion: `Administrada dosis de ${med.nombre} (${med.dosis})`
+                            };
+
+                            await LocalDatabase.saveMascota({
+                              ...m,
+                              medicamentos: medsActualizados,
+                              historialPasado: [...(m.historialPasado || []), nuevoEvento]
+                            });
+
+                            const activeHogarId = localStorage.getItem('petplant_hogar_id');
+                            if (activeHogarId) {
+                              import('../utils/notificationManager').then(({ NotificationManager }) => {
+                                NotificationManager.triggerCloudPushNotification(
+                                  activeHogarId,
+                                  `💊 Toma registrada — ${m.nombre}`,
+                                  `${m.nombre} ha recibido su dosis de ${med.nombre} (${med.dosis}).`
+                                );
+                              }).catch(err => console.error(err));
+                            }
+
+                            alert(`Toma registrada. Próxima dosis: ${activo ? nextDoseDate.toLocaleString() : 'Tratamiento finalizado'}`);
                           }
                         }
                       } else if (t.type === 'peso' || t.type === 'peso-exotico') {

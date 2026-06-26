@@ -77,6 +77,19 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
   const [vacunaFecha, setVacunaFecha] = useState('');
   const [vacunaProxima, setVacunaProxima] = useState('');
 
+  // States for Medication Form
+  const [medNombre, setMedNombre] = useState('');
+  const [medDosis, setMedDosis] = useState('');
+  const [medFrecuencia, setMedFrecuencia] = useState('Diario');
+  const [medFrecuenciaPersonalizada, setMedFrecuenciaPersonalizada] = useState('');
+  const [medFechaInicio, setMedFechaInicio] = useState(() => new Date().toISOString().split('T')[0]);
+  const [medFechaFin, setMedFechaFin] = useState('');
+  const [medHoraProxima, setMedHoraProxima] = useState(() => {
+    const now = new Date();
+    const tzOffset = now.getTimezoneOffset() * 60000;
+    return (new Date(now.getTime() - tzOffset)).toISOString().slice(0, 16);
+  });
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   
@@ -564,6 +577,183 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
     try { playSoundSuccess(); } catch { /* Ignore audio playback error */ }
     onUpdate();
   };
+
+  const agregarMedicacion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!medNombre.trim() || !medDosis.trim()) {
+      alert("Por favor introduce el nombre y la dosis del medicamento.");
+      return;
+    }
+
+    const freqStr = medFrecuencia === 'Otras' ? medFrecuenciaPersonalizada : medFrecuencia;
+    if (!freqStr.trim()) {
+      alert("Por favor especifica la frecuencia.");
+      return;
+    }
+
+    const nuevoMedicamento = {
+      id: safeUUID(),
+      nombre: medNombre.trim(),
+      dosis: medDosis.trim(),
+      frecuencia: freqStr.trim(),
+      fechaInicio: medFechaInicio,
+      fechaFin: medFechaFin ? medFechaFin : undefined,
+      activo: true,
+      proximaDosis: medHoraProxima ? new Date(medHoraProxima).toISOString() : new Date().toISOString(),
+      historialTomas: []
+    };
+
+    const medicamentosActualizados = [...(mascota.medicamentos || []), nuevoMedicamento];
+    const mascotaActualizada: Mascota = {
+      ...mascota,
+      medicamentos: medicamentosActualizados
+    };
+
+    await LocalDatabase.saveMascota(mascotaActualizada);
+
+    // Reset form
+    setMedNombre('');
+    setMedDosis('');
+    setMedFrecuencia('Diario');
+    setMedFrecuenciaPersonalizada('');
+    setMedFechaInicio(new Date().toISOString().split('T')[0]);
+    setMedFechaFin('');
+    const now = new Date();
+    const tzOffset = now.getTimezoneOffset() * 60000;
+    setMedHoraProxima((new Date(now.getTime() - tzOffset)).toISOString().slice(0, 16));
+
+    onUpdate();
+    alert("Medicamento registrado correctamente.");
+  };
+
+  const registrarTomaMedicamento = async (medId: string) => {
+    const meds = mascota.medicamentos || [];
+    const medIdx = meds.findIndex(m => m.id === medId);
+    if (medIdx === -1) return;
+
+    const med = meds[medIdx];
+    const confirmar = window.confirm(`¿Quieres registrar la toma de ${med.nombre} (${med.dosis}) ahora?`);
+    if (!confirmar) return;
+
+    const now = new Date();
+    const nowISO = now.toISOString();
+
+    // Parse frequency to determine next dose
+    let hoursToAdd = 24;
+    const freq = med.frecuencia.toLowerCase();
+    if (freq.includes('8 horas') || freq.includes('8h')) {
+      hoursToAdd = 8;
+    } else if (freq.includes('12 horas') || freq.includes('12h')) {
+      hoursToAdd = 12;
+    } else if (freq.includes('6 horas') || freq.includes('6h')) {
+      hoursToAdd = 6;
+    } else if (freq.includes('4 horas') || freq.includes('4h')) {
+      hoursToAdd = 4;
+    } else if (freq.includes('diario') || freq.includes('cada día') || freq.includes('24 horas') || freq.includes('24h')) {
+      hoursToAdd = 24;
+    } else if (freq.includes('semanal') || freq.includes('semana') || freq.includes('7 días') || freq.includes('7 dias')) {
+      hoursToAdd = 24 * 7;
+    } else {
+      const numMatch = freq.match(/(\d+)\s*(horas|h)/);
+      if (numMatch) {
+        hoursToAdd = parseInt(numMatch[1], 10);
+      }
+    }
+
+    const nextDoseDate = new Date(now.getTime() + hoursToAdd * 60 * 60 * 1000);
+    const updatedHistory = [...(med.historialTomas || []), nowISO];
+
+    // Verificar si se ha superado la fecha fin
+    let activo = med.activo;
+    if (med.fechaFin) {
+      const finDate = new Date(med.fechaFin);
+      finDate.setHours(23, 59, 59, 999);
+      if (nextDoseDate > finDate) {
+        activo = false;
+      }
+    }
+
+    const medActualizado = {
+      ...med,
+      activo,
+      proximaDosis: activo ? nextDoseDate.toISOString() : undefined,
+      historialTomas: updatedHistory
+    };
+
+    const medsActualizados = [...meds];
+    medsActualizados[medIdx] = medActualizado;
+
+    const nuevoEvento = {
+      id: safeUUID(),
+      fecha: nowISO.split('T')[0],
+      tipo: 'Tratamiento' as const,
+      descripcion: `Administrada dosis de ${med.nombre} (${med.dosis})`
+    };
+
+    const mascotaActualizada: Mascota = {
+      ...mascota,
+      medicamentos: medsActualizados,
+      historialPasado: [...(mascota.historialPasado || []), nuevoEvento]
+    };
+
+    await LocalDatabase.saveMascota(mascotaActualizada);
+    try { playSoundSuccess(); } catch { /* Ignore audio playback error */ }
+    onUpdate();
+
+    const activeHogarId = localStorage.getItem('petplant_hogar_id');
+    if (activeHogarId) {
+      import('../utils/notificationManager').then(({ NotificationManager }) => {
+        NotificationManager.triggerCloudPushNotification(
+          activeHogarId,
+          `💊 Toma registrada — ${mascota.nombre}`,
+          `${mascota.nombre} ha recibido su dosis de ${med.nombre} (${med.dosis}).`
+        );
+      }).catch(err => console.error(err));
+    }
+
+    alert(`Toma registrada. Próxima dosis calculada: ${activo ? nextDoseDate.toLocaleString() : 'Tratamiento finalizado'}`);
+  };
+
+  const desactivarMedicamento = async (medId: string) => {
+    const meds = mascota.medicamentos || [];
+    const medIdx = meds.findIndex(m => m.id === medId);
+    if (medIdx === -1) return;
+
+    const med = meds[medIdx];
+    const confirmar = window.confirm(`¿Estás seguro/a de dar de baja / archivar el tratamiento de ${med.nombre}?`);
+    if (!confirmar) return;
+
+    const medsActualizados = [...meds];
+    medsActualizados[medIdx] = {
+      ...med,
+      activo: false,
+      proximaDosis: undefined
+    };
+
+    const mascotaActualizada: Mascota = {
+      ...mascota,
+      medicamentos: medsActualizados
+    };
+
+    await LocalDatabase.saveMascota(mascotaActualizada);
+    onUpdate();
+  };
+
+  const eliminarMedicamento = async (medId: string) => {
+    const meds = mascota.medicamentos || [];
+    const confirmar = window.confirm(`¿Estás seguro/a de ELIMINAR por completo el registro de este medicamento? Se perderá todo su historial.`);
+    if (!confirmar) return;
+
+    const medsActualizados = meds.filter(m => m.id !== medId);
+    const mascotaActualizada: Mascota = {
+      ...mascota,
+      medicamentos: medsActualizados
+    };
+
+    await LocalDatabase.saveMascota(mascotaActualizada);
+    onUpdate();
+  };
+
 
   const agregarIncidenciaPasada = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1325,6 +1515,225 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                     </div>
                   );
                 })}
+              </div>
+
+              <p style={{ margin: '16px 0 8px 0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>
+                💊 Medicación Crónica y Tratamientos
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+                {(!mascota.medicamentos || mascota.medicamentos.length === 0) ? (
+                  <p style={{ margin: '0', fontSize: '11px', color: 'var(--game-text)', opacity: 0.7 }}>
+                    No hay tratamientos registrados.
+                  </p>
+                ) : (
+                  mascota.medicamentos.map(med => {
+                    const isOverdue = med.activo && med.proximaDosis && (new Date() > new Date(med.proximaDosis));
+                    const proximaDosisFormateada = med.proximaDosis 
+                      ? new Date(med.proximaDosis).toLocaleString() 
+                      : 'Tratamiento inactivo/finalizado';
+                    return (
+                      <div key={med.id} style={{
+                        background: 'var(--game-card-bg, #fafafa)',
+                        padding: '10px',
+                        borderRadius: '8px',
+                        border: '1px solid var(--game-border-color, #eee)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                        opacity: med.activo ? 1 : 0.6
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 'bold', fontSize: '12px', color: 'var(--game-text-bright)' }}>
+                            {med.nombre} ({med.dosis})
+                          </span>
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            <span style={{
+                              fontSize: '10px',
+                              fontWeight: 'bold',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              background: med.activo ? (isOverdue ? '#fde8e8' : '#e2fbe8') : '#e9ecef',
+                              color: med.activo ? (isOverdue ? '#c82333' : '#1e7e34') : '#6c757d'
+                            }}>
+                              {med.activo ? (isOverdue ? 'Atrasada' : 'Activo') : 'Inactivo'}
+                            </span>
+                          </div>
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--game-text)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <div><strong>Frecuencia:</strong> {med.frecuencia}</div>
+                          <div><strong>Rango:</strong> Desde {med.fechaInicio}{med.fechaFin ? ` hasta ${med.fechaFin}` : ''}</div>
+                          {med.activo && (
+                            <div style={{ color: isOverdue ? 'var(--game-accent, #d32f2f)' : 'inherit', fontWeight: isOverdue ? 'bold' : 'normal' }}>
+                              <strong>Próxima dosis:</strong> {proximaDosisFormateada}
+                            </div>
+                          )}
+                          {med.historialTomas && med.historialTomas.length > 0 && (
+                            <div>
+                              <strong>Tomas registradas:</strong> {med.historialTomas.length} (Última: {new Date(med.historialTomas[med.historialTomas.length - 1]).toLocaleString()})
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+                          {med.activo && (
+                            <button
+                              type="button"
+                              onClick={() => registrarTomaMedicamento(med.id)}
+                              style={{
+                                padding: '4px 8px',
+                                background: 'var(--game-accent, #1976d2)',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '4px',
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              💊 Registrar Toma
+                            </button>
+                          )}
+                          {med.activo && (
+                            <button
+                              type="button"
+                              onClick={() => desactivarMedicamento(med.id)}
+                              style={{
+                                padding: '4px 8px',
+                                background: '#f0f0f0',
+                                color: '#333',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Dar de baja
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => eliminarMedicamento(med.id)}
+                            style={{
+                              padding: '4px 8px',
+                              background: '#fff',
+                              color: '#c82333',
+                              border: '1px solid #f8d7da',
+                              borderRadius: '4px',
+                              fontSize: '11px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+
+                {/* Formulario Registrar Nuevo Medicamento */}
+                <form onSubmit={agregarMedicacion} style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px dashed rgba(0,0,0,0.1)', paddingTop: '10px' }} className="no-print">
+                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>Añadir nuevo tratamiento:</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Nombre:</label>
+                      <input 
+                        type="text" 
+                        value={medNombre}
+                        onChange={(e) => setMedNombre(e.target.value)}
+                        placeholder="Ej: Insulina, Metacam..."
+                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Dosis:</label>
+                      <input 
+                        type="text" 
+                        value={medDosis}
+                        onChange={(e) => setMedDosis(e.target.value)}
+                        placeholder="Ej: 2 UI, 1 pastilla, 0.5ml..."
+                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Frecuencia:</label>
+                      <select 
+                        value={medFrecuencia} 
+                        onChange={(e) => setMedFrecuencia(e.target.value)}
+                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                      >
+                        <option value="Diario">Diario (Cada 24h)</option>
+                        <option value="Cada 12 horas">Cada 12 horas</option>
+                        <option value="Cada 8 horas">Cada 8 horas</option>
+                        <option value="Cada 6 horas">Cada 6 horas</option>
+                        <option value="Semanal">Semanal</option>
+                        <option value="Otras">Otras</option>
+                      </select>
+                    </div>
+                    {medFrecuencia === 'Otras' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Especificar Frecuencia:</label>
+                        <input 
+                          type="text" 
+                          value={medFrecuenciaPersonalizada}
+                          onChange={(e) => setMedFrecuenciaPersonalizada(e.target.value)}
+                          placeholder="Ej: Cada 48 horas"
+                          style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Fecha inicio:</label>
+                      <input 
+                        type="date" 
+                        value={medFechaInicio}
+                        onChange={(e) => setMedFechaInicio(e.target.value)}
+                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Fecha fin (opcional):</label>
+                      <input 
+                        type="date" 
+                        value={medFechaFin}
+                        onChange={(e) => setMedFechaFin(e.target.value)}
+                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Próxima toma/Inicio:</label>
+                      <input 
+                        type="datetime-local" 
+                        value={medHoraProxima}
+                        onChange={(e) => setMedHoraProxima(e.target.value)}
+                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    style={{
+                      marginTop: '4px',
+                      padding: '6px',
+                      background: 'var(--game-accent, #1976d2)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    + Añadir Medicación
+                  </button>
+                </form>
               </div>
 
               {/* Historial de Vacunas Formales */}
