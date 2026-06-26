@@ -1,22 +1,116 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <link rel="manifest" href="/manifest.json" />
+
+    <!-- ① Preconnect: reducir latencia de dominios externos críticos -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://generativelanguage.googleapis.com" crossorigin />
+
+    <!-- ② Preload: imagen de fondo del tema por defecto (nature) -->
+    <link rel="preload" as="image" href="/flow_lab_imagenes/carga_nature.webp" fetchpriority="high" />
+
+    <!-- ③ Fonts: Outfit (nature), Orbitron (gaming), Fredoka (kawaii) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Fredoka:wght@300..700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet" />
+
     <meta name="theme-color" content="#2e7d32" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Pet & Plant Pro" />
+    <meta name="apple-mobile-web-app-title" content="Pet &amp; Plant Pro" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pet & Plant Pro</title>
+    <meta name="description" content="Gestiona la salud de tus mascotas y plantas con IA veterinaria, recordatorios de riego y seguimiento biométrico." />
+    <title>Pet &amp; Plant Pro</title>
+
+    <!-- ④ Skeleton inline: se renderiza ANTES de que React cargue → FCP instantáneo -->
+    <style>
+      #app-skeleton {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        background: #f3f7f4 url('/flow_lab_imagenes/carga_nature.webp') center/cover no-repeat;
+        font-family: 'Outfit', system-ui, sans-serif;
+        z-index: 99999;
+        transition: opacity 0.4s ease;
+      }
+      #app-skeleton.hidden { opacity: 0; pointer-events: none; }
+      .sk-emojis {
+        font-size: 44px;
+        display: flex;
+        gap: 14px;
+        animation: sk-pulse 1.6s ease-in-out infinite alternate;
+      }
+      .sk-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1b5e20;
+        text-shadow: 0 1px 6px rgba(255,255,255,0.8);
+      }
+      .sk-bar-wrap {
+        width: 160px;
+        height: 4px;
+        background: rgba(46,125,50,0.2);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .sk-bar {
+        height: 100%;
+        width: 40%;
+        background: #4caf50;
+        border-radius: 999px;
+        animation: sk-slide 1.2s ease-in-out infinite;
+      }
+      @keyframes sk-pulse {
+        from { transform: scale(1); opacity: 0.85; }
+        to   { transform: scale(1.06); opacity: 1; }
+      }
+      @keyframes sk-slide {
+        0%   { transform: translateX(-100%); }
+        100% { transform: translateX(400%); }
+      }
+    </style>
   </head>
   <body>
+    <!-- ④ Skeleton visible mientras React inicializa -->
+    <div id="app-skeleton" aria-hidden="true">
+      <div class="sk-emojis">🐶🌿🐱🌱</div>
+      <div class="sk-title">Pet &amp; Plant Pro</div>
+      <div class="sk-bar-wrap"><div class="sk-bar"></div></div>
+    </div>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Ocultar skeleton en cuanto React monta algo en #root -->
+    <script>
+      (function () {
+        var skeleton = document.getElementById('app-skeleton');
+        if (!skeleton) return;
+        // Usar MutationObserver para detectar cuando React inserta contenido
+        var observer = new MutationObserver(function () {
+          var root = document.getElementById('root');
+          if (root && root.children.length > 0) {
+            skeleton.classList.add('hidden');
+            setTimeout(function () { skeleton.remove(); }, 450);
+            observer.disconnect();
+          }
+        });
+        observer.observe(document.getElementById('root') || document.body, { childList: true, subtree: true });
+        // Fallback: ocultar a los 5s si algo falla
+        setTimeout(function () {
+          skeleton.classList.add('hidden');
+          setTimeout(function () { skeleton.remove(); }, 450);
+        }, 5000);
+      })();
+    </script>
   </body>
 </html>
