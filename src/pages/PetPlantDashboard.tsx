@@ -631,19 +631,19 @@ export const PetPlantDashboard: React.FC = () => {
     } else if (experienceMode === 'travels') {
       info.icon = '✈️';
       info.title = 'Guía de Viajes y Vacaciones';
-      info.desc = 'Consulta guías y agentes inteligentes para tu viaje';
+      info.desc = '';
     } else if (experienceMode === 'consultants') {
       info.icon = '💬';
       info.title = 'Consultores de Inteligencia Artificial';
-      info.desc = 'Realiza diagnósticos clínicos, preguntas de cultivo y consultas avanzadas';
+      info.desc = '';
     } else if (experienceMode === 'stats') {
       info.icon = '📈';
       info.title = 'Métricas y Estadísticas';
-      info.desc = 'Visualiza el rendimiento, riegos pendientes y próximas vacunas';
+      info.desc = '';
     } else if (experienceMode === 'settings') {
       info.icon = '⚙️';
       info.title = 'Ajustes del Sistema';
-      info.desc = 'Configura el idioma, temas visuales y sincronización';
+      info.desc = '';
     }
     return info;
   };
