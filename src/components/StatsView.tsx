@@ -73,7 +73,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
         fecha: p.proximaFechaRiego ? p.proximaFechaRiego.split('T')[0] : ''
       };
     })
-    .filter(r => r.dias !== 999 && r.dias >= -2 && r.dias <= 7) // Incluir vencidos de hace 2 días para recordar
+    .filter(r => r.dias !== 999 && r.dias <= 7) // Incluir todos los riegos pendientes (hoy o vencidos) y futuros hasta 7 días
     .sort((a, b) => a.dias - b.dias);
 
   // 2. Próximas Vacunas (próximos 30 días)
