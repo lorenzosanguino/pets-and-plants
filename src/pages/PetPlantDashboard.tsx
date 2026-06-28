@@ -85,9 +85,9 @@ export const PetPlantDashboard: React.FC = () => {
   const [nuevoHogarNombre, setNuevoHogarNombre] = useState('');
   const [joinHogarId, setJoinHogarId] = useState('');
   
-  // Modo de Experiencia: 'landing', 'pets', 'plants', 'exotics', 'travels', 'consultants'
+  // Modo de Experiencia: 'landing', 'pets', 'plants', 'travels', 'consultants', 'stats', 'settings'
   // Al refrescar la página, siempre iniciamos en la página de inicio ('landing') y pestaña 'dashboard'
-  const [experienceMode, setExperienceMode] = useState<'landing' | 'pets' | 'plants' | 'travels' | 'consultants'>('landing');
+  const [experienceMode, setExperienceMode] = useState<'landing' | 'pets' | 'plants' | 'travels' | 'consultants' | 'stats' | 'settings'>('landing');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'stats' | 'consultants' | 'settings'>('dashboard');
 
   // Estados para Búsqueda y Filtros (P3)
@@ -163,7 +163,7 @@ export const PetPlantDashboard: React.FC = () => {
   };
 
   const triggerRippleTransition = React.useCallback((
-    mode: 'landing' | 'pets' | 'plants' | 'travels' | 'consultants',
+    mode: 'landing' | 'pets' | 'plants' | 'travels' | 'consultants' | 'stats' | 'settings',
     tab: 'dashboard' | 'stats' | 'consultants' | 'settings',
     e?: React.MouseEvent | MouseEvent
   ) => {
@@ -184,6 +184,8 @@ export const PetPlantDashboard: React.FC = () => {
     else if (mode === 'travels') color = '#0284c7';
     else if (mode === 'consultants') color = '#7b1fa2';
     else if (mode === 'plants') color = '#2e7d32';
+    else if (mode === 'stats') color = '#e11d48';
+    else if (mode === 'settings') color = '#475569';
     else {
       if (uiTheme === 'gaming') color = '#0f1624';
       else if (uiTheme === 'kawaii') color = '#ffb6c1';
@@ -317,6 +319,8 @@ export const PetPlantDashboard: React.FC = () => {
     if (experienceMode === 'pets') return '#1976d2';
     if (experienceMode === 'travels') return '#0284c7';
     if (experienceMode === 'consultants') return '#7b1fa2';
+    if (experienceMode === 'stats') return '#e11d48';
+    if (experienceMode === 'settings') return '#475569';
     return '#2e7d32'; // plants
   };
 
@@ -614,6 +618,37 @@ export const PetPlantDashboard: React.FC = () => {
 
 
 
+
+  const getHeaderInfo = () => {
+    const info = {
+      icon: '🐾',
+      title: t('appTitlePets'),
+      desc: ''
+    };
+    if (experienceMode === 'plants') {
+      info.icon = '🌿';
+      info.title = t('appTitlePlants');
+    } else if (experienceMode === 'travels') {
+      info.icon = '✈️';
+      info.title = 'Guía de Viajes y Vacaciones';
+      info.desc = 'Consulta guías y agentes inteligentes para tu viaje';
+    } else if (experienceMode === 'consultants') {
+      info.icon = '💬';
+      info.title = 'Consultores de Inteligencia Artificial';
+      info.desc = 'Realiza diagnósticos clínicos, preguntas de cultivo y consultas avanzadas';
+    } else if (experienceMode === 'stats') {
+      info.icon = '📈';
+      info.title = 'Métricas y Estadísticas';
+      info.desc = 'Visualiza el rendimiento, riegos pendientes y próximas vacunas';
+    } else if (experienceMode === 'settings') {
+      info.icon = '⚙️';
+      info.title = 'Ajustes del Sistema';
+      info.desc = 'Configura el idioma, temas visuales y sincronización';
+    }
+    return info;
+  };
+
+  const headerInfo = getHeaderInfo();
 
   return (
     <div 
@@ -1167,37 +1202,37 @@ export const PetPlantDashboard: React.FC = () => {
           <div className="ecosystem-header-responsive" style={{
             background: 'var(--game-card-bg, #ffffff)',
             borderRadius: '16px',
-            padding: activeTab === 'consultants' ? '10px 16px' : '20px 24px',
+            padding: (experienceMode === 'consultants' || experienceMode === 'stats' || experienceMode === 'settings') ? '10px 16px' : '20px 24px',
             border: 'var(--game-border, 1px solid #f0f0f0)',
             display: 'flex',
-            flexDirection: activeTab === 'consultants' ? 'row' : 'column',
-            justifyContent: activeTab === 'consultants' ? 'space-between' : 'center',
+            flexDirection: (experienceMode === 'consultants' || experienceMode === 'stats' || experienceMode === 'settings') ? 'row' : 'column',
+            justifyContent: (experienceMode === 'consultants' || experienceMode === 'stats' || experienceMode === 'settings') ? 'space-between' : 'center',
             alignItems: 'center',
             textAlign: 'center',
             marginBottom: '16px',
-            gap: activeTab === 'consultants' ? '8px' : '16px',
+            gap: (experienceMode === 'consultants' || experienceMode === 'stats' || experienceMode === 'settings') ? '8px' : '16px',
             flexWrap: 'wrap'
           }}>
-            {activeTab !== 'consultants' ? (
+            {(experienceMode !== 'consultants' && experienceMode !== 'stats' && experienceMode !== 'settings') ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                  <span style={{ fontSize: '24px' }}>{experienceMode === 'pets' ? '🐾' : experienceMode === 'travels' ? '✈️' : experienceMode === 'consultants' ? '💬' : '🌿'}</span>
+                  <span style={{ fontSize: '24px' }}>{headerInfo.icon}</span>
                   <h1 style={{ margin: '0', fontSize: '20px', color: 'var(--game-text-bright, #1a1a1a)', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
-                    {experienceMode === 'pets' ? t('appTitlePets') : experienceMode === 'travels' ? 'Guía de Viajes y Vacaciones' : experienceMode === 'consultants' ? 'Consultores de Inteligencia Artificial' : t('appTitlePlants')}
+                    {headerInfo.title}
                   </h1>
                 </div>
-                {(experienceMode === 'travels' || experienceMode === 'consultants') && (
+                {headerInfo.desc && (
                   <p style={{ margin: '4px 0 8px 0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
-                    {experienceMode === 'travels' ? 'Consulta guías y agentes inteligentes para tu viaje' : 'Realiza diagnósticos clínicos, preguntas de cultivo y consultas avanzadas'}
+                    {headerInfo.desc}
                   </p>
                 )}
                 {renderConnectivityIndicator()}
               </div>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '20px' }}>{experienceMode === 'pets' ? '🐾' : experienceMode === 'travels' ? '✈️' : experienceMode === 'consultants' ? '💬' : '🌿'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <span style={{ fontSize: '20px' }}>{headerInfo.icon}</span>
                 <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--game-text-bright, #1a1a1a)', fontFamily: 'var(--game-font, sans-serif)' }}>
-                  {experienceMode === 'pets' ? t('advisorPets') : experienceMode === 'travels' ? 'Consultores de Viajes' : experienceMode === 'consultants' ? 'Consultores IA' : t('advisorPlants')}
+                  {headerInfo.title}
                 </span>
                 <div style={{ marginLeft: '8px', display: 'inline-block' }}>
                   {renderConnectivityIndicator()}
@@ -1209,7 +1244,7 @@ export const PetPlantDashboard: React.FC = () => {
               display: 'flex',
               flexDirection: 'column',
               gap: '8px',
-              width: activeTab === 'consultants' ? 'auto' : '100%',
+              width: (experienceMode === 'consultants' || experienceMode === 'stats' || experienceMode === 'settings') ? 'auto' : '100%',
               alignItems: 'center'
             }}>
               <div style={{
@@ -1306,90 +1341,58 @@ export const PetPlantDashboard: React.FC = () => {
                 </button>
               </div>
 
-              {experienceMode !== 'travels' && experienceMode !== 'consultants' && (
-                <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                  <button 
-                    onClick={(e) => triggerRippleTransition(experienceMode, activeTab === 'stats' ? 'dashboard' : 'stats', e)}
-                    style={{
-                      flex: 1,
-                      padding: '8px 12px',
-                      background: activeTab === 'stats' ? (getAccentColor() + '1A') : '#f5f5f5',
-                      color: activeTab === 'stats' ? getAccentColor() : '#666',
-                      border: activeTab === 'stats' ? `1px solid ${getAccentColor()}` : '1px solid #eaeaea',
-                      borderRadius: '12px',
-                      fontSize: '11.5px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      opacity: activeTab === 'stats' ? 0.9 : 1
-                    }}
-                  >
-                    {t('tabStats')}
-                  </button>
-                  <button 
-                    onClick={(e) => triggerRippleTransition(experienceMode, activeTab === 'settings' ? 'dashboard' : 'settings', e)}
-                    style={{
-                      flex: 1,
-                      padding: '8px 12px',
-                      background: activeTab === 'settings' ? (getAccentColor() + '1A') : '#f5f5f5',
-                      color: activeTab === 'settings' ? getAccentColor() : '#666',
-                      border: activeTab === 'settings' ? `1px solid ${getAccentColor()}` : '1px solid #eaeaea',
-                      borderRadius: '12px',
-                      fontSize: '11.5px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      opacity: activeTab === 'settings' ? 0.9 : 1
-                    }}
-                  >
-                    {t('tabSettings')}
-                  </button>
-                </div>
-              )}
+              <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                <button 
+                  disabled={experienceMode === 'stats'}
+                  onClick={(e) => triggerRippleTransition('stats', 'stats', e)}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    background: experienceMode === 'stats' ? 'var(--game-accent-light, #ffe4e6)' : '#f5f5f5',
+                    color: experienceMode === 'stats' ? '#e11d48' : '#666',
+                    border: '1px solid #eaeaea',
+                    borderRadius: '12px',
+                    fontSize: '11.5px',
+                    fontWeight: 'bold',
+                    cursor: experienceMode === 'stats' ? 'default' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    opacity: experienceMode === 'stats' ? 0.9 : 1
+                  }}
+                >
+                  {t('tabStats')}
+                </button>
+                <button 
+                  disabled={experienceMode === 'settings'}
+                  onClick={(e) => triggerRippleTransition('settings', 'settings', e)}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    background: experienceMode === 'settings' ? 'var(--game-accent-light, #f1f5f9)' : '#f5f5f5',
+                    color: experienceMode === 'settings' ? '#475569' : '#666',
+                    border: '1px solid #eaeaea',
+                    borderRadius: '12px',
+                    fontSize: '11.5px',
+                    fontWeight: 'bold',
+                    cursor: experienceMode === 'settings' ? 'default' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    opacity: experienceMode === 'settings' ? 0.9 : 1
+                  }}
+                >
+                  {t('tabSettings')}
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Navigation Bar (Tabs Filtradas) */}
-          {activeTab !== 'dashboard' && (
-            <div className="dashboard-tabs-container" role="tablist" aria-label="Navegación principal" style={{
-              display: 'flex',
-              gap: '4px',
-              borderBottom: '1px solid #eaeaea',
-              marginBottom: '24px',
-              overflowX: 'auto',
-              WebkitOverflowScrolling: 'touch'
-            }}>
-              <button
-                role="tab"
-                aria-selected={false}
-                onClick={(e) => triggerRippleTransition(experienceMode, 'dashboard', e)}
-                style={{
-                  padding: '12px 16px',
-                  background: 'none',
-                  border: 'none',
-                  borderBottom: '3px solid transparent',
-                  color: '#666',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  transition: 'all 0.2s',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {t('tabDashboard')}
-              </button>
-            </div>
-          )}
-
           {/* Contenido Dinámico de las Pestañas según el Ecosistema */}
           <div style={{ width: '100%' }}>
-            {activeTab === 'dashboard' && experienceMode !== 'travels' && experienceMode !== 'consultants' && (
+            {activeTab === 'dashboard' && (experienceMode === 'pets' || experienceMode === 'plants') && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {/* Barra de Acciones de Registro Glassmorphism */}
                 <div className="dashboard-actions-bar" style={{
@@ -1664,7 +1667,7 @@ export const PetPlantDashboard: React.FC = () => {
             )}
 
             {/* Tab Estadísticas */}
-            {activeTab === 'stats' && (
+            {experienceMode === 'stats' && (
               <div className="page-transition-enter" style={{ width: '100%' }}>
                 <StatsView 
                   mascotas={mascotas}
@@ -1676,7 +1679,7 @@ export const PetPlantDashboard: React.FC = () => {
             )}
 
             {/* 2.6 Tab Ajustes */}
-            {activeTab === 'settings' && (
+            {experienceMode === 'settings' && (
               <div className="page-transition-enter" style={{ width: '100%' }}>
                 <Suspense fallback={<ChunkLoader height="300px" />}>
                   <SettingsView 
