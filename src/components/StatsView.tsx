@@ -4,41 +4,76 @@ import type { Mascota, Planta } from '../database/types';
 interface StatsViewProps {
   mascotas: Mascota[];
   plantas: Planta[];
-
+  clima?: any;
   uiTheme: 'gaming' | 'nature' | 'kawaii';
 }
 
 export const StatsView: React.FC<StatsViewProps> = ({
   mascotas = [],
   plantas = [],
-
+  clima,
   uiTheme: _uiTheme
 }) => {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
 
+  // Helper to calculate climate-adjusted remaining days (identical to PlantCard)
+  const calcularDiasRestantesRiego = (planta: Planta) => {
+    if (!planta.proximaFechaRiego) return 999;
+    const proximo = new Date(planta.proximaFechaRiego).getTime();
+    if (isNaN(proximo)) return 999;
+    const hoyMs = new Date().getTime();
+    const diferenciaMs = proximo - hoyMs;
+    const diasBase = Math.ceil(diferenciaMs / (1000 * 60 * 60 * 24));
+
+    if (clima) {
+      const temp = clima.temperatura;
+      const hum = clima.humedad;
+      
+      let factor = 1.0;
+      if (temp > 28) {
+        const reduccion = Math.min(0.4, ((temp - 28) / 12) * 0.4);
+        factor -= reduccion;
+      } else if (temp < 15) {
+        const incremento = Math.min(0.5, ((15 - temp) / 15) * 0.5);
+        factor += incremento;
+      }
+      
+      if (hum < 35) {
+        factor -= 0.15;
+      } else if (hum > 75) {
+        factor += 0.20;
+      }
+      
+      factor = Math.max(0.5, Math.min(1.7, factor));
+      const baseIntervalo = planta.intervaloRiegoBase || planta.intervaloRiegoDias || 7;
+      const intervaloAjustado = Math.max(2, Math.round(baseIntervalo * factor));
+
+      if (planta.ultimaFechaRiego) {
+        const ultima = new Date(planta.ultimaFechaRiego).getTime();
+        const proximoAjustado = ultima + (intervaloAjustado * 24 * 3600 * 1000);
+        return Math.ceil((proximoAjustado - hoyMs) / (1000 * 60 * 60 * 24));
+      } else {
+        const factorAjuste = baseIntervalo > 0 ? (intervaloAjustado / baseIntervalo) : 1;
+        return Math.max(0, Math.round(diasBase * factorAjuste));
+      }
+    }
+    return diasBase;
+  };
+
   // 1. Próximos Riegos (próximos 7 días)
   const proximosRiegos = plantas
-    .filter(p => {
-      if (!p.proximaFechaRiego) return false;
-      const fRiego = new Date(p.proximaFechaRiego);
-      fRiego.setHours(0, 0, 0, 0);
-      const diffTime = fRiego.getTime() - hoy.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays >= -2 && diffDays <= 7; // Incluir vencidos de hace 2 días para recordar
-    })
     .map(p => {
-      const fRiego = new Date(p.proximaFechaRiego);
-      fRiego.setHours(0, 0, 0, 0);
-      const diffDays = Math.ceil((fRiego.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+      const diffDays = calcularDiasRestantesRiego(p);
       return {
         id: p.id,
         nombre: p.nombreComun,
         tipoRiego: p.tipoRiegoEspecifico || 'Agua del grifo reposada',
         dias: diffDays,
-        fecha: p.proximaFechaRiego.split('T')[0]
+        fecha: p.proximaFechaRiego ? p.proximaFechaRiego.split('T')[0] : ''
       };
     })
+    .filter(r => r.dias !== 999 && r.dias >= -2 && r.dias <= 7) // Incluir vencidos de hace 2 días para recordar
     .sort((a, b) => a.dias - b.dias);
 
   // 2. Próximas Vacunas (próximos 30 días)

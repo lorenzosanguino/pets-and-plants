@@ -1669,6 +1669,7 @@ export const PetPlantDashboard: React.FC = () => {
                 <StatsView 
                   mascotas={mascotas}
                   plantas={plantas}
+                  clima={climaActual}
                   uiTheme={uiTheme}
                 />
               </div>
