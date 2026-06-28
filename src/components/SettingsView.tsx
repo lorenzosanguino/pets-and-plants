@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useTranslations } from '../utils/i18n';
 import { LocalDatabase } from '../database/db';
-import type { Mascota, Planta, AnimalExotico } from '../database/types';
+import type { Mascota, Planta } from '../database/types';
 import { initFirebase, getFirebaseCached } from '../database/firebaseLazy';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -137,7 +137,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         "Test de Diagnóstico",
         [], // mascotas
         [], // plantas
-        [], // exoticos
         uiTheme
       );
 
@@ -188,7 +187,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     try {
       setConflictLoading(true);
       const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
-      await fbSync.uploadChanges(hogarId, hogarNombre, localPayload.mascotas, localPayload.plantas, localPayload.exoticos, uiTheme);
+      await fbSync.uploadChanges(hogarId, hogarNombre, localPayload.mascotas, localPayload.plantas, uiTheme);
       localStorage.setItem('petplant_db_last_updated', getNowTimestamp().toString());
       setShowConflictModal(false);
       dispararLogroVisual("CONFLICTO RESUELTO", "Se han subido tus datos locales a la nube.", "victory");
@@ -207,7 +206,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       await LocalDatabase.overwriteFullDatabase(
         remotePayload.mascotas,
         remotePayload.plantas,
-        remotePayload.exoticos,
         remotePayload.eventos || [],
         remotePayload.chats || []
       );
@@ -246,20 +244,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         return localC >= remoteC ? a : b;
       });
 
-      const mergedE = mergeList(localPayload.exoticos, remotePayload.exoticos, (a: AnimalExotico, b: AnimalExotico) => {
-        const localD = a.diarioExotico?.length || 0;
-        const remoteD = b.diarioExotico?.length || 0;
-        if (localD !== remoteD) return localD > remoteD ? a : b;
-        const localW = a.registroPeso?.length || 0;
-        const remoteW = b.registroPeso?.length || 0;
-        return localW >= remoteW ? a : b;
-      });
-
-      await LocalDatabase.overwriteFullDatabase(mergedM, mergedP, mergedE);
+      await LocalDatabase.overwriteFullDatabase(mergedM, mergedP);
       
       const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
       const now = getNowTimestamp();
-      await fbSync.uploadChanges(hogarId, hogarNombre, mergedM, mergedP, mergedE, uiTheme);
+      await fbSync.uploadChanges(hogarId, hogarNombre, mergedM, mergedP, uiTheme);
       localStorage.setItem('petplant_db_last_updated', now.toString());
 
       setShowConflictModal(false);
@@ -1537,7 +1526,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Última Sincro:</strong> {localDataInfo.timestamp > 0 ? new Date(localDataInfo.timestamp).toLocaleString() : 'Nunca (Modo Local)'}</p>
                 <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Mascotas ({localDataInfo.mascotasCount}):</strong> {localDataInfo.mascotasNames || 'Ninguna'}</p>
                 <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Plantas ({localDataInfo.plantasCount}):</strong> {localDataInfo.plantasNames || 'Ninguna'}</p>
-                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Exóticos ({localDataInfo.exoticosCount}):</strong> {localDataInfo.exoticosNames || 'Ninguno'}</p>
               </div>
 
               {/* Remote Column */}
@@ -1546,7 +1534,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Última Sincro:</strong> {remoteDataInfo.timestamp > 0 ? new Date(remoteDataInfo.timestamp).toLocaleString() : 'Sin datos'}</p>
                 <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Mascotas ({remoteDataInfo.mascotasCount}):</strong> {remoteDataInfo.mascotasNames || 'Ninguna'}</p>
                 <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Plantas ({remoteDataInfo.plantasCount}):</strong> {remoteDataInfo.plantasNames || 'Ninguna'}</p>
-                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Exóticos ({remoteDataInfo.exoticosCount}):</strong> {remoteDataInfo.exoticosNames || 'Ninguno'}</p>
               </div>
             </div>
 

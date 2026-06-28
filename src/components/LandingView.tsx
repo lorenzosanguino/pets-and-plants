@@ -6,7 +6,7 @@ interface LandingViewProps {
   uiTheme: 'gaming' | 'nature' | 'kawaii';
   clima?: DatosClimaticos | null;
   onNavigate: (
-    mode: 'landing' | 'pets' | 'plants' | 'exotics' | 'travels' | 'consultants',
+    mode: 'landing' | 'pets' | 'plants' | 'travels' | 'consultants',
     tab: 'dashboard' | 'stats' | 'consultants' | 'settings',
     e: React.MouseEvent
   ) => void;
@@ -531,61 +531,6 @@ export const LandingView: React.FC<LandingViewProps> = ({
           </button>
         </div>
 
-        {/* Panel de Entrada Exóticos */}
-        <div 
-          className="landing-card landing-card-animation"
-          style={{
-            border: 'var(--game-border, 1px solid #fff8e1)',
-            boxShadow: 'var(--game-shadow, 0 8px 30px rgba(255, 143, 0, 0.05))',
-          }}
-          onClick={(e) => onNavigate('exotics', 'dashboard', e)}
-          onMouseEnter={(e) => {
-            if (window.innerWidth > 600) {
-              e.currentTarget.style.transform = 'translateY(-8px)';
-              e.currentTarget.style.boxShadow = '0 16px 40px rgba(255, 143, 0, 0.15)';
-            }
-            const logo = e.currentTarget.querySelector('.premium-logo-exotic');
-            if (logo && window.innerWidth > 600) (logo as HTMLElement).style.transform = 'scale(1.1) rotate(-4deg)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'none';
-            e.currentTarget.style.boxShadow = 'var(--game-shadow, 0 8px 30px rgba(255, 143, 0, 0.05))';
-            const logo = e.currentTarget.querySelector('.premium-logo-exotic');
-            if (logo) (logo as HTMLElement).style.transform = 'none';
-          }}
-        >
-          {/* Logo Premium Exóticos */}
-          <div 
-            className="premium-logo-exotic"
-            style={{ 
-              width: '76px', 
-              height: '76px', 
-              borderRadius: '50%', 
-              background: 'radial-gradient(circle, var(--game-card-bg, #ffffff) 20%, rgba(255, 143, 0, 0.15) 80%)', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              fontSize: '40px',
-              border: '4px solid var(--game-border-color, #ff8f00)',
-              boxShadow: '0 12px 28px rgba(255, 143, 0, 0.25), inset 0 2px 5px rgba(255,255,255,0.7)',
-              position: 'relative',
-              overflow: 'hidden',
-              transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-            }}
-          >
-            <span className="landing-decorator" style={{ position: 'absolute', opacity: 0.15, fontSize: '30px', bottom: '5px', right: '5px', pointerEvents: 'none' }}>🦎</span>
-            <span style={{ filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.15))', zIndex: 1 }}>🐍</span>
-          </div>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <h2 className="landing-card-title" style={{ color: '#ff8f00' }}>Animales Exóticos</h2>
-            <p className="landing-card-desc">
-              Terrarios y microclimas, control de temperatura y humedad ideal, alertas de última alimentación, registros de mudas y asesor de terrarios por IA.
-            </p>
-          </div>
-          <button className="landing-card-button" style={{ background: '#ff8f00', boxShadow: '0 4px 12px rgba(255, 143, 0, 0.2)' }}>
-            Acceder a Exóticos 🦎
-          </button>
-        </div>
       </div>
 
 
@@ -687,8 +632,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             min-height: 0 !important;
           }
           .landing-card .premium-logo-cat,
-          .landing-card .premium-logo-fern,
-          .landing-card .premium-logo-exotic {
+          .landing-card .premium-logo-fern {
             width: 58px !important;
             height: 58px !important;
             font-size: 30px !important;

@@ -1,14 +1,14 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
-import type { Mascota, AnimalExotico, Planta } from '../database/types';
+import type { Mascota, Planta } from '../database/types';
 import { calcularEdadMascota } from '../utils/age';
 import { escapeHTML } from '../utils/escape';
 
 interface ReportGeneratorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  item: Mascota | AnimalExotico | Planta;
-  type: 'pet' | 'exotic' | 'plant';
+  item: Mascota | Planta;
+  type: 'pet' | 'plant';
 }
 
 export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
@@ -24,7 +24,6 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
 
   const getReportDefaultTitle = () => {
     if (type === 'pet') return `Informe de Salud Veterinaria - ${(item as Mascota).nombre}`;
-    if (type === 'exotic') return `Informe Clínico de Exótico - ${(item as AnimalExotico).nombre}`;
     return `Ficha de Control Fitosanitario - ${(item as Planta).nombreComun}`;
   };
 
@@ -59,11 +58,9 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
 
   // Datos clínicos según tipo
   const isPet = type === 'pet';
-  const isExotic = type === 'exotic';
   const isPlant = type === 'plant';
 
   const petItem = item as Mascota;
-  const exoticItem = item as AnimalExotico;
   const plantItem = item as Planta;
 
   const activeDiag = diagsIA.find(d => d.id === selectedDiagId) || (diagsIA.length > 0 ? diagsIA[0] : null);
@@ -73,16 +70,16 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
   const colors = {
     primary: isGrayscale 
       ? '#1e293b' 
-      : (isPet ? '#1e3a8a' : (isExotic ? '#7c2d12' : '#14532d')),
+      : (isPet ? '#1e3a8a' : '#14532d'),
     secondary: isGrayscale 
       ? '#475569' 
-      : (isPet ? '#3b82f6' : (isExotic ? '#ea580c' : '#16a34a')),
+      : (isPet ? '#3b82f6' : '#16a34a'),
     bgLight: isGrayscale 
       ? '#f8fafc' 
-      : (isPet ? '#f0f9ff' : (isExotic ? '#fff7ed' : '#f0fdf4')),
+      : (isPet ? '#f0f9ff' : '#f0fdf4'),
     border: isGrayscale
       ? '#cbd5e1'
-      : (isPet ? '#bfdbfe' : (isExotic ? '#fed7aa' : '#bbf7d0')),
+      : (isPet ? '#bfdbfe' : '#bbf7d0'),
     textDark: '#0f172a',
     textMuted: '#64748b'
   };
@@ -107,23 +104,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
         color: d.nota.startsWith('[IA') ? '#2196f3' : '#9c27b0'
       }))
     ];
-  } else if (isExotic) {
-    historyItems = [
-      ...(exoticItem.historialPasado || []).map(h => ({
-        fecha: h.fecha,
-        tipo: 'Incidencia',
-        subtipo: h.tipo,
-        texto: h.descripcion,
-        color: '#d97706'
-      })),
-      ...(exoticItem.diarioExotico || []).map(d => ({
-        fecha: d.fecha.includes('T') ? d.fecha.split('T')[0] : d.fecha,
-        tipo: d.nota.startsWith('[IA') ? 'IA Reporte' : 'Nota',
-        subtipo: d.categoria,
-        texto: d.nota,
-        color: d.nota.startsWith('[IA') ? '#2196f3' : '#9c27b0'
-      }))
-    ];
+
   } else if (isPlant) {
     historyItems = [
       ...(plantItem.historialPasado || []).map(h => ({
@@ -383,70 +364,6 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
           </div>
         </div>
       `;
-    } else if (isExotic && includeWeightChart && ((exoticItem.registroPeso && exoticItem.registroPeso.length > 0) || (exoticItem.registroCrecimiento && exoticItem.registroCrecimiento.length > 0))) {
-      const hasLength = exoticItem.registroCrecimiento && exoticItem.registroCrecimiento.length > 0;
-      const dataPoints = hasLength 
-        ? [...(exoticItem.registroCrecimiento || [])].map(d => ({ fecha: d.fecha, valor: d.alturaCm, unit: 'cm' }))
-        : [...(exoticItem.registroPeso || [])].map(d => ({ fecha: d.fecha, valor: d.pesoKg, unit: 'g' }));
-
-      const sortedData = dataPoints
-        .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
-        .slice(-10);
-
-      const paddingX = 40;
-      const paddingY = 25;
-      const width = 500;
-      const height = 150;
-      const chartWidth = width - paddingX * 2;
-      const chartHeight = height - paddingY * 2;
-
-      const values = sortedData.map(c => c.valor);
-      const maxW = Math.max(...values, 1);
-      const minW = Math.min(...values, 0);
-      const rangeW = maxW - minW || 1;
-
-      const dates = sortedData.map(c => new Date(c.fecha).getTime());
-      const maxD = Math.max(...dates);
-      const minD = Math.min(...dates);
-      const rangeD = maxD - minD || 1;
-
-      const points = sortedData.map((c) => {
-        const x = paddingX + (sortedData.length > 1 
-          ? ((new Date(c.fecha).getTime() - minD) / rangeD) * chartWidth
-          : chartWidth / 2);
-        const y = height - paddingY - ((c.valor - minW) / rangeW) * chartHeight;
-        return { 
-          x, 
-          y, 
-          label: `${c.valor} ${c.unit}`, 
-          date: new Date(c.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }) 
-        };
-      });
-
-      const pathD = points.length > 0 ? points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') : '';
-
-      let svgPointsHtml = '';
-      points.forEach(p => {
-        svgPointsHtml += `
-          <circle cx="${p.x}" cy="${p.y}" r="5" fill="#ffffff" stroke="${colors.secondary}" stroke-width="3" />
-          <text x="${p.x}" y="${p.y - 12}" text-anchor="middle" font-size="10" font-weight="bold" fill="${colors.primary}">${p.label}</text>
-          <text x="${p.x}" y="${height - paddingY + 16}" text-anchor="middle" font-size="9" fill="#64748b">${p.date}</text>
-        `;
-      });
-
-      weightSectionHtml = `
-        <div class="report-section">
-          <h3>Curva de Historial Biométrico (${hasLength ? 'Longitud' : 'Peso'})</h3>
-          <div style="background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; padding: 12px; margin-top: 8px;">
-            <svg viewBox="0 0 500 150" style="width: 100%; height: auto; display: block;">
-              <line x1="${paddingX}" y1="${height - paddingY}" x2="${width - paddingX}" y2="${height - paddingY}" stroke="#e2e8f0" stroke-width="1" />
-              <line x1="${paddingX}" y1="${paddingY}" x2="${width - paddingX}" y2="${paddingY}" stroke="#f1f5f9" stroke-width="1" />
-              ${pathD ? `<path d="${pathD}" fill="none" stroke="${colors.secondary}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />` : ''}
-              ${svgPointsHtml}
-            </svg>
-          </div>
-        </div>
-      `;
     }
 
     // Diagnóstico IA
@@ -519,15 +436,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
           ${petItem.porcionDiariaGramos ? `<tr><th>Porción Diaria:</th><td><strong>${petItem.porcionDiariaGramos} gramos</strong></td></tr>` : ''}
         </table>
       `;
-    } else if (isExotic) {
-      infoTableHtml = `
-        <table class="details-table">
-          <tr><th>Especie / Tipo:</th><td>${escapeHTML(exoticItem.especie)} / ${escapeHTML(exoticItem.tipoEspecifico || 'No especificado')}</td></tr>
-          <tr><th>Nro. de Microchip:</th><td>${escapeHTML(exoticItem.chip || 'Sin microchip')}</td></tr>
-          <tr><th>Parámetros Terrario:</th><td>🌡️ ${exoticItem.temperaturaTerrario}°C | 💧 ${exoticItem.humedadTerrario}% HR</td></tr>
-          <tr><th>Alimentación:</th><td>Cada ${exoticItem.intervaloAlimentacionDias} días (Última: ${formatDate(exoticItem.ultimaAlimentacion)})</td></tr>
-        </table>
-      `;
+
     } else if (isPlant) {
       infoTableHtml = `
         <table class="details-table">
@@ -590,7 +499,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
       `;
     }
 
-    const titleLogo = isPlant ? '🌿' : (isExotic ? '🦎' : '🐾');
+    const titleLogo = isPlant ? '🌿' : '🐾';
 
     printDiv.innerHTML = `
       <style>
@@ -1396,7 +1305,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                 style={{ flex: 1, fontWeight: selectedTheme === 'category' ? 'bold' : 'normal', border: selectedTheme === 'category' ? '2px solid var(--accent)' : '1px solid var(--border)' }}
                 onClick={() => setSelectedTheme('category')}
               >
-                🎨 Categoría ({isPet ? 'Azul' : (isExotic ? 'Violeta' : 'Verde')})
+                🎨 Categoría ({isPet ? 'Azul' : 'Verde'})
               </button>
               <button 
                 type="button" 
@@ -1524,7 +1433,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
               {/* Encabezado */}
               <h1>
                 <span style={{ fontWeight: 'bold', color: colors.primary }}>
-                  {isPlant ? '🌿' : (isExotic ? '🦎' : '🐾')} {clinicName}
+                  {isPlant ? '🌿' : '🐾'} {clinicName}
                 </span>
                 <span style={{ fontSize: '13px', color: '#0f172a', fontWeight: '700' }}>
                   {reportTitle}
@@ -1563,18 +1472,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                         </tbody>
                       </table>
                     )}
-                    {isExotic && (
-                      <table className="preview-details-table">
-                        <tbody>
-                          <tr><th>Especie:</th><td>{exoticItem.especie}</td></tr>
-                          <tr><th>Tipo Específico:</th><td>{exoticItem.tipoEspecifico || 'No especificado'}</td></tr>
-                          <tr><th>Microchip:</th><td>{exoticItem.chip || 'Sin microchip'}</td></tr>
-                          <tr><th>Parámetros Terrario:</th><td>🌡️ {exoticItem.temperaturaTerrario}°C | 💧 {exoticItem.humedadTerrario}%</td></tr>
-                          <tr><th>Última Alimen.:</th><td>{formatDate(exoticItem.ultimaAlimentacion)}</td></tr>
-                          <tr><th>Frecuencia Riego:</th><td>Cada {exoticItem.intervaloAlimentacionDias} días</td></tr>
-                        </tbody>
-                      </table>
-                    )}
+
                     {isPlant && (
                       <table className="preview-details-table">
                         <tbody>

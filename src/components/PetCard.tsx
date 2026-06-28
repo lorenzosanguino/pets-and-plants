@@ -71,7 +71,7 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
   const [nuevoPeso, setNuevoPeso] = useState('');
 
   // States for Vaccine Form (P4)
-  const [vacunaTipo, setVacunaTipo] = useState<'Trivalente' | 'Leucemia' | 'Rabia' | 'Otras'>('Trivalente');
+  const [vacunaTipo, setVacunaTipo] = useState<string>('Trivalente');
   const [vacunaPersonalizada, setVacunaPersonalizada] = useState('');
   const [vacunaLote, setVacunaLote] = useState('');
   const [vacunaFecha, setVacunaFecha] = useState('');
@@ -92,6 +92,12 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // Collapsible sections states
+  const [showVacunas, setShowVacunas] = useState(false);
+  const [showDesparasitacion, setShowDesparasitacion] = useState(false);
+  const [showMedicacion, setShowMedicacion] = useState(false);
+  const [showHistorialClinico, setShowHistorialClinico] = useState(false);
   
   const theme = propTheme || localStorage.getItem('petplant_game_theme') || 'nature';
 
@@ -433,17 +439,121 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
     onUpdate();
   };
 
-  const toggleVacunaCheck = async (vName: string) => {
-    const current = mascota.vacunasChecklist || [];
-    if (current.includes(vName)) {
-      return;
+  const getVaccineRecordForChecklist = (vName: string) => {
+    const historial = mascota.historialVacunas || [];
+    
+    if (vName === 'Trivalente Felina (1ª dosis)') {
+      return historial.filter(v => v.vacuna.toLowerCase() === 'trivalente' || v.vacuna.toLowerCase().includes('trivalente felina (1ª dosis)'))[0];
     }
-    const confirmar = window.confirm(`¿Estás seguro/a de marcar "${vName}" como colocada/realizada? Esta acción no se puede deshacer.`);
+    if (vName === 'Trivalente Felina (2ª dosis)') {
+      return historial.filter(v => v.vacuna.toLowerCase() === 'trivalente' || v.vacuna.toLowerCase().includes('trivalente felina (2ª dosis)'))[1];
+    }
+    if (vName === 'Leucemia Felina') {
+      return historial.find(v => v.vacuna.toLowerCase() === 'leucemia' || v.vacuna.toLowerCase().includes('leucemia felina'));
+    }
+    if (vName === 'Rabia') {
+      return historial.find(v => v.vacuna.toLowerCase() === 'rabia');
+    }
+    
+    // Canino (Parvovirus, Moquillo, Adenovirus, Rabia, Leptospirosis, Bordetella)
+    if (vName === 'Parvovirus') {
+      return historial.find(v => v.vacuna.toLowerCase() === 'parvovirus' || (v.vacuna === 'Otras' && v.vacunaPersonalizada?.toLowerCase().includes('parvovirus')));
+    }
+    if (vName === 'Moquillo') {
+      return historial.find(v => v.vacuna.toLowerCase() === 'moquillo' || (v.vacuna === 'Otras' && v.vacunaPersonalizada?.toLowerCase().includes('moquillo')));
+    }
+    if (vName === 'Adenovirus') {
+      return historial.find(v => v.vacuna.toLowerCase() === 'adenovirus' || (v.vacuna === 'Otras' && v.vacunaPersonalizada?.toLowerCase().includes('adenovirus')));
+    }
+    if (vName === 'Leptospirosis') {
+      return historial.find(v => v.vacuna.toLowerCase() === 'leptospirosis' || (v.vacuna === 'Otras' && v.vacunaPersonalizada?.toLowerCase().includes('leptospirosis')));
+    }
+    if (vName === 'Bordetella') {
+      return historial.find(v => v.vacuna.toLowerCase() === 'bordetella' || (v.vacuna === 'Otras' && v.vacunaPersonalizada?.toLowerCase().includes('bordetella')));
+    }
+    
+    return undefined;
+  };
+
+  const prellenarFormularioVacuna = (vName: string) => {
+    let tipo = 'Otras';
+    let personalizada = '';
+    
+    if (vName === 'Trivalente Felina (1ª dosis)' || vName === 'Trivalente Felina (2ª dosis)') {
+      tipo = 'Trivalente';
+    } else if (vName === 'Leucemia Felina') {
+      tipo = 'Leucemia';
+    } else if (vName === 'Rabia') {
+      tipo = 'Rabia';
+    } else {
+      const standardCanine = ['Parvovirus', 'Moquillo', 'Adenovirus', 'Leptospirosis', 'Bordetella'];
+      if (standardCanine.includes(vName)) {
+        tipo = vName;
+      } else {
+        tipo = 'Otras';
+        personalizada = vName;
+      }
+    }
+    
+    setVacunaTipo(tipo);
+    setVacunaPersonalizada(personalizada);
+    setVacunaFecha(new Date().toISOString().split('T')[0]); // hoy
+    setVacunaLote('');
+    setVacunaProxima('');
+    
+    setTimeout(() => {
+      const loteInput = document.getElementById(`vacuna-lote-${mascota.id}`);
+      if (loteInput) {
+        loteInput.focus();
+        loteInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  };
+
+  const toggleVacunaCheck = async (vName: string) => {
+    const isAlreadyChecked = (mascota.vacunasChecklist || []).includes(vName) || !!getVaccineRecordForChecklist(vName);
+    if (isAlreadyChecked) return;
+
+    const confirmar = window.confirm(`¿Estás seguro/a de marcar "${vName}" como colocada? Se creará un registro rápido en el historial clínico.`);
     if (!confirmar) return;
 
-    const updated = [...current, vName];
-    const mascotaActualizada: Mascota = { ...mascota, vacunasChecklist: updated };
+    let tipo = 'Otras';
+    let personalizada = undefined;
+    if (vName === 'Trivalente Felina (1ª dosis)' || vName === 'Trivalente Felina (2ª dosis)') {
+      tipo = 'Trivalente';
+    } else if (vName === 'Leucemia Felina') {
+      tipo = 'Leucemia';
+    } else if (vName === 'Rabia') {
+      tipo = 'Rabia';
+    } else {
+      const standardCanine = ['Parvovirus', 'Moquillo', 'Adenovirus', 'Leptospirosis', 'Bordetella'];
+      if (standardCanine.includes(vName)) {
+        tipo = vName;
+      } else {
+        tipo = 'Otras';
+        personalizada = vName;
+      }
+    }
+
+    const nuevaVacuna = {
+      fecha: new Date().toISOString(),
+      vacuna: tipo,
+      lote: 'Rápido',
+      vacunaPersonalizada: personalizada
+    };
+
+    const currentChecklist = mascota.vacunasChecklist || [];
+    const updatedChecklist = currentChecklist.includes(vName) ? currentChecklist : [...currentChecklist, vName];
+    const updatedHistorial = [...(mascota.historialVacunas || []), nuevaVacuna];
+
+    const mascotaActualizada: Mascota = {
+      ...mascota,
+      vacunasChecklist: updatedChecklist,
+      historialVacunas: updatedHistorial
+    };
+
     await LocalDatabase.saveMascota(mascotaActualizada);
+    onUpdate();
   };
 
   const agregarRegistroVacuna = async (e: React.FormEvent) => {
@@ -466,9 +576,27 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
     };
 
     const historialActualizado = [...(mascota.historialVacunas || []), nuevaVacuna];
+    
+    // Determinar nombre del checklist correspondiente
+    let nameForChecklist = vacunaTipo;
+    if (vacunaTipo === 'Otras') {
+      nameForChecklist = vacunaPersonalizada;
+    } else if (vacunaTipo === 'Trivalente') {
+      const countTrivalente = (mascota.historialVacunas || []).filter(v => v.vacuna === 'Trivalente').length;
+      nameForChecklist = countTrivalente === 0 ? 'Trivalente Felina (1ª dosis)' : 'Trivalente Felina (2ª dosis)';
+    } else if (vacunaTipo === 'Leucemia') {
+      nameForChecklist = 'Leucemia Felina';
+    }
+
+    const currentChecklist = mascota.vacunasChecklist || [];
+    const updatedChecklist = currentChecklist.includes(nameForChecklist)
+      ? currentChecklist
+      : [...currentChecklist, nameForChecklist];
+
     const mascotaActualizada: Mascota = {
       ...mascota,
-      historialVacunas: historialActualizado
+      historialVacunas: historialActualizado,
+      vacunasChecklist: updatedChecklist
     };
 
     await LocalDatabase.saveMascota(mascotaActualizada);
@@ -479,8 +607,70 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
     setVacunaFecha('');
     setVacunaProxima('');
     
+    // Reset default select value
+    if (mascota.especie === 'Felino') setVacunaTipo('Trivalente');
+    else if (mascota.especie === 'Canino') setVacunaTipo('Parvovirus');
+    else setVacunaTipo('Otras');
+
     onUpdate();
     alert("Vacuna registrada con éxito en el historial.");
+  };
+
+  const eliminarRegistroVacuna = async (index: number) => {
+    const confirmar = window.confirm("¿Estás seguro de que deseas eliminar esta vacuna del historial clínico?");
+    if (!confirmar) return;
+
+    const historial = mascota.historialVacunas || [];
+    const vacunaAEliminar = historial[index];
+    const nuevoHistorial = historial.filter((_, idx) => idx !== index);
+
+    let nuevosChecklist = mascota.vacunasChecklist || [];
+    if (vacunaAEliminar) {
+      let vName = '';
+      if (vacunaAEliminar.vacuna === 'Trivalente') {
+        const trivalentesRestantes = nuevoHistorial.filter(v => v.vacuna === 'Trivalente').length;
+        if (trivalentesRestantes === 1) {
+          vName = 'Trivalente Felina (2ª dosis)';
+        } else if (trivalentesRestantes === 0) {
+          nuevosChecklist = nuevosChecklist.filter(v => v !== 'Trivalente Felina (1ª dosis)' && v !== 'Trivalente Felina (2ª dosis)');
+        }
+      } else if (vacunaAEliminar.vacuna === 'Leucemia') {
+        vName = 'Leucemia Felina';
+      } else if (vacunaAEliminar.vacuna === 'Rabia') {
+        vName = 'Rabia';
+      } else if (vacunaAEliminar.vacuna === 'Otras') {
+        vName = vacunaAEliminar.vacunaPersonalizada || '';
+      } else {
+        vName = vacunaAEliminar.vacuna;
+      }
+
+      if (vName) {
+        nuevosChecklist = nuevosChecklist.filter(v => v !== vName);
+      }
+    }
+
+    const mascotaActualizada = {
+      ...mascota,
+      historialVacunas: nuevoHistorial,
+      vacunasChecklist: nuevosChecklist
+    };
+
+    await LocalDatabase.saveMascota(mascotaActualizada);
+    onUpdate();
+  };
+
+  const eliminarChecklistVacuna = async (vName: string) => {
+    const confirmar = window.confirm(`¿Quieres desmarcar "${vName}"?`);
+    if (!confirmar) return;
+
+    const nuevosChecklist = (mascota.vacunasChecklist || []).filter(v => v !== vName);
+    const mascotaActualizada = {
+      ...mascota,
+      vacunasChecklist: nuevosChecklist
+    };
+
+    await LocalDatabase.saveMascota(mascotaActualizada);
+    onUpdate();
   };
 
   const getDewormingInfo = (vName: 'Desparasitación Interna' | 'Desparasitación Externa') => {
@@ -1433,73 +1623,306 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
           {/* Checklist de Vacunas y Desparasitaciones */}
           {(mascota.especie === 'Felino' || mascota.especie === 'Canino') && (
             <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px' }}>
-              <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>
-                💉 Control Preventivo: Vacunación colocada
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
-                {(mascota.especie === 'Felino' 
-                  ? ['Trivalente Felina (1ª dosis)', 'Trivalente Felina (2ª dosis)', 'Leucemia Felina', 'Rabia'] 
-                  : ['Parvovirus', 'Moquillo', 'Adenovirus', 'Rabia', 'Leptospirosis', 'Bordetella']
-                ).map(vName => {
-                  const isChecked = (mascota.vacunasChecklist || []).includes(vName);
-                  return (
-                    <label key={vName} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', cursor: isChecked ? 'default' : 'pointer', fontFamily: 'var(--game-font, sans-serif)', color: isChecked ? 'var(--game-text-bright)' : 'var(--game-text)' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={isChecked} 
-                        disabled={isChecked}
-                        onChange={() => toggleVacunaCheck(vName)}
-                        style={{ cursor: isChecked ? 'default' : 'pointer' }}
-                      />
-                      <span style={{ textDecoration: isChecked ? 'line-through' : 'none', opacity: isChecked ? 0.6 : 1 }}>
-                        {vName}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
+              {/* Sección de Vacunación Colapsable */}
+              <div style={{ marginBottom: '16px', background: 'var(--game-card-bg, #fafafa)', padding: '12px', borderRadius: 'var(--game-radius, 8px)', border: '1px solid var(--game-border-color, #eee)' }}>
+                <div 
+                  onClick={() => setShowVacunas(!showVacunas)}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    userSelect: 'none'
+                  }}
+                >
+                  <p style={{ margin: '0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    💉 Vacunación: Plan Preventivo e Historial
+                  </p>
+                  <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontWeight: 'bold' }}>
+                    {showVacunas ? '▲' : '▼'}
+                  </span>
+                </div>
+                
+                {showVacunas && (
+                  <div style={{ marginTop: '12px', borderTop: '1px dashed var(--game-border-color, #eee)', paddingTop: '10px' }}>
+                    {/* Lista de vacunas del plan de salud */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+                      {(mascota.especie === 'Felino' 
+                        ? ['Trivalente Felina (1ª dosis)', 'Trivalente Felina (2ª dosis)', 'Leucemia Felina', 'Rabia'] 
+                        : ['Parvovirus', 'Moquillo', 'Adenovirus', 'Rabia', 'Leptospirosis', 'Bordetella']
+                      ).map(vName => {
+                        const record = getVaccineRecordForChecklist(vName);
+                        const isChecked = (mascota.vacunasChecklist || []).includes(vName) || !!record;
+                        
+                        return (
+                          <div key={vName} style={{ 
+                            display: 'flex', 
+                            flexDirection: 'column',
+                            gap: '4px',
+                            padding: '8px',
+                            background: 'var(--game-bg, #ffffff)',
+                            border: '1px solid var(--game-border-color, #eaeaea)',
+                            borderRadius: '6px'
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <input 
+                                  type="checkbox" 
+                                  checked={isChecked} 
+                                  disabled={isChecked}
+                                  onChange={() => toggleVacunaCheck(vName)}
+                                  style={{ cursor: isChecked ? 'default' : 'pointer' }}
+                                />
+                                <span style={{ 
+                                  fontSize: '12px', 
+                                  fontWeight: 'bold',
+                                  color: 'var(--game-text-bright, #333)',
+                                  textDecoration: isChecked ? 'line-through' : 'none', 
+                                  opacity: isChecked ? 0.7 : 1 
+                                }}>
+                                  {vName}
+                                </span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                {isChecked ? (
+                                  <span style={{
+                                    fontSize: '10px',
+                                    fontWeight: 'bold',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    background: '#e2fbe8',
+                                    color: '#1e7e34'
+                                  }}>
+                                    ✓ Aplicada
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      prellenarFormularioVacuna(vName);
+                                    }}
+                                    style={{
+                                      padding: '2px 6px',
+                                      background: 'var(--game-accent-light, rgba(33, 150, 243, 0.1))',
+                                      color: 'var(--game-accent, #2196f3)',
+                                      border: 'none',
+                                      borderRadius: '4px',
+                                      fontSize: '10px',
+                                      fontWeight: 'bold',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    ➕ Registrar
+                                  </button>
+                                )}
+                                {isChecked && (
+                                  <button
+                                    type="button"
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      if (record) {
+                                        const idx = (mascota.historialVacunas || []).indexOf(record);
+                                        if (idx !== -1) await eliminarRegistroVacuna(idx);
+                                      } else {
+                                        await eliminarChecklistVacuna(vName);
+                                      }
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      color: '#c82333',
+                                      cursor: 'pointer',
+                                      fontSize: '11px',
+                                      padding: '2px'
+                                    }}
+                                    title="Eliminar registro"
+                                  >
+                                    🗑️
+                                  </button>
+                                )}
+                              </div>
+                            </div>
 
-              <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>
-                💊 Desparasitación Periódica
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {(['Desparasitación Interna', 'Desparasitación Externa'] as const).map(vName => {
-                  const info = getDewormingInfo(vName);
-                  return (
-                    <div key={vName} style={{
-                      background: 'var(--game-card-bg, #fafafa)',
-                      padding: '10px',
-                      borderRadius: '8px',
-                      border: '1px solid var(--game-border-color, #eee)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '6px'
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontWeight: 'bold', fontSize: '12px', color: 'var(--game-text-bright)' }}>
-                          {vName === 'Desparasitación Interna' ? '💊 Interna (cada 3 meses)' : '🛡️ Externa (cada mes)'}
-                        </span>
-                        <span style={{
-                          fontSize: '10px',
-                          fontWeight: 'bold',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          background: info.status === 'Al día' ? '#e2fbe8' : '#fde8e8',
-                          color: info.status === 'Al día' ? '#1e7e34' : '#c82333'
-                        }}>
-                          {info.status}
-                        </span>
+                            {record && (
+                              <div style={{ 
+                                fontSize: '10px', 
+                                color: 'var(--game-text, #666)', 
+                                display: 'flex', 
+                                flexWrap: 'wrap', 
+                                gap: '8px', 
+                                paddingLeft: '20px',
+                                opacity: 0.8
+                              }}>
+                                <span><strong>Fecha:</strong> {record.fecha ? record.fecha.split('T')[0] : 'S/F'}</span>
+                                <span><strong>Lote:</strong> {record.lote}</span>
+                                {record.proximaDosis && (
+                                  <span style={{ color: 'var(--game-accent)' }}>
+                                    <strong>Próxima:</strong> {record.proximaDosis.split('T')[0]}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Vacunas adicionales / personalizadas que no están en el checklist */}
+                    {(() => {
+                      const checklistStandard = mascota.especie === 'Felino'
+                        ? ['Trivalente Felina (1ª dosis)', 'Trivalente Felina (2ª dosis)', 'Leucemia Felina', 'Rabia']
+                        : ['Parvovirus', 'Moquillo', 'Adenovirus', 'Rabia', 'Leptospirosis', 'Bordetella'];
+
+                      const recomendadosMatheados = checklistStandard.map(vName => getVaccineRecordForChecklist(vName)).filter(Boolean);
+                      const adicionales = (mascota.historialVacunas || []).filter(v => !recomendadosMatheados.includes(v));
+
+                      if (adicionales.length === 0) return null;
+
+                      return (
+                        <div style={{ marginTop: '10px', borderTop: '1px dashed var(--game-border-color, #eee)', paddingTop: '10px' }}>
+                          <p style={{ margin: '0 0 6px 0', fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)' }}>
+                            Otras vacunas administradas:
+                          </p>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            {adicionales.map((v, keyIdx) => {
+                              const vName = v.vacuna === 'Otras' ? (v.vacunaPersonalizada || 'Otras') : v.vacuna;
+                              const realIdxInHistorial = (mascota.historialVacunas || []).indexOf(v);
+                              return (
+                                <div key={keyIdx} style={{ 
+                                  display: 'flex', 
+                                  justifyContent: 'space-between', 
+                                  alignItems: 'center',
+                                  padding: '6px 8px',
+                                  background: 'var(--game-bg, #ffffff)',
+                                  border: '1px solid var(--game-border-color, #eaeaea)',
+                                  borderRadius: '6px'
+                                }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>{vName}</span>
+                                    <div style={{ fontSize: '10px', color: 'var(--game-text)', display: 'flex', gap: '8px', opacity: 0.8 }}>
+                                      <span>Fecha: {v.fecha ? v.fecha.split('T')[0] : 'S/F'}</span>
+                                      <span>Lote: {v.lote}</span>
+                                      {v.proximaDosis && <span style={{ color: 'var(--game-accent)' }}>Próxima: {v.proximaDosis.split('T')[0]}</span>}
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (realIdxInHistorial !== -1) eliminarRegistroVacuna(realIdxInHistorial);
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      color: '#c82333',
+                                      cursor: 'pointer',
+                                      fontSize: '11px'
+                                    }}
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Formulario Registrar Nueva Vacuna integrado */}
+                    <form onSubmit={agregarRegistroVacuna} style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px dashed rgba(0,0,0,0.1)', paddingTop: '10px', marginTop: '12px' }} className="no-print">
+                      <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>Registrar nueva dosis:</span>
+                      <div className="responsive-form-grid-2">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Tipo:</label>
+                          <select 
+                            value={vacunaTipo} 
+                            onChange={(e) => {
+                              setVacunaTipo(e.target.value);
+                              if (e.target.value !== 'Otras') {
+                                setVacunaPersonalizada('');
+                              }
+                            }}
+                            style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                          >
+                            {mascota.especie === 'Felino' && (
+                              <>
+                                <option value="Trivalente">Trivalente</option>
+                                <option value="Leucemia">Leucemia</option>
+                                <option value="Rabia">Rabia</option>
+                                <option value="Otras">Otras</option>
+                              </>
+                            )}
+                            {mascota.especie === 'Canino' && (
+                              <>
+                                <option value="Parvovirus">Parvovirus</option>
+                                <option value="Moquillo">Moquillo</option>
+                                <option value="Adenovirus">Adenovirus</option>
+                                <option value="Rabia">Rabia</option>
+                                <option value="Leptospirosis">Leptospirosis</option>
+                                <option value="Bordetella">Bordetella</option>
+                                <option value="Otras">Otras</option>
+                              </>
+                            )}
+                            {mascota.especie !== 'Felino' && mascota.especie !== 'Canino' && (
+                              <option value="Otras">Otras</option>
+                            )}
+                          </select>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Lote:</label>
+                          <input 
+                            id={`vacuna-lote-${mascota.id}`}
+                            type="text" 
+                            value={vacunaLote}
+                            onChange={(e) => setVacunaLote(e.target.value)}
+                            placeholder="Ej: LT-4819"
+                            style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                          />
+                        </div>
                       </div>
-                      <div style={{ fontSize: '11px', color: 'var(--game-text)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <div><strong>Última toma:</strong> {formatearFechaSimple(info.lastDate)}</div>
-                        <div><strong>Próxima toma:</strong> {formatearFechaSimple(info.nextDate)}</div>
+
+                      {(vacunaTipo === 'Otras' || (mascota.especie !== 'Felino' && mascota.especie !== 'Canino')) && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Especificar Vacuna:</label>
+                          <input 
+                            type="text" 
+                            value={vacunaPersonalizada}
+                            onChange={(e) => setVacunaPersonalizada(e.target.value)}
+                            placeholder="Ej: Nobivac KC, Tos de las Perreras..."
+                            style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                          />
+                        </div>
+                      )}
+
+                      <div className="responsive-form-grid-2">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Fecha colocación:</label>
+                          <input 
+                            type="date" 
+                            value={vacunaFecha}
+                            onChange={(e) => setVacunaFecha(e.target.value)}
+                            style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                          />
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Próxima dosis (Opcional):</label>
+                          <input 
+                            type="date" 
+                            value={vacunaProxima}
+                            onChange={(e) => setVacunaProxima(e.target.value)}
+                            style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                          />
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => registrarTomaDeworming(vName)}
+
+                      <button 
+                        type="submit"
                         style={{
-                          alignSelf: 'flex-start',
-                          padding: '4px 8px',
+                          padding: '6px 10px',
                           background: 'var(--game-accent, #1976d2)',
                           color: '#fff',
                           border: 'none',
@@ -1507,529 +1930,540 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                           fontSize: '11px',
                           fontWeight: 'bold',
                           cursor: 'pointer',
-                          marginTop: '2px'
+                          marginTop: '4px',
+                          alignSelf: 'flex-start'
                         }}
                       >
-                        Registrar Toma
+                        Registrar Vacuna
                       </button>
-                    </div>
-                  );
-                })}
+                    </form>
+                  </div>
+                )}
               </div>
 
-              <p style={{ margin: '16px 0 8px 0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>
-                💊 Medicación Crónica y Tratamientos
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
-                {(!mascota.medicamentos || mascota.medicamentos.length === 0) ? (
-                  <p style={{ margin: '0', fontSize: '11px', color: 'var(--game-text)', opacity: 0.7 }}>
-                    No hay tratamientos registrados.
+              {/* Desparasitación Periódica Colapsable */}
+              <div style={{ marginBottom: '16px', background: 'var(--game-card-bg, #fafafa)', padding: '12px', borderRadius: 'var(--game-radius, 8px)', border: '1px solid var(--game-border-color, #eee)' }}>
+                <div 
+                  onClick={() => setShowDesparasitacion(!showDesparasitacion)}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    userSelect: 'none'
+                  }}
+                >
+                  <p style={{ margin: '0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    🛡️ Desparasitación Periódica
                   </p>
-                ) : (
-                  mascota.medicamentos.map(med => {
-                    const isOverdue = med.activo && med.proximaDosis && (new Date() > new Date(med.proximaDosis));
-                    const proximaDosisFormateada = med.proximaDosis 
-                      ? new Date(med.proximaDosis).toLocaleString() 
-                      : 'Tratamiento inactivo/finalizado';
-                    return (
-                      <div key={med.id} style={{
-                        background: 'var(--game-card-bg, #fafafa)',
-                        padding: '10px',
-                        borderRadius: '8px',
-                        border: '1px solid var(--game-border-color, #eee)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '6px',
-                        opacity: med.activo ? 1 : 0.6
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontWeight: 'bold', fontSize: '12px', color: 'var(--game-text-bright)' }}>
-                            {med.nombre} ({med.dosis})
-                          </span>
-                          <div style={{ display: 'flex', gap: '4px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontWeight: 'bold' }}>
+                    {showDesparasitacion ? '▲' : '▼'}
+                  </span>
+                </div>
+
+                {showDesparasitacion && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px', borderTop: '1px dashed var(--game-border-color, #eee)', paddingTop: '10px' }}>
+                    {(['Desparasitación Interna', 'Desparasitación Externa'] as const).map(vName => {
+                      const info = getDewormingInfo(vName);
+                      return (
+                        <div key={vName} style={{
+                          background: 'var(--game-card-bg, #fafafa)',
+                          padding: '10px',
+                          borderRadius: '8px',
+                          border: '1px solid var(--game-border-color, #eee)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '6px'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontWeight: 'bold', fontSize: '12px', color: 'var(--game-text-bright)' }}>
+                              {vName === 'Desparasitación Interna' ? '💊 Interna (cada 3 meses)' : '🛡️ Externa (cada mes)'}
+                            </span>
                             <span style={{
                               fontSize: '10px',
                               fontWeight: 'bold',
                               padding: '2px 6px',
                               borderRadius: '4px',
-                              background: med.activo ? (isOverdue ? '#fde8e8' : '#e2fbe8') : '#e9ecef',
-                              color: med.activo ? (isOverdue ? '#c82333' : '#1e7e34') : '#6c757d'
+                              background: info.status === 'Al día' ? '#e2fbe8' : '#fde8e8',
+                              color: info.status === 'Al día' ? '#1e7e34' : '#c82333'
                             }}>
-                              {med.activo ? (isOverdue ? 'Atrasada' : 'Activo') : 'Inactivo'}
+                              {info.status}
                             </span>
                           </div>
-                        </div>
-                        <div style={{ fontSize: '11px', color: 'var(--game-text)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <div><strong>Frecuencia:</strong> {med.frecuencia}</div>
-                          <div><strong>Rango:</strong> Desde {med.fechaInicio}{med.fechaFin ? ` hasta ${med.fechaFin}` : ''}</div>
-                          {med.activo && (
-                            <div style={{ color: isOverdue ? 'var(--game-accent, #d32f2f)' : 'inherit', fontWeight: isOverdue ? 'bold' : 'normal' }}>
-                              <strong>Próxima dosis:</strong> {proximaDosisFormateada}
-                            </div>
-                          )}
-                          {med.historialTomas && med.historialTomas.length > 0 && (
-                            <div>
-                              <strong>Tomas registradas:</strong> {med.historialTomas.length} (Última: {new Date(med.historialTomas[med.historialTomas.length - 1]).toLocaleString()})
-                            </div>
-                          )}
-                        </div>
-                        <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
-                          {med.activo && (
-                            <button
-                              type="button"
-                              onClick={() => registrarTomaMedicamento(med.id)}
-                              style={{
-                                padding: '4px 8px',
-                                background: 'var(--game-accent, #1976d2)',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '4px',
-                                fontSize: '11px',
-                                fontWeight: 'bold',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              💊 Registrar Toma
-                            </button>
-                          )}
-                          {med.activo && (
-                            <button
-                              type="button"
-                              onClick={() => desactivarMedicamento(med.id)}
-                              style={{
-                                padding: '4px 8px',
-                                background: '#f0f0f0',
-                                color: '#333',
-                                border: '1px solid #ccc',
-                                borderRadius: '4px',
-                                fontSize: '11px',
-                                fontWeight: 'bold',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Dar de baja
-                            </button>
-                          )}
+                          <div style={{ fontSize: '11px', color: 'var(--game-text)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <div><strong>Última toma:</strong> {formatearFechaSimple(info.lastDate)}</div>
+                            <div><strong>Próxima toma:</strong> {formatearFechaSimple(info.nextDate)}</div>
+                          </div>
                           <button
                             type="button"
-                            onClick={() => eliminarMedicamento(med.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              registrarTomaDeworming(vName);
+                            }}
                             style={{
+                              alignSelf: 'flex-start',
                               padding: '4px 8px',
-                              background: '#fff',
-                              color: '#c82333',
-                              border: '1px solid #f8d7da',
+                              background: 'var(--game-accent, #1976d2)',
+                              color: '#fff',
+                              border: 'none',
                               borderRadius: '4px',
                               fontSize: '11px',
-                              cursor: 'pointer'
+                              fontWeight: 'bold',
+                              cursor: 'pointer',
+                              marginTop: '2px'
                             }}
                           >
-                            Eliminar
+                            Registrar Toma
                           </button>
                         </div>
-                      </div>
-                    );
-                  })
+                      );
+                    })}
+                  </div>
                 )}
-
-                {/* Formulario Registrar Nuevo Medicamento */}
-                <form onSubmit={agregarMedicacion} style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px dashed rgba(0,0,0,0.1)', paddingTop: '10px' }} className="no-print">
-                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>Añadir nuevo tratamiento:</span>
-                  <div className="responsive-form-grid-2">
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Nombre:</label>
-                      <input 
-                        type="text" 
-                        value={medNombre}
-                        onChange={(e) => setMedNombre(e.target.value)}
-                        placeholder="Ej: Insulina, Metacam..."
-                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Dosis:</label>
-                      <input 
-                        type="text" 
-                        value={medDosis}
-                        onChange={(e) => setMedDosis(e.target.value)}
-                        placeholder="Ej: 2 UI, 1 pastilla, 0.5ml..."
-                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="responsive-form-grid-2">
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Frecuencia:</label>
-                      <select 
-                        value={medFrecuencia} 
-                        onChange={(e) => setMedFrecuencia(e.target.value)}
-                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
-                      >
-                        <option value="Diario">Diario (Cada 24h)</option>
-                        <option value="Cada 12 horas">Cada 12 horas</option>
-                        <option value="Cada 8 horas">Cada 8 horas</option>
-                        <option value="Cada 6 horas">Cada 6 horas</option>
-                        <option value="Semanal">Semanal</option>
-                        <option value="Otras">Otras</option>
-                      </select>
-                    </div>
-                    {medFrecuencia === 'Otras' && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                        <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Especificar Frecuencia:</label>
-                        <input 
-                          type="text" 
-                          value={medFrecuenciaPersonalizada}
-                          onChange={(e) => setMedFrecuenciaPersonalizada(e.target.value)}
-                          placeholder="Ej: Cada 48 horas"
-                          style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="responsive-form-grid-3">
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Fecha inicio:</label>
-                      <input 
-                        type="date" 
-                        value={medFechaInicio}
-                        onChange={(e) => setMedFechaInicio(e.target.value)}
-                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Fecha fin (opcional):</label>
-                      <input 
-                        type="date" 
-                        value={medFechaFin}
-                        onChange={(e) => setMedFechaFin(e.target.value)}
-                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Próxima toma/Inicio:</label>
-                      <input 
-                        type="datetime-local" 
-                        value={medHoraProxima}
-                        onChange={(e) => setMedHoraProxima(e.target.value)}
-                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    style={{
-                      marginTop: '4px',
-                      padding: '6px',
-                      background: 'var(--game-accent, #1976d2)',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '4px',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    + Añadir Medicación
-                  </button>
-                </form>
               </div>
 
-              {/* Historial de Vacunas Formales */}
-              <div style={{ marginTop: '16px', background: 'rgba(0,0,0,0.01)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.05)' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', display: 'block', marginBottom: '8px' }}>
-                  📜 Historial Clínico de Vacunas
-                </span>
-                
-                {(!mascota.historialVacunas || mascota.historialVacunas.length === 0) ? (
-                  <p style={{ margin: '0 0 12px 0', fontSize: '11px', color: 'var(--game-text)', opacity: 0.7 }}>
-                    No hay vacunas registradas en el historial formal.
+              {/* Medicación Crónica y Tratamientos Colapsable */}
+              <div style={{ marginBottom: '16px', background: 'var(--game-card-bg, #fafafa)', padding: '12px', borderRadius: 'var(--game-radius, 8px)', border: '1px solid var(--game-border-color, #eee)' }}>
+                <div 
+                  onClick={() => setShowMedicacion(!showMedicacion)}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    userSelect: 'none'
+                  }}
+                >
+                  <p style={{ margin: '0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    💊 Medicación Crónica y Tratamientos
                   </p>
-                ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginBottom: '12px', textAlign: 'left' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
-                        <th style={{ padding: '4px' }}>Vacuna</th>
-                        <th style={{ padding: '4px' }}>Fecha</th>
-                        <th style={{ padding: '4px' }}>Lote</th>
-                        <th style={{ padding: '4px' }}>Próxima Dosis</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {mascota.historialVacunas.map((v, idx) => {
-                        const vName = v.vacuna === 'Otras' ? (v.vacunaPersonalizada || 'Otras') : v.vacuna;
-                        const fechaFormateada = v.fecha ? v.fecha.split('T')[0] : 'S/F';
-                        const proximaFormateada = v.proximaDosis ? v.proximaDosis.split('T')[0] : 'No';
-                        return (
-                          <tr key={idx} style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                            <td style={{ padding: '4px', fontWeight: 'bold' }}>{vName}</td>
-                            <td style={{ padding: '4px' }}>{fechaFormateada}</td>
-                            <td style={{ padding: '4px' }}>{v.lote}</td>
-                            <td style={{ padding: '4px', color: 'var(--game-accent)' }}>{proximaFormateada}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                )}
+                  <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontWeight: 'bold' }}>
+                    {showMedicacion ? '▲' : '▼'}
+                  </span>
+                </div>
 
-                {/* Formulario Registrar Nueva Vacuna */}
-                <form onSubmit={agregarRegistroVacuna} style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px dashed rgba(0,0,0,0.1)', paddingTop: '10px' }} className="no-print">
-                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>Registrar nueva dosis:</span>
-                  <div className="responsive-form-grid-2">
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Tipo:</label>
-                      <select 
-                        value={vacunaTipo} 
-                        onChange={(e) => setVacunaTipo(e.target.value as any)}
-                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                {showMedicacion && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px', borderTop: '1px dashed var(--game-border-color, #eee)', paddingTop: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+                      {(!mascota.medicamentos || mascota.medicamentos.length === 0) ? (
+                        <p style={{ margin: '0', fontSize: '11px', color: 'var(--game-text)', opacity: 0.7 }}>
+                          No hay tratamientos registrados.
+                        </p>
+                      ) : (
+                        mascota.medicamentos.map(med => {
+                          const isOverdue = med.activo && med.proximaDosis && (new Date() > new Date(med.proximaDosis));
+                          const proximaDosisFormateada = med.proximaDosis 
+                            ? new Date(med.proximaDosis).toLocaleString() 
+                            : 'Tratamiento inactivo/finalizado';
+                          return (
+                            <div key={med.id} style={{
+                              background: 'var(--game-card-bg, #fafafa)',
+                              padding: '10px',
+                              borderRadius: '8px',
+                              border: '1px solid var(--game-border-color, #eee)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '6px',
+                              opacity: med.activo ? 1 : 0.6
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontWeight: 'bold', fontSize: '12px', color: 'var(--game-text-bright)' }}>
+                                  {med.nombre} ({med.dosis})
+                                </span>
+                                <div style={{ display: 'flex', gap: '4px' }}>
+                                  <span style={{
+                                    fontSize: '10px',
+                                    fontWeight: 'bold',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    background: med.activo ? (isOverdue ? '#fde8e8' : '#e2fbe8') : '#e9ecef',
+                                    color: med.activo ? (isOverdue ? '#c82333' : '#1e7e34') : '#6c757d'
+                                  }}>
+                                    {med.activo ? (isOverdue ? 'Atrasada' : 'Activo') : 'Inactivo'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div style={{ fontSize: '11px', color: 'var(--game-text)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <div><strong>Frecuencia:</strong> {med.frecuencia}</div>
+                                <div><strong>Rango:</strong> Desde {med.fechaInicio}{med.fechaFin ? ` hasta ${med.fechaFin}` : ''}</div>
+                                {med.activo && (
+                                  <div style={{ color: isOverdue ? 'var(--game-accent, #d32f2f)' : 'inherit', fontWeight: isOverdue ? 'bold' : 'normal' }}>
+                                    <strong>Próxima dosis:</strong> {proximaDosisFormateada}
+                                  </div>
+                                )}
+                                {med.historialTomas && med.historialTomas.length > 0 && (
+                                  <div>
+                                    <strong>Tomas registradas:</strong> {med.historialTomas.length} (Última: {new Date(med.historialTomas[med.historialTomas.length - 1]).toLocaleString()})
+                                  </div>
+                                )}
+                              </div>
+                              <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+                                {med.activo && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      registrarTomaMedicamento(med.id);
+                                    }}
+                                    style={{
+                                      padding: '4px 8px',
+                                      background: 'var(--game-accent, #1976d2)',
+                                      color: '#fff',
+                                      border: 'none',
+                                      borderRadius: '4px',
+                                      fontSize: '11px',
+                                      fontWeight: 'bold',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    💊 Registrar Toma
+                                  </button>
+                                )}
+                                {med.activo && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      desactivarMedicamento(med.id);
+                                    }}
+                                    style={{
+                                      padding: '4px 8px',
+                                      background: '#f0f0f0',
+                                      color: '#333',
+                                      border: '1px solid #ccc',
+                                      borderRadius: '4px',
+                                      fontSize: '11px',
+                                      fontWeight: 'bold',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    Dar de baja
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    eliminarMedicamento(med.id);
+                                  }}
+                                  style={{
+                                    padding: '4px 8px',
+                                    background: '#fff',
+                                    color: '#c82333',
+                                    border: '1px solid #f8d7da',
+                                    borderRadius: '4px',
+                                    fontSize: '11px',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  Eliminar
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Formulario Registrar Nuevo Medicamento */}
+                    <form onSubmit={agregarMedicacion} style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px dashed rgba(0,0,0,0.1)', paddingTop: '10px' }} className="no-print">
+                      <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>Añadir nuevo tratamiento:</span>
+                      <div className="responsive-form-grid-2">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Nombre:</label>
+                          <input 
+                            type="text" 
+                            value={medNombre}
+                            onChange={(e) => setMedNombre(e.target.value)}
+                            placeholder="Ej: Insulina, Metacam..."
+                            style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                          />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Dosis:</label>
+                          <input 
+                            type="text" 
+                            value={medDosis}
+                            onChange={(e) => setMedDosis(e.target.value)}
+                            placeholder="Ej: 2 UI, 1 pastilla, 0.5ml..."
+                            style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="responsive-form-grid-2">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Frecuencia:</label>
+                          <select 
+                            value={medFrecuencia} 
+                            onChange={(e) => setMedFrecuencia(e.target.value)}
+                            style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                          >
+                            <option value="Diario">Diario (Cada 24h)</option>
+                            <option value="Cada 12 horas">Cada 12 horas</option>
+                            <option value="Cada 8 horas">Cada 8 horas</option>
+                            <option value="Cada 6 horas">Cada 6 horas</option>
+                            <option value="Semanal">Semanal</option>
+                            <option value="Otras">Otras</option>
+                          </select>
+                        </div>
+                        {medFrecuencia === 'Otras' && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                            <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Especificar Frecuencia:</label>
+                            <input 
+                              type="text" 
+                              value={medFrecuenciaPersonalizada}
+                              onChange={(e) => setMedFrecuenciaPersonalizada(e.target.value)}
+                              placeholder="Ej: Cada 48 horas"
+                              style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="responsive-form-grid-3">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Fecha inicio:</label>
+                          <input 
+                            type="date" 
+                            value={medFechaInicio}
+                            onChange={(e) => setMedFechaInicio(e.target.value)}
+                            style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                          />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Fecha fin (opcional):</label>
+                          <input 
+                            type="date" 
+                            value={medFechaFin}
+                            onChange={(e) => setMedFechaFin(e.target.value)}
+                            style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                          />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Próxima toma/Inicio:</label>
+                          <input 
+                            type="datetime-local" 
+                            value={medHoraProxima}
+                            onChange={(e) => setMedHoraProxima(e.target.value)}
+                            style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        style={{
+                          marginTop: '4px',
+                          padding: '6px',
+                          background: 'var(--game-accent, #1976d2)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer'
+                        }}
                       >
-                        <option value="Trivalente">Trivalente</option>
-                        <option value="Leucemia">Leucemia</option>
-                        <option value="Rabia">Rabia</option>
-                        <option value="Otras">Otras</option>
-                      </select>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Lote:</label>
-                      <input 
-                        type="text" 
-                        value={vacunaLote}
-                        onChange={(e) => setVacunaLote(e.target.value)}
-                        placeholder="Ej: LT-4819"
-                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
-                      />
-                    </div>
+                        + Añadir Medicación
+                      </button>
+                    </form>
                   </div>
-
-                  {vacunaTipo === 'Otras' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Especificar Vacuna:</label>
-                      <input 
-                        type="text" 
-                        value={vacunaPersonalizada}
-                        onChange={(e) => setVacunaPersonalizada(e.target.value)}
-                        placeholder="Ej: Nobivac KC, Tos de las Perreras..."
-                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
-                      />
-                    </div>
-                  )}
-
-                  <div className="responsive-form-grid-2">
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Fecha colocación:</label>
-                      <input 
-                        type="date" 
-                        value={vacunaFecha}
-                        onChange={(e) => setVacunaFecha(e.target.value)}
-                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
-                      />
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Próxima dosis (Opcional):</label>
-                      <input 
-                        type="date" 
-                        value={vacunaProxima}
-                        onChange={(e) => setVacunaProxima(e.target.value)}
-                        style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
-                      />
-                    </div>
-                  </div>
-
-                  <button 
-                    type="submit"
-                    style={{
-                      padding: '6px 10px',
-                      background: 'var(--game-accent, #1976d2)',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '4px',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      marginTop: '4px',
-                      alignSelf: 'flex-start'
-                    }}
-                  >
-                    Registrar Vacuna
-                  </button>
-                </form>
+                )}
               </div>
             </div>
           )}
 
           {/* Historial Clínico e Incidencias Unificado */}
+          {/* Historial Clínico e Incidencias Unificado Colapsable */}
           <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <p style={{ margin: '0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>
-              🏥 Historial Clínico e Incidencias
-            </p>
-            
-            {onOpenScanner && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%', marginBottom: '10px' }} className="no-print">
-                <button 
-                  type="button" 
-                  onClick={() => onOpenScanner('salud_mascota', mascota.id)} 
-                  disabled={!cuota.esIlimitado && cuota.restantes === 0}
-                  style={{ 
-                    width: '100%',
-                    padding: '8px', 
-                    background: (!cuota.esIlimitado && cuota.restantes === 0) ? '#e0e0e0' : 'var(--game-accent-light, rgba(25, 118, 210, 0.1))', 
-                    color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#9e9e9e' : 'var(--game-text-bright, #1976d2)', 
-                    border: '1.5px solid ' + ((!cuota.esIlimitado && cuota.restantes === 0) ? '#ccc' : 'var(--game-border-color, #1976d2)'), 
-                    borderRadius: 'var(--game-radius, 6px)', 
-                    fontSize: '12px', 
-                    fontWeight: 'bold', 
-                    cursor: (!cuota.esIlimitado && cuota.restantes === 0) ? 'not-allowed' : 'pointer',
-                    fontFamily: 'var(--game-font, sans-serif)',
-                    transition: 'transform 0.2s',
-                    boxSizing: 'border-box'
-                  }}
-                >
-                  Analizar Salud por IA 🩺 📷
-                </button>
-                <span style={{ fontSize: '10px', color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#c62828' : 'var(--game-text, #666)', textAlign: 'center', display: 'block', fontWeight: '500' }}>
-                  {cuota.esIlimitado 
-                    ? '⚡ Modo Premium: Análisis ilimitados' 
-                    : cuota.restantes === 0 
-                      ? `❌ Límite diario alcanzado (Espera ${IAQuotaManager.obtenerMensajeTiempoRestante()} o añade tu API Key en Ajustes ⚙️)` 
-                      : `🔑 Te quedan ${cuota.restantes} análisis de IA hoy`}
+            <div style={{ background: 'var(--game-card-bg, #fafafa)', padding: '12px', borderRadius: 'var(--game-radius, 8px)', border: '1px solid var(--game-border-color, #eee)' }}>
+              <div 
+                onClick={() => setShowHistorialClinico(!showHistorialClinico)}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  userSelect: 'none'
+                }}
+              >
+                <p style={{ margin: '0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  🏥 Historial Clínico e Incidencias
+                </p>
+                <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontWeight: 'bold' }}>
+                  {showHistorialClinico ? '▲' : '▼'}
                 </span>
               </div>
-            )}
 
-            <form onSubmit={agregarIncidenciaPasada} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '4px' }} className="no-print">
-              <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--game-text, #666)' }}>Registrar incidencia médica manualmente:</span>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
-                <input 
-                  type="date" 
-                  value={histFecha} 
-                  onChange={(e) => setHistFecha(e.target.value)} 
-                  required
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} 
-                />
-                <select 
-                  value={histTipo} 
-                  onChange={(e) => setHistTipo(e.target.value as 'Enfermedad' | 'Parásito' | 'Tratamiento' | 'Otro')}
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
-                >
-                  <option value="Enfermedad">Enfermedad</option>
-                  <option value="Parásito">Parásito</option>
-                  <option value="Tratamiento">Tratamiento</option>
-                  <option value="Otro">Otro</option>
-                </select>
-              </div>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <input 
-                  type="text" 
-                  placeholder="Descripción de la dolencia o tratamiento..." 
-                  value={histDesc} 
-                  onChange={(e) => setHistDesc(e.target.value)} 
-                  required
-                  style={{ flex: 1, minWidth: 0, padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
-                />
-                <button type="submit" style={{ padding: '6px 12px', background: '#1a1a1a', color: theme === 'gaming' ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
-                  Añadir
-                </button>
-              </div>
-            </form>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '220px', overflowY: 'auto' }}>
-              {unifiedHistory.length === 0 ? (
-                <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>Sin registros clínicos ni incidencias.</span>
-              ) : (
-                unifiedHistory.map(item => {
-                  const esIAReporte = item.tipo === 'IA Reporte';
-                  const textoMostrar = esIAReporte 
-                    ? `${item.subtipo.toLowerCase()} - (${item.fecha})` 
-                    : item.texto;
-                  
-                  return (
-                    <div 
-                      key={item.id} 
-                      onClick={() => {
-                        if (esIAReporte) {
-                          const parsed = parseIAReporte(item.texto);
-                          setIaReporteModal({
-                            fecha: item.fecha,
-                            diagnostico: parsed.diagnostico,
-                            tratamiento: parsed.tratamiento,
-                            advertencia: parsed.advertencia,
-                            subtipo: item.subtipo
-                          });
-                        }
-                      }}
-                      style={{ 
-                        padding: '8px', 
-                        background: 'var(--game-accent-light, #fafafa)', 
-                        borderRadius: 'var(--game-radius, 4px)', 
-                        borderLeft: `3px solid ${item.color}`, 
-                        fontSize: '11px', 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'center',
-                        cursor: esIAReporte ? 'pointer' : 'default',
-                        transition: 'background 0.2s',
-                        userSelect: 'none'
-                      }}
-                      className={esIAReporte ? "hover-ia-report" : ""}
-                    >
-                      <div style={{ flex: 1, marginRight: '8px' }}>
-                        <span style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', display: 'block' }}>
-                          {item.tipo.toUpperCase()} • {item.subtipo.toUpperCase()} • {item.fecha} {esIAReporte && '🔍 Click para ver análisis'}
-                        </span>
-                        <span style={{ 
-                          color: 'var(--game-text-bright, #333)', 
+              {showHistorialClinico && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '12px', borderTop: '1px dashed var(--game-border-color, #eee)', paddingTop: '10px' }}>
+                  {onOpenScanner && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%', marginBottom: '10px' }} className="no-print">
+                      <button 
+                        type="button" 
+                        onClick={() => onOpenScanner('salud_mascota', mascota.id)} 
+                        disabled={!cuota.esIlimitado && cuota.restantes === 0}
+                        style={{ 
+                          width: '100%',
+                          padding: '8px', 
+                          background: (!cuota.esIlimitado && cuota.restantes === 0) ? '#e0e0e0' : 'var(--game-accent-light, rgba(25, 118, 210, 0.1))', 
+                          color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#9e9e9e' : 'var(--game-text-bright, #1976d2)', 
+                          border: '1.5px solid ' + ((!cuota.esIlimitado && cuota.restantes === 0) ? '#ccc' : 'var(--game-border-color, #1976d2)'), 
+                          borderRadius: 'var(--game-radius, 6px)', 
+                          fontSize: '12px', 
+                          fontWeight: 'bold', 
+                          cursor: (!cuota.esIlimitado && cuota.restantes === 0) ? 'not-allowed' : 'pointer',
                           fontFamily: 'var(--game-font, sans-serif)',
-                          textDecoration: esIAReporte ? 'underline' : 'none',
-                          fontWeight: esIAReporte ? '500' : 'normal'
-                        }}>
-                          {textoMostrar}
-                        </span>
-                      </div>
-                      <div onClick={(e) => e.stopPropagation()}>
-                        {deleteConfirmId === item.id ? (
-                          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                            <button 
-                              type="button"
-                              onClick={async () => {
-                                if (item.tipo === 'Incidencia') {
-                                  const filtrado = (mascota.historialPasado || []).filter(x => x.id !== item.id);
-                                  await LocalDatabase.saveMascota({ ...mascota, historialPasado: filtrado });
-                                } else {
-                                  const filtrado = (mascota.diarioClinico || []).filter(x => x.id !== item.id);
-                                  await LocalDatabase.saveMascota({ ...mascota, diarioClinico: filtrado });
-                                }
-                                setDeleteConfirmId(null);
-                                onUpdate();
-                              }}
-                              style={{ background: '#d32f2f', color: '#fff', border: 'none', borderRadius: '3px', padding: '2px 6px', fontSize: '9px', fontWeight: 'bold', cursor: 'pointer' }}
-                            >
-                              Sí
-                            </button>
-                            <button 
-                              type="button"
-                              onClick={() => setDeleteConfirmId(null)}
-                              style={{ background: '#ccc', color: '#333', border: 'none', borderRadius: '3px', padding: '2px 4px', fontSize: '9px', cursor: 'pointer' }}
-                            >
-                              No
-                            </button>
-                          </div>
-                        ) : (
-                          <button 
-                            type="button"
-                            onClick={() => setDeleteConfirmId(item.id)}
-                            style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', padding: '0 4px' }}
-                          >
-                            🗑️
-                          </button>
-                        )}
-                      </div>
+                          transition: 'transform 0.2s',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        Analizar Salud por IA 🩺 📷
+                      </button>
+                      <span style={{ fontSize: '10px', color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#c62828' : 'var(--game-text, #666)', textAlign: 'center', display: 'block', fontWeight: '500' }}>
+                        {cuota.esIlimitado 
+                          ? '⚡ Modo Premium: Análisis ilimitados' 
+                          : cuota.restantes === 0 
+                            ? `❌ Límite diario alcanzado (Espera ${IAQuotaManager.obtenerMensajeTiempoRestante()} o añade tu API Key en Ajustes ⚙️)` 
+                            : `🔑 Te quedan ${cuota.restantes} análisis de IA hoy`}
+                      </span>
                     </div>
-                  );
-                })
+                  )}
+
+                  <form onSubmit={agregarIncidenciaPasada} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '4px' }} className="no-print">
+                    <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--game-text, #666)' }}>Registrar incidencia médica manualmente:</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
+                      <input 
+                        type="date" 
+                        value={histFecha} 
+                        onChange={(e) => setHistFecha(e.target.value)} 
+                        required
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} 
+                      />
+                      <select 
+                        value={histTipo} 
+                        onChange={(e) => setHistTipo(e.target.value as 'Enfermedad' | 'Parásito' | 'Tratamiento' | 'Otro')}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
+                      >
+                        <option value="Enfermedad">Enfermedad</option>
+                        <option value="Parásito">Parásito</option>
+                        <option value="Tratamiento">Tratamiento</option>
+                        <option value="Otro">Otro</option>
+                      </select>
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <input 
+                        type="text" 
+                        placeholder="Descripción de la dolencia o tratamiento..." 
+                        value={histDesc} 
+                        onChange={(e) => setHistDesc(e.target.value)} 
+                        required
+                        style={{ flex: 1, minWidth: 0, padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
+                      />
+                      <button type="submit" style={{ padding: '6px 12px', background: '#1a1a1a', color: theme === 'gaming' ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
+                        Añadir
+                      </button>
+                    </div>
+                  </form>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '220px', overflowY: 'auto' }}>
+                    {unifiedHistory.length === 0 ? (
+                      <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>Sin registros clínicos ni incidencias.</span>
+                    ) : (
+                      unifiedHistory.map(item => {
+                        const esIAReporte = item.tipo === 'IA Reporte';
+                        const textoMostrar = esIAReporte 
+                          ? `${item.subtipo.toLowerCase()} - (${item.fecha})` 
+                          : item.texto;
+                        
+                        return (
+                          <div 
+                            key={item.id} 
+                            onClick={() => {
+                              if (esIAReporte) {
+                                const parsed = parseIAReporte(item.texto);
+                                setIaReporteModal({
+                                  fecha: item.fecha,
+                                  diagnostico: parsed.diagnostico,
+                                  tratamiento: parsed.tratamiento,
+                                  advertencia: parsed.advertencia,
+                                  subtipo: item.subtipo
+                                });
+                              }
+                            }}
+                            style={{ 
+                              padding: '8px', 
+                              background: 'var(--game-accent-light, #fafafa)', 
+                              borderRadius: 'var(--game-radius, 4px)', 
+                              borderLeft: `3px solid ${item.color}`, 
+                              fontSize: '11px', 
+                              display: 'flex', 
+                              justifyContent: 'space-between', 
+                              alignItems: 'center',
+                              cursor: esIAReporte ? 'pointer' : 'default',
+                              transition: 'background 0.2s',
+                              userSelect: 'none'
+                            }}
+                            className={esIAReporte ? "hover-ia-report" : ""}
+                          >
+                            <div style={{ flex: 1, marginRight: '8px' }}>
+                              <span style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', display: 'block' }}>
+                                {item.tipo.toUpperCase()} • {item.subtipo.toUpperCase()} • {item.fecha} {esIAReporte && '🔍 Click para ver análisis'}
+                              </span>
+                              <span style={{ 
+                                color: 'var(--game-text-bright, #333)', 
+                                fontFamily: 'var(--game-font, sans-serif)',
+                                textDecoration: esIAReporte ? 'underline' : 'none',
+                                fontWeight: esIAReporte ? '500' : 'normal'
+                              }}>
+                                {textoMostrar}
+                              </span>
+                            </div>
+                            <div onClick={(e) => e.stopPropagation()}>
+                              {deleteConfirmId === item.id ? (
+                                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                  <button 
+                                    type="button"
+                                    onClick={async () => {
+                                      if (item.tipo === 'Incidencia') {
+                                        const filtrado = (mascota.historialPasado || []).filter(x => x.id !== item.id);
+                                        await LocalDatabase.saveMascota({ ...mascota, historialPasado: filtrado });
+                                      } else {
+                                        const filtrado = (mascota.diarioClinico || []).filter(x => x.id !== item.id);
+                                        await LocalDatabase.saveMascota({ ...mascota, diarioClinico: filtrado });
+                                      }
+                                      setDeleteConfirmId(null);
+                                      onUpdate();
+                                    }}
+                                    style={{ background: '#d32f2f', color: '#fff', border: 'none', borderRadius: '3px', padding: '2px 6px', fontSize: '9px', fontWeight: 'bold', cursor: 'pointer' }}
+                                  >
+                                    Sí
+                                  </button>
+                                  <button 
+                                    type="button"
+                                    onClick={() => setDeleteConfirmId(null)}
+                                    style={{ background: '#ccc', color: '#333', border: 'none', borderRadius: '3px', padding: '2px 4px', fontSize: '9px', cursor: 'pointer' }}
+                                  >
+                                    No
+                                  </button>
+                                </div>
+                              ) : (
+                                <button 
+                                  type="button"
+                                  onClick={() => setDeleteConfirmId(item.id)}
+                                  style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', padding: '0 4px' }}
+                                >
+                                  🗑️
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           </div>

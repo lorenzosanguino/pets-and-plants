@@ -1,20 +1,18 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef } from 'react';
 import { LocalDatabase } from '../database/db';
-import type { Mascota, Planta, AnimalExotico } from '../database/types';
+import type { Mascota, Planta } from '../database/types';
 import { initFirebase, getFirebaseCached } from '../database/firebaseLazy';
 import { MicrosoftSyncService } from '../services/microsoftSync';
 
 const getNowTimestamp = (): number => Date.now();
 
-const isDatabaseDefaultDemo = (mascotas: Mascota[], plantas: Planta[], exoticos: AnimalExotico[]) => {
+const isDatabaseDefaultDemo = (mascotas: Mascota[], plantas: Planta[]) => {
   return (
     mascotas.length === 1 &&
     mascotas[0].id === 'mascota-luna-id' &&
     plantas.length === 1 &&
-    plantas[0].id === 'planta-fern-id' &&
-    exoticos.length === 1 &&
-    exoticos[0].id === 'exotico-tarantula-id'
+    plantas[0].id === 'planta-fern-id'
   );
 };
 
@@ -71,13 +69,12 @@ export const useSyncManager = ({
       
       const listMascotas = await LocalDatabase.getMascotas();
       const listPlantas = await LocalDatabase.getPlantas();
-      const listExoticos = await LocalDatabase.getExoticos();
-      
-      const isLocalDemo = isDatabaseDefaultDemo(listMascotas, listPlantas, listExoticos);
-      const isLocalEmpty = listMascotas.length === 0 && listPlantas.length === 0 && listExoticos.length === 0;
+            
+      const isLocalDemo = isDatabaseDefaultDemo(listMascotas, listPlantas);
+      const isLocalEmpty = listMascotas.length === 0 && listPlantas.length === 0;
 
       if (backup) {
-        const isCloudDemo = isDatabaseDefaultDemo(backup.mascotas || [], backup.plantas || [], backup.exoticos || []);
+        const isCloudDemo = isDatabaseDefaultDemo(backup.mascotas || [], backup.plantas || []);
         const localLastUpdated = Number(localStorage.getItem('petplant_db_last_updated') || 0);
         const remoteIsNewer = backup.updatedAt > localLastUpdated;
         
@@ -95,7 +92,6 @@ export const useSyncManager = ({
           await LocalDatabase.overwriteFullDatabase(
             backup.mascotas || [],
             backup.plantas || [],
-            backup.exoticos || [],
             backup.eventos || [],
             backup.chats || []
           );
@@ -133,11 +129,10 @@ export const useSyncManager = ({
       setSyncStatus('syncing');
       const listMascotas = await LocalDatabase.getMascotas();
       const listPlantas = await LocalDatabase.getPlantas();
-      const listExoticos = await LocalDatabase.getExoticos();
-      const listEventos = await LocalDatabase.getEventosCalendario();
+            const listEventos = await LocalDatabase.getEventosCalendario();
       
       const chats = [];
-      const consultantIds = ['veterinario', 'agronomo', 'exotico'];
+      const consultantIds = ['veterinario', 'agronomo'];
       for (const id of consultantIds) {
         const chat = await LocalDatabase.getChatHistorial(id);
         if (chat) chats.push(chat);
@@ -146,7 +141,6 @@ export const useSyncManager = ({
       await MicrosoftSyncService.uploadBackup({
         mascotas: listMascotas,
         plantas: listPlantas,
-        exoticos: listExoticos,
         eventos: listEventos,
         chats: chats,
         updatedAt: getNowTimestamp()
@@ -182,11 +176,10 @@ export const useSyncManager = ({
     try {
       const listMascotas = await LocalDatabase.getMascotas();
       const listPlantas = await LocalDatabase.getPlantas();
-      const listExoticos = await LocalDatabase.getExoticos();
-      const listEventos = await LocalDatabase.getEventosCalendario();
+            const listEventos = await LocalDatabase.getEventosCalendario();
       
       const chats = [];
-      const consultantIds = ['veterinario', 'agronomo', 'exotico'];
+      const consultantIds = ['veterinario', 'agronomo'];
       for (const id of consultantIds) {
         const chat = await LocalDatabase.getChatHistorial(id);
         if (chat) chats.push(chat);
@@ -197,7 +190,6 @@ export const useSyncManager = ({
         await MicrosoftSyncService.uploadBackup({
           mascotas: listMascotas,
           plantas: listPlantas,
-          exoticos: listExoticos,
           eventos: listEventos,
           chats: chats,
           updatedAt: getNowTimestamp()
@@ -210,7 +202,7 @@ export const useSyncManager = ({
         const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Mi Hogar";
         
         console.log('Subiendo copia a Firebase...');
-        const uploadPromise = fbSync.uploadChanges(activeHogar, activeNombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
+        const uploadPromise = fbSync.uploadChanges(activeHogar, activeNombre, listMascotas, listPlantas, uiTheme, listEventos, chats);
         await Promise.race([
           uploadPromise,
           new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout de conexión con la nube. Tus datos están a salvo localmente en el dispositivo y se sincronizarán de forma automática en segundo plano cuando vuelva la conexión.")), 12000))
@@ -235,8 +227,7 @@ export const useSyncManager = ({
   const uploadChangesToFirebaseDirect = async (
     activeHogar: string,
     listMascotas: Mascota[],
-    listPlantas: Planta[],
-    listExoticos: AnimalExotico[]
+    listPlantas: Planta[]
   ) => {
     const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Hogar Sincronizado";
     setSyncStatus('synced');
@@ -247,7 +238,7 @@ export const useSyncManager = ({
         LocalDatabase.getEventosCalendario(),
         (async () => {
           const res = [];
-          const consultantIds = ['veterinario', 'agronomo', 'exotico'];
+          const consultantIds = ['veterinario', 'agronomo'];
           for (const id of consultantIds) {
             const chat = await LocalDatabase.getChatHistorial(id);
             if (chat) res.push(chat);
@@ -262,7 +253,6 @@ export const useSyncManager = ({
         activeNombre, 
         listMascotas, 
         listPlantas, 
-        listExoticos, 
         uiTheme,
         listEventos,
         chats
@@ -284,7 +274,7 @@ export const useSyncManager = ({
   };
 
   const handleLocalDataChanged = async (
-    data: { mascotas: Mascota[]; plantas: Planta[]; exoticos: AnimalExotico[] },
+    data: { mascotas: Mascota[]; plantas: Planta[] },
     isLocalEdit: boolean
   ) => {
     if (!isLocalEdit) return;
@@ -300,7 +290,7 @@ export const useSyncManager = ({
     } else {
       const activeHogar = localStorage.getItem('petplant_hogar_id');
       if (activeHogar && !isRemoteSyncingRef.current && provider !== 'microsoft') {
-        await uploadChangesToFirebaseDirect(activeHogar, data.mascotas, data.plantas, data.exoticos);
+        await uploadChangesToFirebaseDirect(activeHogar, data.mascotas, data.plantas);
       }
     }
   };
@@ -308,14 +298,13 @@ export const useSyncManager = ({
   const crearHogar = async (nombre: string) => {
     setSyncStatus('syncing');
     try {
-      const [listMascotas, listPlantas, listExoticos, listEventos, chats] = await Promise.all([
+      const [listMascotas, listPlantas, listEventos, chats] = await Promise.all([
         LocalDatabase.getMascotas(),
         LocalDatabase.getPlantas(),
-        LocalDatabase.getExoticos(),
         LocalDatabase.getEventosCalendario(),
         (async () => {
           const res = [];
-          const consultantIds = ['veterinario', 'agronomo', 'exotico'];
+          const consultantIds = ['veterinario', 'agronomo'];
           for (const id of consultantIds) {
             const chat = await LocalDatabase.getChatHistorial(id);
             if (chat) res.push(chat);
@@ -328,7 +317,6 @@ export const useSyncManager = ({
         nombre.trim(), 
         listMascotas, 
         listPlantas, 
-        listExoticos, 
         uiTheme,
         listEventos,
         chats
@@ -380,7 +368,6 @@ export const useSyncManager = ({
         await LocalDatabase.overwriteFullDatabase(
           data.mascotas || [],
           data.plantas || [],
-          data.exoticos || [],
           data.eventos,
           data.chats
         );
@@ -437,7 +424,7 @@ export const useSyncManager = ({
         localStorage.removeItem('petplant_hogar_id');
         localStorage.removeItem('petplant_hogar_nombre');
         setSyncStatus('idle');
-        await LocalDatabase.overwriteFullDatabase([], [], [], [], []);
+        await LocalDatabase.overwriteFullDatabase([], [], [], []);
         await onCloudDataReceived();
         return;
       }
@@ -459,7 +446,6 @@ export const useSyncManager = ({
         await LocalDatabase.overwriteFullDatabase(
           data.mascotas || [],
           data.plantas || [],
-          data.exoticos || [],
           data.eventos,
           data.chats
         );
@@ -647,11 +633,10 @@ export const useSyncManager = ({
                   const userHogar = await FirebaseSyncService.getUserHogar(firebaseUser.uid);
                   const listMascotas = await LocalDatabase.getMascotas();
                   const listPlantas = await LocalDatabase.getPlantas();
-                  const listExoticos = await LocalDatabase.getExoticos();
-                  const listEventos = await LocalDatabase.getEventosCalendario();
+                                    const listEventos = await LocalDatabase.getEventosCalendario();
                   
                   const chats = [];
-                  const consultantIds = ['veterinario', 'agronomo', 'exotico'];
+                  const consultantIds = ['veterinario', 'agronomo'];
                   for (const id of consultantIds) {
                     const chat = await LocalDatabase.getChatHistorial(id);
                     if (chat) chats.push(chat);
@@ -682,8 +667,7 @@ export const useSyncManager = ({
                           cloudHogarNombre,
                           listMascotas,
                           listPlantas,
-                          listExoticos,
-                          uiTheme,
+                                            uiTheme,
                           listEventos,
                           chats
                         );
@@ -693,29 +677,28 @@ export const useSyncManager = ({
                         }
                       }
 
-                      const isLocalDemo = isDatabaseDefaultDemo(listMascotas, listPlantas, listExoticos);
-                      const isCloudDemo = isDatabaseDefaultDemo(data.mascotas || [], data.plantas || [], data.exoticos || []);
-                      const cloudHasRealData = !isCloudDemo && (data.mascotas?.length > 0 || data.plantas?.length > 0 || data.exoticos?.length > 0);
+                      const isLocalDemo = isDatabaseDefaultDemo(listMascotas, listPlantas);
+                      const isCloudDemo = isDatabaseDefaultDemo(data.mascotas || [], data.plantas || []);
+                      const cloudHasRealData = !isCloudDemo && (data.mascotas?.length > 0 || data.plantas?.length > 0);
 
                       const localLastUpdated = Number(localStorage.getItem('petplant_db_last_updated') || 0);
-                      const isLocalEmpty = listMascotas.length === 0 && listPlantas.length === 0 && listExoticos.length === 0;
+                      const isLocalEmpty = listMascotas.length === 0 && listPlantas.length === 0;
                       const remoteIsNewer = data.updatedAt > localLastUpdated;
 
                       if (!isLocalDemo && isCloudDemo) {
-                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
+                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, uiTheme, listEventos, chats);
                       } else if (cloudHasRealData && (remoteIsNewer || isLocalEmpty || isLocalDemo)) {
                         isRemoteSyncingRef.current = true;
                         await LocalDatabase.overwriteFullDatabase(
                           data.mascotas || [],
                           data.plantas || [],
-                          data.exoticos || [],
-                          data.eventos,
+                                          data.eventos,
                           data.chats
                         );
                         isRemoteSyncingRef.current = false;
                         await onCloudDataReceived();
                       } else {
-                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
+                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, uiTheme, listEventos, chats);
                       }
 
                       if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii')) {
@@ -723,8 +706,8 @@ export const useSyncManager = ({
                         setUiTheme(data.theme as any);
                       }
                     } else {
-                      if (listMascotas.length > 0 || listPlantas.length > 0 || listExoticos.length > 0) {
-                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
+                      if (listMascotas.length > 0 || listPlantas.length > 0) {
+                        await FirebaseSyncService.uploadChanges(cloudHogarId, cloudHogarNombre, listMascotas, listPlantas, uiTheme, listEventos, chats);
                       }
                     }
                   } else {
@@ -732,9 +715,9 @@ export const useSyncManager = ({
                     const localHogarNombre = localStorage.getItem('petplant_hogar_nombre') || 'Mi Hogar';
                     if (localHogarId) {
                       await FirebaseSyncService.saveUserHogar(firebaseUser.uid, localHogarId, localHogarNombre);
-                      await FirebaseSyncService.uploadChanges(localHogarId, localHogarNombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
+                      await FirebaseSyncService.uploadChanges(localHogarId, localHogarNombre, listMascotas, listPlantas, uiTheme, listEventos, chats);
                     } else {
-                      const nuevoCodigo = await FirebaseSyncService.createHogar("Mi Hogar", listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
+                      const nuevoCodigo = await FirebaseSyncService.createHogar("Mi Hogar", listMascotas, listPlantas, uiTheme, listEventos, chats);
                       localStorage.setItem('petplant_hogar_id', nuevoCodigo);
                       localStorage.setItem('petplant_hogar_nombre', "Mi Hogar");
                       setHogarId(nuevoCodigo);
@@ -760,11 +743,10 @@ export const useSyncManager = ({
                   if (data) {
                     const listMascotas = await LocalDatabase.getMascotas();
                     const listPlantas = await LocalDatabase.getPlantas();
-                    const listExoticos = await LocalDatabase.getExoticos();
-                    const listEventos = await LocalDatabase.getEventosCalendario();
+                                        const listEventos = await LocalDatabase.getEventosCalendario();
                     
                     const chats = [];
-                    const consultantIds = ['veterinario', 'agronomo', 'exotico'];
+                    const consultantIds = ['veterinario', 'agronomo'];
                     for (const id of consultantIds) {
                       const chat = await LocalDatabase.getChatHistorial(id);
                       if (chat) chats.push(chat);
@@ -778,8 +760,7 @@ export const useSyncManager = ({
                         localHogarNombre,
                         listMascotas,
                         listPlantas,
-                        listExoticos,
-                        uiTheme,
+                                        uiTheme,
                         listEventos,
                         chats
                       );
@@ -789,29 +770,28 @@ export const useSyncManager = ({
                       }
                     }
 
-                    const isLocalDemo = isDatabaseDefaultDemo(listMascotas, listPlantas, listExoticos);
-                    const isCloudDemo = isDatabaseDefaultDemo(data.mascotas || [], data.plantas || [], data.exoticos || []);
-                    const cloudHasRealData = !isCloudDemo && (data.mascotas?.length > 0 || data.plantas?.length > 0 || data.exoticos?.length > 0);
+                    const isLocalDemo = isDatabaseDefaultDemo(listMascotas, listPlantas);
+                    const isCloudDemo = isDatabaseDefaultDemo(data.mascotas || [], data.plantas || []);
+                    const cloudHasRealData = !isCloudDemo && (data.mascotas?.length > 0 || data.plantas?.length > 0);
 
                     const localLastUpdated = Number(localStorage.getItem('petplant_db_last_updated') || 0);
-                    const isLocalEmpty = listMascotas.length === 0 && listPlantas.length === 0 && listExoticos.length === 0;
+                    const isLocalEmpty = listMascotas.length === 0 && listPlantas.length === 0;
                     const remoteIsNewer = data.updatedAt > localLastUpdated;
 
                     if (!isLocalDemo && isCloudDemo) {
-                      await FirebaseSyncService.uploadChanges(localHogarId, data.nombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
+                      await FirebaseSyncService.uploadChanges(localHogarId, data.nombre, listMascotas, listPlantas, uiTheme, listEventos, chats);
                     } else if (cloudHasRealData && (remoteIsNewer || isLocalEmpty || isLocalDemo)) {
                       isRemoteSyncingRef.current = true;
                       await LocalDatabase.overwriteFullDatabase(
                         data.mascotas || [],
                         data.plantas || [],
-                        data.exoticos || [],
-                        data.eventos,
+                                      data.eventos,
                         data.chats
                       );
                       isRemoteSyncingRef.current = false;
                       await onCloudDataReceived();
                     } else {
-                      await FirebaseSyncService.uploadChanges(localHogarId, data.nombre, listMascotas, listPlantas, listExoticos, uiTheme, listEventos, chats);
+                      await FirebaseSyncService.uploadChanges(localHogarId, data.nombre, listMascotas, listPlantas, uiTheme, listEventos, chats);
                     }
 
                     if (data.theme && (data.theme === 'nature' || data.theme === 'gaming' || data.theme === 'kawaii')) {
@@ -854,15 +834,14 @@ export const useSyncManager = ({
       
       const localMascotas = await LocalDatabase.getMascotas();
       const localPlantas = await LocalDatabase.getPlantas();
-      const localExoticos = await LocalDatabase.getExoticos();
-      const isLocalEmpty = localMascotas.length === 0 && localPlantas.length === 0 && localExoticos.length === 0;
+            const isLocalEmpty = localMascotas.length === 0 && localPlantas.length === 0;
 
-      const isLocalDemo = isDatabaseDefaultDemo(localMascotas, localPlantas, localExoticos);
-      const isCloudDemo = isDatabaseDefaultDemo(data.mascotas || [], data.plantas || [], data.exoticos || []);
+      const isLocalDemo = isDatabaseDefaultDemo(localMascotas, localPlantas);
+      const isCloudDemo = isDatabaseDefaultDemo(data.mascotas || [], data.plantas || []);
 
       const esIntentoDeMachacarConDemo = isCloudDemo && !isLocalDemo;
 
-      const cloudIsEmpty = (data.mascotas || []).length === 0 && (data.plantas || []).length === 0 && (data.exoticos || []).length === 0;
+      const cloudIsEmpty = (data.mascotas || []).length === 0 && (data.plantas || []).length === 0;
       const esIntentoDeMachacarConVacio = cloudIsEmpty && !isLocalEmpty && !isLocalDemo;
 
       if (!esIntentoDeMachacarConDemo && !esIntentoDeMachacarConVacio && (data.updatedAt > localLastUpdated || isLocalEmpty || (isLocalDemo && !isCloudDemo))) {
@@ -872,8 +851,7 @@ export const useSyncManager = ({
           await LocalDatabase.overwriteFullDatabase(
             data.mascotas || [],
             data.plantas || [],
-            data.exoticos || [],
-            data.eventos,
+              data.eventos,
             data.chats
           );
           await onCloudDataReceived();
@@ -914,10 +892,9 @@ export const useSyncManager = ({
         try {
           const listMascotas = await LocalDatabase.getMascotas();
           const listPlantas = await LocalDatabase.getPlantas();
-          const listExoticos = await LocalDatabase.getExoticos();
-          const listEventos = await LocalDatabase.getEventosCalendario();
+                    const listEventos = await LocalDatabase.getEventosCalendario();
           const chats = [];
-          const consultantIds = ['veterinario', 'agronomo', 'exotico'];
+          const consultantIds = ['veterinario', 'agronomo'];
           for (const id of consultantIds) {
             const chat = await LocalDatabase.getChatHistorial(id);
             if (chat) chats.push(chat);
@@ -929,8 +906,7 @@ export const useSyncManager = ({
             activeNombre, 
             listMascotas, 
             listPlantas, 
-            listExoticos, 
-            uiTheme,
+                uiTheme,
             listEventos,
             chats
           );

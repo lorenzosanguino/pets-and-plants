@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { initializeFirestore, doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import type { Mascota, Planta, AnimalExotico, EventoCalendario, ChatHistorial } from './types';
+import type { Mascota, Planta, EventoCalendario, ChatHistorial } from './types';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
@@ -50,7 +50,6 @@ export interface HogarCloudData {
   nombre: string;
   mascotas: Mascota[];
   plantas: Planta[];
-  exoticos: AnimalExotico[];
   updatedAt: number;
   lastUpdatedBy: string; // Tab/Device unique ID
   theme?: string; // Soportar sincronización del tema visual
@@ -238,7 +237,6 @@ export class FirebaseSyncService {
     nombre: string, 
     mascotas: Mascota[], 
     plantas: Planta[], 
-    exoticos: AnimalExotico[], 
     theme?: string,
     eventos?: EventoCalendario[],
     chats?: ChatHistorial[]
@@ -248,7 +246,6 @@ export class FirebaseSyncService {
       nombre,
       mascotas: mascotas || [],
       plantas: plantas || [],
-      exoticos: exoticos || [],
       updatedAt: Date.now(),
       lastUpdatedBy: deviceSessionId
     };
@@ -316,7 +313,6 @@ export class FirebaseSyncService {
     nombre: string, 
     mascotas: Mascota[], 
     plantas: Planta[], 
-    exoticos: AnimalExotico[], 
     theme?: string,
     eventos?: EventoCalendario[],
     chats?: ChatHistorial[]
@@ -325,7 +321,6 @@ export class FirebaseSyncService {
       nombre,
       mascotas: mascotas || [],
       plantas: plantas || [],
-      exoticos: exoticos || [],
       updatedAt: Date.now(),
       lastUpdatedBy: deviceSessionId
     };

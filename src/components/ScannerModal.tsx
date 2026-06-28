@@ -4,22 +4,22 @@ import { CameraScanner } from './CameraScanner';
 import { GeminiAPIService } from '../services/geminiAPI';
 import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
-import type { Mascota, Planta, AnimalExotico } from '../database/types';
+import type { Mascota, Planta } from '../database/types';
 import { IAQuotaManager } from '../utils/iaQuota';
 
 interface ScannerModalProps {
   onClose: () => void;
   mascotas: Mascota[];
   plantas: Planta[];
-  exoticos: AnimalExotico[];
+
   onUpdate: () => void;
   forcedMode?: ScanMode;
   forcedAssetId?: string;
 }
 
-type ScanMode = 'registrar_mascota' | 'salud_mascota' | 'registrar_planta' | 'enfermedad_planta' | 'registrar_exotico' | 'salud_exotico';
+type ScanMode = 'registrar_mascota' | 'salud_mascota' | 'registrar_planta' | 'enfermedad_planta';
 
-export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, plantas, exoticos, onUpdate, forcedMode, forcedAssetId }) => {
+export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, plantas, onUpdate, forcedMode, forcedAssetId }) => {
   const cuota = IAQuotaManager.obtenerEstadoCuota();
   const [mode, setMode] = useState<ScanMode>(forcedMode || 'registrar_mascota');
   const [loading, setLoading] = useState(false);
@@ -52,13 +52,6 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
   const [plantCompuestosToxicos, setPlantCompuestosToxicos] = useState('');
   const [plantUltimoRiegoOpcion, setPlantUltimoRiegoOpcion] = useState('hoy');
 
-  // Estados de edición del formulario de exótico escaneado
-  const [exoticoNombre, setExoticoNombre] = useState('');
-  const [exoticoEspecie, setExoticoEspecie] = useState<'Serpiente' | 'Rana' | 'Tarántula' | 'Escorpión' | 'Otro'>('Otro');
-  const [exoticoTipoEspecifico, setExoticoTipoEspecifico] = useState('');
-  const [exoticoTemperatura, setExoticoTemperatura] = useState('25');
-  const [exoticoHumedad, setExoticoHumedad] = useState('60');
-  const [exoticoIntervaloAlimentacion, setExoticoIntervaloAlimentacion] = useState('7');
 
   // Estados para asociar diagnósticos de salud/enfermedad
   const [selectedAssetId, setSelectedAssetId] = useState(forcedAssetId || '');
@@ -105,19 +98,6 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
           setSelectedAssetId(forcedAssetId);
         } else if (plantas.length > 0) {
           setSelectedAssetId(plantas[0].id);
-        }
-      } else if (mode === 'registrar_exotico') {
-        setExoticoEspecie(res.especie || 'Otro');
-        setExoticoTipoEspecifico(res.tipoEspecifico || '');
-        setExoticoNombre(res.nombreSugerido || '');
-        setExoticoTemperatura(String(res.temperaturaTerrario || '25'));
-        setExoticoHumedad(String(res.humedadTerrario || '60'));
-        setExoticoIntervaloAlimentacion(String(res.intervaloAlimentacionDias || '7'));
-      } else if (mode === 'salud_exotico') {
-        if (forcedAssetId) {
-          setSelectedAssetId(forcedAssetId);
-        } else if (exoticos.length > 0) {
-          setSelectedAssetId(exoticos[0].id);
         }
       }
     } catch (err: any) {
@@ -169,21 +149,6 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
             setSelectedAssetId(forcedAssetId);
           } else if (plantas.length > 0) {
             setSelectedAssetId(plantas[0].id);
-          }
-        }
-      } else if (mode === 'registrar_exotico') {
-        setExoticoEspecie(res.especie || 'Otro');
-        setExoticoTipoEspecifico(res.tipoEspecifico || '');
-        setExoticoNombre(res.nombreSugerido || '');
-        setExoticoTemperatura(String(res.temperaturaTerrario || '25'));
-        setExoticoHumedad(String(res.humedadTerrario || '60'));
-        setExoticoIntervaloAlimentacion(String(res.intervaloAlimentacionDias || '7'));
-      } else if (mode === 'salud_exotico') {
-        if (!selectedAssetId) {
-          if (forcedAssetId) {
-            setSelectedAssetId(forcedAssetId);
-          } else if (exoticos.length > 0) {
-            setSelectedAssetId(exoticos[0].id);
           }
         }
       }
@@ -309,33 +274,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
     }
   };
 
-  const guardarExoticoEscaneado = async () => {
-    if (!exoticoNombre.trim() || !capturedDataUrl) return;
 
-    const nuevoExotico: AnimalExotico = {
-      id: safeUUID(),
-      nombre: exoticoNombre.trim(),
-      especie: exoticoEspecie,
-      tipoEspecifico: exoticoTipoEspecifico.trim() || 'Desconocido',
-      temperaturaTerrario: parseFloat(exoticoTemperatura) || 25,
-      humedadTerrario: parseFloat(exoticoHumedad) || 60,
-      ultimaAlimentacion: new Date().toISOString().split('T')[0],
-      intervaloAlimentacionDias: parseInt(exoticoIntervaloAlimentacion) || 7,
-      diarioExotico: [],
-      fotoUrl: capturedDataUrl, // Foto obligatoria
-      fotos: capturedImages.length > 0 ? capturedImages.map(img => img.dataUrl) : [capturedDataUrl],
-      historialPasado: []
-    };
-
-    try {
-      await LocalDatabase.saveExotico(nuevoExotico);
-      onUpdate();
-      onClose();
-    } catch (err) {
-      console.error(err);
-      setErrorMsg("Error al guardar el animal exótico en IndexedDB.");
-    }
-  };
 
   const guardarReporteSaludEnDiario = async () => {
     if (!selectedAssetId || !scanResult) return;
@@ -406,38 +345,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
     onClose();
   };
 
-  const guardarReporteExoticoSaludEnDiario = async () => {
-    if (!selectedAssetId || !scanResult) return;
-    const exo = exoticos.find(e => e.id === selectedAssetId);
-    if (!exo) return;
 
-    const nuevaNota = {
-      id: safeUUID(),
-      fecha: new Date().toISOString(),
-      nota: `[IA Diagnóstico Exótico]: ${scanResult.diagnostico} | Tratamiento: ${scanResult.tratamiento} | Alerta: ${scanResult.advertencia}`,
-      categoria: 'Observación general' as const
-    };
-
-    const nuevoDiag = {
-      id: safeUUID(),
-      fecha: new Date().toISOString(),
-      diagnostico: scanResult.diagnostico,
-      tratamiento: scanResult.tratamiento,
-      advertencia: scanResult.advertencia || '',
-      esUrgente: !!scanResult.esUrgente,
-      fotoUrl: capturedDataUrl || undefined
-    };
-
-    const exoActualizado: AnimalExotico = {
-      ...exo,
-      diarioExotico: [nuevaNota, ...(exo.diarioExotico || [])],
-      diagnosticosIA: [nuevoDiag, ...(exo.diagnosticosIA || [])]
-    };
-
-    await LocalDatabase.saveExotico(exoActualizado);
-    onUpdate();
-    onClose();
-  };
 
   const resetScanner = () => {
     setCapturedDataUrl(null);
@@ -463,20 +371,11 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
     setPlantToxicidadCanina('Segura');
     setPlantCompuestosToxicos('');
     setPlantUltimoRiegoOpcion('hoy');
-    // Reset exotic form
-    setExoticoNombre('');
-    setExoticoEspecie('Otro');
-    setExoticoTipoEspecifico('');
-    setExoticoTemperatura('25');
-    setExoticoHumedad('60');
-    setExoticoIntervaloAlimentacion('7');
   };
 
   const accentColor = (mode === 'registrar_mascota' || mode === 'salud_mascota') 
     ? 'var(--game-accent, #1976d2)' 
-    : (mode === 'registrar_exotico' || mode === 'salud_exotico')
-      ? '#ff8f00'
-      : 'var(--game-accent, #2e7d32)';
+    : 'var(--game-accent, #2e7d32)';
 
   return (
     <div className="modal-backdrop" style={{
@@ -566,28 +465,17 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
             >
               Enfermedad Planta 🍂
             </button>
-            <button 
-              onClick={() => setMode('registrar_exotico')} 
-              style={{ padding: '10px 6px', background: mode === 'registrar_exotico' ? 'var(--game-accent, #ff8f00)' : 'rgba(0,0,0,0.05)', color: mode === 'registrar_exotico' ? '#fff' : 'var(--game-text)', border: '1px solid var(--game-border-color, #ccc)', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-            >
-              Registrar Exótico 🦎
-            </button>
-            <button 
-              onClick={() => setMode('salud_exotico')} 
-              style={{ padding: '10px 6px', background: mode === 'salud_exotico' ? 'var(--game-accent, #ff8f00)' : 'rgba(0,0,0,0.05)', color: mode === 'salud_exotico' ? '#fff' : 'var(--game-text)', border: '1px solid var(--game-border-color, #ccc)', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-            >
-              Salud Exótico 🩺
-            </button>
+
           </div>
         )}
 
         {/* Caja de consulta para los modos de salud/diagnóstico */}
-        {!capturedDataUrl && (mode === 'salud_mascota' || mode === 'enfermedad_planta' || mode === 'salud_exotico') && (
+        {!capturedDataUrl && (mode === 'salud_mascota' || mode === 'enfermedad_planta') && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
             <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Consulta / Notas adicionales:</label>
             <input 
               type="text" 
-              placeholder="Ej: Tiene una calva en el lomo / Manchas marrones en las hojas / No ha mudado bien"
+              placeholder="Ej: Tiene una calva en el lomo / Manchas marrones en las hojas"
               value={customQuery}
               onChange={(e) => setCustomQuery(e.target.value)}
               style={{ padding: '8px 12px', border: '1px solid var(--game-border-color, #ccc)', borderRadius: '6px', fontSize: '13px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
@@ -613,7 +501,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
               </p>
             </div>
           ) : (
-            <CameraScanner mode={(mode === 'registrar_mascota' || mode === 'salud_mascota' || mode === 'registrar_exotico' || mode === 'salud_exotico') ? 'mascota' : 'planta'} onCapture={handleCapture} />
+            <CameraScanner mode={(mode === 'registrar_mascota' || mode === 'salud_mascota') ? 'mascota' : 'planta'} onCapture={handleCapture} />
           )
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -950,80 +838,9 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
                   </div>
                 )}
 
-                {/* FORMULARIO MODO: Registrar Exótico */}
-                {mode === 'registrar_exotico' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                      <div>
-                        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Especie:</label>
-                        <select value={exoticoEspecie} onChange={(e) => setExoticoEspecie(e.target.value as any)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}>
-                          <option value="Serpiente">Serpiente 🐍</option>
-                          <option value="Rana">Rana 🐸</option>
-                          <option value="Tarántula">Tarántula 🕷️</option>
-                          <option value="Escorpión">Escorpión 🦂</option>
-                          <option value="Otro">Otro 🦎</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Tipo Específico:</label>
-                        <input type="text" value={exoticoTipoEspecifico} onChange={(e) => setExoticoTipoEspecifico(e.target.value)} style={{ width: '100%', padding: '5px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
-                      </div>
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Nombre Sugerido:</label>
-                      <input type="text" value={exoticoNombre} onChange={(e) => setExoticoNombre(e.target.value)} placeholder="Ponle un nombre..." style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
-                      <div>
-                        <label style={{ fontSize: '10px', fontWeight: 'bold' }}>Temp Terrario (°C):</label>
-                        <input type="number" value={exoticoTemperatura} onChange={(e) => setExoticoTemperatura(e.target.value)} style={{ width: '100%', padding: '5px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
-                      </div>
-                      <div>
-                        <label style={{ fontSize: '10px', fontWeight: 'bold' }}>Humedad (%):</label>
-                        <input type="number" value={exoticoHumedad} onChange={(e) => setExoticoHumedad(e.target.value)} style={{ width: '100%', padding: '5px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
-                      </div>
-                      <div>
-                        <label style={{ fontSize: '10px', fontWeight: 'bold' }}>Alimentación (días):</label>
-                        <input type="number" value={exoticoIntervaloAlimentacion} onChange={(e) => setExoticoIntervaloAlimentacion(e.target.value)} style={{ width: '100%', padding: '5px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
-                      </div>
-                    </div>
-                    <button onClick={guardarExoticoEscaneado} disabled={!exoticoNombre.trim()} style={{ padding: '12px', background: '#2e7d32', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: exoticoNombre.trim() ? 'pointer' : 'not-allowed', marginTop: '10px', opacity: exoticoNombre.trim() ? 1 : 0.6 }}>
-                      Registrar Animal Exótico 💾
-                    </button>
-                  </div>
-                )}
 
-                {/* FORMULARIO MODO: Salud Animal Exótico */}
-                {mode === 'salud_exotico' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
-                    <div style={{ padding: '12px', background: 'rgba(0,0,0,0.03)', borderRadius: '8px', border: '1px solid var(--game-border-color)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
-                        <TTSButton text={`Diagnóstico de Terrario: ${scanResult.diagnostico}. Tratamiento sugerido: ${scanResult.tratamiento}.${scanResult.advertencia ? ` Alerta: ${scanResult.advertencia}` : ''}`} />
-                      </div>
-                      <p><strong>Diagnóstico de Terrario:</strong> {scanResult.diagnostico}</p>
-                      <p><strong>Tratamiento sugerido:</strong> {scanResult.tratamiento}</p>
-                      <p style={{ color: scanResult.esUrgente ? '#f44336' : 'inherit' }}><strong>Alerta:</strong> {scanResult.advertencia}</p>
-                    </div>
 
-                    {exoticos.length === 0 ? (
-                      <p style={{ fontStyle: 'italic', fontSize: '12px', color: '#666' }}>Registra un animal exótico primero para poder guardar este diagnóstico en su diario clínico.</p>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label style={{ fontWeight: 'bold' }}>Asociar al expediente de:</label>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <select value={selectedAssetId} onChange={(e) => setSelectedAssetId(e.target.value)} style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}>
-                            {exoticos.map(e => (
-                              <option key={e.id} value={e.id}>{e.nombre}</option>
-                            ))}
-                          </select>
-                          <button onClick={guardarReporteExoticoSaludEnDiario} style={{ padding: '8px 16px', background: 'var(--game-accent, #ff8f00)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
-                            Guardar en Diario
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+
 
                 <button onClick={resetScanner} style={{ padding: '8px', border: '1px solid var(--game-border-color)', borderRadius: '6px', cursor: 'pointer', background: 'none', color: 'var(--game-text)', fontSize: '12px', marginTop: '6px' }}>
                   ↩ Volver a escanear

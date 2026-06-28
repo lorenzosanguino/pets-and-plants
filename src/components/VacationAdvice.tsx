@@ -4,11 +4,10 @@ import { TTSButton } from '../utils/useTTS';
 import { renderMarkdownToHTML } from '../utils/markdown';
 import { useTranslations } from '../utils/i18n';
 interface VacationAdviceProps {
-  mode: 'plants' | 'pets' | 'exotics' | 'travels';
+  mode: 'plants' | 'pets' | 'travels';
   theme?: string;
   mascotas?: any[];
   plantas?: any[];
-  exoticos?: any[];
 }
 
 export const VacationAdvice: React.FC<VacationAdviceProps> = ({ 
@@ -16,14 +15,12 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
   theme = 'nature',
   mascotas = [],
   plantas = [],
-  exoticos = []
 }) => {
   const { locale } = useTranslations();
   const [prevMode, setPrevMode] = useState(mode);
-  const [activeTab, setActiveTab] = useState<'plants' | 'cats' | 'dogs' | 'exotics'>(() => {
+  const [activeTab, setActiveTab] = useState<'plants' | 'cats' | 'dogs'>(() => {
     if (mode === 'plants') return 'plants';
     if (mode === 'pets') return 'cats';
-    if (mode === 'exotics') return 'exotics';
     return 'plants';
   });
   const [query, setQuery] = useState('');
@@ -32,7 +29,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
 
   if (mode !== prevMode) {
     setPrevMode(mode);
-    setActiveTab(mode === 'plants' ? 'plants' : mode === 'pets' ? 'cats' : mode === 'exotics' ? 'exotics' : 'plants');
+    setActiveTab(mode === 'plants' ? 'plants' : mode === 'pets' ? 'cats' : 'plants');
     setChatMessages([]);
     setQuery('');
   }
@@ -50,15 +47,13 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
     setLoading(true);
     try {
       // Determine appropriate advisor context
-      let consultantType: 'agronomo' | 'veterinario' | 'exoticos' = 'agronomo';
+      let consultantType: 'agronomo' | 'veterinario' = 'agronomo';
       let contextLabel = 'Plantas';
 
       if (activeTab === 'plants') {
         consultantType = 'agronomo';
         contextLabel = locale === 'en' ? 'Plants' : 'Plantas';
-      } else if (activeTab === 'exotics') {
-        consultantType = 'exoticos';
-        contextLabel = locale === 'en' ? 'Exotic Animals' : 'Animales Exóticos';
+
       } else {
         consultantType = 'veterinario';
         contextLabel = activeTab === 'cats' 
@@ -81,7 +76,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
         consultantType, 
         promptContext,
         undefined,
-        { mascotas, plantas, exoticos },
+        { mascotas, plantas },
         undefined,
         historyForAPI
       );
@@ -121,7 +116,6 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
         <p style={{ margin: '0', fontSize: '13px', color: '#666', lineHeight: '1.4' }}>
           {mode === 'plants' && 'Encuentra consejos expertos e ideas para mantener tus plantas seguras durante tus ausencias.'}
           {mode === 'pets' && 'Directrices y checklist para el cuidado de tus perros y gatos cuando te vas de viaje.'}
-          {mode === 'exotics' && 'Información crítica sobre soporte vital y cuidado de animales exóticos durante tus vacaciones.'}
           {mode === 'travels' && 'Selecciona una categoría para ver consejos expertos e ideas para tus ausencias de vacaciones.'}
         </p>
       </div>
@@ -164,19 +158,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
           >
             🐶 Perros
           </button>
-          {mode === 'travels' && (
-            <button
-              onClick={() => { setActiveTab('exotics'); setChatMessages([]); }}
-              style={{
-                flex: 1, padding: '10px', background: activeTab === 'exotics' ? 'var(--game-accent-light, #f3e5f5)' : 'transparent',
-                color: activeTab === 'exotics' ? '#7b1fa2' : '#666', border: 'none',
-                borderBottom: activeTab === 'exotics' ? '3px solid #7b1fa2' : '3px solid transparent',
-                fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap'
-              }}
-            >
-              🦎 Exóticos
-            </button>
-          )}
+
         </div>
       )}
 
@@ -198,7 +180,6 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
               type="text"
               placeholder={
                 activeTab === 'plants' ? 'Pregunta sobre tus plantas...' : 
-                activeTab === 'exotics' ? 'Pregunta sobre tu animal exótico...' :
                 activeTab === 'cats' ? 'Pregunta sobre tus gatos...' : 'Pregunta sobre tus perros...'
               }
               value={query}
@@ -210,7 +191,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
               disabled={loading}
               style={{
                 padding: '8px 16px',
-                background: activeTab === 'plants' ? '#2e7d32' : (activeTab === 'exotics' ? '#7b1fa2' : (activeTab === 'cats' ? '#1976d2' : '#e65100')),
+                background: activeTab === 'plants' ? '#2e7d32' : (activeTab === 'cats' ? '#1976d2' : '#e65100'),
                 color: '#fff',
                 border: 'none',
                 borderRadius: '8px',
@@ -246,8 +227,8 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
                   borderRadius: msg.sender === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
                   background: msg.sender === 'user'
                     ? (theme === 'gaming'
-                      ? (activeTab === 'plants' ? 'rgba(76, 175, 80, 0.15)' : (activeTab === 'exotics' ? 'rgba(156, 39, 176, 0.15)' : (activeTab === 'cats' ? 'rgba(33, 150, 243, 0.15)' : 'rgba(255, 152, 0, 0.15)')))
-                      : (activeTab === 'plants' ? '#e8f5e9' : (activeTab === 'exotics' ? '#f3e5f5' : (activeTab === 'cats' ? '#e3f2fd' : '#fff3e0'))))
+                      ? (activeTab === 'plants' ? 'rgba(76, 175, 80, 0.15)' : (activeTab === 'cats' ? 'rgba(33, 150, 243, 0.15)' : 'rgba(255, 152, 0, 0.15)'))
+                      : (activeTab === 'plants' ? '#e8f5e9' : (activeTab === 'cats' ? '#e3f2fd' : '#fff3e0')))
                     : 'var(--game-card-bg, #ffffff)',
                   border: '1px solid var(--game-border-color, #e0e0e0)',
                   color: msg.sender === 'user'
@@ -323,22 +304,6 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
               <li><strong>Documentación y Vacunas:</strong> Lleva su cartilla veterinaria oficial y asegúrate de que la vacuna de la Rabia y el microchip estén registrados y al día.</li>
               <li><strong>Hidratación en Ruta:</strong> Realiza paradas cada 2 horas para que estire las patas, orine y beba agua fresca. Nunca lo dejes solo en el coche al sol.</li>
               <li><strong>Botiquín del Viajero:</strong> Prepara un pequeño neceser con gasas, desinfectante (clorhexidina), sus medicamentos usuales y protectores para las almohadillas.</li>
-            </ul>
-          </div>
-        )}
-
-        {activeTab === 'exotics' && (
-          <div>
-            <h4 style={{ margin: '0 0 10px 0', color: '#7b1fa2', fontWeight: 'bold', fontSize: '14px' }}>
-              ⚠️ Consulta Obligatoria con un Especialista en Exóticos
-            </h4>
-            <p style={{ margin: '0 0 10px 0', fontSize: '12.5px', color: '#555', lineHeight: '1.4' }}>
-              Los animales exóticos (serpientes, ranas, geckos, arañas, etc.) dependen críticamente de condiciones específicas que no son generalizables. Te recomendamos encarecidamente consultar a un profesional antes de viajar.
-            </p>
-            <ul style={{ margin: '0', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li><strong>Parámetros Críticos del Terrario:</strong> Verifica minuciosamente los calentadores, humidificadores y lámparas UVB. Conéctalos a temporizadores digitales de confianza.</li>
-              <li><strong>Alimentación Específica:</strong> Algunas especies pueden ayunar bajo supervisión, pero los anfibios o crías requieren alimentación e hidratación diarias constantes difíciles de automatizar.</li>
-              <li><strong>Veterinario de Exóticos de Guardia:</strong> Localiza la clínica de exóticos 24 horas más cercana y deja sus datos visibles para el cuidador que supervise a los animales.</li>
             </ul>
           </div>
         )}

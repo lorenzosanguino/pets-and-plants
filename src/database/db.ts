@@ -1,4 +1,4 @@
-import type { Mascota, Planta, CatalogoPlanta, AnimalExotico, EventoCalendario, ChatHistorial, AccionSincronizacion, NotificacionProgramada } from './types';
+import type { Mascota, Planta, CatalogoPlanta, EventoCalendario, ChatHistorial, AccionSincronizacion, NotificacionProgramada } from './types';
 
 const DB_NAME = 'PetPlantDB';
 const DB_VERSION = 4;
@@ -149,9 +149,7 @@ function openDB(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains('plantas')) {
         db.createObjectStore('plantas', { keyPath: 'id' });
       }
-      if (!db.objectStoreNames.contains('exoticos')) {
-        db.createObjectStore('exoticos', { keyPath: 'id' });
-      }
+
       if (!db.objectStoreNames.contains('eventos_calendario')) {
         db.createObjectStore('eventos_calendario', { keyPath: 'id' });
       }
@@ -255,53 +253,7 @@ export class LocalDatabase {
     });
   }
 
-  static async getExoticos(): Promise<AnimalExotico[]> {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction('exoticos', 'readonly');
-      const store = tx.objectStore('exoticos');
-      const req = store.getAll();
-      req.onsuccess = () => resolve(req.result || []);
-      tx.onerror = () => reject(tx.error);
-      tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
-    });
-  }
 
-  static async saveExotico(exotico: AnimalExotico): Promise<void> {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction('exoticos', 'readwrite');
-      const store = tx.objectStore('exoticos');
-      store.put(exotico);
-      tx.oncomplete = () => {
-        if (!LocalDatabase._isSeedingInProgress) {
-          import('../services/syncQueue').then(({ SyncQueueService }) => {
-            SyncQueueService.enqueue('save_exotico', exotico).catch(err => console.error(err));
-          });
-        }
-        resolve();
-      };
-      tx.onerror = () => reject(tx.error);
-      tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
-    });
-  }
-
-  static async deleteExotico(id: string): Promise<void> {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction('exoticos', 'readwrite');
-      const store = tx.objectStore('exoticos');
-      store.delete(id);
-      tx.oncomplete = () => {
-        import('../services/syncQueue').then(({ SyncQueueService }) => {
-          SyncQueueService.enqueue('delete_exotico', id).catch(err => console.error(err));
-        });
-        resolve();
-      };
-      tx.onerror = () => reject(tx.error);
-      tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
-    });
-  }
 
   static async getEventosCalendario(): Promise<EventoCalendario[]> {
     const db = await openDB();
@@ -478,27 +430,7 @@ export class LocalDatabase {
       });
     }
 
-    const exoticos = await this.getExoticos();
-    if (exoticos.length === 0) {
-      await this.saveExotico({
-        id: 'exotico-tarantula-id',
-        nombre: "Spidey",
-        especie: "Tarántula",
-        tipoEspecifico: "Tarántula de rodillas rojas",
-        temperaturaTerrario: 26,
-        humedadTerrario: 70,
-        ultimaAlimentacion: new Date(Date.now() - 4 * 24 * 3600 * 1000).toISOString(),
-        intervaloAlimentacionDias: 7,
-        diarioExotico: [
-          { id: '1', fecha: new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString(), nota: "Humedad estable, comió un grillo mediano.", categoria: "Observación general" }
-        ],
-        fotoUrl: "", // Base64 or empty placeholder
-        chip: "981020004000",
-        historialPasado: [
-          { id: 'h3', fecha: '2026-04-15', tipo: 'Muda', descripcion: 'Completó exitosamente su proceso de muda.' }
-        ]
-      });
-    }
+
 
       if (typeof window !== 'undefined') {
         localStorage.setItem('petplant_seed_done', 'true');
@@ -515,10 +447,9 @@ export class LocalDatabase {
     }
     const db = await openDB();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(['mascotas', 'plantas', 'exoticos', 'eventos_calendario', 'chats_consultor'], 'readwrite');
+      const tx = db.transaction(['mascotas', 'plantas', 'eventos_calendario', 'chats_consultor'], 'readwrite');
       tx.objectStore('mascotas').clear();
       tx.objectStore('plantas').clear();
-      tx.objectStore('exoticos').clear();
       tx.objectStore('eventos_calendario').clear();
       tx.objectStore('chats_consultor').clear();
 
@@ -564,21 +495,18 @@ export class LocalDatabase {
     });
   }
 
-  static async overwriteDatabase(mascotas: Mascota[], plantas: Planta[], exoticos: AnimalExotico[]): Promise<void> {
+  static async overwriteDatabase(mascotas: Mascota[], plantas: Planta[]): Promise<void> {
     const db = await openDB();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(['mascotas', 'plantas', 'exoticos'], 'readwrite');
+      const tx = db.transaction(['mascotas', 'plantas'], 'readwrite');
       const petStore = tx.objectStore('mascotas');
       const plantStore = tx.objectStore('plantas');
-      const exoticStore = tx.objectStore('exoticos');
 
       petStore.clear();
       plantStore.clear();
-      exoticStore.clear();
 
       mascotas.forEach(m => petStore.put(m));
       plantas.forEach(p => plantStore.put(p));
-      exoticos.forEach(e => exoticStore.put(e));
 
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
@@ -589,13 +517,12 @@ export class LocalDatabase {
   static async overwriteFullDatabase(
     mascotas: Mascota[],
     plantas: Planta[],
-    exoticos: AnimalExotico[],
     eventos?: EventoCalendario[],
     chats?: ChatHistorial[]
   ): Promise<void> {
     const db = await openDB();
     return new Promise((resolve, reject) => {
-      const storesToTransaction = ['mascotas', 'plantas', 'exoticos'];
+      const storesToTransaction = ['mascotas', 'plantas'];
       if (eventos !== undefined) storesToTransaction.push('eventos_calendario');
       if (chats !== undefined) storesToTransaction.push('chats_consultor');
 
@@ -603,15 +530,12 @@ export class LocalDatabase {
       
       const petStore = tx.objectStore('mascotas');
       const plantStore = tx.objectStore('plantas');
-      const exoticStore = tx.objectStore('exoticos');
 
       petStore.clear();
       plantStore.clear();
-      exoticStore.clear();
 
       mascotas.forEach(m => petStore.put(m));
       plantas.forEach(p => plantStore.put(p));
-      exoticos.forEach(e => exoticStore.put(e));
 
       if (eventos !== undefined) {
         const eventStore = tx.objectStore('eventos_calendario');

@@ -162,6 +162,12 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
     aislamiento: string;
   } | null>(null);
 
+  // Collapsible sections states
+  const [showRiego, setShowRiego] = useState(false);
+  const [showIncidencias, setShowIncidencias] = useState(false);
+  const [showCrecimiento, setShowCrecimiento] = useState(false);
+  const [showDiarioFoliar, setShowDiarioFoliar] = useState(false);
+
   const [histFecha, setHistFecha] = useState('');
   const [histTipo, setHistTipo] = useState<'Enfermedad' | 'Parásito' | 'Poda' | 'Tratamiento' | 'Muda' | 'Otro'>('Poda');
   const [histDesc, setHistDesc] = useState('');
@@ -1338,325 +1344,387 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
 
           {/* Calendario de Riego Semanal Interactivo */}
           {renderCalendarioRiegoSemanal()}
-          {/* Historial de Incidencias Pasadas (Podas, plagas, trasplantes) */}
+          {/* Historial de Incidencias Pasadas Colapsable */}
           <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px' }}>
-            <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>
-              📋 Historial de Podas e Incidencias Pasadas
-            </p>
-            
-            <form onSubmit={agregarIncidenciaPasada} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }} className="no-print">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
-                <input 
-                  type="date" 
-                  value={histFecha} 
-                  onChange={(e) => setHistFecha(e.target.value)} 
-                  required
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} 
-                />
-                <select 
-                  value={histTipo} 
-                  onChange={(e) => setHistTipo(e.target.value as any)}
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
-                >
-                  <option value="Poda">Poda</option>
-                  <option value="Tratamiento">Tratamiento</option>
-                  <option value="Enfermedad">Enfermedad</option>
-                  <option value="Parásito">Parásito</option>
-                  <option value="Otro">Otro</option>
-                </select>
+            <div style={{ background: 'var(--game-card-bg, #fafafa)', padding: '12px', borderRadius: 'var(--game-radius, 8px)', border: '1px solid var(--game-border-color, #eee)' }}>
+              <div 
+                onClick={() => setShowIncidencias(!showIncidencias)}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  userSelect: 'none'
+                }}
+              >
+                <p style={{ margin: '0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  📋 Historial de Podas e Incidencias
+                </p>
+                <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontWeight: 'bold' }}>
+                  {showIncidencias ? '▲' : '▼'}
+                </span>
               </div>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <input 
-                  type="text" 
-                  placeholder="Descripción (ej: Poda severa, trasplante, ácaros...)" 
-                  value={histDesc} 
-                  onChange={(e) => setHistDesc(e.target.value)} 
-                  required
-                  style={{ flex: 1, padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
-                />
-                <button type="submit" style={{ padding: '6px 12px', background: '#1a1a1a', color: theme === 'gaming' ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
-                  Añadir
-                </button>
-              </div>
-            </form>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '120px', overflowY: 'auto' }}>
-              {(planta.historialPasado || []).length === 0 ? (
-                <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>Sin incidencias registradas.</span>
-              ) : (
-                (planta.historialPasado || []).map(h => (
-                  <div key={h.id} style={{ padding: '6px 8px', background: 'var(--game-accent-light, #fafafa)', borderRadius: '4px', borderLeft: '3px solid #4caf50', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <span style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', display: 'block' }}>{h.tipo.toUpperCase()} • {h.fecha}</span>
-                      <span style={{ color: 'var(--game-text-bright)' }}>{h.descripcion}</span>
+              {showIncidencias && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px', borderTop: '1px dashed var(--game-border-color, #eee)', paddingTop: '10px' }}>
+                  <form onSubmit={agregarIncidenciaPasada} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }} className="no-print">
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
+                      <input 
+                        type="date" 
+                        value={histFecha} 
+                        onChange={(e) => setHistFecha(e.target.value)} 
+                        required
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} 
+                      />
+                      <select 
+                        value={histTipo} 
+                        onChange={(e) => setHistTipo(e.target.value as any)}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
+                      >
+                        <option value="Poda">Poda</option>
+                        <option value="Tratamiento">Tratamiento</option>
+                        <option value="Enfermedad">Enfermedad</option>
+                        <option value="Parásito">Parásito</option>
+                        <option value="Otro">Otro</option>
+                      </select>
                     </div>
-                    <button 
-                      type="button"
-                      onClick={async () => {
-                        const filtrado = (planta.historialPasado || []).filter(x => x.id !== h.id);
-                        const plantaAct = { ...planta, historialPasado: filtrado };
-                        await LocalDatabase.savePlanta(plantaAct);
-                        onUpdate();
-                      }}
-                      style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', padding: '0 4px' }}
-                    >
-                      🗑️
-                    </button>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <input 
+                        type="text" 
+                        placeholder="Descripción (ej: Poda severa, trasplante, ácaros...)" 
+                        value={histDesc} 
+                        onChange={(e) => setHistDesc(e.target.value)} 
+                        required
+                        style={{ flex: 1, padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
+                      />
+                      <button type="submit" style={{ padding: '6px 12px', background: '#1a1a1a', color: theme === 'gaming' ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
+                        Añadir
+                      </button>
+                    </div>
+                  </form>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '120px', overflowY: 'auto' }}>
+                    {(planta.historialPasado || []).length === 0 ? (
+                      <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>Sin incidencias registradas.</span>
+                    ) : (
+                      (planta.historialPasado || []).map(h => (
+                        <div key={h.id} style={{ padding: '6px 8px', background: 'var(--game-accent-light, #fafafa)', borderRadius: '4px', borderLeft: '3px solid #4caf50', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <span style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', display: 'block' }}>{h.tipo.toUpperCase()} • {h.fecha}</span>
+                            <span style={{ color: 'var(--game-text-bright)' }}>{h.descripcion}</span>
+                          </div>
+                          <button 
+                            type="button"
+                            onClick={async () => {
+                              const filtrado = (planta.historialPasado || []).filter(x => x.id !== h.id);
+                              const plantaAct = { ...planta, historialPasado: filtrado };
+                              await LocalDatabase.savePlanta(plantaAct);
+                              onUpdate();
+                            }}
+                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', padding: '0 4px' }}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      ))
+                    )}
                   </div>
-                ))
+                </div>
               )}
             </div>
           </div>
 
-          {/* Crecimiento de la Planta */}
+          {/* Historial de Crecimiento Colapsable */}
           <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <h4 style={{ margin: '0', fontSize: '13px', color: 'var(--game-text-bright, #333)', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)' }}>
-              📈 Historial de Crecimiento (Altura)
-            </h4>
-            {(() => {
-              const chartData = (planta.registroCrecimiento || []).map(r => ({
-                fecha: r.fecha,
-                valor: r.alturaCm
-              }));
-
-              let accentColor = '#2e7d32'; // nature
-              if (theme === 'kawaii') accentColor = '#ff6b8b';
-              else if (theme === 'gaming') accentColor = '#66fcf1';
-
-              return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <BiometricChart
-                    data={chartData}
-                    yLabel="Altura (cm)"
-                    color={accentColor}
-                    theme={theme as any}
-                  />
-                  <form onSubmit={registrarCrecimiento} style={{ display: 'flex', gap: '8px', margin: '4px 0' }} className="no-print">
-                    <input
-                      type="number"
-                      step="0.1"
-                      placeholder="Nueva altura (cm)"
-                      value={nuevoCrecimiento}
-                      onChange={(e) => setNuevoCrecimiento(e.target.value)}
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                        padding: '8px 12px',
-                        background: 'var(--game-bg, #ffffff)',
-                        color: 'var(--game-text-bright, #333)',
-                        border: 'var(--game-border, 1px solid #eaeaea)',
-                        borderRadius: 'var(--game-radius, 8px)',
-                        fontSize: '13px',
-                        fontFamily: 'var(--game-font, sans-serif)',
-                        outline: 'none'
-                      }}
-                    />
-                    <button
-                      type="submit"
-                      style={{
-                        padding: '8px 16px',
-                        background: 'var(--game-accent, #2e7d32)',
-                        color: theme === 'gaming' ? '#000000' : 'var(--game-text-bright, #fff)',
-                        border: 'var(--game-border, none)',
-                        borderRadius: 'var(--game-radius, 8px)',
-                        fontSize: '13px',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        fontFamily: 'var(--game-font, sans-serif)',
-                        flexShrink: 0
-                      }}
-                    >
-                      Medir 📏
-                    </button>
-                  </form>
-                </div>
-              );
-            })()}
-          </div>
-
-          {/* Diario Foliar de la Planta */}
-          <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <h4 style={{ margin: '0', fontSize: '13px', color: 'var(--game-text-bright, #333)', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)' }}>
-              📓 Diario Foliar y Diagnóstico
-            </h4>
-            <form onSubmit={agregarNotaFoliar} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }} className="no-print">
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <select 
-                  value={estadoHoja} 
-                  onChange={(e) => setEstadoHoja(e.target.value as any)}
-                  style={{ padding: '6px', border: 'var(--game-border, 1px solid #eaeaea)', borderRadius: 'var(--game-radius, 6px)', fontSize: '12px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
-                >
-                  <option value="Excelente">Excelente</option>
-                  <option value="Normal">Normal</option>
-                  <option value="Clorosis/Lesión">Clorosis/Lesión</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder="Nueva nota agrónoma..."
-                  value={nota}
-                  onChange={(e) => setNota(e.target.value)}
-                  style={{ flex: 1, minWidth: 0, padding: '8px 12px', border: 'var(--game-border, 1px solid #eaeaea)', borderRadius: 'var(--game-radius, 6px)', fontSize: '13px', background: 'var(--game-bg)', color: 'var(--game-text-bright)', outline: 'none' }}
-                />
+            <div style={{ background: 'var(--game-card-bg, #fafafa)', padding: '12px', borderRadius: 'var(--game-radius, 8px)', border: '1px solid var(--game-border-color, #eee)', width: '100%', boxSizing: 'border-box' }}>
+              <div 
+                onClick={() => setShowCrecimiento(!showCrecimiento)}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  userSelect: 'none'
+                }}
+              >
+                <p style={{ margin: '0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  📈 Historial de Crecimiento (Altura)
+                </p>
+                <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontWeight: 'bold' }}>
+                  {showCrecimiento ? '▲' : '▼'}
+                </span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <button type="submit" style={{ padding: '8px', background: 'var(--game-accent, #1a1a1a)', color: theme === 'gaming' ? '#000' : '#fff', border: 'none', borderRadius: 'var(--game-radius, 6px)', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'var(--game-font, sans-serif)' }}>
-                  Registrar Nota
-                </button>
-                {onOpenScanner && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
-                    <button 
-                      type="button" 
-                      onClick={() => onOpenScanner('enfermedad_planta', planta.id)} 
-                      disabled={!cuota.esIlimitado && cuota.restantes === 0}
-                      style={{ 
-                        width: '100%',
-                        padding: '8px', 
-                        background: (!cuota.esIlimitado && cuota.restantes === 0) ? '#e0e0e0' : 'var(--game-accent-light, rgba(46, 125, 50, 0.1))', 
-                        color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#9e9e9e' : 'var(--game-text-bright, #2e7d32)', 
-                        border: '1.5px solid ' + ((!cuota.esIlimitado && cuota.restantes === 0) ? '#ccc' : 'var(--game-border-color, #2e7d32)'), 
-                        borderRadius: 'var(--game-radius, 6px)', 
-                        fontSize: '13px', 
-                        fontWeight: 'bold', 
-                        cursor: (!cuota.esIlimitado && cuota.restantes === 0) ? 'not-allowed' : 'pointer',
-                        fontFamily: 'var(--game-font, sans-serif)',
-                        transition: 'transform 0.2s'
-                      }}
-                    >
-                      Analizar Enfermedad Foliar por IA 🍂 📷
-                    </button>
-                    <span style={{ fontSize: '10px', color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#c62828' : 'var(--game-text, #666)', textAlign: 'center', display: 'block', fontWeight: '500' }}>
-                      {cuota.esIlimitado 
-                        ? '⚡ Modo Premium: Análisis ilimitados' 
-                        : cuota.restantes === 0 
-                          ? `❌ Límite diario alcanzado (Espera ${IAQuotaManager.obtenerMensajeTiempoRestante()} o añade tu API Key en Ajustes ⚙️)` 
-                          : `🔑 Te quedan ${cuota.restantes} análisis de IA hoy`}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </form>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '160px', overflowY: 'auto' }}>
-              {(planta.diarioFoliar || []).length === 0 ? (
-                <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>Sin notas en el diario foliar.</span>
-              ) : (
-                (() => {
-                  const parseIAReportePlanta = (nota: string) => {
-                    let diagnostico: string;
-                    let tratamiento = '';
-                    let aislamiento = '';
+              {showCrecimiento && (
+                <div style={{ marginTop: '12px', borderTop: '1px dashed var(--game-border-color, #eee)', paddingTop: '10px' }}>
+                  {(() => {
+                    const chartData = (planta.registroCrecimiento || []).map(r => ({
+                      fecha: r.fecha,
+                      valor: r.alturaCm
+                    }));
 
-                    const diagKey = '[IA Diagnóstico Fitosanitario]:';
-                    const tratKey = '| Tratamiento:';
-                    const aisKey = '| Aislamiento sugerido:';
-
-                    const diagIdx = nota.indexOf(diagKey);
-                    const tratIdx = nota.indexOf(tratKey);
-                    const aisIdx = nota.indexOf(aisKey);
-
-                    if (diagIdx !== -1) {
-                      const start = diagIdx + diagKey.length;
-                      const end = tratIdx !== -1 ? tratIdx : (aisIdx !== -1 ? aisIdx : nota.length);
-                      diagnostico = nota.substring(start, end).trim();
-                    } else {
-                      diagnostico = nota;
-                    }
-
-                    if (tratIdx !== -1) {
-                      const start = tratIdx + tratKey.length;
-                      const end = aisIdx !== -1 ? aisIdx : nota.length;
-                      tratamiento = nota.substring(start, end).trim();
-                    }
-
-                    if (aisIdx !== -1) {
-                      const start = aisIdx + aisKey.length;
-                      aislamiento = nota.substring(start).trim();
-                    }
-
-                    return {
-                      diagnostico: diagnostico || 'No especificado',
-                      tratamiento: tratamiento || 'No especificado',
-                      aislamiento: aislamiento || 'No sugerido'
-                    };
-                  };
-
-                  return (planta.diarioFoliar || []).map(d => {
-                    const esIAReporte = d.nota.startsWith('[IA');
-                    const fechaFmt = new Date(d.fecha).toLocaleDateString();
-                    const textoMostrar = esIAReporte 
-                      ? `análisis fitosanitario - (${fechaFmt})`
-                      : d.nota;
+                    let accentColor = '#2e7d32'; // nature
+                    if (theme === 'kawaii') accentColor = '#ff6b8b';
+                    else if (theme === 'gaming') accentColor = '#66fcf1';
 
                     return (
-                      <div 
-                        key={d.id} 
-                        onClick={() => {
-                          if (esIAReporte) {
-                            const parsed = parseIAReportePlanta(d.nota);
-                            setIaReporteModal({
-                              fecha: fechaFmt,
-                              diagnostico: parsed.diagnostico,
-                              tratamiento: parsed.tratamiento,
-                              aislamiento: parsed.aislamiento
-                            });
-                          }
-                        }}
-                        style={{ 
-                          padding: '8px', 
-                          borderLeft: `3px solid ${d.estadoGeneral === 'Excelente' ? '#4caf50' : d.estadoGeneral === 'Normal' ? '#2196f3' : '#ff9800'}`, 
-                          background: 'var(--game-accent-light, #fafafa)', 
-                          fontSize: '11px', 
-                          borderRadius: 'var(--game-radius, 4px)',
-                          cursor: esIAReporte ? 'pointer' : 'default',
-                          transition: 'background 0.2s',
-                          userSelect: 'none'
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--game-text, #888)', marginBottom: '2px', fontSize: '9px', alignItems: 'center' }}>
-                          <span>
-                            ESTADO: {d.estadoGeneral.toUpperCase()} • {fechaFmt} {esIAReporte && '🔍 Click para ver análisis'}
-                          </span>
-                          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
-                            {deleteConfirmId === d.id ? (
-                              <>
-                                <button 
-                                  type="button"
-                                  onClick={() => eliminarNotaFoliar(d.id)}
-                                  style={{ background: '#d32f2f', color: '#fff', border: 'none', borderRadius: '3px', padding: '1px 4px', fontSize: '8px', fontWeight: 'bold', cursor: 'pointer' }}
-                                >
-                                  Sí
-                                </button>
-                                <button 
-                                  type="button"
-                                  onClick={() => setDeleteConfirmId(null)}
-                                  style={{ background: '#ccc', color: '#333', border: 'none', borderRadius: '3px', padding: '1px 3px', fontSize: '8px', cursor: 'pointer' }}
-                                >
-                                  No
-                                </button>
-                              </>
-                            ) : (
-                              <button 
-                                type="button"
-                                onClick={() => setDeleteConfirmId(d.id)}
-                                style={{ background: 'transparent', color: 'var(--game-text, #888)', border: 'none', fontSize: '10px', cursor: 'pointer', padding: '0 4px' }}
-                              >
-                                🗑️
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        <span style={{ 
-                          color: 'var(--game-text-bright, #333)', 
-                          fontFamily: 'var(--game-font, sans-serif)',
-                          textDecoration: esIAReporte ? 'underline' : 'none',
-                          fontWeight: esIAReporte ? '500' : 'normal'
-                        }}>
-                          {textoMostrar}
-                        </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <BiometricChart
+                          data={chartData}
+                          yLabel="Altura (cm)"
+                          color={accentColor}
+                          theme={theme as any}
+                        />
+                        <form onSubmit={registrarCrecimiento} style={{ display: 'flex', gap: '8px', margin: '4px 0' }} className="no-print">
+                          <input
+                            type="number"
+                            step="0.1"
+                            placeholder="Nueva altura (cm)"
+                            value={nuevoCrecimiento}
+                            onChange={(e) => setNuevoCrecimiento(e.target.value)}
+                            style={{
+                              flex: 1,
+                              minWidth: 0,
+                              padding: '8px 12px',
+                              background: 'var(--game-bg, #ffffff)',
+                              color: 'var(--game-text-bright, #333)',
+                              border: 'var(--game-border, 1px solid #eaeaea)',
+                              borderRadius: 'var(--game-radius, 8px)',
+                              fontSize: '13px',
+                              fontFamily: 'var(--game-font, sans-serif)',
+                              outline: 'none'
+                            }}
+                          />
+                          <button
+                            type="submit"
+                            style={{
+                              padding: '8px 16px',
+                              background: 'var(--game-accent, #2e7d32)',
+                              color: theme === 'gaming' ? '#000000' : 'var(--game-text-bright, #fff)',
+                              border: 'var(--game-border, none)',
+                              borderRadius: 'var(--game-radius, 8px)',
+                              fontSize: '13px',
+                              fontWeight: 'bold',
+                              cursor: 'pointer',
+                              fontFamily: 'var(--game-font, sans-serif)',
+                              flexShrink: 0
+                            }}
+                          >
+                            Medir 📏
+                          </button>
+                        </form>
                       </div>
                     );
-                  });
-                })()
+                  })()}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Diario Foliar Colapsable */}
+          <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ background: 'var(--game-card-bg, #fafafa)', padding: '12px', borderRadius: 'var(--game-radius, 8px)', border: '1px solid var(--game-border-color, #eee)', width: '100%', boxSizing: 'border-box' }}>
+              <div 
+                onClick={() => setShowDiarioFoliar(!showDiarioFoliar)}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  userSelect: 'none'
+                }}
+              >
+                <p style={{ margin: '0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  📓 Diario Foliar y Diagnóstico
+                </p>
+                <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontWeight: 'bold' }}>
+                  {showDiarioFoliar ? '▲' : '▼'}
+                </span>
+              </div>
+
+              {showDiarioFoliar && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px', borderTop: '1px dashed var(--game-border-color, #eee)', paddingTop: '10px' }}>
+                  <form onSubmit={agregarNotaFoliar} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }} className="no-print">
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <select 
+                        value={estadoHoja} 
+                        onChange={(e) => setEstadoHoja(e.target.value as any)}
+                        style={{ padding: '6px', border: 'var(--game-border, 1px solid #eaeaea)', borderRadius: 'var(--game-radius, 6px)', fontSize: '12px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
+                      >
+                        <option value="Excelente">Excelente</option>
+                        <option value="Normal">Normal</option>
+                        <option value="Clorosis/Lesión">Clorosis/Lesión</option>
+                      </select>
+                      <input
+                        type="text"
+                        placeholder="Nueva nota agrónoma..."
+                        value={nota}
+                        onChange={(e) => setNota(e.target.value)}
+                        style={{ flex: 1, minWidth: 0, padding: '8px 12px', border: 'var(--game-border, 1px solid #eaeaea)', borderRadius: 'var(--game-radius, 6px)', fontSize: '13px', background: 'var(--game-bg)', color: 'var(--game-text-bright)', outline: 'none' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <button type="submit" style={{ padding: '8px', background: 'var(--game-accent, #1a1a1a)', color: theme === 'gaming' ? '#000' : '#fff', border: 'none', borderRadius: 'var(--game-radius, 6px)', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'var(--game-font, sans-serif)' }}>
+                        Registrar Nota
+                      </button>
+                      {onOpenScanner && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
+                          <button 
+                            type="button" 
+                            onClick={() => onOpenScanner('enfermedad_planta', planta.id)} 
+                            disabled={!cuota.esIlimitado && cuota.restantes === 0}
+                            style={{ 
+                              width: '100%',
+                              padding: '8px', 
+                              background: (!cuota.esIlimitado && cuota.restantes === 0) ? '#e0e0e0' : 'var(--game-accent-light, rgba(46, 125, 50, 0.1))', 
+                              color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#9e9e9e' : 'var(--game-text-bright, #2e7d32)', 
+                              border: '1.5px solid ' + ((!cuota.esIlimitado && cuota.restantes === 0) ? '#ccc' : 'var(--game-border-color, #2e7d32)'), 
+                              borderRadius: 'var(--game-radius, 6px)', 
+                              fontSize: '13px', 
+                              fontWeight: 'bold', 
+                              cursor: (!cuota.esIlimitado && cuota.restantes === 0) ? 'not-allowed' : 'pointer',
+                              fontFamily: 'var(--game-font, sans-serif)',
+                              transition: 'transform 0.2s'
+                            }}
+                          >
+                            Analizar Enfermedad Foliar por IA 🍂 📷
+                          </button>
+                          <span style={{ fontSize: '10px', color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#c62828' : 'var(--game-text, #666)', textAlign: 'center', display: 'block', fontWeight: '500' }}>
+                            {cuota.esIlimitado 
+                              ? '⚡ Modo Premium: Análisis ilimitados' 
+                              : cuota.restantes === 0 
+                                ? `❌ Límite diario alcanzado (Espera ${IAQuotaManager.obtenerMensajeTiempoRestante()} o añade tu API Key en Ajustes ⚙️)` 
+                                : `🔑 Te quedan ${cuota.restantes} análisis de IA hoy`}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </form>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '160px', overflowY: 'auto' }}>
+                    {(planta.diarioFoliar || []).length === 0 ? (
+                      <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>Sin notas en el diario foliar.</span>
+                    ) : (
+                      (() => {
+                        const parseIAReportePlanta = (nota: string) => {
+                          let diagnostico = '';
+                          let tratamiento = '';
+                          let aislamiento = '';
+
+                          const diagKey = '[IA Diagnóstico Fitosanitario]:';
+                          const tratKey = '| Tratamiento:';
+                          const aisKey = '| Aislamiento sugerido:';
+
+                          const diagIdx = nota.indexOf(diagKey);
+                          const tratIdx = nota.indexOf(tratKey);
+                          const aisIdx = nota.indexOf(aisKey);
+
+                          if (diagIdx !== -1) {
+                            const start = diagIdx + diagKey.length;
+                            const end = tratIdx !== -1 ? tratIdx : (aisIdx !== -1 ? aisIdx : nota.length);
+                            diagnostico = nota.substring(start, end).trim();
+                          } else {
+                            diagnostico = nota;
+                          }
+
+                          if (tratIdx !== -1) {
+                            const start = tratIdx + tratKey.length;
+                            const end = aisIdx !== -1 ? aisIdx : nota.length;
+                            tratamiento = nota.substring(start, end).trim();
+                          }
+
+                          if (aisIdx !== -1) {
+                            const start = aisIdx + aisKey.length;
+                            aislamiento = nota.substring(start).trim();
+                          }
+
+                          return {
+                            diagnostico: diagnostico || 'No especificado',
+                            tratamiento: tratamiento || 'No especificado',
+                            aislamiento: aislamiento || 'No sugerido'
+                          };
+                        };
+
+                        return (planta.diarioFoliar || []).map(d => {
+                          const esIAReporte = d.nota.startsWith('[IA');
+                          const fechaFmt = new Date(d.fecha).toLocaleDateString();
+                          const textoMostrar = esIAReporte 
+                            ? `análisis fitosanitario - (${fechaFmt})`
+                            : d.nota;
+
+                          return (
+                            <div 
+                              key={d.id} 
+                              onClick={() => {
+                                if (esIAReporte) {
+                                  const parsed = parseIAReportePlanta(d.nota);
+                                  setIaReporteModal({
+                                    fecha: fechaFmt,
+                                    diagnostico: parsed.diagnostico,
+                                    tratamiento: parsed.tratamiento,
+                                    aislamiento: parsed.aislamiento
+                                  });
+                                }
+                              }}
+                              style={{ 
+                                padding: '8px', 
+                                borderLeft: `3px solid ${d.estadoGeneral === 'Excelente' ? '#4caf50' : d.estadoGeneral === 'Normal' ? '#2196f3' : '#ff9800'}`, 
+                                background: 'var(--game-accent-light, #fafafa)', 
+                                fontSize: '11px', 
+                                borderRadius: 'var(--game-radius, 4px)',
+                                cursor: esIAReporte ? 'pointer' : 'default',
+                                transition: 'background 0.2s',
+                                userSelect: 'none'
+                              }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--game-text, #888)', marginBottom: '2px', fontSize: '9px', alignItems: 'center' }}>
+                                <span>
+                                  ESTADO: {d.estadoGeneral.toUpperCase()} • {fechaFmt} {esIAReporte && '🔍 Click para ver análisis'}
+                                </span>
+                                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                  {deleteConfirmId === d.id ? (
+                                    <>
+                                      <button 
+                                        type="button"
+                                        onClick={() => eliminarNotaFoliar(d.id)}
+                                        style={{ background: '#d32f2f', color: '#fff', border: 'none', borderRadius: '3px', padding: '1px 4px', fontSize: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+                                      >
+                                        Sí
+                                      </button>
+                                      <button 
+                                        type="button"
+                                        onClick={() => setDeleteConfirmId(null)}
+                                        style={{ background: '#ccc', color: '#333', border: 'none', borderRadius: '3px', padding: '1px 3px', fontSize: '8px', cursor: 'pointer' }}
+                                      >
+                                        No
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <button 
+                                      type="button"
+                                      onClick={() => setDeleteConfirmId(d.id)}
+                                      style={{ background: 'transparent', color: 'var(--game-text, #888)', border: 'none', fontSize: '10px', cursor: 'pointer', padding: '0 4px' }}
+                                    >
+                                      🗑️
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              <span style={{ 
+                                color: 'var(--game-text-bright, #333)', 
+                                fontFamily: 'var(--game-font, sans-serif)',
+                                textDecoration: esIAReporte ? 'underline' : 'none',
+                                fontWeight: esIAReporte ? '500' : 'normal'
+                              }}>
+                                {textoMostrar}
+                              </span>
+                            </div>
+                          );
+                        });
+                      })()
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           </div>

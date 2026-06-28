@@ -1,20 +1,18 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef } from 'react';
 import { LocalDatabase } from '../database/db';
-import type { Mascota, Planta, AnimalExotico, EventoCalendario } from '../database/types';
+import type { Mascota, Planta, EventoCalendario } from '../database/types';
 import { NotificationManager } from '../utils/notificationManager';
 
 interface RefreshedData {
   mascotas: Mascota[];
   plantas: Planta[];
-  exoticos: AnimalExotico[];
   climaActual: any;
 }
 
 // In-Memory Cache Layer for DB Reads
 let ramCacheMascotas: Mascota[] | null = null;
 let ramCachePlantas: Planta[] | null = null;
-let ramCacheExoticos: AnimalExotico[] | null = null;
 let ramCacheLastUpdated = 0;
 
 export const useAppData = (
@@ -22,7 +20,6 @@ export const useAppData = (
 ) => {
   const [mascotas, setMascotas] = useState<Mascota[]>([]);
   const [plantas, setPlantas] = useState<Planta[]>([]);
-  const [exoticos, setExoticos] = useState<AnimalExotico[]>([]);
   const [climaActual, setClimaActual] = useState<any>(() => {
     try {
       const saved = localStorage.getItem('petplant_last_gps_weather');
@@ -62,8 +59,7 @@ export const useAppData = (
   };
 
   const evaluarRecordatoriosYPendientes = async (
-    prefetchedPlantas?: Planta[],
-    prefetchedExoticos?: AnimalExotico[]
+    prefetchedPlantas?: Planta[]
   ) => {
     try {
       const listEventos: EventoCalendario[] = await LocalDatabase.getEventosCalendario();
@@ -94,7 +90,6 @@ export const useAppData = (
       );
 
       const listPlantas = prefetchedPlantas || await LocalDatabase.getPlantas();
-      const listExoticos = prefetchedExoticos || await LocalDatabase.getExoticos();
 
       const hoyInicioDia = new Date();
       hoyInicioDia.setHours(0, 0, 0, 0);
@@ -106,16 +101,8 @@ export const useAppData = (
         return prox <= hoyInicioDia && !notificadosRef.current.has(`riego-${p.id}`);
       });
 
-      const exoticosPendientes = listExoticos.filter(ex => {
-        if (!ex.ultimaAlimentacion || !ex.intervaloAlimentacionDias) return false;
-        const ult = new Date(ex.ultimaAlimentacion);
-        ult.setHours(0, 0, 0, 0);
-        const proxAlimentacion = new Date(ult.getTime() + ex.intervaloAlimentacionDias * 24 * 3600 * 1000);
-        proxAlimentacion.setHours(0, 0, 0, 0);
-        return proxAlimentacion <= hoyInicioDia && !notificadosRef.current.has(`alimentacion-${ex.id}`);
-      });
 
-      const totalAlertas = eventosMañana.length + eventosHoy.length + plantasPendientes.length + exoticosPendientes.length;
+      const totalAlertas = eventosMañana.length + eventosHoy.length + plantasPendientes.length;
       if (totalAlertas === 0) return;
 
       const permisoConcedido = await NotificationManager.requestPermission();
@@ -157,13 +144,6 @@ export const useAppData = (
         );
       }
 
-      for (const ex of exoticosPendientes) {
-        markNotificado(`alimentacion-${ex.id}`);
-        await NotificationManager.sendNotification(
-          `🦎 Alimentación Pendiente`,
-          `¡Es hora de alimentar a ${ex.nombre} (${ex.tipoEspecifico})!`
-        );
-      }
     } catch (err) {
       console.warn("Error al evaluar recordatorios y tareas pendientes:", err);
     }
@@ -177,28 +157,23 @@ export const useAppData = (
 
       let listMascotas: Mascota[];
       let listPlantas: Planta[];
-      let listExoticos: AnimalExotico[];
 
       const now = Date.now();
       // Cache hits for non-local edits (TTL = 2 seconds)
-      if (!isLocalEdit && ramCacheMascotas && ramCachePlantas && ramCacheExoticos && (now - ramCacheLastUpdated < 2000)) {
+      if (!isLocalEdit && ramCacheMascotas && ramCachePlantas && (now - ramCacheLastUpdated < 2000)) {
         listMascotas = ramCacheMascotas;
         listPlantas = ramCachePlantas;
-        listExoticos = ramCacheExoticos;
       } else {
         listMascotas = await LocalDatabase.getMascotas();
         listPlantas = await LocalDatabase.getPlantas();
-        listExoticos = await LocalDatabase.getExoticos();
         
         ramCacheMascotas = listMascotas;
         ramCachePlantas = listPlantas;
-        ramCacheExoticos = listExoticos;
         ramCacheLastUpdated = now;
       }
 
       setMascotas(listMascotas);
       setPlantas(listPlantas);
-      setExoticos(listExoticos);
 
       const savedClima = localStorage.getItem('petplant_last_gps_weather');
       let parsedClima = null;
@@ -215,14 +190,13 @@ export const useAppData = (
         onDataRefreshed({
           mascotas: listMascotas,
           plantas: listPlantas,
-          exoticos: listExoticos,
           climaActual: parsedClima
         }, isLocalEdit);
       }
 
       // Defer the notifications evaluation asynchronously to keep the UI snappy
       setTimeout(() => {
-        evaluarRecordatoriosYPendientes(listPlantas, listExoticos).catch(err => console.warn(err));
+        evaluarRecordatoriosYPendientes(listPlantas).catch(err => console.warn(err));
       }, 100);
     } catch (err) {
       console.error("Fallo al refrescar IndexedDB:", err);
@@ -233,11 +207,10 @@ export const useAppData = (
     try {
       const listMascotas = await LocalDatabase.getMascotas();
       const listPlantas = await LocalDatabase.getPlantas();
-      const listExoticos = await LocalDatabase.getExoticos();
       const listEventos = await LocalDatabase.getEventosCalendario();
       
       const chats = [];
-      const consultantIds = ['veterinario', 'agronomo', 'exotico'];
+      const consultantIds = ['veterinario', 'agronomo'];
       for (const id of consultantIds) {
         const chat = await LocalDatabase.getChatHistorial(id);
         if (chat) chats.push(chat);
@@ -246,7 +219,6 @@ export const useAppData = (
       const backupData = {
         mascotas: listMascotas,
         plantas: listPlantas,
-        exoticos: listExoticos,
         eventos: listEventos,
         chats: chats,
         exportadoEn: new Date().toISOString(),
@@ -289,20 +261,18 @@ export const useAppData = (
         const content = evt.target?.result as string;
         const data = JSON.parse(content);
 
-        if (!data || (!Array.isArray(data.mascotas) && !Array.isArray(data.plantas) && !Array.isArray(data.exoticos))) {
+        if (!data || (!Array.isArray(data.mascotas) && !Array.isArray(data.plantas))) {
           throw new Error("El archivo JSON no tiene un formato de copia de seguridad válido.");
         }
 
         const importMascotas = Array.isArray(data.mascotas) ? data.mascotas : [];
         const importPlantas = Array.isArray(data.plantas) ? data.plantas : [];
-        const importExoticos = Array.isArray(data.exoticos) ? data.exoticos : [];
         const importEventos = Array.isArray(data.eventos) ? data.eventos : [];
         const importChats = Array.isArray(data.chats) ? data.chats : [];
 
         await LocalDatabase.overwriteFullDatabase(
           importMascotas,
           importPlantas,
-          importExoticos,
           importEventos,
           importChats
         );
@@ -326,11 +296,9 @@ export const useAppData = (
   return {
     mascotas,
     plantas,
-    exoticos,
     climaActual,
     setMascotas,
     setPlantas,
-    setExoticos,
     setClimaActual,
     refreshData,
     exportarCopiaSeguridad,

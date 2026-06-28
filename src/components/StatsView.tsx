@@ -1,17 +1,17 @@
 import React from 'react';
-import type { Mascota, Planta, AnimalExotico } from '../database/types';
+import type { Mascota, Planta } from '../database/types';
 
 interface StatsViewProps {
   mascotas: Mascota[];
   plantas: Planta[];
-  exoticos: AnimalExotico[];
+
   uiTheme: 'gaming' | 'nature' | 'kawaii';
 }
 
 export const StatsView: React.FC<StatsViewProps> = ({
   mascotas = [],
   plantas = [],
-  exoticos = [],
+
   uiTheme: _uiTheme
 }) => {
   const hoy = new Date();
@@ -142,31 +142,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
     })
     .filter(Boolean) as { nombre: string; emoji: string; tipo: string; tendencia: any; ultimoValor: string }[];
 
-  // 5. Alimentación de Exóticos
-  const proximasComidasExoticos = exoticos
-    .map(e => {
-      if (!e.ultimaAlimentacion) return null;
-      const ultAlim = new Date(e.ultimaAlimentacion);
-      ultAlim.setHours(0, 0, 0, 0);
-      const proxAlim = new Date(ultAlim);
-      proxAlim.setDate(proxAlim.getDate() + (e.intervaloAlimentacionDias || 1));
-      proxAlim.setHours(0, 0, 0, 0);
-      
-      const diffTime = proxAlim.getTime() - hoy.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      return {
-        id: e.id,
-        nombre: e.nombre,
-        especie: e.especie,
-        tipo: e.tipoEspecifico,
-        dias: diffDays,
-        fecha: proxAlim.toISOString().split('T')[0]
-      };
-    })
-    .filter(Boolean)
-    .filter(item => item!.dias <= 3) // Vencidos o dentro de los próximos 3 días
-    .sort((a, b) => a!.dias - b!.dias) as { id: string; nombre: string; especie: string; tipo: string; dias: number; fecha: string }[];
+
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', paddingBottom: '30px' }}>
@@ -212,22 +188,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
           <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text)', opacity: 0.8 }}>Plantas</span>
         </div>
 
-        <div style={{
-          background: 'var(--game-card-bg)',
-          border: 'var(--game-border)',
-          borderRadius: 'var(--game-radius)',
-          boxShadow: 'var(--game-shadow)',
-          padding: '16px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '8px',
-          transition: 'transform 0.2s',
-        }}>
-          <span style={{ fontSize: '28px' }}>🦎</span>
-          <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--game-accent)' }}>{exoticos.length}</span>
-          <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text)', opacity: 0.8 }}>Exóticos</span>
-        </div>
+
       </div>
 
       {/* GRID DE ESTADÍSTICAS Y ALERTAS */}
@@ -560,59 +521,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
             )}
           </div>
 
-          {/* Alimentación de Exóticos */}
-          {exoticos.length > 0 && (
-            <div style={{
-              background: 'var(--game-card-bg)',
-              border: 'var(--game-border)',
-              borderRadius: 'var(--game-radius)',
-              boxShadow: 'var(--game-shadow)',
-              padding: '20px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px'
-            }}>
-              <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid var(--game-border-color, #e0e0e0)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>🦗</span> Alimentación de Exóticos
-              </h3>
-              {proximasComidasExoticos.length === 0 ? (
-                <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>Todos tus exóticos han sido alimentados recientemente.</p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {proximasComidasExoticos.map(e => {
-                    const isOverdue = e.dias < 0;
-                    const label = e.dias === 0 ? 'Hoy' : e.dias === 1 ? 'Mañana' : isOverdue ? `Atrasado por ${Math.abs(e.dias)} días` : `En ${e.dias} días`;
-                    return (
-                      <div key={e.id} style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        background: 'rgba(0,0,0,0.02)',
-                        border: '1px solid rgba(0,0,0,0.05)'
-                      }}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--game-text-bright, #111)' }}>{e.nombre} ({e.tipo})</span>
-                          <span style={{ fontSize: '11px', color: 'var(--game-text)', opacity: 0.7 }}>{e.especie}</span>
-                        </div>
-                        <span style={{
-                          fontSize: '11px',
-                          fontWeight: 'bold',
-                          padding: '4px 8px',
-                          borderRadius: '6px',
-                          background: isOverdue ? '#ffebee' : e.dias === 0 ? '#e3f2fd' : 'rgba(0,0,0,0.05)',
-                          color: isOverdue ? '#c62828' : e.dias === 0 ? '#1565c0' : 'var(--game-text)'
-                        }}>
-                          {label}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
+
 
         </div>
 

@@ -13,7 +13,7 @@ export interface RegistroCrecimiento {
 
 export interface RegistroVacuna {
   fecha: string; // ISO Date
-  vacuna: 'Trivalente' | 'Leucemia' | 'Rabia' | 'Otras';
+  vacuna: string;
   lote: string;
   proximaDosis?: string; // ISO Date para medicina preventiva
   vacunaPersonalizada?: string; // Nombre libre cuando vacuna === 'Otras'
@@ -113,24 +113,7 @@ export interface Planta {
   registroCrecimiento?: RegistroCrecimiento[]; // Registro de evolución de altura
 }
 
-export interface AnimalExotico {
-  id: string; // UUID
-  nombre: string;
-  especie: 'Serpiente' | 'Rana' | 'Tarántula' | 'Escorpión' | 'Otro';
-  tipoEspecifico: string; // Ej: Pitón Regius, Rana arborícola, etc.
-  temperaturaTerrario: number;
-  humedadTerrario: number;
-  ultimaAlimentacion: string; // ISO Date o YYYY-MM-DD
-  intervaloAlimentacionDias: number;
-  diarioExotico: EntradaDiarioClinico[];
-  fotoUrl: string; // Foto del animal (Base64 optimizada)
-  fotos?: string[]; // Colección de fotos (Base64 optimizado)
-  chip?: string; // Microchip del animal exótico
-  historialPasado: EventoPasado[]; // Historial de enfermedades/muda/parásitos
-  diagnosticosIA?: RegistroDiagnosticoIA[]; // Historial de diagnósticos IA
-  registroCrecimiento?: RegistroCrecimiento[]; // Registro de evolución de altura/longitud
-  registroPeso?: RegistroPeso[]; // Registro de evolución de peso
-}
+
 
 export interface EventoCalendario {
   id: string;
@@ -168,7 +151,7 @@ export interface CatalogoPlanta {
 export interface AccionSincronizacion {
   id: string; // UUID de la acción
   timestamp: number;
-  tipoAccion: 'save_mascota' | 'delete_mascota' | 'save_planta' | 'delete_planta' | 'save_exotico' | 'delete_exotico' | 'save_evento' | 'delete_evento';
+  tipoAccion: 'save_mascota' | 'delete_mascota' | 'save_planta' | 'delete_planta' | 'save_evento' | 'delete_evento';
   payload: any; // El objeto completo (Mascota, Planta, etc.) o ID del elemento a eliminar
 }
 

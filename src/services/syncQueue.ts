@@ -63,11 +63,10 @@ export class SyncQueueService {
       // Obtener el estado local consolidado más reciente para subir a la nube
       const mascotas = await LocalDatabase.getMascotas();
       const plantas = await LocalDatabase.getPlantas();
-      const exoticos = await LocalDatabase.getExoticos();
       const eventos = await LocalDatabase.getEventosCalendario();
       
       const chats = [];
-      const consultantIds = ['veterinario', 'agronomo', 'exotico'];
+      const consultantIds = ['veterinario', 'agronomo'];
       for (const id of consultantIds) {
         const chat = await LocalDatabase.getChatHistorial(id);
         if (chat) chats.push(chat);
@@ -82,7 +81,6 @@ export class SyncQueueService {
             hogarNombre,
             mascotas,
             plantas,
-            exoticos,
             uiTheme,
             eventos,
             chats
@@ -93,7 +91,6 @@ export class SyncQueueService {
         await MicrosoftSyncService.uploadBackup({
           mascotas,
           plantas,
-          exoticos,
           eventos,
           chats,
           updatedAt: Date.now()

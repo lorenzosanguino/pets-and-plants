@@ -1,4 +1,4 @@
-import type { Mascota, Planta, AnimalExotico } from '../database/types';
+import type { Mascota, Planta } from '../database/types';
 import type { DatosClimaticos } from './weatherService';
 import { IAQuotaManager } from '../utils/iaQuota';
 
@@ -8,7 +8,7 @@ export interface AnalisisMultimodalResult {
   advertencia: string;
   esUrgente: boolean;
   abrirFicha?: {
-    tipo: 'mascota' | 'planta' | 'exotico';
+    tipo: 'mascota' | 'planta';
     id: string;
   } | null;
 }
@@ -128,7 +128,7 @@ const ANALISIS_MULTIMODAL_SCHEMA = {
     abrirFicha: {
       type: 'OBJECT',
       properties: {
-        tipo: { type: 'STRING', enum: ['mascota', 'planta', 'exotico'] },
+        tipo: { type: 'STRING', enum: ['mascota', 'planta'] },
         id: { type: 'STRING' }
       },
       required: ['tipo', 'id']
@@ -173,18 +173,7 @@ const REGISTRAR_PLANTA_SCHEMA = {
   required: ['nombreComun', 'nombreCientifico', 'toxicidadFelina', 'toxicidadCanina', 'compuestosToxicos', 'intervaloRiegoSugeridoDias']
 };
 
-const REGISTRAR_EXOTICO_SCHEMA = {
-  type: 'OBJECT',
-  properties: {
-    especie: { type: 'STRING' },
-    tipoEspecifico: { type: 'STRING' },
-    nombreSugerido: { type: 'STRING' },
-    temperaturaTerrario: { type: 'NUMBER' },
-    humedadTerrario: { type: 'NUMBER' },
-    intervaloAlimentacionDias: { type: 'NUMBER' }
-  },
-  required: ['especie', 'tipoEspecifico', 'nombreSugerido', 'temperaturaTerrario', 'humedadTerrario', 'intervaloAlimentacionDias']
-};
+
 
 export class GeminiAPIService {
   static _lastApiError: string | null = null;
@@ -311,10 +300,10 @@ export class GeminiAPIService {
    */
   static async analizarImagen(
     imageBlob: Blob | null,
-    tipoConsultor: 'veterinario' | 'agronomo' | 'exoticos' | 'chef' | 'chef_exoticos',
+    tipoConsultor: 'veterinario' | 'agronomo' | 'chef',
     promptTexto: string,
     simulatedTemplateKey?: 'vet_garrapata' | 'vet_herida' | 'plant_marron' | 'plant_parasito',
-    dbInfo?: { mascotas: Mascota[]; plantas: Planta[]; exoticos: AnimalExotico[] },
+    dbInfo?: { mascotas: Mascota[]; plantas: Planta[] },
     gpsCoords?: DatosClimaticos,
     historial?: { sender: 'user' | 'ia'; text: string }[]
   ): Promise<AnalisisMultimodalResult> {
@@ -354,16 +343,14 @@ The user has registered the following elements. Use them as immediate query cont
             const ultimoPeso = m.registroPeso && m.registroPeso.length > 0 ? m.registroPeso[m.registroPeso.length - 1].pesoKg : 'Not registered';
             return `ID: ${m.id}, Name: ${m.nombre}, Species: ${m.especie}, Birthdate: ${m.fechaNacimiento}, Chip: ${m.numeroChip || 'Not registered'}, Weight: ${ultimoPeso}kg`;
           }).join(' | ') || 'None'}
-- Plants: ${dbInfo.plantas.map(p => `ID: ${p.id}, Common Name: ${p.nombreComun}, Scientific Name: ${p.nombreCientifico || 'Unknown'}, Location: ${p.ubicacionHabitacion}, Watering interval: ${p.intervaloRiegoDias || 7} days`).join(' | ') || 'None'}
-- Exotic Animals: ${dbInfo.exoticos.map(e => `ID: ${e.id}, Name: ${e.nombre}, Species: ${e.especie}, Specific Type: ${e.tipoEspecifico || 'Unknown'}, Terrarium: Temp ${e.temperaturaTerrario || 26}°C / Hum ${e.humedadTerrario || 60}%`).join(' | ') || 'None'}`
+- Plants: ${dbInfo.plantas.map(p => `ID: ${p.id}, Common Name: ${p.nombreComun}, Scientific Name: ${p.nombreCientifico || 'Unknown'}, Location: ${p.ubicacionHabitacion}, Watering interval: ${p.intervaloRiegoDias || 7} days`).join(' | ') || 'None'}`
             : `\n\n--- DATOS DE ELEMENTOS REGISTRADOS EN LA APP ---
 El usuario tiene registrados los siguientes elementos. Úsalos como contexto inmediato de consulta. Si el usuario pregunta o se refiere a un elemento por su nombre o descripción (ej. "Enzo", "cactus del salón"), identifícalo a partir de esta lista y responde refiriéndote a él:
 - Mascotas: ${dbInfo.mascotas.map(m => {
             const ultimoPeso = m.registroPeso && m.registroPeso.length > 0 ? m.registroPeso[m.registroPeso.length - 1].pesoKg : 'No registrado';
             return `ID: ${m.id}, Nombre: ${m.nombre}, Especie: ${m.especie}, F.Nacimiento: ${m.fechaNacimiento}, Chip: ${m.numeroChip || 'No registrado'}, Peso: ${ultimoPeso}kg`;
           }).join(' | ') || 'Ninguna'}
-- Plantas: ${dbInfo.plantas.map(p => `ID: ${p.id}, Nombre Común: ${p.nombreComun}, Nombre Científico: ${p.nombreCientifico || 'Desconocido'}, Ubicación: ${p.ubicacionHabitacion}, Riego cada: ${p.intervaloRiegoDias || 7} días`).join(' | ') || 'Ninguna'}
-- Animales Exóticos: ${dbInfo.exoticos.map(e => `ID: ${e.id}, Nombre: ${e.nombre}, Especie: ${e.especie}, Tipo Específico: ${e.tipoEspecifico || 'Desconocido'}, Terrario: Temp ${e.temperaturaTerrario || 26}°C / Hum ${e.humedadTerrario || 60}%`).join(' | ') || 'Ninguno'}`;
+- Plantas: ${dbInfo.plantas.map(p => `ID: ${p.id}, Nombre Común: ${p.nombreComun}, Nombre Científico: ${p.nombreCientifico || 'Desconocido'}, Ubicación: ${p.ubicacionHabitacion}, Riego cada: ${p.intervaloRiegoDias || 7} días`).join(' | ') || 'Ninguna'}`;
         }
 
         let gpsContext = '';
@@ -384,8 +371,8 @@ El usuario se encuentra en las siguientes coordenadas y condiciones climáticas 
         }
 
         const navigationInstruction = locale === 'en'
-          ? `\n\nCRITICAL - NAVIGATION AND FILE ACCESS: If the user asks you to open, go to, see, examine, or access the file/card of a specific pet, plant, or exotic that is registered, or if they speak to you with a clear intention of wanting to visualize their details on screen (e.g. "I want to see Enzo's card", "go to the living room cactus", "show the tarantula"), you MUST identify which database element matches. In this case, include in the JSON a key called "abrirFicha" whose value is an object with the structure { "tipo": "mascota" | "planta" | "exotico", "id": "id-del-elemento" }. If the user is not asking to see or go to any card in particular, omit the "abrirFicha" key from the JSON response entirely (do not include it).`
-          : `\n\nCRÍTICO - NAVEGACIÓN Y ACCESO A FICHAS: Si el usuario te pide abrir, ir, ver, examinar o acceder a la ficha/tarjeta de una mascota, planta o exótico específico que está registrado, o si te habla de él con clara intención de querer visualizar sus detalles en pantalla (ej. "quiero ver la ficha de Enzo", "ir al cactus de salon", "muestra la tarántula"), DEBES identificar cuál de los elementos de la base de datos coincide. En tal caso, incluye en el JSON una clave llamada "abrirFicha" cuyo valor sea un objeto con la estructura { "tipo": "mascota" | "planta" | "exotico", "id": "id-del-elemento" }. Si el usuario no está pidiendo ver o ir a ninguna ficha en particular, omite por completo la clave "abrirFicha" de la respuesta JSON (no la incluyas).`;
+          ? `\n\nCRITICAL - NAVIGATION AND FILE ACCESS: If the user asks you to open, go to, see, examine, or access the file/card of a specific pet or plant that is registered, or if they speak to you with a clear intention of wanting to visualize their details on screen (e.g. "I want to see Enzo's card", "go to the living room cactus"), you MUST identify which database element matches. In this case, include in the JSON a key called "abrirFicha" whose value is an object with the structure { "tipo": "mascota" | "planta", "id": "id-del-elemento" }. If the user is not asking to see or go to any card in particular, omit the "abrirFicha" key from the JSON response entirely (do not include it).`
+          : `\n\nCRÍTICO - NAVEGACIÓN Y ACCESO A FICHAS: Si el usuario te pide abrir, ir, ver, examinar o acceder a la ficha/tarjeta de una mascota o planta específica que está registrado, o si te habla de él con clara intención de querer visualizar sus detalles en pantalla (ej. "quiero ver la ficha de Enzo", "ir al cactus de salon"), DEBES identificar cuál de los elementos de la base de datos coincide. En tal caso, incluye en el JSON una clave llamada "abrirFicha" cuyo valor sea un objeto con la estructura { "tipo": "mascota" | "planta", "id": "id-del-elemento" }. Si el usuario no está pidiendo ver o ir a ninguna ficha en particular, omite por completo la clave "abrirFicha" de la respuesta JSON (no la incluyas).`;
 
         let systemInstruction = '';
         if (imageBlob) {
@@ -393,14 +380,12 @@ El usuario se encuentra en las siguientes coordenadas y condiciones climáticas 
           if (locale === 'en') {
             baseSystemInstruction = tipoConsultor === 'veterinario'
               ? "Act as an expert clinical veterinarian specializing in comparative pathology and preventive medicine. Perform a thorough and rigorous evaluation of the image and the user's clinical data. Analyze the morphology of lesions, erythema, distension, secretions, parasites (e.g., ticks, fleas), or visual behavioral anomalies. Your diagnosis must be highly technical and precise in its medical terminology. Return your response strictly in a flat JSON format with exactly these text keys: 'diagnostico' (detailed description with clinical terminology, e.g., 'Suspicion of acute moist dermatitis with peripheral erythema' instead of 'wound'), 'tratamiento' (detailed step-by-step instructions for preventive first aid at home), 'advertencia' (critical clinical alerts, signs of worsening, or risks of vector-borne pathogens like ehrlichia/babesia), 'esUrgente' (a boolean true/false indicating whether it requires immediate referral to veterinary hospital emergencies), and optionally 'abrirFicha' (or object, omitting the key if not applicable)."
-              : tipoConsultor === 'exoticos'
-              ? "Act as a specialist veterinarian in exotic animals, herpetologist, and clinical entomologist. Scrutinize the image for dermatological anomalies, retained sheds (dysecdysis), thermal burns from bulbs or heating mats, signs of dehydration, terrarium mites, lethargy, or distension. Return your response strictly in a flat JSON format with exactly these text keys: 'diagnostico' (technical and species-specific description of the symptom, e.g., 'Focal dysecdysis on ocular spectacles or distal extremities'), 'tratamiento' (detailed therapeutic procedure and controlled hydration in captivity), 'advertencia' (risk of limb constriction, septicemia from burns, or blindness from retained spectacles), 'esUrgente' (a boolean true/false if it requires immediate clinical intervention or critical terrarium parameter adjustment), and optionally 'abrirFicha' (or object, omitting the key if not applicable)."
+
               : "Act as an expert agronomist, phytopathologist, and clinical botanist. Scrutinize the image, identifying patterns of leaf damage, chlorosis, apical necrosis, vascular wilt, presence of pests (mealybug, scale, spider mite, aphid), or leaf mycosis. Return your response strictly in a flat JSON format with exactly these text keys: 'diagnostico' (detailed and precise phytopathological diagnosis, e.g., 'Symmetric leaf apical necrosis compatible with osmotic stress due to soluble salt accumulation' instead of 'brown tips'), 'tratamiento' (detailed step-by-step covering cultural, physical, and biological or phytosanitary treatments like potassium soap/neem oil), 'advertencia' (risks of sooty mold, total defoliation, or horizontal spread to healthy crops), 'esUrgente' (a boolean true/false indicating whether it requires immediate isolation or shock intervention to save the plant), and optionally 'abrirFicha' (or object, omitting the key if not applicable).";
           } else {
             baseSystemInstruction = tipoConsultor === 'veterinario'
               ? "Actúa como un veterinario clínico experto con especialización en patología comparada y medicina preventiva. Realiza una evaluación exhaustiva y rigurosa de la imagen y los datos clínicos del usuario. Analiza la morfología de las lesiones, eritemas, distensión, secreciones, parásitos (ej. garrapatas, pulgas) o anomalías de comportamiento visual. Tu diagnóstico debe ser altamente técnico y preciso en su terminología médica. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas claves de texto: 'diagnostico' (descripción detallada con terminología clínica, ej. 'Sospecha de dermatitis húmeda aguda con eritema periférico' en lugar de 'herida'), 'tratamiento' (instrucciones paso a paso detalladas para primeros auxilios preventivos en el hogar), 'advertencia' (alertas clínicas críticas, signos de empeoramiento o riesgos de patógenos vectoriales como ehrlichia/babesia), 'esUrgente' (un booleano true/false que indica si requiere derivación inmediata a urgencias hospitalarias veterinarias), y opcionalmente 'abrirFicha' (u objeto, omitiendo la clave si no aplica)."
-              : tipoConsultor === 'exoticos'
-              ? "Actúa como un veterinario especialista en animales exóticos, herpetólogo y entomólogo clínico. Analiza minuciosamente la imagen en busca de anomalías dermatológicas, retención de mudas (disecdisis), quemaduras térmicas de bombillas o mantas calefactoras, signos de deshidratación, ácaros del terrario, letargia o distensión. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas claves de texto: 'diagnostico' (descripción técnica y específica de la especie y su síntoma, ej. 'Disecdisis focal en placas oculares o extremidades distales'), 'tratamiento' (procedimiento terapéutico detallado e hidratación controlada en cautiverio), 'advertencia' (riesgo de constricción de extremidades, septicemia por quemaduras o ceguera por mudas oculares retenidas), 'esUrgente' (un booleano true/false si requiere intervención clínica inmediata o ajuste crítico de parámetros de terrario), y opcionalmente 'abrirFicha' (u objeto, omitiendo la clave si no aplica)."
+
               : "Actúa como un agrónomo, fitopatólogo y botánico clínico experto. Analiza la imagen minuciosamente identificando patrones de daño foliar, clorosis, necrosis apical, marchitez vascular, presencia de plagas (cochinilla, chips, araña roja, pulgón) o micosis foliares. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas claves de texto: 'diagnostico' (diagnóstico fitopatológico detallado y preciso, ej. 'Necrosis apical foliar simétrica compatible con estrés osmótico por acumulación de sales solubles' en lugar de 'puntas marrones'), 'tratamiento' (paso a paso detallado que abarque control cultural, físico y tratamientos biológicos o fitosanitarios como jabón potásico/aceite de neem), 'advertencia' (riesgos de negrilla, defoliación total o propagación horizontal a cultivos sanos), 'esUrgente' (un booleano true/false que indica si requiere aislamiento inmediato o intervención de choque para salvar la planta), y opcionalmente 'abrirFicha' (u objeto, omitiendo la clave si no aplica).";
           }
           const aspectInstruction = locale === 'en'
@@ -412,24 +397,20 @@ El usuario se encuentra en las siguientes coordenadas y condiciones climáticas 
           if (locale === 'en') {
             if (tipoConsultor === 'chef') {
               baseSystemInstruction = "Act as a chef and expert pet veterinary nutritionist. Design a detailed, healthy, and balanced homemade recipe or food plan for the pet based on their species, weight, and activity data. Return your response strictly in a flat JSON format with exactly these text keys: 'diagnostico' (the recipe and breakdown of ingredients detailed in grams with recommended calories, structured clearly and directly with short bullet points), 'tratamiento' (step-by-step preparation instructions), 'advertencia' (warnings of forbidden foods or critical supplementation like taurine in cats), 'esUrgente' (a boolean false), and optionally 'abrirFicha' (or object, omitting the key if not applicable).";
-            } else if (tipoConsultor === 'chef_exoticos') {
-              baseSystemInstruction = "Act as a chef and veterinarian specializing in exotic animal nutrition. Design a detailed, healthy, and balanced feeding plan for the animal based on their species, weight, terrarium temperature, and humidity. Return your response strictly in a flat JSON format with exactly these text keys: 'diagnostico' (recommended foods, frequency, and proportions, structured clearly and directly with short bullet points), 'tratamiento' (preparation instructions or step-by-step feeding advice), 'advertencia' (warnings of forbidden foods or critical necessary supplements), 'esUrgente' (a boolean false), and optionally 'abrirFicha' (or object, omitting the key if not applicable).";
+
             } else if (tipoConsultor === 'veterinario') {
               baseSystemInstruction = "Act as an expert clinical veterinarian specializing in animal welfare and preventive medicine. You are in a fluid and natural chat conversation with the user, who has not attached any image. Respond to their inquiry or concern in a professional, detailed, and understanding manner, as an expert would in a real conversation. Return your response strictly in a flat JSON format with exactly these keys: 'diagnostico' (your complete and fluid response to the user, structured with paragraphs or lists if necessary, without asking for photos unless strictly necessary to diagnose an unseen physical injury), 'tratamiento' (must be an empty string ''), 'advertencia' (must be an empty string ''), 'esUrgente' (a boolean false, unless the user describes an explicit life-threatening emergency), and optionally 'abrirFicha' (or object, omitting the key if not applicable).";
-            } else if (tipoConsultor === 'exoticos') {
-              baseSystemInstruction = "Act as a veterinarian specializing in exotic animals and terrariophilia. You are in a fluid and natural chat conversation with the user, who has not attached any image. Respond to their questions about terrarium parameters, feeding, shedding, or behavior in an expert, clear, and detailed manner. Return your response strictly in a flat JSON format with exactly these keys: 'diagnostico' (your complete and fluid response to the user, structured with paragraphs or lists if necessary, without asking for photos unless strictly necessary to diagnose an unseen physical injury), 'tratamiento' (must be an empty string ''), 'advertencia' (must be an empty string ''), 'esUrgente' (a boolean false, unless the user describes an explicit life-threatening emergency), and optionally 'abrirFicha' (or object, omitting the key if not applicable).";
+
             } else {
               baseSystemInstruction = "Act as an expert agronomist, botanist, and phytopathologist. You are in a fluid and natural chat conversation with the user, who has not attached any image. Respond to their questions about substrates, watering, light, fertilizer, or plant care in an expert, practical, and detailed manner. Return your response strictly in a flat JSON format with exactly these keys: 'diagnostico' (your complete and fluid response to the user, structured with paragraphs or lists if necessary, without asking for photos unless strictly necessary to diagnose an unseen physical pest), 'tratamiento' (must be an empty string ''), 'advertencia' (must be an empty string ''), 'esUrgente' (a boolean false, unless the user describes an explicit life-threatening emergency), and optionally 'abrirFicha' (or object, omitting the key if not applicable).";
             }
           } else {
             if (tipoConsultor === 'chef') {
               baseSystemInstruction = "Actúa como un chef y veterinario nutricionista de mascotas experto. Diseña una receta casera o plan alimentario detallado, saludable y equilibrado para la mascota en base a sus datos de especie, peso y actividad. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas claves de texto: 'diagnostico' (la receta y desglose de ingredientes detallado en gramos con sus calorías recomendadas, estructurada de forma clara y directa con puntos cortos), 'tratamiento' (instrucciones de preparación paso a paso), 'advertencia' (advertencias de alimentos prohibidos o suplementación como taurina en gatos), 'esUrgente' (un booleano false), y opcionalmente 'abrirFicha' (u objeto, omitiendo la clave si no aplica).";
-            } else if (tipoConsultor === 'chef_exoticos') {
-              baseSystemInstruction = "Actúa como un chef y veterinario especialista en nutrición de animales exóticos. Diseña un plan de alimentación detallado, saludable y equilibrado para el animal en base a su especie, peso, temperatura y humedad del terrario. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas claves de texto: 'diagnostico' (los alimentos recomendados, frecuencia y proporciones, estructurada de forma clara y directa con puntos cortos), 'tratamiento' (instrucciones de preparación o consejos de administración paso a paso), 'advertencia' (advertencias de alimentos prohibidos o suplementos críticos necesarios), 'esUrgente' (un booleano false), y opcionalmente 'abrirFicha' (u objeto, omitiendo la clave si no aplica).";
+
             } else if (tipoConsultor === 'veterinario') {
               baseSystemInstruction = "Actúa como un veterinario clínico experto con especialización en bienestar animal and medicina preventiva. Estás en una conversación de chat fluida y natural con el usuario, quien no ha adjuntado ninguna imagen. Responde a su consulta o duda de forma profesional, detallada y comprensiva, como lo haría un experto en una conversación real. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas claves: 'diagnostico' (tu respuesta completa y fluida al usuario, estructurada con párrafos o listas si es necesario, sin pedirle fotos a menos que sea estrictamente necesario para diagnosticar una lesión física oculta), 'tratamiento' (debe ser una cadena vacía ''), 'advertencia' (debe ser una cadena vacía ''), 'esUrgente' (un booleano false, a menos que el usuario describa una emergencia letal explícita), y opcionalmente 'abrirFicha' (u objeto, omitiendo la clave si no aplica).";
-            } else if (tipoConsultor === 'exoticos') {
-              baseSystemInstruction = "Actúa como un veterinario especialista en animales exóticos y terrariofilia. Estás en una conversación de chat fluida y natural con el usuario, quien no ha adjuntado ninguna imagen. Responde a sus dudas sobre parámetros de terrario, alimentación, muda o comportamiento de forma experta, clara y detallada. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas claves: 'diagnostico' (tu respuesta completa y fluida al usuario, estructurada con párrafos o listas si es necesario, sin pedirle fotos a menos que sea estrictamente necesario para diagnosticar una lesión física oculta), 'tratamiento' (debe ser una cadena vacía ''), 'advertencia' (debe ser una cadena vacía ''), 'esUrgente' (un booleano false, a menos que el usuario describa una emergencia letal explícita), y opcionalmente 'abrirFicha' (u objeto, omitiendo la clave si no aplica).";
+
             } else {
               baseSystemInstruction = "Actúa como un agrónomo, botánico y fitopatólogo experto. Estás en una conversación de chat fluida y natural con el usuario, quien no ha adjuntado ninguna imagen. Responde a sus dudas sobre sustratos, riego, luz, abono o cuidados de plantas de forma experta, práctica y detallada. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas claves: 'diagnostico' (tu respuesta completa y fluida al usuario, estructurada con párrafos o listas si es necesario, sin pedirle fotos a menos que sea estrictamente necesario para diagnosticar una plaga física oculta), 'tratamiento' (debe ser una cadena vacía ''), 'advertencia' (debe ser una cadena vacía ''), 'esUrgente' (un booleano false, a menos que el usuario describa una emergencia letal explícita), y opcionalmente 'abrirFicha' (u objeto, omitiendo la clave si no aplica).";
             }
@@ -559,12 +540,6 @@ El usuario se encuentra en las siguientes coordenadas y condiciones climáticas 
             );
             if (matchedPlant) {
               abrirFicha = { tipo: 'planta', id: matchedPlant.id };
-            } else {
-              // Buscar exótico
-              const matchedExotic = dbInfo.exoticos.find(e => textLower.includes(e.nombre.toLowerCase()));
-              if (matchedExotic) {
-                abrirFicha = { tipo: 'exotico', id: matchedExotic.id };
-              }
             }
           }
         }
@@ -615,69 +590,6 @@ ${esGato ? '💊 Taurina: Suplemento esencial diario.' : ''}`;
             return;
           }
 
-          // Interceptar Chef Nutricional (Exóticos)
-          if (tipoConsultor === 'chef_exoticos') {
-            const nombreMatch = promptTexto.match(/Nombre:\s*(.*)/i);
-            const especieMatch = promptTexto.match(/Especie:\s*(.*)/i);
-            const tempMatch = promptTexto.match(/Temperatura del terrario:\s*([\d.]+)/i);
-            const humMatch = promptTexto.match(/Humedad del terrario:\s*([\d.]+)/i);
-
-            const nombre = nombreMatch ? nombreMatch[1].trim() : 'Animal';
-            const especieCompleta = especieMatch ? especieMatch[1].trim() : 'Exótico';
-            const temp = tempMatch ? tempMatch[1] : '26';
-            const hum = humMatch ? humMatch[1] : '60';
-
-            const especieLower = especieCompleta.toLowerCase();
-            let alimentosAdecuados: string;
-            let alimentosProhibidos: string;
-            let frecuencia: string;
-            let suplementos: string;
-
-            if (especieLower.includes('serpiente') || especieLower.includes('pitón') || especieLower.includes('boa') || especieLower.includes('python')) {
-              alimentosAdecuados = '• Ratones o ratas de tamaño adecuado (diámetro similar a la parte más ancha de su cuerpo).\n• Se recomienda ofrecer alimento previamente congelado y descongelado a temperatura ambiente.';
-              alimentosProhibidos = '• Presas vivas (pueden morder y causar heridas graves e infecciones).\n• Carne procesada, embutidos o alimentos cocinados.';
-              frecuencia = '• Ejemplares jóvenes: Cada 5-7 días.\n• Ejemplares adultos: Cada 10-15 días.';
-              suplementos = '• No suele requerir si la presa entera está sana, pero se puede espolvorear calcio esporádicamente.';
-            } else if (especieLower.includes('rana') || especieLower.includes('sapo') || especieLower.includes('anfibio')) {
-              alimentosAdecuados = '• Insectos vivos pequeños cargados de nutrientes (gut-loaded): grillos, moscas de la fruta (Drosophila), pequeñas cucarachas.';
-              alimentosProhibidos = '• Insectos capturados en la naturaleza (pueden contener pesticidas o parásitos).\n• Alimentos comerciales para perros o gatos.';
-              frecuencia = '• Cada 2-3 días, preferiblemente al atardecer (hábitos crepusculares/nocturnos).';
-              suplementos = '• Espolvorear Calcio + Vitamina D3 en los insectos 2 veces por semana, y un complejo multivitamínico para reptiles 1 vez al mes.';
-            } else if (especieLower.includes('tarántula') || especieLower.includes('araña') || especieLower.includes('escorpión')) {
-              alimentosAdecuados = '• Insectos vivos: grillos, cucarachas Dubia, runners o tenebrios adecuados al tamaño de su prosoma/opistosoma.';
-              alimentosProhibidos = '• Insectos grandes o agresivos mientras esté en periodo de premuda o recién mudada (su exoesqueleto es blando y vulnerable).';
-              frecuencia = '• Jóvenes: 1-2 veces por semana.\n• Adultos: Cada 10-14 días.';
-              suplementos = '• No requiere suplementación de calcio o vitaminas. Mantener agua limpia en un tapón plano.';
-            } else {
-              alimentosAdecuados = '• Dieta variada según sea insectívoro, herbívoro o carnívoro.\n• Verduras de hoja verde (diente de león, canónigos) e insectos vivos.';
-              alimentosProhibidos = '• Lechuga iceberg, espinacas en exceso, aguacate, cítricos, chocolate, azúcares.';
-              frecuencia = '• Variable según edad y especie (diaria para herbívoros jóvenes, espaciada para carnívoros).';
-              suplementos = '• Calcio sin fósforo espolvoreado en la comida 2-3 veces por semana; Vitamina D3 según exposición a luz UVB.';
-            }
-
-            const receta = `[Modo Offline - Guía Nutricional para ${nombre} (${especieCompleta})]
-Temperatura de terrario registrada: ${temp}°C
-Humedad de terrario registrada: ${hum}%
-
-Alimentos Recomendados:
-${alimentosAdecuados}
-
-Frecuencia sugerida:
-${frecuencia}`;
-
-            const errWarning = GeminiAPIService._lastApiError
-              ? `\n\n[Error de API: ${GeminiAPIService._lastApiError}]`
-              : "";
-
-            resolve({
-              diagnostico: receta,
-              tratamiento: `Administración y Suplementos:\n${suplementos}`,
-              advertencia: `Alimentos Prohibidos:\n${alimentosProhibidos}\n\nNota: Esta es una guía de referencia rápida sin conexión. Activa el internet o ingresa tu clave API en Ajustes ⚙️ para obtener un plan nutricional dinámico por IA.${errWarning}`,
-              esUrgente: false,
-              abrirFicha
-            });
-            return;
-          }
           // 0. Interceptar preguntas sobre cómo enviar o mandar fotos
           if (text.includes('cómo mando') || text.includes('como mando') || text.includes('cómo enviar') || text.includes('como enviar') || text.includes('subir foto') || text.includes('adjuntar')) {
             resolve({
@@ -724,14 +636,7 @@ ${frecuencia}`;
                 esUrgente: false,
                 abrirFicha
               });
-            } else if (tipoConsultor === 'exoticos') {
-              resolve({
-                diagnostico: "Preparar un terrario para tu ausencia durante un viaje es fundamental para la seguridad de tus animales exóticos. Te recomiendo seguir este protocolo:\n\n1. Automatización: Conecta las mantas térmicas, bombillas cerámicas y sistemas de iluminación UVB a temporizadores automáticos digitales de confianza.\n2. Parámetros de seguridad: Deja un termohigrómetro con registro de máximas y mínimas a la vista. Facilita las instrucciones de rango óptimo y el contacto de tu veterinario de exóticos de urgencia a la persona encargada de la supervisión.\n\nRecuerda que los reptiles, anfibios e invertebrados son sumamente sensibles a las fluctuaciones de temperatura. Nunca dejes el terrario desatendido por más de 48 horas sin una inspección visual de control.",
-                tratamiento: "",
-                advertencia: "",
-                esUrgente: false,
-                abrirFicha
-              });
+
             } else {
               resolve({
                 diagnostico: "Para que tus plantas no sufran durante tus vacaciones o viajes, puedes implementar estos sistemas sencillos de cuidado autónomo:\n\n1. Riego autónomo: Utiliza hidrogel de liberación lenta en el sustrato, o bien cordones de algodón grueso comunicados desde un depósito de agua elevado hacia la maceta.\n2. Agrupación y microclima: Reúne tus plantas en la habitación más fresca y que reciba luz indirecta. La cercanía física incrementa la humedad ambiental local por transpiración compartida.\n\nEvita encharcar las macetas antes de salir, ya que la acumulación de agua estancada y sin ventilación favorece la pudrición radicular acelerada.",
@@ -754,14 +659,7 @@ ${frecuencia}`;
                 esUrgente: false,
                 abrirFicha
               });
-            } else if (tipoConsultor === 'exoticos') {
-              resolve({
-                diagnostico: "El comportamiento en animales exóticos (como la letargia, agresividad o conductas defensivas) suele ser una respuesta directa a desajustes en las condiciones de su hábitat. Si notas cambios de temperamento, es vital revisar los parámetros de temperatura y humedad en el terrario.\n\nSi deseas compartir una foto del terrario o de la postura de tu exótico para que la analice, puedes usar el botón de la cámara 📷 o pulsar el clip 📎 al lado del cuadro de texto para adjuntar una imagen.\n\nTambién podemos resolver tus dudas sin fotos. Cuéntame: ¿de qué especie se trata, cuáles son sus parámetros de temperatura/humedad actuales y qué comportamiento específico has observado?",
-                tratamiento: "",
-                advertencia: "",
-                esUrgente: false,
-                abrirFicha
-              });
+
             } else {
               resolve({
                 diagnostico: "El movimiento y la respuesta de las hojas de tus plantas (como curvarse, cerrarse o marchitarse) son sus mecanismos de defensa conductuales ante el estrés del entorno (falta de agua, exceso de calor o corrientes de aire).\n\nPara resolver tus dudas no es obligatorio subir una foto, podemos seguir charlando aquí. Si en algún momento deseas mostrarme el estado de sus hojas, puedes presionar el icono de la cámara 📷 para tomar una foto en vivo o usar el clip de adjunto 📎 para subir un archivo.\n\nCuéntame: ¿cada cuántos días la estás regando y qué cambios has notado en sus hojas?",
@@ -852,27 +750,9 @@ ${frecuencia}`;
             return;
           }
 
-          if (tipoConsultor === 'exoticos' && (text.includes('muda') || text.includes('piel') || text.includes('retención'))) {
-            resolve({
-              diagnostico: "La retención de muda (disecdisis) en reptiles suele ser consecuencia de una humedad ambiental insuficiente. Puedes ayudarle de esta manera:\n\n1. Hidratación pasiva: Dale baños de agua tibia (25-28°C) durante 15-20 minutos para reblandecer la queratina vieja.\n2. Escondite húmedo: Introduce una caja refugio con musgo esfagno humedecido dentro del terrario.\n3. Ayuda manual suave: Pasa un bastoncillo húmedo con suavidad sobre las escamas sueltas, pero nunca tires a la fuerza.\n\nPresta especial atención a la punta de la cola y los párpados, ya que la piel retenida en estas zonas puede causar constricción de flujo sanguíneo o ceguera.",
-              tratamiento: "",
-              advertencia: "",
-              esUrgente: false,
-              abrirFicha
-            });
-            return;
-          }
 
-          if (tipoConsultor === 'exoticos' && (text.includes('quemadura') || text.includes('calor') || text.includes('bombilla'))) {
-            resolve({
-              diagnostico: "Si sospechas de una quemadura térmica en tu exótico (generalmente por bombillas o mantas calefactoras desprotegidas), actúa rápido:\n\n1. Aislamiento térmico: Retira al animal de la fuente de calor y coloca rejillas protectoras en las lámparas.\n2. Tratamiento local: Enjuaga con suero templado y aplica pomada de sulfadiazina de plata al 1%.\n3. Cuarentena estéril: Aloja temporalmente al animal en un recinto limpio sobre papel de cocina absorbente como sustrato para evitar infecciones por tierra o arena.\n\nLas quemaduras en reptiles pueden infectarse y causar septicemia rápidamente. Es aconsejable que lo revise un veterinario de exóticos.",
-              tratamiento: "",
-              advertencia: "",
-              esUrgente: false,
-              abrirFicha
-            });
-            return;
-          }
+
+
 
           if (tipoConsultor === 'agronomo' && (text.includes('marrón') || text.includes('punta') || text.includes('seca'))) {
             resolve({
@@ -903,8 +783,7 @@ ${frecuencia}`;
             let saludoMsg: string;
             if (tipoConsultor === 'veterinario') {
               saludoMsg = "Hola. Como consultor de bienestar y medicina preventiva veterinaria, estoy aquí para resolver tus dudas de forma cercana y profesional. Puedes preguntarme sobre la dieta de tu mascota, su comportamiento, enriquecimiento ambiental, cuidados en casa o pautas preventivas generales. ¡Dime en qué te puedo ayudar hoy!";
-            } else if (tipoConsultor === 'exoticos') {
-              saludoMsg = "Hola. Soy tu consultor especialista en animales exóticos. Estoy a tu disposición para ayudarte a optimizar las condiciones de tu terrario o acuario, responder dudas sobre la temperatura, humedad y alimentación recomendadas para reptiles, anfibios, aves o artrópodos. ¿Qué especie tienes hoy?";
+
             } else {
               saludoMsg = "Hola. Como consultor agrónomo y botánico, te doy la bienvenida. Estoy aquí para resolver todas tus dudas sobre el cuidado de tus plantas de interior o jardín, sustratos, frecuencias de riego, fertilización adecuada o microclimas domésticos. ¿De qué planta te gustaría hablar?";
             }
@@ -919,11 +798,7 @@ ${frecuencia}`;
                 diagnostico: "La alimentación es uno de los pilares fundamentales de la salud de tu mascota. Aquí te doy las pautas generales más importantes:\n\n🐱 **Para gatos**: Los felinos son carnívoros estrictos. Prioriza piensos con alto contenido en proteína animal (>35%) y bajo en carbohidratos. La alimentación mixta (pienso seco + comida húmeda) mejora la hidratación y reduce el riesgo de problemas renales. Evita el atún de lata en conserva como dieta base (exceso de mercurio y déficit de taurina).\n\n🐶 **Para perros**: La dieta óptima depende de la raza, el peso, la edad y el nivel de actividad. Un adulto sano necesita entre 25-30g de pienso premium por kg de peso al día, dividido en 2 tomas. Los perros de razas grandes se benefician de piensos específicos con glucosamina y condroitina para las articulaciones.\n\n**¿Qué especie tienes y qué duda específica tienes sobre su alimentación?** Puedo darte recomendaciones mucho más precisas si me das más detalles.",
                 tratamiento: "", advertencia: "", esUrgente: false, abrirFicha
               });
-            } else if (tipoConsultor === 'exoticos') {
-              resolve({
-                diagnostico: "La alimentación de animales exóticos varía enormemente según la especie. Aquí están los principios más importantes por grupo:\n\n🦎 **Reptiles herbívoros** (iguanas, tortugas): Hojas oscuras ricas en calcio (col rizada, diente de león, endivia) representan el 80% de la dieta. Evita la lechuga iceberg (nulo valor nutricional) y los alimentos con oxalatos en exceso como la espinaca.\n\n🐍 **Serpientes y reptiles carnívoros**: La mayoría se alimentan de ratones o ratas de tamaño apropiado (el roedor no debe superar el ancho del cuerpo de la serpiente). Siempre presas descongeladas, no vivas, para evitar lesiones al animal.\n\n🕷️ **Tarántulas y artrópodos**: Grillos, cucarachas Dubia o moscas del vinagre adaptadas al tamaño del arácnido. Retira las presas vivas no consumidas tras 24h para evitar estrés.\n\n¿Qué especie tienes? Te doy las pautas exactas de frecuencia y tipo de alimento.",
-                tratamiento: "", advertencia: "", esUrgente: false, abrirFicha
-              });
+
             } else {
               resolve({
                 diagnostico: "La fertilización y el sustrato son la 'dieta' de tus plantas. Estos son los principios clave:\n\n🌿 **Macronutrientes esenciales**: Nitrógeno (N) para el crecimiento foliar y el verde intenso, Fósforo (P) para raíces fuertes y floración, Potasio (K) para la resistencia general y la regulación hídrica.\n\n📅 **Frecuencia de abono**: En temporada de crecimiento (primavera/verano) cada 2-3 semanas con abono líquido equilibrado. En otoño/invierno, reduce o elimina la fertilización, ya que la planta está en reposo y el exceso de sales quema las raíces.\n\n⚠️ **El exceso de fertilizante es más dañino que la falta**: Provoca quemaduras radiculares por acumulación de sales, que se manifiesta como puntas marrones y hojas amarillas con bordes quemados.\n\n¿Qué tipo de planta tienes y en qué fase de crecimiento está? Te oriento con la pauta más adecuada.",
@@ -979,13 +854,7 @@ ${frecuencia}`;
           }
 
           // 11. Temperatura y terrario (exóticos)
-          if (tipoConsultor === 'exoticos' && (text.includes('temperatur') || text.includes('terrario') || text.includes('calor') || text.includes('frio') || text.includes('frío') || text.includes('humedad') || text.includes('uvb') || text.includes('lámpara') || text.includes('lampara'))) {
-            resolve({
-              diagnostico: "Los parámetros ambientales del terrario son la base de la salud de cualquier animal exótico. Aquí los rangos orientativos más importantes:\n\n🦎 **Gecko leopardo**: Zona cálida 30-32°C / Zona fría 24-26°C. Humedad 30-40%. Iluminación UVB no imprescindible pero sí recomendable.\n\n🐍 **Serpientes de maíz/Ball Python**: Zona cálida 28-32°C / Zona fría 24-26°C. Humedad 50-60% (Ball Python hasta 70% en muda). Nunca usar piedras calefactoras de contacto directo.\n\n🐸 **Ranas arbóreas (ej. Litoria)**: Temperatura 22-28°C con gradiente. Humedad 60-80%. Rociar el terrario cada noche para simular el ciclo húmedo nocturno.\n\n🕷️ **Tarántulas terrestres**: 22-28°C temperatura ambiente. Humedad según especie (áridas 30-50%, selváticas 70-80%). Ventilación cruzada esencial para evitar ácaros.\n\n⚠️ **CRÍTICO**: Las fluctuaciones bruscas de temperatura son más peligrosas que una temperatura ligeramente incorrecta pero estable. Invierte en un termostato y termohigrómetro digital con sonda.\n\n¿Qué especie tienes y qué parámetros tienes actualmente?",
-              tratamiento: "", advertencia: "", esUrgente: false, abrirFicha
-            });
-            return;
-          }
+
 
           // 12. Edad, longevidad y esperanza de vida
           if (tipoConsultor === 'veterinario' && (text.includes('edad') || text.includes('viejo') || text.includes('anciano') || text.includes('años') || text.includes('cuánto vive') || text.includes('cuanto vive') || text.includes('longev') || text.includes('esperanza'))) {
@@ -1006,12 +875,7 @@ ${frecuencia}`;
             } else {
               respuestaGenerica = `Entiendo tu consulta. Como especialista en medicina y bienestar animal, intentaré orientarte de la mejor manera posible.\n\nPara darte una respuesta más precisa y útil, necesitaría un poco más de contexto sobre lo que estás observando en tu mascota. Puedo ayudarte con temas como:\n\n• 🍽️ Dieta y alimentación específica por especie y edad\n• 💊 Medicamentos, desparasitación y calendario de vacunas\n• 🏠 Enriquecimiento ambiental y bienestar en el hogar\n• 🩺 Interpretación de síntomas y cuándo acudir a urgencias\n• ✂️ Castración, cirugías y postoperatorios\n• 👵 Cuidados de mascotas senior\n\n¿Me puedes contar con más detalle qué está pasando o qué te preocupa? Si tienes una foto del problema (herida, lesión, parásito), también puedes enviármela usando el botón 📷 de la barra inferior.`;
             }
-          } else if (tipoConsultor === 'exoticos') {
-            if (esConversacionIniciada) {
-              respuestaGenerica = "De acuerdo. Para poder aconsejarte de forma más exacta sobre tu exótico, ¿me indicarías de qué especie se trata, y cuáles son sus parámetros actuales de temperatura o humedad en el terrario?";
-            } else {
-              respuestaGenerica = `Recibido. Como especialista en animales exóticos y terrariofilia, estoy aquí para ayudarte.\n\nPara orientarte de manera precisa, sería muy útil que me indicaras:\n\n• 🦎 La especie exacta que tienes (gecko leopardo, ball python, tarántula, rana, etc.)\n• 📐 Las dimensiones del terrario/recinto\n• 🌡️ Los parámetros actuales de temperatura y humedad\n• 🍗 Qué y con qué frecuencia come\n\nPuedo ayudarte con configuración de terrarios, identificación de problemas de salud, parámetros óptimos de hábitat, ciclos de alimentación y manejo. Si tienes una foto del animal o del terrario, puedes enviármela con el botón 📷 para un diagnóstico visual más preciso.`;
-            }
+
           } else {
             if (esConversacionIniciada) {
               respuestaGenerica = "Entendido. Para darte la mejor recomendación botánica, ¿podrías indicarme qué especie de planta es, con qué frecuencia la riegas o cuánta luz recibe en su ubicación actual?";
@@ -1033,8 +897,7 @@ ${frecuencia}`;
         } else {
           if (tipoConsultor === 'veterinario') {
             key = (text.includes('garrapata') || text.includes('bicho') || text.includes('parásito') || text.includes('tick') || text.includes('bug') || text.includes('parasite') || text.includes('flea') || text.includes('pulga')) ? 'vet_garrapata' : 'vet_herida';
-          } else if (tipoConsultor === 'exoticos') {
-            key = (text.includes('muda') || text.includes('piel') || text.includes('retención') || text.includes('shed') || text.includes('skin')) ? 'exo_muda' : 'exo_quemadura';
+
           } else {
             key = (text.includes('marrón') || text.includes('punta') || text.includes('seca') || text.includes('brown') || text.includes('tip') || text.includes('dry')) ? 'plant_marron' : 'plant_parasito';
           }
@@ -1059,7 +922,7 @@ ${frecuencia}`;
    */
   static async analizarSmartScanner(
     imageBlob: Blob | null,
-    mode: 'registrar_mascota' | 'salud_mascota' | 'registrar_planta' | 'enfermedad_planta' | 'registrar_exotico' | 'salud_exotico',
+    mode: 'registrar_mascota' | 'salud_mascota' | 'registrar_planta' | 'enfermedad_planta',
     promptTexto?: string
   ): Promise<any> {
     const cuota = IAQuotaManager.obtenerEstadoCuota();
@@ -1099,14 +962,7 @@ ${frecuencia}`;
           systemInstruction = locale === 'en'
             ? "Act as an expert agronomist, phytopathologist, and clinical botanist. Scrutinize the image, identifying patterns of leaf damage, chlorosis, apical necrosis, vascular wilt, presence of pests, or leaf mycosis. Return your response strictly in a flat JSON format with exactly these four text keys: 'diagnostico' (detailed and precise phytopathological diagnosis, e.g., 'Symmetric leaf apical necrosis compatible with osmotic stress due to soluble salt accumulation' instead of 'brown tips'), 'tratamiento' (detailed step-by-step instructions covering cultural, physical, and biological or phytosanitary treatments like potassium soap/neem oil), 'advertencia' (risks of sooty mold, total defoliation, or horizontal spread to healthy crops), and 'esUrgente' (a boolean true/false indicating whether it requires immediate isolation or shock intervention to save the plant)."
             : "Actúa como un agrónomo, fitopatólogo y botánico clínico experto. Analiza la imagen minuciosamente identificando patrones de daño foliar, clorosis, necrosis apical, marchitez vascular, presencia de plagas o micosis foliares. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas cuatro claves de texto: 'diagnostico' (diagnóstico fitopatológico detallado y preciso, ej. 'Necrosis apical foliar simétrica compatible con estrés osmótico por acumulación de sales solubles' en lugar de 'puntas marrones'), 'tratamiento' (paso a paso detallado que abarque control cultural, físico y tratamientos biológicos o fitosanitarios como jabón potásico/aceite de neem), 'advertencia' (riesgos de negrilla, defoliación total o propagación horizontal a cultivos sanos), y 'esUrgente' (un booleano true/false que indica si requiere aislamiento inmediato o intervención de choque para salvar la planta).";
-        } else if (mode === 'registrar_exotico') {
-          systemInstruction = locale === 'en'
-            ? "Act as a professional specialist expert in herpetology, entomology, and exotic species husbandry. Scrutinize color patterns, scales, body setae, proportions, and ocular anatomy to identify the exact species with maximum taxonomic precision (for example, distinguishing species of tarantulas, geckos, snakes, or frogs). Recommend a characteristic name, optimal terrarium temperature (warm zone/gradient) in °C (number), relative environmental humidity in % (number), and recommended feeding interval in days (number). Return your response strictly in a flat JSON format with exactly these text keys: 'especie', 'tipoEspecifico', 'nombreSugerido', 'temperaturaTerrario', 'humedadTerrario', and 'intervaloAlimentacionDias' (all numeric values must be pure numbers)."
-            : "Actúa como un especialista experto en herpetología, entomología y mantenimiento de especies exóticas a nivel profesional. Analiza de forma minuciosa patrones de coloración, escamas, setas corporales, proporciones y anatomía ocular para identificar con máxima precisión taxonómica la especie exacta (por ejemplo, distinguiendo especies de tarántulas, geckos, serpientes o ranas). Recomienda un nombre característico, la temperatura óptima del terrario (zona cálida/gradiente) en °C (número), la humedad relativa ambiental en % (número), y el intervalo de alimentación recomendado en días (número). Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas claves de texto: 'especie', 'tipoEspecifico', 'nombreSugerido', 'temperaturaTerrario', 'humedadTerrario', e 'intervaloAlimentacionDias' (todos los valores numéricos deben ser números puros).";
-        } else if (mode === 'salud_exotico') {
-          systemInstruction = locale === 'en'
-            ? "Act as an exotic animal specialist veterinarian, herpetologist, and clinical entomologist. Scrutinize the image for skin abnormalities, retained sheds (dysecdysis), thermal burns from bulbs or heat mats, signs of dehydration, terrarium mites, lethargy, or distension. Return your response strictly in a flat JSON format with exactly these four text keys: 'diagnostico' (technical and species-specific description of the symptom, e.g., 'Focal dysecdysis on ocular spectacles or distal extremities'), 'tratamiento' (detailed therapeutic procedure and controlled hydration in captivity), 'advertencia' (risk of limb constriction, septicemia from burns, or blindness from retained spectacles), and 'esUrgente' (a boolean true/false if it requires immediate clinical intervention or critical terrarium parameter adjustment)."
-            : "Actúa como un veterinario especialista en animales exóticos, herpetólogo y entomólogo clínico. Analiza minuciosamente la imagen en busca de anomalías dermatológicas, retención de mudas (disecdisis), quemaduras térmicas de bombillas o mantas calefactoras, signos de deshidratación, ácaros del terrario, letargia o distensión. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas cuatro claves de texto: 'diagnostico' (descripción técnica y específica de la especie y su síntoma, ej. 'Disecdisis focal en placas oculares o extremidades distales'), 'tratamiento' (procedimiento terapéutico detallado e hidratación controlada en cautiverio), 'advertencia' (riesgo de constricción de extremidades, septicemia por quemaduras o ceguera por mudas oculares retenidas), y 'esUrgente' (un booleano true/false si requiere intervención clínica inmediata o ajuste crítico de parámetros de terrario).";
+
         }
         
         const aspectInstruction = `\n\nCRÍTICO - ASPECTO Y RESOLUCIÓN COMPLETOS: Analiza la imagen completa en su resolución y relación de aspecto originales. No asumes que la imagen ha sido recortada a un cuadrado; evalúa todos los elementos visibles en todo el encuadre enviado.`;
@@ -1127,8 +983,7 @@ ${frecuencia}`;
           responseSchema = REGISTRAR_MASCOTA_SCHEMA;
         } else if (mode === 'registrar_planta') {
           responseSchema = REGISTRAR_PLANTA_SCHEMA;
-        } else if (mode === 'registrar_exotico') {
-          responseSchema = REGISTRAR_EXOTICO_SCHEMA;
+
         }
 
         let response: Response | null = null;
@@ -1227,22 +1082,8 @@ ${frecuencia}`;
         compuestosToxicos: '',
         intervaloRiegoSugeridoDias: 5
       };
-    } else if (mode === 'registrar_exotico') {
-      return {
-        especie: 'Tarántula',
-        tipoEspecifico: 'Tarántula de rodillas rojas mexicana',
-        nombreSugerido: 'Pelusa',
-        temperaturaTerrario: 26,
-        humedadTerrario: 65,
-        intervaloAlimentacionDias: 7
-      };
-    } else if (mode === 'salud_exotico') {
-      return {
-        diagnostico: 'Muda retenida leve en extremidades posteriores.',
-        tratamiento: 'Incrementar la humedad local rociando agua tibia y proporcionar un refugio húmedo con musgo sphagnum.',
-        advertencia: 'Vigilar si la muda no se desprende en 48 horas para evitar constricción.',
-        esUrgente: false
-      };
+
+
     } else if (mode === 'salud_mascota') {
       const text = (promptTexto || '').toLowerCase();
       const key = (text.includes('garrapata') || text.includes('bicho') || text.includes('parásito')) ? 'vet_garrapata' : 'vet_herida';

@@ -17,14 +17,14 @@ interface ChatMessage {
     tratamiento: string;
     advertencia: string;
     esUrgente: boolean;
-    abrirFicha?: { tipo: 'mascota' | 'planta' | 'exotico'; id: string } | null;
+    abrirFicha?: { tipo: 'mascota' | 'planta'; id: string } | null;
   };
 }
 
 interface IAConsultantsViewProps {
-  forceConsultant?: 'veterinario' | 'agronomo' | 'exoticos';
+  forceConsultant?: 'veterinario' | 'agronomo';
   hideSelector?: boolean;
-  onNavigateToAsset?: (tipo: 'mascota' | 'planta' | 'exotico', id: string) => void;
+  onNavigateToAsset?: (tipo: 'mascota' | 'planta', id: string) => void;
   onUpdate?: () => void;
 }
 
@@ -36,7 +36,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
 }) => {
   const theme = localStorage.getItem('petplant_game_theme') || 'adventure';
 
-  const [activeConsultant, setActiveConsultant] = useState<'veterinario' | 'agronomo' | 'exoticos'>(
+  const [activeConsultant, setActiveConsultant] = useState<'veterinario' | 'agronomo'>(
     forceConsultant || 'veterinario'
   );
   const [inputText, setInputText] = useState('');
@@ -287,10 +287,9 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
 
     try {
       // Obtener datos de la base de datos local para inyectar como contexto
-      const [mascotas, plantas, exoticos] = await Promise.all([
+      const [mascotas, plantas] = await Promise.all([
         LocalDatabase.getMascotas(),
-        LocalDatabase.getPlantas(),
-        LocalDatabase.getExoticos()
+        LocalDatabase.getPlantas()
       ]);
 
       // Obtener coordenadas GPS y clima en vivo desde el caché local si está habilitado
@@ -326,7 +325,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
         activeConsultant,
         currentText,
         currentTemplate,
-        { mascotas, plantas, exoticos },
+        { mascotas, plantas },
         gpsCoords,
         cleanHistoryForAPI
       );
@@ -763,28 +762,11 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
               >
                 🌿 Agrónomo
               </button>
-              <button
-                type="button"
-                onClick={() => { setActiveConsultant('exoticos'); setAttachedImage(null); }}
-                style={{
-                  padding: '8px 16px',
-                  background: activeConsultant === 'exoticos' ? 'var(--game-accent-light, #fff8e1)' : 'var(--game-bg, #f5f5f5)',
-                  color: activeConsultant === 'exoticos' ? 'var(--game-text-bright, #ff8f00)' : 'var(--game-text, #555)',
-                  border: 'var(--game-border, none)',
-                  borderRadius: theme === 'arcade' ? '0px' : '8px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  fontFamily: 'var(--game-font, sans-serif)',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                🦎 Exóticos
-              </button>
+
             </div>
           ) : (
-            <h3 style={{ margin: '0', fontSize: '14px', color: activeConsultant === 'veterinario' ? '#1976d2' : activeConsultant === 'exoticos' ? '#ff8f00' : '#2e7d32', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
-              {activeConsultant === 'veterinario' ? '🐾 Consultor Veterinario' : activeConsultant === 'exoticos' ? '🦎 Especialista en Exóticos' : '🌿 Consultor Agrónomo'}
+            <h3 style={{ margin: '0', fontSize: '14px', color: activeConsultant === 'veterinario' ? '#1976d2' : '#2e7d32', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
+              {activeConsultant === 'veterinario' ? '🐾 Consultor Veterinario' : '🌿 Consultor Agrónomo'}
             </h3>
           )}
 

@@ -9,11 +9,11 @@ const getNowTimestamp = (): number => Date.now();
 interface EcosystemCalendarProps {
   plantas: any[];
   mascotas: any[];
-  exoticos?: any[];
+
   onUpdate: () => void;
 }
 
-export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = [], mascotas = [], exoticos = [], onUpdate }) => {
+export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = [], mascotas = [], onUpdate }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [eventos, setEventos] = useState<EventoCalendario[]>([]);
   const [selectedDayStr, setSelectedDayStr] = useState<string | null>(() => {
@@ -75,24 +75,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
         }
       });
 
-      // Pesaje sugerido para exóticos
-      exoticos.forEach(e => {
-        const ultimoPeso = e.registroPeso && e.registroPeso[e.registroPeso.length - 1];
-        const fechaUltimoPeso = ultimoPeso ? new Date(ultimoPeso.fecha) : new Date(0);
-        const diferenciaMs = hoy.getTime() - fechaUltimoPeso.getTime();
-        const diasDesdePeso = Math.floor(diferenciaMs / (1000 * 60 * 60 * 24));
 
-        if (diasDesdePeso >= 7 || !ultimoPeso) {
-          tareas.push({
-            type: 'peso-exotico',
-            title: `Pesar a ${e.nombre}`,
-            detail: "Mantener actualizada la curva de peso",
-            emoji: '⚖️',
-            color: '#9c27b0',
-            targetId: e.id
-          });
-        }
-      });
 
       // Medicación programada activa para el día seleccionado
       mascotas.forEach(m => {
@@ -605,7 +588,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                   <span style={{ fontSize: '10px', color: '#666' }}>{t.detail}</span>
                 </div>
                 
-                {(t.type === 'riego' || t.type === 'vacuna' || t.type === 'peso' || t.type === 'peso-exotico' || t.type === 'medicacion') && (
+                {(t.type === 'riego' || t.type === 'vacuna' || t.type === 'peso' || t.type === 'medicacion') && (
                   <button
                     onClick={async () => {
                       if (t.type === 'riego') {
@@ -718,11 +701,8 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                             alert(`Toma registrada. Próxima dosis: ${activo ? nextDoseDate.toLocaleString() : 'Tratamiento finalizado'}`);
                           }
                         }
-                      } else if (t.type === 'peso' || t.type === 'peso-exotico') {
-                        const isExo = t.type === 'peso-exotico';
-                        const animal = isExo
-                          ? exoticos.find(item => item.id === t.targetId)
-                          : mascotas.find(item => item.id === t.targetId);
+                      } else if (t.type === 'peso') {
+                        const animal = mascotas.find(item => item.id === t.targetId);
 
                         if (animal) {
                           const pesoInput = window.prompt(`Introduce el nuevo peso (Kg) para ${animal.nombre}:`);
@@ -737,19 +717,11 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                             pesoKg: pesoNum
                           };
 
-                          if (isExo) {
-                            const listadoPeso = animal.registroPeso || [];
-                            await LocalDatabase.saveExotico({
-                              ...animal,
-                              registroPeso: [...listadoPeso, nuevoRegistro]
-                            });
-                          } else {
-                            const listadoPeso = animal.registroPeso || [];
-                            await LocalDatabase.saveMascota({
-                              ...animal,
-                              registroPeso: [...listadoPeso, nuevoRegistro]
-                            });
-                          }
+                          const listadoPeso = animal.registroPeso || [];
+                          await LocalDatabase.saveMascota({
+                            ...animal,
+                            registroPeso: [...listadoPeso, nuevoRegistro]
+                          });
                         }
                       }
                       onUpdate();
