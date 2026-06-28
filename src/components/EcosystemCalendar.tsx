@@ -327,12 +327,54 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
       color: 'var(--game-text, #333)',
       boxSizing: 'border-box'
     }}>
+      {/* CSS Styles */}
+      <style>{`
+        .calendar-header-container {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 12px;
+          width: 100%;
+        }
+        .calendar-controls-wrapper {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+        }
+        @media (max-width: 600px) {
+          .calendar-header-container {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 16px;
+          }
+          .calendar-controls-wrapper {
+            flex-direction: column-reverse;
+            width: 100%;
+            gap: 12px;
+          }
+          .calendar-nav-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            gap: 8px;
+          }
+          .calendar-export-btn {
+            width: 100% !important;
+            justify-content: center;
+            margin-right: 0 !important;
+          }
+        }
+      `}</style>
+
       {/* Calendar Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="calendar-header-container">
         <h3 style={{ margin: '0', fontSize: '18px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>
           📅 Agenda y Calendario del Ecosistema
         </h3>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div className="calendar-controls-wrapper">
           <button 
             type="button"
             onClick={exportarICS}
@@ -351,25 +393,28 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
               marginRight: '4px'
             }}
             title="Exportar calendario a formato iCal (.ics)"
-            className="no-print"
+            className="no-print calendar-export-btn"
           >
             📅 Exportar iCal
           </button>
-          <button 
-            onClick={handlePrevMonth}
-            style={{ padding: '6px 12px', background: '#f0f0f0', border: '1px solid #ccc', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', color: '#000' }}
-          >
-            &lt;
-          </button>
-          <span style={{ fontSize: '14px', fontWeight: 'bold', minWidth: '120px', textAlign: 'center' }}>
-            {monthNames[month]} {year}
-          </span>
-          <button 
-            onClick={handleNextMonth}
-            style={{ padding: '6px 12px', background: '#f0f0f0', border: '1px solid #ccc', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', color: '#000' }}
-          >
-            &gt;
-          </button>
+          
+          <div className="calendar-nav-group">
+            <button 
+              onClick={handlePrevMonth}
+              style={{ padding: '6px 12px', background: '#f0f0f0', border: '1px solid #ccc', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', color: '#000' }}
+            >
+              &lt;
+            </button>
+            <span style={{ fontSize: '14px', fontWeight: 'bold', minWidth: '120px', textAlign: 'center' }}>
+              {monthNames[month]} {year}
+            </span>
+            <button 
+              onClick={handleNextMonth}
+              style={{ padding: '6px 12px', background: '#f0f0f0', border: '1px solid #ccc', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', color: '#000' }}
+            >
+              &gt;
+            </button>
+          </div>
         </div>
       </div>
 
