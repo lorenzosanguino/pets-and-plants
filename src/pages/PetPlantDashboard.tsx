@@ -1202,49 +1202,37 @@ export const PetPlantDashboard: React.FC = () => {
           <div className="ecosystem-header-responsive" style={{
             background: 'var(--game-card-bg, #ffffff)',
             borderRadius: '16px',
-            padding: (experienceMode === 'consultants' || experienceMode === 'stats' || experienceMode === 'settings') ? '10px 16px' : '20px 24px',
+            padding: '20px 24px',
             border: 'var(--game-border, 1px solid #f0f0f0)',
             display: 'flex',
-            flexDirection: (experienceMode === 'consultants' || experienceMode === 'stats' || experienceMode === 'settings') ? 'row' : 'column',
-            justifyContent: (experienceMode === 'consultants' || experienceMode === 'stats' || experienceMode === 'settings') ? 'space-between' : 'center',
+            flexDirection: 'column',
+            justifyContent: 'center',
             alignItems: 'center',
             textAlign: 'center',
             marginBottom: '16px',
-            gap: (experienceMode === 'consultants' || experienceMode === 'stats' || experienceMode === 'settings') ? '8px' : '16px',
+            gap: '16px',
             flexWrap: 'wrap'
           }}>
-            {(experienceMode !== 'consultants' && experienceMode !== 'stats' && experienceMode !== 'settings') ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                  <span style={{ fontSize: '24px' }}>{headerInfo.icon}</span>
-                  <h1 style={{ margin: '0', fontSize: '20px', color: 'var(--game-text-bright, #1a1a1a)', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
-                    {headerInfo.title}
-                  </h1>
-                </div>
-                {headerInfo.desc && (
-                  <p style={{ margin: '4px 0 8px 0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
-                    {headerInfo.desc}
-                  </p>
-                )}
-                {renderConnectivityIndicator()}
-              </div>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                <span style={{ fontSize: '20px' }}>{headerInfo.icon}</span>
-                <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--game-text-bright, #1a1a1a)', fontFamily: 'var(--game-font, sans-serif)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                <span style={{ fontSize: '24px' }}>{headerInfo.icon}</span>
+                <h1 style={{ margin: '0', fontSize: '20px', color: 'var(--game-text-bright, #1a1a1a)', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
                   {headerInfo.title}
-                </span>
-                <div style={{ marginLeft: '8px', display: 'inline-block' }}>
-                  {renderConnectivityIndicator()}
-                </div>
+                </h1>
               </div>
-            )}
+              {headerInfo.desc && (
+                <p style={{ margin: '4px 0 8px 0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
+                  {headerInfo.desc}
+                </p>
+              )}
+              {renderConnectivityIndicator()}
+            </div>
             
             <div className="ecosystem-buttons-responsive" style={{
               display: 'flex',
               flexDirection: 'column',
               gap: '8px',
-              width: (experienceMode === 'consultants' || experienceMode === 'stats' || experienceMode === 'settings') ? 'auto' : '100%',
+              width: '100%',
               alignItems: 'center'
             }}>
               <div style={{
