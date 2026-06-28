@@ -19,7 +19,6 @@ const EcosystemCalendar  = lazy(() => import('../components/EcosystemCalendar').
 const VacationAdvice     = lazy(() => import('../components/VacationAdvice').then(m => ({ default: m.VacationAdvice })));
 const ManualPetForm      = lazy(() => import('../components/ManualRegisterModal').then(m => ({ default: m.ManualPetForm })));
 const ManualPlantForm    = lazy(() => import('../components/ManualRegisterModal').then(m => ({ default: m.ManualPlantForm })));
-const LandingView        = lazy(() => import('../components/LandingView').then(m => ({ default: m.LandingView })));
 const SettingsView       = lazy(() => import('../components/SettingsView').then(m => ({ default: m.SettingsView })));
 const ConfettiOverlay    = lazy(() => import('../components/ConfettiOverlay').then(m => ({ default: m.ConfettiOverlay })));
 
@@ -85,9 +84,9 @@ export const PetPlantDashboard: React.FC = () => {
   const [nuevoHogarNombre, setNuevoHogarNombre] = useState('');
   const [joinHogarId, setJoinHogarId] = useState('');
   
-  // Modo de Experiencia: 'landing', 'pets', 'plants', 'travels', 'consultants', 'stats', 'settings'
-  // Al refrescar la página, siempre iniciamos en la página de inicio ('landing') y pestaña 'dashboard'
-  const [experienceMode, setExperienceMode] = useState<'landing' | 'pets' | 'plants' | 'travels' | 'consultants' | 'stats' | 'settings'>('landing');
+  // Modo de Experiencia: 'pets', 'plants', 'travels', 'consultants', 'stats', 'settings'
+  // Al refrescar la página, iniciamos en la página de Mascotas y pestaña 'dashboard'
+  const [experienceMode, setExperienceMode] = useState<'pets' | 'plants' | 'travels' | 'consultants' | 'stats' | 'settings'>('pets');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'stats' | 'consultants' | 'settings'>('dashboard');
 
   // Estados para Búsqueda y Filtros (P3)
@@ -349,8 +348,6 @@ export const PetPlantDashboard: React.FC = () => {
 
   // Interceptar botón de Atrás en Android (popstate)
   useEffect(() => {
-    if (experienceMode === 'landing') return;
-
     // Push a state so popstate event fires when pressing back
     window.history.pushState({ mode: experienceMode, tab: activeTab }, '');
 
@@ -364,7 +361,7 @@ export const PetPlantDashboard: React.FC = () => {
         window.history.pushState({ mode: experienceMode, tab: activeTab }, '');
       } else {
         if (!e.state || e.state.mode === 'landing') {
-          triggerRippleTransition('landing', 'dashboard');
+          triggerRippleTransition('pets', 'dashboard');
         } else {
           triggerRippleTransition(e.state.mode, e.state.tab || 'dashboard');
         }
@@ -589,7 +586,7 @@ export const PetPlantDashboard: React.FC = () => {
 
 
   useEffect(() => {
-    if (uiTheme !== 'gaming' || experienceMode === 'landing') return;
+    if (uiTheme !== 'gaming') return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) {
@@ -669,7 +666,7 @@ export const PetPlantDashboard: React.FC = () => {
         overflow: isLoading ? 'hidden' : 'visible',
         fontFamily: 'var(--game-font, sans-serif)', 
         color: 'var(--game-text, #333)',
-        padding: (experienceMode === 'landing' || isLoading) ? '12px 10px 24px 10px' : '24px 16px',
+        padding: isLoading ? '12px 10px 24px 10px' : '24px 16px',
         position: 'relative',
         overflowX: 'hidden',
         boxSizing: 'border-box'
@@ -1180,23 +1177,8 @@ export const PetPlantDashboard: React.FC = () => {
         </div>
       )}
 
-      
-      {/* 1. VIDEOJUEGO LANDING SPLASH SCREEN */}
-      {experienceMode === 'landing' && (
-        <Suspense fallback={<ChunkLoader height="300px" />}>
-          <LandingView 
-            uiTheme={uiTheme}
-            clima={climaActual}
-            onNavigate={(mode, tab, e) => triggerRippleTransition(mode, tab, e)}
-            mascotas={mascotas}
-            plantas={plantas}
-          />
-        </Suspense>
-      )}
-
-      {/* 2. ECOSISTEMAS DEDICADOS E INDEPENDIENTES */}
-      {experienceMode !== 'landing' && (
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      {/* ECOSISTEMAS DEDICADOS E INDEPENDIENTES */}
+      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           
           {/* Header Ecosistema */}
           <div className="ecosystem-header-responsive" style={{
@@ -1832,7 +1814,6 @@ export const PetPlantDashboard: React.FC = () => {
 
 
         </div>
-      )}
 
 
 
