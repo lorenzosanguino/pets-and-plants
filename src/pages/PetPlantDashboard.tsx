@@ -162,7 +162,7 @@ export const PetPlantDashboard: React.FC = () => {
   };
 
   const triggerRippleTransition = React.useCallback((
-    mode: 'landing' | 'pets' | 'plants' | 'travels' | 'consultants' | 'stats' | 'settings',
+    mode: 'pets' | 'plants' | 'travels' | 'consultants' | 'stats' | 'settings',
     tab: 'dashboard' | 'stats' | 'consultants' | 'settings',
     e?: React.MouseEvent | MouseEvent
   ) => {
