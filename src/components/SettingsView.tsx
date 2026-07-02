@@ -524,7 +524,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               transition: 'all 0.2s'
             }}
           >
-            {loadingGPS ? 'Sincronizando todo...' : 'Sincronizar todo el Ecosistema por Satélite 🛰️'}
+            {loadingGPS ? t('gpsSyncingBtn') : t('gpsSyncBtn')}
           </button>
           {gpsSyncSuccess && (
             <span style={{ fontSize: '12px', color: '#2e7d32', fontWeight: 'bold' }}>✓ {gpsSyncSuccess}</span>
@@ -548,10 +548,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             fontWeight: 'bold',
             fontFamily: 'var(--game-font, sans-serif)'
           }}>
-            🏠 Grupo Hogar (Sincronización en la Nube)
+            {t('hogarGroupTitle')}
           </h3>
           <p style={{ margin: '0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', lineHeight: '1.4' }}>
-            Comparte el estado de tus mascotas, riegos y clínica veterinaria en tiempo real con tu familia y cuidadores.
+            {t('hogarGroupDesc')}
           </p>
           {!isCloudEnabled && (
             <div style={{
@@ -564,7 +564,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               borderRadius: 'var(--game-radius, 6px)',
               border: 'var(--game-border, 1px solid rgba(33, 150, 243, 0.3))'
             }}>
-              ⚡ Modo Sincronización en vivo disponible a través de Firestore.
+              {t('hogarLiveSyncAvail')}
             </div>
           )}
         </div>
@@ -582,7 +582,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             marginBottom: '16px'
           }}>
             <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>
-              🏠 Cambiar entre Hogares Vinculados ({joinedHogares.length})
+              {t('hogarSwitchTitle')} ({joinedHogares.length})
             </span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {joinedHogares.map((hogar) => {
@@ -623,7 +623,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             cursor: 'pointer'
                           }}
                         >
-                          Conectar 🔌
+                          {t('hogarConnect')}
                         </button>
                       ) : (
                         <span style={{
@@ -634,7 +634,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           fontSize: '11px',
                           fontWeight: 'bold'
                         }}>
-                          Activo ✓
+                          {t('hogarActive')}
                         </span>
                       )}
                       <button
@@ -651,7 +651,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           cursor: 'pointer'
                         }}
                       >
-                        Quitar 🗑️
+                        {t('hogarRemove')}
                       </button>
                     </div>
                   </div>
@@ -674,7 +674,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   cursor: 'pointer'
                 }}
               >
-                Volver a Modo Local (Desconectar)
+                {t('hogarLocalMode')}
               </button>
             )}
           </div>
@@ -693,7 +693,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           }}>
             <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
               <div>
-                <span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--game-text, #888)', fontWeight: 'bold', fontFamily: 'var(--game-font, monospace)' }}>Hogar Activo</span>
+                <span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--game-text, #888)', fontWeight: 'bold', fontFamily: 'var(--game-font, monospace)' }}>{t('hogarActiveLabel')}</span>
                 <h4 style={{ margin: '0', fontSize: '20px', color: 'var(--game-text-bright, #333)', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)' }}>{hogarNombre}</h4>
               </div>
               <span style={{
@@ -715,7 +715,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   background: syncStatus === 'synced' ? '#4caf50' : syncStatus === 'syncing' ? '#ff9800' : '#f44336',
                   display: 'inline-block'
                 }} />
-                {syncStatus === 'synced' ? 'Sincronizado' : syncStatus === 'syncing' ? 'Sincronizando...' : 'Error de Sincro'}
+                {syncStatus === 'synced' ? t('hogarSynced') : syncStatus === 'syncing' ? t('hogarSyncing') : t('hogarSyncError')}
               </span>
             </div>
 
@@ -730,7 +730,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               gap: '12px'
             }}>
               <div>
-                <p style={{ margin: '0', fontSize: '11px', color: 'var(--game-text, #666)' }}>Código de invitación para tu familia:</p>
+                <p style={{ margin: '0', fontSize: '11px', color: 'var(--game-text, #666)' }}>{t('hogarInviteCode')}</p>
                 <strong style={{ fontSize: '16px', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, monospace)' }}>{hogarId}</strong>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
@@ -751,7 +751,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     fontFamily: 'var(--game-font, sans-serif)'
                   }}
                 >
-                  Copiar Código
+                  {t('hogarCopyCode')}
                 </button>
                 <button
                   onClick={() => setShowQR(prev => !prev)}
@@ -769,7 +769,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     fontFamily: 'var(--game-font, sans-serif)'
                   }}
                 >
-                  {showQR ? '🙈 Ocultar QR' : '📱 Ver QR'}
+                  {showQR ? t('hogarHideQR') : t('hogarShowQR')}
                 </button>
               </div>
             </div>
@@ -787,7 +787,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 borderRadius: 'var(--game-radius, 8px)',
               }}>
                 <p style={{ margin: '0', fontSize: '12px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
-                  Escanea este QR para unirte al hogar <strong style={{ color: 'var(--game-text-bright)' }}>{hogarNombre}</strong>
+                  {t('hogarScanQR')} <strong style={{ color: 'var(--game-text-bright)' }}>{hogarNombre}</strong>
                 </p>
                 <div style={{
                   padding: '12px',
@@ -826,7 +826,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 transition: 'all 0.2s'
               }}
             >
-              Desvincular Grupo Hogar 🚪
+              {t('hogarUnlink')}
             </button>
           </div>
         ) : (
@@ -846,13 +846,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               flexDirection: 'column',
               gap: '12px'
             }}>
-              <h4 style={{ margin: '0', fontSize: '15px', color: 'var(--game-text-bright, #333)', fontWeight: 'bold' }}>Crear Nuevo Grupo Hogar</h4>
+              <h4 style={{ margin: '0', fontSize: '15px', color: 'var(--game-text-bright, #333)', fontWeight: 'bold' }}>{t('hogarCreateTitle')}</h4>
               <p style={{ margin: '0', fontSize: '11px', color: 'var(--game-text, #777)', lineHeight: '1.4' }}>
-                Sube tu base de datos actual y genera un código de invitación único.
+                {t('hogarCreateDesc')}
               </p>
               <input
                 type="text"
-                placeholder="Nombre del Hogar (Ej. Casa Lorenzo)"
+                placeholder={t('hogarCreatePlaceholder')}
                 value={nuevoHogarNombre}
                 onChange={(e) => setNuevoHogarNombre(e.target.value)}
                 style={{
@@ -881,7 +881,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   fontFamily: 'var(--game-font, sans-serif)'
                 }}
               >
-                {syncStatus === 'syncing' ? 'Creando...' : 'Crear y Subir Base de Datos 🏠'}
+                {syncStatus === 'syncing' ? t('hogarCreating') : t('hogarCreateBtn')}
               </button>
             </form>
 
@@ -895,13 +895,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               flexDirection: 'column',
               gap: '12px'
             }}>
-              <h4 style={{ margin: '0', fontSize: '15px', color: 'var(--game-text-bright, #333)', fontWeight: 'bold' }}>Unirse a un Grupo Hogar Existente</h4>
+              <h4 style={{ margin: '0', fontSize: '15px', color: 'var(--game-text-bright, #333)', fontWeight: 'bold' }}>{t('hogarJoinTitle')}</h4>
               <p style={{ margin: '0', fontSize: '11px', color: 'var(--game-text, #777)', lineHeight: '1.4' }}>
-                Introduce el código compartido para descargar la base de datos y unirte al grupo.
+                {t('hogarJoinDesc')}
               </p>
               <input
                 type="text"
-                placeholder="Código: HOGAR-XXXX-XXXX"
+                placeholder={t('hogarJoinPlaceholder')}
                 value={joinHogarId}
                 onChange={(e) => setJoinHogarId(e.target.value)}
                 style={{
@@ -930,7 +930,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   fontFamily: 'var(--game-font, sans-serif)'
                 }}
               >
-                {syncStatus === 'syncing' ? 'Vinculando...' : 'Unirse y Descargar Datos 🔌'}
+                {syncStatus === 'syncing' ? t('hogarJoining') : t('hogarJoinBtn')}
               </button>
             </form>
           </div>
@@ -949,7 +949,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)' }}>
-              🔧 ¿Problemas de sincronización?
+              {t('hogarSyncProblems')}
             </span>
             <button
               type="button"
@@ -967,7 +967,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 fontFamily: 'var(--game-font, sans-serif)'
               }}
             >
-              {runningDiag ? 'Ejecutando...' : 'Ejecutar Diagnóstico 🔍'}
+              {runningDiag ? t('hogarDiagRunning') : t('hogarDiagBtn')}
             </button>
           </div>
           {diagnosticLog && (
@@ -1114,7 +1114,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             fontWeight: 'bold',
             fontFamily: 'var(--game-font, sans-serif)'
           }}>
-            🔑 Sesión en la Nube
+            {t('cloudSessionTitle')}
           </h3>
           {user ? (
             <p style={{ margin: '0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)' }}>
@@ -1122,7 +1122,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </p>
           ) : (
             <p style={{ margin: '0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)' }}>
-              No has iniciado sesión. Tus datos se guardan de forma local en tu navegador. Inicia sesión para guardar tus datos de forma segura en la nube.
+            {t('cloudSessionNoLogin')}
             </p>
           )}
         </div>
