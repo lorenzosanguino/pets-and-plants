@@ -110,11 +110,11 @@ export const useAppData = (
 
       for (const ev of eventosHoy) {
         markNotificado(ev.id);
-        let prefijo = '📅 Recordatorio Hoy';
-        if (ev.categoria === 'veterinario') prefijo = '🐾 Veterinaria Hoy';
-        else if (ev.categoria === 'riego') prefijo = '💧 Riego Hoy';
-        else if (ev.categoria === 'medicacion') prefijo = '💊 Medicación Hoy';
-        else if (ev.categoria === 'abono') prefijo = '🌿 Abono Hoy';
+        let prefijo = '📅 Reminder Today';
+        if (ev.categoria === 'veterinario') prefijo = '🐾 Vet Today';
+        else if (ev.categoria === 'riego') prefijo = '💧 Watering Today';
+        else if (ev.categoria === 'medicacion') prefijo = '💊 Medication Today';
+        else if (ev.categoria === 'abono') prefijo = '🌿 Fertilizer Today';
 
         await NotificationManager.sendNotification(
           prefijo,
@@ -124,11 +124,11 @@ export const useAppData = (
 
       for (const ev of eventosMañana) {
         markNotificado(ev.id);
-        let prefijo = '📅 Recordatorio Mañana';
-        if (ev.categoria === 'veterinario') prefijo = '🐾 Veterinaria Mañana';
-        else if (ev.categoria === 'riego') prefijo = '💧 Riego Mañana';
-        else if (ev.categoria === 'medicacion') prefijo = '💊 Medicación Mañana';
-        else if (ev.categoria === 'abono') prefijo = '🌿 Abono Mañana';
+        let prefijo = '📅 Reminder Tomorrow';
+        if (ev.categoria === 'veterinario') prefijo = '🐾 Vet Tomorrow';
+        else if (ev.categoria === 'riego') prefijo = '💧 Watering Tomorrow';
+        else if (ev.categoria === 'medicacion') prefijo = '💊 Medication Tomorrow';
+        else if (ev.categoria === 'abono') prefijo = '🌿 Fertilizer Tomorrow';
 
         await NotificationManager.sendNotification(
           prefijo,
@@ -139,8 +139,8 @@ export const useAppData = (
       for (const p of plantasPendientes) {
         markNotificado(`riego-${p.id}`);
         await NotificationManager.sendNotification(
-          `💧 Riego Pendiente`,
-          `¡Es hora de regar tu ${p.nombreComun}! (${p.ubicacionHabitacion})`
+          `💧 Watering Pending`,
+          `Time to water your ${p.nombreComun}! (${p.ubicacionHabitacion})`
         );
       }
 
@@ -236,10 +236,10 @@ export const useAppData = (
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      alert("Copia de seguridad exportada con éxito. Revisa tus descargas.");
+      alert("Backup exported successfully. Check your downloads.");
     } catch (err) {
       console.error("Fallo al exportar copia de seguridad:", err);
-      alert("Error al exportar la copia de seguridad. Revisa la consola para más detalles.");
+      alert("Error exporting backup. Check the console for more details.");
     }
   };
 
@@ -248,7 +248,7 @@ export const useAppData = (
     if (!file) return;
 
     const confirmacion = window.confirm(
-      "ATENCIÓN: Importar esta copia de seguridad sobrescribirá todos tus datos locales de mascotas, plantas, exóticos, eventos de calendario y chats. ¿Seguro que deseas continuar?"
+      "WARNING: Importing this backup will overwrite all your local data for pets, plants, exotics, calendar events and chats. Are you sure you want to continue?"
     );
     if (!confirmacion) {
       e.target.value = '';
@@ -262,7 +262,7 @@ export const useAppData = (
         const data = JSON.parse(content);
 
         if (!data || (!Array.isArray(data.mascotas) && !Array.isArray(data.plantas))) {
-          throw new Error("El archivo JSON no tiene un formato de copia de seguridad válido.");
+          throw new Error("The JSON file does not have a valid backup format.");
         }
 
         const importMascotas = Array.isArray(data.mascotas) ? data.mascotas : [];
@@ -278,10 +278,10 @@ export const useAppData = (
         );
 
         await refreshData(true);
-        alert("¡Copia de seguridad importada correctamente!");
+        alert("Backup imported successfully!");
       } catch (err: any) {
         console.error("Error al importar copia de seguridad:", err);
-        alert(`Fallo al importar: ${err.message || 'Formato de archivo inválido'}`);
+        alert(`Import failed: ${err.message || 'Invalid file format'}`);
       } finally {
         e.target.value = '';
       }

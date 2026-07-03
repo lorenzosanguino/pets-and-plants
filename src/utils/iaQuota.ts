@@ -100,7 +100,7 @@ export class IAQuotaManager {
    * Formatea una cantidad de segundos en días, horas, minutos y segundos de forma legible en español.
    */
   static formatearSegundos(totalSegundos: number): string {
-    if (totalSegundos <= 0) return 'unos instantes';
+    if (totalSegundos <= 0) return 'a few moments';
 
     const dias = Math.floor(totalSegundos / 86400);
     const horas = Math.floor((totalSegundos % 86400) / 3600);
@@ -109,23 +109,23 @@ export class IAQuotaManager {
 
     const partes: string[] = [];
     if (dias > 0) {
-      partes.push(`${dias} ${dias === 1 ? 'día' : 'días'}`);
+      partes.push(`${dias} ${dias === 1 ? 'day' : 'days'}`);
     }
     if (horas > 0) {
-      partes.push(`${horas} ${horas === 1 ? 'hora' : 'horas'}`);
+      partes.push(`${horas} ${horas === 1 ? 'hour' : 'hours'}`);
     }
     if (minutos > 0) {
-      partes.push(`${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}`);
+      partes.push(`${minutos} ${minutos === 1 ? 'minute' : 'minutes'}`);
     }
     if (segundos > 0 || partes.length === 0) {
-      partes.push(`${segundos} ${segundos === 1 ? 'segundo' : 'segundos'}`);
+      partes.push(`${segundos} ${segundos === 1 ? 'second' : 'seconds'}`);
     }
 
     if (partes.length === 1) return partes[0];
     
     const todasMenosUltima = partes.slice(0, -1).join(', ');
     const ultima = partes[partes.length - 1];
-    return `${todasMenosUltima} y ${ultima}`;
+    return `${todasMenosUltima} and ${ultima}`;
   }
 
   /**
@@ -133,7 +133,7 @@ export class IAQuotaManager {
    */
   static obtenerMensajeTiempoRestante(): string {
     const ms = this.obtenerTiempoRestanteMs();
-    if (ms <= 0) return 'unos instantes';
+    if (ms <= 0) return 'a few moments';
     
     const totalSegundos = Math.floor(ms / 1000);
     return this.formatearSegundos(totalSegundos);
@@ -143,29 +143,29 @@ export class IAQuotaManager {
    * Formatea un error de API en un mensaje amigable y legible para el usuario.
    */
   static formatearErrorCuota(errorStr: string): string {
-    if (!errorStr) return "Límite de cuota excedido. Por favor, inténtalo más tarde.";
+    if (!errorStr) return "Quota limit exceeded. Please try again later.";
     
     const status = this.obtenerEstadoCuota();
     const tiempoRenovacion = this.obtenerMensajeTiempoRestante();
     
     const infoCuota = status.esIlimitado
-      ? 'Tienes cuota ilimitada con tu clave API.'
+      ? 'You have unlimited quota with your API key.'
       : status.restantes > 0
-      ? `Te quedan ${status.restantes} de ${status.limite} consultas gratuitas hoy.`
-      : `Límite gratuito de hoy alcanzado.`;
+      ? `You have ${status.restantes} of ${status.limite} free queries left today.`
+      : `Today's free limit reached.`;
     
     const tiempoRestablecimientoMsg = status.esIlimitado 
       ? '' 
-      : `Tiempo restante para restablecer la cuota diaria: ${tiempoRenovacion}.`;
+      : `Time remaining to reset the daily quota: ${tiempoRenovacion}.`;
 
     const esErrorCuotaExcedida = errorStr.includes("429") || 
                                  errorStr.toLowerCase().includes("quota") || 
                                  errorStr.includes("RESOURCE_EXHAUSTED") ||
                                  status.restantes === 0;
 
-    // Si es un error de cuota o se alcanzó el límite diario, mostramos las horas y minutos restantes de forma prioritaria
+    // If quota is exceeded or daily limit reached, show remaining time prominently
     if (esErrorCuotaExcedida) {
-      return `Límite de consultas de IA alcanzado. Estará disponible de nuevo en ${tiempoRenovacion}. [${infoCuota}] (Si este aviso persiste, se ha agotado el cupo diario compartido; puedes configurar tu propia API Key gratuita en Ajustes ⚙️ para usar la app sin esperas). Mientras tanto, cargamos datos simulados de demostración. 🐾`;
+      return `AI query limit reached. It will be available again in ${tiempoRenovacion}. [${infoCuota}] (If this persists, the shared daily quota is exhausted; you can set up your own free API Key in Settings ⚙️ to use the app without waiting). In the meantime, loading demo simulation data. 🐾`;
     }
 
     const retryMatch = errorStr.match(/retry\s+in\s+([\d.]+)\s*s/i) || 
@@ -176,9 +176,9 @@ export class IAQuotaManager {
       const segundosFloat = parseFloat(retryMatch[1]);
       const segundos = Math.max(1, Math.round(segundosFloat));
       const tiempoTexto = this.formatearSegundos(segundos);
-      return `Google Gemini está descansando un momento por exceso de peticiones. Estará listo en ${tiempoTexto}. ${tiempoRestablecimientoMsg} [${infoCuota}] (Puedes configurar tu propia API Key gratuita en Ajustes ⚙️ para evitar esperas). Mientras tanto, cargamos datos simulados de demostración. 🐾`;
+      return `Google Gemini is taking a short break due to too many requests. It will be ready in ${tiempoTexto}. ${tiempoRestablecimientoMsg} [${infoCuota}] (You can set up your own free API Key in Settings ⚙️ to avoid waiting). In the meantime, loading demo simulation data. 🐾`;
     }
 
-    return `Conexión limitada (${errorStr}). ${tiempoRestablecimientoMsg} [${infoCuota}] Cargando datos simulados de demostración. 🐾`;
+    return `Limited connection (${errorStr}). ${tiempoRestablecimientoMsg} [${infoCuota}] Loading demo simulation data. 🐾`;
   }
 }

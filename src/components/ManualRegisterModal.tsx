@@ -126,7 +126,7 @@ export const ManualPetForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
       margin: 'auto'
     }}>
       <h3 style={{ margin: '0', fontSize: '18px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid #f0f0f0', paddingBottom: '8px' }}>
-        Añadir Mascota 🐾
+        Add Pet 🐾
       </h3>
 
       {errorMsg && <p style={{ color: '#f44336', fontSize: '12px', background: 'rgba(244,67,54,0.1)', padding: '8px', borderRadius: '6px', margin: '0' }}>{errorMsg}</p>}
@@ -161,16 +161,16 @@ export const ManualPetForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
           <select value={especie} onChange={handleEspecieChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}>
             <option value="Felino">Felino 🐱</option>
             <option value="Canino">Canino 🐶</option>
-            <option value="Hamster">Hámster 🐹</option>
+            <option value="Hamster">Hamster 🐹</option>
             <option value="Conejo">Conejo 🐰</option>
             <option value="Peces">Peces 🐠</option>
-            <option value="Pájaro">Pájaro 🐦</option>
+            <option value="Pájaro">Bird 🐦</option>
             <option value="Cobaya">Cobaya 🐹</option>
             <option value="Otro">Otro 🐾</option>
           </select>
         </div>
         <div>
-          <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Raza / Catálogo:</label>
+          <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Breed / Catalog:</label>
           <select value={raza} onChange={handleRazaChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}>
             <option value="">-- Personalizado --</option>
             {razasDisponibles.map(r => (
@@ -185,7 +185,7 @@ export const ManualPetForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
           <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Especificar Raza:</label>
           <input 
             type="text" 
-            placeholder="Mestizo, Siamés, etc."
+            placeholder="Mixed, Siamese, etc."
             value={raza} 
             onChange={(e) => setRaza(e.target.value)} 
             style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
@@ -203,7 +203,7 @@ export const ManualPetForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
             style={{ cursor: 'pointer' }}
           />
           <label htmlFor="checkbox-es-mamifero" style={{ fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}>
-            ¿Es un mamífero? (ej: hurón, erizo, etc.)
+            Is it a mammal? (e.g.: ferret, hedgehog, etc.)
           </label>
         </div>
       )}
@@ -218,10 +218,10 @@ export const ManualPetForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
             </select>
           </div>
           <div>
-            <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>¿Castrado/a?:</label>
+            <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Neutered/Spayed?:</label>
             <select value={castrado ? 'si' : 'no'} onChange={(e) => setCastrado(e.target.value === 'si')} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}>
               <option value="no">No</option>
-              <option value="si">Sí</option>
+              <option value="si">Yes</option>
             </select>
           </div>
         </div>
@@ -283,7 +283,7 @@ export const ManualPetForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
 export const ManualPlantForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
   const [nombreComun, setNombreComun] = useState('');
   const [nombreCientifico, setNombreCientifico] = useState('');
-  const [ubicacion, setUbicacion] = useState('Salón');
+  const [ubicacion, setUbicacion] = useState('Living Room');
   const [tipoRiego, setTipoRiego] = useState<TipoRiego>('Agua del grifo reposada');
   const [intervaloRiego, setIntervaloRiego] = useState('7');
   const [toxicidad, setToxicidad] = useState<NivelToxicidadFelina>('Segura');
@@ -333,7 +333,7 @@ export const ManualPlantForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombreComun.trim() || !fotoUrl) {
-      setErrorMsg("El nombre común y la foto son obligatorios.");
+      setErrorMsg("Common name and photo are required.");
       return;
     }
 
@@ -414,13 +414,13 @@ export const ManualPlantForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
       margin: 'auto'
     }}>
       <h3 style={{ margin: '0', fontSize: '18px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid #f0f0f0', paddingBottom: '8px' }}>
-        Añadir Planta 🌿
+        Add Plant 🌿
       </h3>
 
       {errorMsg && <p style={{ color: '#f44336', fontSize: '12px', background: 'rgba(244,67,54,0.1)', padding: '8px', borderRadius: '6px', margin: '0' }}>{errorMsg}</p>}
 
       <div>
-        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Seleccionar del Catálogo (ASPCA):</label>
+        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Select from Catalog (ASPCA):</label>
         <select onChange={handleCatalogoChange} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}>
           <option value="">-- Personalizado --</option>
           {CATALOGO_ASPCA.map(p => (
@@ -430,7 +430,7 @@ export const ManualPlantForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
       </div>
 
       <div>
-        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Nombre Común:</label>
+        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Common Name:</label>
         <input 
           type="text" 
           value={nombreComun} 
@@ -442,7 +442,7 @@ export const ManualPlantForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
       </div>
 
       <div>
-        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Nombre Científico:</label>
+        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Scientific Name:</label>
         <input 
           type="text" 
           value={nombreCientifico} 
@@ -454,18 +454,18 @@ export const ManualPlantForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
 
       <div className="responsive-form-grid-2" style={{ gap: '10px' }}>
         <div>
-          <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Ubicación:</label>
+          <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Location:</label>
           <input 
             type="text" 
             value={ubicacion} 
             onChange={(e) => setUbicacion(e.target.value)} 
-            placeholder="Ej: Terraza, Salón"
+            placeholder="E.g.: Terrace, Living Room"
             required
             style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
           />
         </div>
         <div>
-          <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Riego (días):</label>
+          <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Watering (days):</label>
           <input 
             type="number" 
             value={intervaloRiego} 
@@ -487,14 +487,14 @@ export const ManualPlantForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
       </div>
 
       <div>
-        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>¿Cuándo fue el último riego?</label>
+        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>When was the last watering?</label>
         <select value={ultimoRiegoOpcion} onChange={(e) => setUltimoRiegoOpcion(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)', fontSize: '12px' }}>
           <option value="hoy">Hoy 💧</option>
           <option value="ayer">Ayer</option>
-          <option value="hace_2">Hace 2 días</option>
-          <option value="hace_3">Hace 3 días</option>
-          <option value="hace_5">Hace 5 días</option>
-          <option value="hace_7">Hace 7 días (1 semana)</option>
+          <option value="hace_2">2 days ago</option>
+          <option value="hace_3">3 days ago</option>
+          <option value="hace_5">5 days ago</option>
+          <option value="hace_7">7 days ago (1 week)</option>
           <option value="necesita_ya">Requiere riego ya (Desconocido / Hace mucho)</option>
         </select>
       </div>
@@ -504,22 +504,22 @@ export const ManualPlantForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
           <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Seguridad Felina:</label>
           <select value={toxicidad} onChange={(e) => setToxicidad(e.target.value as any)} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)', fontSize: '12px' }}>
             <option value="Segura">Segura 🐈</option>
-            <option value="Tóxica leve (irritante)">Tóxica Leve ⚠️</option>
-            <option value="Altamente tóxica (urgencia)">Muy Tóxica 🚨</option>
+            <option value="Tóxica leve (irritante)">Mildly Toxic ⚠️</option>
+            <option value="Altamente tóxica (urgencia)">Highly Toxic 🚨</option>
           </select>
         </div>
         <div>
           <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Seguridad Canina:</label>
           <select value={toxicidadCanina} onChange={(e) => setToxicidadCanina(e.target.value as any)} style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)', fontSize: '12px' }}>
             <option value="Segura">Segura 🐕</option>
-            <option value="Tóxica leve (irritante)">Tóxica Leve ⚠️</option>
-            <option value="Altamente tóxica (urgencia)">Muy Tóxica 🚨</option>
+            <option value="Tóxica leve (irritante)">Mildly Toxic ⚠️</option>
+            <option value="Altamente tóxica (urgencia)">Highly Toxic 🚨</option>
           </select>
         </div>
       </div>
 
       <div>
-        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Compuesto Tóxico (si lo hay):</label>
+        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Toxic Compound (if any):</label>
         <input 
           type="text" 
           placeholder="Ej: Oxalato, Saponinas..."

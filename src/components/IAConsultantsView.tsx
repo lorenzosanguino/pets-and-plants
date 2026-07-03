@@ -113,11 +113,11 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
         } else {
           let defaultText = '';
           if (activeConsultant === 'veterinario') {
-            defaultText = 'Hola. Soy tu consultor de bienestar animal y prevención veterinaria. ¿En qué puedo asesorarte hoy con respecto al enriquecimiento del hogar o control clínico? Puedes adjuntar una foto de tu mascota o usar una plantilla rápida para analizar heridas o parásitos de forma preventiva.';
+            defaultText = 'Hello. I am your animal wellness and veterinary prevention consultant. How can I advise you today on home enrichment or clinical monitoring? You can attach a photo of your pet or use a quick template to preventively analyze wounds or parasites.';
           } else if (activeConsultant === 'agronomo') {
-            defaultText = 'Hola. Soy tu consultor agrónomo y paisajista. Estoy aquí para resolver dudas sobre microclimas domésticos, sustratos y requerimientos de cultivo. Puedes adjuntar una foto de tus plantas o usar una plantilla rápida para diagnosticar hojas marrones o plagas foliares.';
+            defaultText = 'Hello. I am your agronomist and landscape consultant. I am here to answer questions about domestic microclimates, substrates, and cultivation requirements. You can attach a photo of your plants or use a quick template to diagnose brown leaves or leaf pests.';
           } else {
-            defaultText = 'Hola. Soy tu consultor especialista en animales exóticos. Puedo ayudarte con las condiciones ideales de temperatura y humedad para tu terrario, frecuencia de alimentación de reptiles y artrópodos, o control de mudas de piel. ¿Qué especie exótica tienes hoy?';
+            defaultText = 'Hello. I am your exotic animal specialist consultant. I can help with ideal temperature and humidity conditions for your terrarium, feeding frequency for reptiles and arthropods, or skin molting control. What exotic species do you have today?';
           }
           setMessages([{
             id: '1',
@@ -199,7 +199,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
 
   const toggleListening = () => {
     if (!recognitionRef.current) {
-      alert("El reconocimiento de voz no está soportado en este navegador.");
+      alert("Voice recognition is not supported in this browser.");
       return;
     }
     if (isListening) {
@@ -232,7 +232,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
 
 
   const borrarHistorial = async () => {
-    if (!window.confirm("¿Estás seguro de que deseas vaciar el historial de chat de este consultor?")) {
+    if (!window.confirm("Are you sure you want to clear the chat history for this consultant?")) {
       return;
     }
     try {
@@ -245,11 +245,11 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
       
       let defaultText = '';
       if (activeConsultant === 'veterinario') {
-        defaultText = 'Hola. Soy tu consultor de bienestar animal y prevención veterinaria. ¿En qué puedo asesorarte hoy con respecto al enriquecimiento del hogar o control clínico? Puedes adjuntar una foto de tu mascota o usar una plantilla rápida para analizar heridas o parásitos de forma preventiva.';
+        defaultText = 'Hello. I am your animal wellness and veterinary prevention consultant. How can I advise you today on home enrichment or clinical monitoring? You can attach a photo of your pet or use a quick template to preventively analyze wounds or parasites.';
       } else if (activeConsultant === 'agronomo') {
-        defaultText = 'Hola. Soy tu consultor agrónomo y paisajista. Estoy aquí para resolver dudas sobre microclimas domésticos, sustratos y requerimientos de cultivo. Puedes adjuntar una foto de tus plantas o usar una plantilla rápida para diagnosticar hojas marrones o plagas foliares.';
+        defaultText = 'Hello. I am your agronomist and landscape consultant. I am here to answer questions about domestic microclimates, substrates, and cultivation requirements. You can attach a photo of your plants or use a quick template to diagnose brown leaves or leaf pests.';
       } else {
-        defaultText = 'Hola. Soy tu consultor especialista en animales exóticos. Puedo ayudarte con las condiciones ideales de temperatura y humedad para tu terrario, frecuencia de alimentación de reptiles y artrópodos, o control de mudas de piel. ¿Qué especie exótica tienes hoy?';
+        defaultText = 'Hello. I am your exotic animal specialist consultant. I can help with ideal temperature and humidity conditions for your terrarium, feeding frequency for reptiles and arthropods, or skin molting control. What exotic species do you have today?';
       }
       setMessages([{
         id: '1',
@@ -273,7 +273,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
     const userMsg: ChatMessage = {
       id: safeUUID(),
       sender: 'user',
-      text: currentText || "Análisis de imagen adjunta.",
+      text: currentText || "Attached image analysis.",
       timestamp: new Date(),
       imageUrl: currentImage?.dataUrl
     };
@@ -365,7 +365,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
       onUpdate?.();
     } catch (err) {
       console.error("Error al procesar el mensaje por IA:", err);
-      alert("Lo siento, ha ocurrido un error al comunicarse con la IA. Por favor, inténtelo de nuevo.");
+      alert("Sorry, an error occurred while communicating with the AI. Please try again.");
       // Restablecer estados al valor anterior
       setInputText(currentText);
       setAttachedImage(currentImage);
@@ -431,7 +431,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
           fontFamily: 'monospace'
         }}>
           <strong style={{ color: '#ffd700', fontSize: '11px', display: 'block', marginBottom: '6px', borderBottom: '1px solid #fff', paddingBottom: '4px' }}>
-            ☞ RECOMENDACIÓN DE ACCIÓN
+            ☞ ACTION RECOMMENDATION
           </strong>
           <p style={{ margin: '0 0 8px 0', fontSize: '11px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
             {m.diagnosticoClinico.tratamiento}
@@ -455,14 +455,14 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
           fontFamily: 'monospace'
         }}>
           <strong style={{ fontSize: '11px', display: 'block', marginBottom: '6px', borderBottom: '1px dashed #33ff33', paddingBottom: '4px' }}>
-            * SISTEMA: PLAN DE INTERVENCIÓN
+            * SYSTEM: INTERVENTION PLAN
           </strong>
           <p style={{ margin: '0 0 8px 0', fontSize: '11px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
             {m.diagnosticoClinico.tratamiento}
           </p>
           {m.diagnosticoClinico.advertencia && (
             <div style={{ padding: '6px', border: '1px solid #33ff33', fontSize: '10px', color: '#33ff33' }}>
-              <strong>ATENCIÓN:</strong> {m.diagnosticoClinico.advertencia}
+              <strong>ATTENTION:</strong> {m.diagnosticoClinico.advertencia}
             </div>
           )}
         </div>
@@ -486,7 +486,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
           borderBottom: '1px solid var(--game-border-color, #eaeaea)', 
           paddingBottom: '4px' 
         }}>
-          📋 ACCIÓN COMPATIBLE
+          📋 COMPATIBLE ACTION
         </strong>
         <p style={{ margin: '0 0 8px 0', fontSize: '11px', whiteSpace: 'pre-wrap', color: theme === 'gaming' ? 'var(--game-text, #e0d0ff)' : 'var(--game-text, #333)', lineHeight: '1.5' }}>
           {m.diagnosticoClinico.tratamiento}
@@ -500,7 +500,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
             color: theme === 'gaming' ? 'var(--game-accent, #fbee09)' : 'var(--game-text-bright)',
             borderLeft: theme === 'gaming' ? '3px solid var(--game-accent, #fbee09)' : '3px solid var(--game-text-bright, #888)'
           }}>
-            <strong>Atención Preventiva:</strong> {m.diagnosticoClinico.advertencia}
+            <strong>Preventive Attention:</strong> {m.diagnosticoClinico.advertencia}
           </div>
         )}
         {m.diagnosticoClinico.abrirFicha && onNavigateToAsset && (
@@ -532,10 +532,10 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
       let t = msg.text;
       if (msg.diagnosticoClinico) {
         if (msg.diagnosticoClinico.tratamiento && msg.diagnosticoClinico.tratamiento.trim()) {
-          t += "\n\nAcción recomendada: " + msg.diagnosticoClinico.tratamiento;
+          t += "\n\nRecommended action: " + msg.diagnosticoClinico.tratamiento;
         }
         if (msg.diagnosticoClinico.advertencia && msg.diagnosticoClinico.advertencia.trim()) {
-          t += "\n\nAtención preventiva: " + msg.diagnosticoClinico.advertencia;
+          t += "\n\nPreventive attention: " + msg.diagnosticoClinico.advertencia;
         }
       }
       return t;
@@ -708,7 +708,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
               gap: '8px'
             }}>
               <span style={{ fontSize: '24px' }}>📸</span>
-              <span>¡Suelta la foto aquí para analizarla!</span>
+              <span>Drop the photo here to analyze it!</span>
             </div>
           </div>
         )}
@@ -760,13 +760,13 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
                   whiteSpace: 'nowrap'
                 }}
               >
-                🌿 Agrónomo
+                🌿 Agronomist
               </button>
 
             </div>
           ) : (
             <h3 style={{ margin: '0', fontSize: '14px', color: activeConsultant === 'veterinario' ? '#1976d2' : '#2e7d32', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
-              {activeConsultant === 'veterinario' ? '🐾 Consultor Veterinario' : '🌿 Consultor Agrónomo'}
+              {activeConsultant === 'veterinario' ? '🐾 Veterinary Consultant' : '🌿 Agronomist Consultant'}
             </h3>
           )}
 
@@ -830,7 +830,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px'
-                }} title={hasApiKey ? "IA de Gemini activa (Consulta Real)" : "Modo demostración offline (Configura tu API Key en Ajustes ⚙️)"}>
+                }} title={hasApiKey ? "Gemini AI active (Real Query)" : "Offline demo mode (Set your API Key in Settings ⚙️)"}>
                   <span>{hasApiKey ? '💎' : '⚠️'}</span>
                   <span>{hasApiKey ? 'Consulta Real' : 'Consulta Simulada'}</span>
                 </div>
@@ -883,8 +883,8 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
               {theme === 'terminal' 
                 ? '> ANALIZANDO_CONSULTA...' 
                 : attachedImage
-                  ? 'El consultor está examinando minuciosamente la fisiopatología de la imagen...'
-                  : 'El consultor está analizando tu consulta...'}
+                  ? 'The consultant is thoroughly examining the image pathophysiology...'
+                  : 'The consultant is analyzing your query...'}
             </div>
           )}
           <div ref={messagesEndRef} />
@@ -908,7 +908,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
           }}>
             <img src={attachedImage.dataUrl} alt="Thumbnail preview" style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} />
             <span style={{ fontSize: '11px', color: 'var(--game-text, #555)', fontWeight: 'bold' }}>
-              {selectedTemplateKey ? 'Plantilla de Simulación' : 'Foto Física Optimizada'}
+              {selectedTemplateKey ? 'Simulation Template' : 'Optimized Physical Photo'}
             </span>
             <button
               onClick={() => { setAttachedImage(null); setSelectedTemplateKey(undefined); }}

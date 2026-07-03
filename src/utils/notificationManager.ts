@@ -166,15 +166,15 @@ export class NotificationManager {
 
           if (diasRestantes < 0) {
             await this.sendNotification(
-              `💊 ${tipo} vencida — ${mascota.nombre}`,
-              `La ${tipo.toLowerCase()} de ${mascota.nombre} venció hace ${Math.abs(diasRestantes)} días. ¡Es hora de ponerla al día!`
+              `💊 ${tipo} overdue — ${mascota.nombre}`,
+              `${mascota.nombre}'s ${tipo.toLowerCase()} was due ${Math.abs(diasRestantes)} day${Math.abs(diasRestantes) === 1 ? '' : 's'} ago. Time to get it up to date!`
             );
             localStorage.setItem(COOLDOWN_KEY, Date.now().toString());
-            return; // Una notificación por sesión es suficiente
+            return; // One notification per session is enough
           } else if (diasRestantes <= 7) {
             await this.sendNotification(
-              `💊 ${tipo} próxima — ${mascota.nombre}`,
-              `La ${tipo.toLowerCase()} de ${mascota.nombre} vence en ${diasRestantes} día${diasRestantes === 1 ? '' : 's'}. ¡Recuerda administrarla a tiempo!`
+              `💊 ${tipo} upcoming — ${mascota.nombre}`,
+              `${mascota.nombre}'s ${tipo.toLowerCase()} is due in ${diasRestantes} day${diasRestantes === 1 ? '' : 's'}. Remember to administer it on time!`
             );
             localStorage.setItem(COOLDOWN_KEY, Date.now().toString());
             return;

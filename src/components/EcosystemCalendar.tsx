@@ -143,7 +143,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
 
   const exportarICS = () => {
     if (eventos.length === 0) {
-      alert("No hay eventos en el calendario para exportar.");
+      alert("There are no events in the calendar to export.");
       return;
     }
 
@@ -217,8 +217,8 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
   const firstDayIndex = getFirstDayOfMonth(year, month);
 
   const monthNames = [
-    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
   ];
 
   const handleDayClick = (dayNum: number) => {
@@ -292,12 +292,12 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
 
   const getCategoryLabel = (cat: string) => {
     switch (cat) {
-      case 'riego': return 'Riego 💧';
-      case 'veterinario': return 'Veterinario 🩺';
-      case 'peluqueria': return 'Peluquería ✂️';
-      case 'medicacion': return 'Medicación 💊';
-      case 'abono': return 'Abono 🌱';
-      default: return 'Otro 📝';
+      case 'riego': return 'Watering 💧';
+      case 'veterinario': return 'Veterinary 🩺';
+      case 'peluqueria': return 'Grooming ✂️';
+      case 'medicacion': return 'Medication 💊';
+      case 'abono': return 'Fertilizer 🌱';
+      default: return 'Other 📝';
     }
   };
 
@@ -372,7 +372,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
       {/* Calendar Header */}
       <div className="calendar-header-container">
         <h3 style={{ margin: '0', fontSize: '18px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>
-          📅 Agenda y Calendario del Ecosistema
+          📅 Ecosystem Agenda & Calendar
         </h3>
         <div className="calendar-controls-wrapper">
           <button 
@@ -392,10 +392,10 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
               gap: '4px',
               marginRight: '4px'
             }}
-            title="Exportar calendario a formato iCal (.ics)"
+            title="Export calendar to iCal format (.ics)"
             className="no-print calendar-export-btn"
           >
-            📅 Exportar iCal
+            📅 Export iCal
           </button>
           
           <div className="calendar-nav-group">
@@ -420,13 +420,13 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
 
       {/* Weekdays Labels */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', fontSize: '12px', fontWeight: 'bold', borderBottom: '1px solid #eee', paddingBottom: '6px' }}>
-        <span>Lu</span>
-        <span>Ma</span>
-        <span>Mi</span>
-        <span>Ju</span>
-        <span>Vi</span>
-        <span>Sá</span>
-        <span style={{ color: '#ef4444' }}>Do</span>
+        <span>Mo</span>
+        <span>Tu</span>
+        <span>We</span>
+        <span>Th</span>
+        <span>Fr</span>
+        <span>Sa</span>
+        <span style={{ color: '#ef4444' }}>Su</span>
       </div>
 
       {/* Days Grid */}
@@ -535,7 +535,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h4 style={{ margin: '0', fontSize: '14px', fontWeight: 'bold' }}>
-              Notas para el día: <strong style={{ color: 'var(--game-border-color, #1976d2)' }}>{selectedDayStr}</strong>
+              Notes for: <strong style={{ color: 'var(--game-border-color, #1976d2)' }}>{selectedDayStr}</strong>
             </h4>
             {!showEventForm && (
               <button 
@@ -551,7 +551,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                   cursor: 'pointer'
                 }}
               >
-                Añadir Nota ➕
+                Add Note ➕
               </button>
             )}
           </div>
@@ -573,17 +573,17 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                   onChange={(e) => setNewCategoria(e.target.value as any)}
                   style={{ padding: '6px', fontSize: '11px', border: '1px solid #ccc', borderRadius: '6px', background: '#fff', color: '#000' }}
                 >
-                  <option value="riego">Riego 💧</option>
-                  <option value="veterinario">Veterinario 🩺</option>
-                  <option value="peluqueria">Peluquería ✂️</option>
-                  <option value="medicacion">Medicación 💊</option>
-                  <option value="abono">Abono 🌱</option>
-                  <option value="otro">Otro 📝</option>
+                  <option value="riego">Watering 💧</option>
+                  <option value="veterinario">Veterinary 🩺</option>
+                  <option value="peluqueria">Grooming ✂️</option>
+                  <option value="medicacion">Medication 💊</option>
+                  <option value="abono">Fertilizer 🌱</option>
+                  <option value="otro">Other 📝</option>
                 </select>
                 <input 
                   type="text" 
                   required
-                  placeholder="Escribe el recordatorio o nota..."
+                  placeholder="Write the reminder or note..."
                   value={newTexto}
                   onChange={(e) => setNewTexto(e.target.value)}
                   style={{ flex: 1, padding: '6px 10px', fontSize: '11px', border: '1px solid #ccc', borderRadius: '6px', background: '#fff', color: '#000' }}
@@ -595,13 +595,13 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                   onClick={() => setShowEventForm(false)}
                   style={{ padding: '4px 10px', fontSize: '11px', background: '#ccc', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                 >
-                  Cancelar
+                  Cancel
                 </button>
                 <button 
                   type="submit" 
                   style={{ padding: '4px 12px', fontSize: '11px', background: '#2e7d32', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}
                 >
-                  Guardar Note 💾
+                  Save Note 💾
                 </button>
               </div>
             </form>
@@ -627,7 +627,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
                   <span style={{ fontSize: '9px', fontWeight: 'bold', color: t.color, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    {t.emoji} Tarea del Ecosistema • {t.type.toUpperCase()}
+                    {t.emoji} Ecosystem Task • {t.type.toUpperCase()}
                   </span>
                   <span style={{ color: 'var(--game-text-bright, #333)', fontWeight: 'bold' }}>{t.title}</span>
                   <span style={{ fontSize: '10px', color: '#666' }}>{t.detail}</span>
@@ -653,7 +653,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                           // Extraemos la vacuna removiendo "Vacunar " y " a NombreMascota"
                           const cleanTitle = t.title.replace('Vacunar ', '');
                           const vName = cleanTitle.split(` a ${m.nombre}`)[0];
-                          const confirmar = window.confirm(`¿Estás seguro/a de marcar "${vName}" para ${m.nombre} como colocada/realizada? Esta acción no se puede deshacer.`);
+                          const confirmar = window.confirm(`Are you sure you want to mark "${vName}" for ${m.nombre} as placed/done? This action cannot be undone.`);
                           if (!confirmar) return;
 
                           const current = m.vacunasChecklist || [];
@@ -671,7 +671,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                           const medId = (t as any).medId;
                           const med = (m.medicamentos || []).find((item: any) => item.id === medId);
                           if (med) {
-                            const confirmar = window.confirm(`¿Quieres registrar la toma de ${med.nombre} (${med.dosis}) para ${m.nombre} ahora?`);
+                            const confirmar = window.confirm(`Do you want to record the dose of ${med.nombre} (${med.dosis}) for ${m.nombre} now?`);
                             if (!confirmar) return;
 
                             const now = new Date();
@@ -743,7 +743,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                               }).catch(err => console.error(err));
                             }
 
-                            alert(`Toma registrada. Próxima dosis: ${activo ? nextDoseDate.toLocaleString() : 'Tratamiento finalizado'}`);
+                            alert(`Dose recorded. Next dose: ${activo ? nextDoseDate.toLocaleString() : 'Treatment completed'}`);
                           }
                         }
                       } else if (t.type === 'peso') {
@@ -754,7 +754,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                           if (pesoInput === null) return; // User cancelled
                           const pesoNum = parseFloat(pesoInput.replace(',', '.'));
                           if (isNaN(pesoNum) || pesoNum <= 0) {
-                            alert("Por favor, introduce un número válido para el peso.");
+                            alert("Please enter a valid number for the weight.");
                             return;
                           }
                           const nuevoRegistro = {
@@ -784,14 +784,14 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                       flexShrink: 0
                     }}
                   >
-                    Completar ✓
+                    Complete ✓
                   </button>
                 )}
               </div>
             ))}
 
             {selectedDayEvents.length === 0 && obtenerTareasAutomaticas(selectedDayStr).length === 0 ? (
-              <p style={{ margin: '0', fontSize: '12px', color: '#888', fontStyle: 'italic', textAlign: 'center' }}>Sin recordatorios ni notas registradas.</p>
+              <p style={{ margin: '0', fontSize: '12px', color: '#888', fontStyle: 'italic', textAlign: 'center' }}>No reminders or notes recorded.</p>
             ) : (
               selectedDayEvents.map(ev => (
                 <div
@@ -816,7 +816,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                       checked={!!ev.completado}
                       onChange={() => handleToggleCompletado(ev)}
                       style={{ cursor: 'pointer', width: '16px', height: '16px', flexShrink: 0 }}
-                      title={ev.completado ? "Marcar como pendiente" : "Marcar como completado"}
+                      title={ev.completado ? "Mark as pending" : "Mark as completed"}
                     />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left', minWidth: 0 }}>
                       <span style={{ fontSize: '9px', fontWeight: 'bold', color: getCategoryColor(ev.categoria), textTransform: 'uppercase' }}>
@@ -851,7 +851,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                         fontSize: '14px',
                         padding: '4px'
                       }}
-                      title="Añadir a Google Calendar"
+                      title="Add to Google Calendar"
                     >
                       📅
                     </button>
@@ -865,7 +865,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                         fontSize: '12px',
                         padding: '4px'
                       }}
-                      title="Eliminar"
+                      title="Delete"
                     >
                       🗑️
                     </button>

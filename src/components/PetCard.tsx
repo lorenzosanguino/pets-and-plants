@@ -2323,16 +2323,16 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                       </button>
                       <span style={{ fontSize: '10px', color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#c62828' : 'var(--game-text, #666)', textAlign: 'center', display: 'block', fontWeight: '500' }}>
                         {cuota.esIlimitado 
-                          ? '⚡ Modo Premium: Análisis ilimitados' 
+                          ? '✅ Premium Mode: Unlimited analyses' 
                           : cuota.restantes === 0 
-                            ? `❌ Límite diario alcanzado (Espera ${IAQuotaManager.obtenerMensajeTiempoRestante()} o añade tu API Key en Ajustes ⚙️)` 
-                            : `🔑 Te quedan ${cuota.restantes} análisis de IA hoy`}
+                            ? `⚠️ Daily limit reached (Wait ${IAQuotaManager.obtenerMensajeTiempoRestante()} or add your API Key in Settings 🔑)` 
+                            : `🔬 You have ${cuota.restantes} AI analyses left today`}
                       </span>
                     </div>
                   )}
 
                   <form onSubmit={agregarIncidenciaPasada} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '4px' }} className="no-print">
-                    <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--game-text, #666)' }}>Registrar incidencia médica manualmente:</span>
+                    <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--game-text, #666)' }}>Register medical incident manually:</span>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
                       <input 
                         type="date" 
@@ -2347,7 +2347,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                         style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
                       >
                         <option value="Enfermedad">Enfermedad</option>
-                        <option value="Parásito">Parásito</option>
+                        <option value="Parásito">Parasite</option>
                         <option value="Tratamiento">Tratamiento</option>
                         <option value="Otro">Otro</option>
                       </select>
@@ -2355,21 +2355,21 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <input 
                         type="text" 
-                        placeholder="Descripción de la dolencia o tratamiento..." 
+                        placeholder="Description of the condition or treatment..." 
                         value={histDesc} 
                         onChange={(e) => setHistDesc(e.target.value)} 
                         required
                         style={{ flex: 1, minWidth: 0, padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
                       />
                       <button type="submit" style={{ padding: '6px 12px', background: '#1a1a1a', color: theme === 'gaming' ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
-                        Añadir
+                        Add
                       </button>
                     </div>
                   </form>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '220px', overflowY: 'auto' }}>
                     {unifiedHistory.length === 0 ? (
-                      <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>Sin registros clínicos ni incidencias.</span>
+                      <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>No clinical records or incidents.</span>
                     ) : (
                       unifiedHistory.map(item => {
                         const esIAReporte = item.tipo === 'IA Reporte';
@@ -2409,7 +2409,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                           >
                             <div style={{ flex: 1, marginRight: '8px' }}>
                               <span style={{ fontSize: '9px', color: '#666', fontWeight: 'bold', display: 'block' }}>
-                                {item.tipo.toUpperCase()} • {item.subtipo.toUpperCase()} • {item.fecha} {esIAReporte && '🔍 Click para ver análisis'}
+                                {item.tipo.toUpperCase()} • {item.subtipo.toUpperCase()} • {item.fecha} {esIAReporte && '📊 Click to view analysis'}
                               </span>
                               <span style={{ 
                                 color: 'var(--game-text-bright, #333)', 
@@ -2438,7 +2438,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                                     }}
                                     style={{ background: '#d32f2f', color: '#fff', border: 'none', borderRadius: '3px', padding: '2px 6px', fontSize: '9px', fontWeight: 'bold', cursor: 'pointer' }}
                                   >
-                                    Sí
+                                    Yes
                                   </button>
                                   <button 
                                     type="button"
@@ -2472,11 +2472,11 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
 
           {/* Código QR Ficticio Clínico */}
           <div className="printable-only-qr" style={{ display: 'none', flexDirection: 'column', alignItems: 'center', marginTop: '16px', borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px' }}>
-            <p style={{ margin: '0 0 6px 0', fontSize: '10px', color: 'var(--game-text, #666)', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)' }}>EXPEDIENTE CLÍNICO DIGITAL</p>
+            <p style={{ margin: '0 0 6px 0', fontSize: '10px', color: 'var(--game-text, #666)', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)' }}>DIGITAL CLINICAL RECORD</p>
             <svg width="60" height="60" viewBox="0 0 29 29" style={{ border: '1px solid #ddd', padding: '4px', background: '#fff' }}>
               <path d="M0 0h9v9H0zm1 1v7h7V1zm10 0h9v9h-9zm1 1v7h7V1zm-11 10h9v9H0zm1 1v7h7V12zm18-11h9v9h-9zm1 1v7h7V12zm-8 10h3v3h-3zm3 3h3v3h-3zm-3 3h3v3h-3zm11-11h3v3h-3zm-3 3h3v3h-3zm3 3h3v3h-3zm-11 2h3v3h-3zm3 3h3v3h-3zm-6-6h3v3H8zm3 3h3v3h-3zm6-6h3v3h-3zm3 3h3v3h-3z" fill="#000"/>
             </svg>
-            <span style={{ fontSize: '8px', color: 'var(--game-text, #888)', marginTop: '4px', fontFamily: 'var(--game-font, sans-serif)' }}>Escanea para descargar historial clínico</span>
+            <span style={{ fontSize: '8px', color: 'var(--game-text, #888)', marginTop: '4px', fontFamily: 'var(--game-font, sans-serif)' }}>Scan to download clinical history</span>
           </div>
 
           {/* Escuela de Adiestramiento Adaptativo — solo para caninos */}
@@ -2592,9 +2592,9 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                 boxSizing: 'border-box',
                 margin: 'auto'
               }} onClick={(e) => e.stopPropagation()}>
-                <h4 style={{ margin: '0 0 12px 0', color: '#c62828', fontSize: '18px', fontFamily: 'var(--game-font, sans-serif)' }}>⚠️ ¿Eliminar Mascota?</h4>
+                <h4 style={{ margin: '0 0 12px 0', color: '#c62828', fontSize: '18px', fontFamily: 'var(--game-font, sans-serif)' }}>⚠️ Delete Pet?</h4>
                 <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: 'var(--game-text, #555)', fontFamily: 'var(--game-font, sans-serif)', lineHeight: '1.4' }}>
-                  ¿Estás seguro de que deseas eliminar permanentemente el expediente de <strong>{mascota.nombre}</strong>? Esta acción no se puede deshacer.
+                  Are you sure you want to permanently delete the record for <strong>{mascota.nombre}</strong>? This action cannot be undone.
                 </p>
                 <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
                   <button 
@@ -2633,7 +2633,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                       fontFamily: 'var(--game-font, sans-serif)'
                     }}
                   >
-                    Sí, eliminar 🗑️
+                    Yes, delete 🗑️
                   </button>
                 </div>
               </div>
@@ -2679,7 +2679,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                       🩺 Reporte de Salud por IA
                     </h3>
                     <span style={{ fontSize: '11px', color: '#666', marginTop: '2px', fontWeight: '500' }}>
-                      Categoría: {iaReporteModal.subtipo} • Fecha: {iaReporteModal.fecha}
+                      Category: {iaReporteModal.subtipo} ❖ Date: {iaReporteModal.fecha}
                     </span>
                   </div>
                   <button 
@@ -2703,7 +2703,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                   
                   <div style={{ background: 'rgba(33, 150, 243, 0.06)', borderLeft: '4px solid #2196f3', padding: '12px', borderRadius: '4px' }}>
                     <h4 style={{ margin: '0 0 6px 0', fontSize: '12px', fontWeight: 'bold', color: '#1976d2', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      📋 Diagnóstico de Salud
+                      💉 Health Diagnosis
                     </h4>
                     <p style={{ margin: 0, lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{iaReporteModal.diagnostico}</p>
                   </div>
@@ -2727,7 +2727,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                 {/* Botón inferior de cerrar y TTS */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', width: '100%' }}>
                   <TTSButton
-                    text={`Diagnóstico: ${iaReporteModal.diagnostico}. Tratamiento sugerido: ${iaReporteModal.tratamiento}. ${iaReporteModal.advertencia ? `Advertencia: ${iaReporteModal.advertencia}` : ''}`}
+                    text={`Diagnosis: ${iaReporteModal.diagnostico}. Suggested treatment: ${iaReporteModal.tratamiento}. ${iaReporteModal.advertencia ? `Warning: ${iaReporteModal.advertencia}` : ''}`}
                     theme={theme}
                     size="normal"
                   />
@@ -2790,7 +2790,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
             {chefLoading ? (
               <div style={{ padding: '40px 0', textAlign: 'center' }}>
                 <div style={{ fontSize: '24px', animation: 'spin 2s linear infinite', display: 'inline-block' }}>🍖</div>
-                <p style={{ margin: '10px 0 0 0', fontSize: '13px', color: 'var(--text)' }}>Generando receta y proporciones calóricas...</p>
+                <p style={{ margin: '10px 0 0 0', fontSize: '13px', color: 'var(--text)' }}>Generating recipe and caloric proportions...</p>
               </div>
             ) : chefRecipe ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -2900,19 +2900,19 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
             </p>
 
             <div style={{ fontSize: '48px', fontWeight: '800', color: 'var(--accent)' }}>
-              {trainingTimer > 0 ? `${trainingTimer}s` : '¡Tiempo! 🎉'}
+              {trainingTimer > 0 ? `${trainingTimer}s` : "Time's up! 🏆"}
             </div>
 
             {trainingTimer === 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <p style={{ margin: 0, fontSize: '12px', fontWeight: 'bold' }}>¿Cómo respondió tu mascota?</p>
+                <p style={{ margin: 0, fontSize: '12px', fontWeight: 'bold' }}>How did your pet respond?</p>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button 
                     type="button" 
                     onClick={() => registrarResultadoEntrenamiento(-10)}
                     style={{ flex: 1, padding: '8px', background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', borderRadius: '8px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
                   >
-                    🔴 Le costó
+                    😰 Struggled
                   </button>
                   <button 
                     type="button" 
@@ -2936,7 +2936,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                 onClick={() => setActiveTrainingTrick(null)}
                 style={{ padding: '8px', background: 'transparent', border: '1px solid var(--border)', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}
               >
-                Cancelar Sesión
+                Cancel Session
               </button>
             )}
           </div>
@@ -2982,8 +2982,8 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
             textAlign: 'center', animation: 'modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
           }}>
             <span style={{ fontSize: '32px' }}>🏆</span>
-            <h4 style={{ margin: '4px 0 0 0', color: '#15803d', fontWeight: 'bold' }}>¡Comando Dominado!</h4>
-            <p style={{ margin: 0, fontSize: '12px', color: '#4b5563' }}>Tu mascota ha aprendido "{showConfettiTrick}"</p>
+            <h4 style={{ margin: '4px 0 0 0', color: '#15803d', fontWeight: 'bold' }}>Command Mastered!</h4>
+            <p style={{ margin: 0, fontSize: '12px', color: '#4b5563' }}>Your pet has learned "{showConfettiTrick}"</p>
           </div>
         </div>
       )}

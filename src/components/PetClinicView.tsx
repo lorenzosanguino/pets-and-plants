@@ -143,7 +143,7 @@ export const PetClinicView: React.FC<PetClinicViewProps> = ({
 
     return (
       <div style={{ marginTop: '16px', background: '#fcfcfc', padding: '16px', borderRadius: '12px', border: '1px solid #f0f0f0' }}>
-        <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#555', fontWeight: 'bold' }}>Trazado Percentil de Peso y Condición Corporal</h4>
+        <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#555', fontWeight: 'bold' }}>Weight Percentile and Body Condition Chart</h4>
         <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: 'visible' }}>
           {/* Zona Sombreada de Referencia Saludable */}
           <path d={bandPath} fill="#e3f2fd" opacity="0.5" />
@@ -173,7 +173,7 @@ export const PetClinicView: React.FC<PetClinicViewProps> = ({
           })}
         </svg>
         <p style={{ margin: '8px 0 0 0', fontSize: '10px', color: '#666', fontStyle: 'italic', textAlign: 'center' }}>
-          La franja azul representa el percentil clínico de peso ideal para la raza de tamaño medio.
+          The blue band represents the clinical percentile of ideal weight for medium-sized breeds.
         </p>
       </div>
     );
@@ -186,7 +186,7 @@ export const PetClinicView: React.FC<PetClinicViewProps> = ({
         
         {/* Selector de Mascota */}
         <div style={{ background: '#fff', padding: '16px', borderRadius: '16px', border: '1px solid #f0f0f0', display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#444' }}>Expediente:</label>
+          <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#444' }}>Record:</label>
           <select 
             value={selectedPetId} 
             onChange={(e) => setSelectedPetId(e.target.value)}
@@ -203,14 +203,14 @@ export const PetClinicView: React.FC<PetClinicViewProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ fontSize: '36px' }}>🐾</div>
             <div>
-              <h3 style={{ margin: '0', fontSize: '18px', color: '#333' }}>Expediente de {activePet.nombre}</h3>
-              <span style={{ fontSize: '12px', color: '#888' }}>Chip: {activePet.numeroChip || 'Sin microchip'} • Actividad: {activePet.actividad || 'Moderada'}</span>
+              <h3 style={{ margin: '0', fontSize: '18px', color: '#333' }}>Record of {activePet.nombre}</h3>
+              <span style={{ fontSize: '12px', color: '#888' }}>Chip: {activePet.numeroChip || 'No microchip'} • Activity: {activePet.actividad || 'Moderate'}</span>
             </div>
           </div>
 
           {alertaPeso && (
             <div style={{ padding: '12px', background: '#ffebee', border: '1px solid #ffcdd2', borderRadius: '8px', color: '#c62828', fontSize: '12px' }}>
-              ⚠️ <strong>Alerta Metabólica:</strong> Se detectó una {alertaPeso.tipo} brusca de peso de <strong>{alertaPeso.porcentaje}%</strong>. Se recomienda consultar al veterinario para realizar exámenes analíticos.
+              ⚠️ <strong>Metabolic Alert:</strong> A sudden weight {alertaPeso.tipo} of <strong>{alertaPeso.porcentaje}%</strong> was detected. It is recommended to consult a veterinarian for analytical exams.
             </div>
           )}
 
@@ -225,23 +225,23 @@ export const PetClinicView: React.FC<PetClinicViewProps> = ({
         {/* Calculadora Nutricional */}
         <div style={{ background: '#fff', padding: '20px', borderRadius: '16px', border: '1px solid #f0f0f0' }}>
           <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#333', borderBottom: '1px solid #f0f0f0', paddingBottom: '8px' }}>
-            Calculadora Nutricional Veterinaria
+            Veterinary Nutritional Calculator
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
             <div style={{ padding: '12px', background: '#f5f5f5', borderRadius: '8px', textAlign: 'center' }}>
-              <span style={{ fontSize: '11px', color: '#666' }}>Tasa Reposo (RER)</span>
+              <span style={{ fontSize: '11px', color: '#666' }}>Resting Rate (RER)</span>
               <p style={{ margin: '4px 0 0 0', fontSize: '18px', fontWeight: 'bold', color: '#2196f3' }}>{rer} <span style={{ fontSize: '12px' }}>Kcal</span></p>
             </div>
             <div style={{ padding: '12px', background: '#e3f2fd', borderRadius: '8px', textAlign: 'center' }}>
-              <span style={{ fontSize: '11px', color: '#666' }}>Diario Requerido (DER)</span>
+              <span style={{ fontSize: '11px', color: '#666' }}>Daily Required (DER)</span>
               <p style={{ margin: '4px 0 0 0', fontSize: '18px', fontWeight: 'bold', color: '#1976d2' }}>{der} <span style={{ fontSize: '12px' }}>Kcal</span></p>
             </div>
           </div>
 
           <div style={{ padding: '12px 16px', background: '#e8f5e9', border: '1px solid #c8e6c9', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <span style={{ fontSize: '12px', color: '#2e7d32', fontWeight: 'bold' }}>Ración Diaria Sugerida</span>
-              <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#555' }}>Cálculo basado en croqueta estándar (360 Kcal/100g)</p>
+              <span style={{ fontSize: '12px', color: '#2e7d32', fontWeight: 'bold' }}>Suggested Daily Ration</span>
+              <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#555' }}>Calculation based on standard kibble (360 Kcal/100g)</p>
             </div>
             <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#2e7d32' }}>{gramosComida}g</span>
           </div>
@@ -250,7 +250,7 @@ export const PetClinicView: React.FC<PetClinicViewProps> = ({
         {/* Diario Clínico */}
         <div style={{ background: '#fff', padding: '20px', borderRadius: '16px', border: '1px solid #f0f0f0' }}>
           <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#333', borderBottom: '1px solid #f0f0f0', paddingBottom: '8px' }}>
-            Registro Diario Clínico y Logs
+            Daily Clinical Record and Logs
           </h3>
 
           <form onSubmit={agregarNotaClinica} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
@@ -260,13 +260,13 @@ export const PetClinicView: React.FC<PetClinicViewProps> = ({
                 onChange={(e) => setCategoria(e.target.value as any)}
                 style={{ padding: '6px', border: '1px solid #eaeaea', borderRadius: '6px', fontSize: '12px', background: '#fafafa' }}
               >
-                <option value="Observación general">Observación</option>
-                <option value="Nutrición">Nutrición</option>
-                <option value="Comportamiento">Comportamiento</option>
+                <option value="Observación general">Observation</option>
+                <option value="Nutrición">Nutrition</option>
+                <option value="Comportamiento">Behavior</option>
               </select>
               <input
                 type="text"
-                placeholder="Añadir nota de comportamiento o dieta..."
+                placeholder="Add a behavior or diet note..."
                 value={nota}
                 onChange={(e) => setNota(e.target.value)}
                 style={{ flex: 1, minWidth: 0, padding: '8px 12px', border: '1px solid #eaeaea', borderRadius: '6px', fontSize: '13px' }}
@@ -274,7 +274,7 @@ export const PetClinicView: React.FC<PetClinicViewProps> = ({
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <button type="submit" style={{ padding: '8px', background: '#1a1a1a', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}>
-                Registrar Nota
+                 Save Note
               </button>
               {onOpenScanner && (
                 <button 
@@ -312,7 +312,7 @@ export const PetClinicView: React.FC<PetClinicViewProps> = ({
                           onClick={() => eliminarNotaClinica(d.id)}
                           style={{ background: '#d32f2f', color: '#fff', border: 'none', borderRadius: '3px', padding: '1px 5px', fontSize: '9px', fontWeight: 'bold', cursor: 'pointer' }}
                         >
-                          ¿Seguro?
+                          Sure?
                         </button>
                         <button 
                           type="button"
@@ -327,7 +327,7 @@ export const PetClinicView: React.FC<PetClinicViewProps> = ({
                         type="button"
                         onClick={() => setDeleteConfirmId(d.id)}
                         style={{ background: 'transparent', color: '#888', border: 'none', fontSize: '11px', cursor: 'pointer', padding: '0 4px' }}
-                        title="Eliminar nota"
+                        title="Delete note"
                       >
                         🗑️
                       </button>

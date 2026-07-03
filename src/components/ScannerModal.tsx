@@ -320,7 +320,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
     const nuevaNota = {
       id: safeUUID(),
       fecha: new Date().toISOString(),
-      nota: `[IA Diagnóstico Fitosanitario]: ${scanResult.diagnostico} | Tratamiento: ${scanResult.tratamiento} | Aislamiento sugerido: ${scanResult.esUrgente ? 'SÍ' : 'NO'}`,
+      nota: `[AI Phytosanitary Diagnosis]: ${scanResult.diagnostico} | Treatment: ${scanResult.tratamiento} | Suggested isolation: ${scanResult.esUrgente ? 'Yes' : 'NO'}`,
       estadoGeneral: (scanResult.esUrgente ? 'Clorosis/Lesión' : 'Normal') as any
     };
 
@@ -413,7 +413,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
         </button>
 
         <h2 style={{ marginTop: '0', fontSize: '20px', color: 'var(--game-text-bright, #333)' }}>
-          🔍 Escáner Clínico Inteligente
+          🔬 Smart Clinical Scanner
         </h2>
 
         <div style={{
@@ -431,10 +431,10 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
         }}>
           <span>
             {cuota.esIlimitado 
-              ? '⚡ Modo Premium: Análisis ilimitados con tu clave API.' 
+              ? '✅ Premium Mode: Unlimited analyses with your API key.' 
               : cuota.restantes === 0 
-                ? `❌ Límite diario de análisis alcanzado (Espera ${IAQuotaManager.obtenerMensajeTiempoRestante()} o añade tu API Key en Ajustes ⚙️)` 
-                : `🔑 Te quedan ${cuota.restantes} análisis de IA disponibles hoy.`}
+                ? `❌ Daily analysis limit reached (Wait ${IAQuotaManager.obtenerMensajeTiempoRestante()} or add your API Key in Settings 🔑)` 
+                : `🔬 You have ${cuota.restantes} AI analyses available today.`}
           </span>
         </div>
 
@@ -495,9 +495,9 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
               color: 'var(--game-text-bright)'
             }}>
               <span style={{ fontSize: '48px', display: 'block', marginBottom: '16px' }}>⚠️</span>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#c62828', fontWeight: 'bold' }}>Escáner Deshabilitado</h3>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#c62828', fontWeight: 'bold' }}>Scanner Disabled</h3>
               <p style={{ fontSize: '13px', margin: '0 0 16px 0', color: 'var(--game-text)' }}>
-                Has alcanzado tu límite diario de análisis gratuitos. Estará disponible de nuevo en ${IAQuotaManager.obtenerMensajeTiempoRestante()}. Para análisis ilimitados inmediatos, introduce tu clave API en Ajustes ⚙️.
+                {`You have reached your daily free analysis limit. It will be available again in ${IAQuotaManager.obtenerMensajeTiempoRestante()}. For immediate unlimited analyses, enter your API key in Settings 🔑.`}
               </p>
             </div>
           ) : (
@@ -613,7 +613,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
               </div>
             )}
 
-            {loading && <p style={{ textAlign: 'center', fontSize: '14px', color: accentColor }}>Procesando análisis molecular por IA...</p>}
+            {loading && <p style={{ textAlign: 'center', fontSize: '14px', color: accentColor }}>Processing molecular AI analysis...</p>}
             
             {errorMsg && (
               <p style={{ 
@@ -687,10 +687,10 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
                         </select>
                       </div>
                       <div>
-                        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>¿Castrado/a?:</label>
+                        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Neutered/Spayed?:</label>
                         <select value={petCastrado ? 'si' : 'no'} onChange={(e) => setPetCastrado(e.target.value === 'si')} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}>
                           <option value="no">No</option>
-                          <option value="si">Sí</option>
+                          <option value="si">Yes</option>
                         </select>
                       </div>
                     </div>
@@ -706,20 +706,20 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
                 {mode === 'registrar_planta' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <div>
-                      <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Nombre Común:</label>
+                      <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Common Name:</label>
                       <input type="text" value={plantNombreComun} onChange={(e) => setPlantNombreComun(e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Nombre Científico:</label>
+                      <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Scientific Name:</label>
                       <input type="text" value={plantNombreCientifico} onChange={(e) => setPlantNombreCientifico(e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                       <div>
-                        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Ubicación:</label>
+                        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Location:</label>
                         <input type="text" value={plantUbicacion} onChange={(e) => setPlantUbicacion(e.target.value)} style={{ width: '100%', padding: '5px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
                       </div>
                       <div>
-                        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Riego recomendado cada (días):</label>
+                        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Recommended watering every (days):</label>
                         <input type="number" value={plantIntervaloRiego} onChange={(e) => setPlantIntervaloRiego(e.target.value)} style={{ width: '100%', padding: '5px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
                       </div>
                     </div>
@@ -734,14 +734,14 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
                     </div>
 
                     <div>
-                      <label style={{ fontSize: '11px', fontWeight: 'bold' }}>¿Cuándo fue el último riego?</label>
+                      <label style={{ fontSize: '11px', fontWeight: 'bold' }}>When was the last watering?</label>
                       <select value={plantUltimoRiegoOpcion} onChange={(e) => setPlantUltimoRiegoOpcion(e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)', fontSize: '12px' }}>
                         <option value="hoy">Hoy 💧</option>
                         <option value="ayer">Ayer</option>
-                        <option value="hace_2">Hace 2 días</option>
-                        <option value="hace_3">Hace 3 días</option>
-                        <option value="hace_5">Hace 5 días</option>
-                        <option value="hace_7">Hace 7 días (1 semana)</option>
+                        <option value="hace_2">2 days ago</option>
+                        <option value="hace_3">3 days ago</option>
+                        <option value="hace_5">5 days ago</option>
+                        <option value="hace_7">7 days ago (1 week)</option>
                         <option value="necesita_ya">Requiere riego ya (Desconocido / Hace mucho)</option>
                       </select>
                     </div>
@@ -751,16 +751,16 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
                         <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Toxicidad Felina:</label>
                         <select value={plantToxicidad} onChange={(e) => setPlantToxicidad(e.target.value as any)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)', fontSize: '12px' }}>
                           <option value="Segura">Segura 🐈</option>
-                          <option value="Tóxica leve (irritante)">Tóxica Leve ⚠️</option>
-                          <option value="Altamente tóxica (urgencia)">Muy Tóxica 🚨</option>
+                          <option value="Tóxica leve (irritante)">Mildly Toxic ⚠️</option>
+                          <option value="Altamente tóxica (urgencia)">Highly Toxic 🚨</option>
                         </select>
                       </div>
                       <div>
                         <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Toxicidad Canina:</label>
                         <select value={plantToxicidadCanina} onChange={(e) => setPlantToxicidadCanina(e.target.value as any)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)', fontSize: '12px' }}>
                           <option value="Segura">Segura 🐕</option>
-                          <option value="Tóxica leve (irritante)">Tóxica Leve ⚠️</option>
-                          <option value="Altamente tóxica (urgencia)">Muy Tóxica 🚨</option>
+                          <option value="Tóxica leve (irritante)">Mildly Toxic ⚠️</option>
+                          <option value="Altamente tóxica (urgencia)">Highly Toxic 🚨</option>
                         </select>
                       </div>
                     </div>
@@ -779,15 +779,15 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
                     <div style={{ padding: '12px', background: 'rgba(0,0,0,0.03)', borderRadius: '8px', border: '1px solid var(--game-border-color)' }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
-                        <TTSButton text={`Diagnóstico: ${scanResult.diagnostico}. Tratamiento sugerido: ${scanResult.tratamiento}.${scanResult.advertencia ? ` Alerta: ${scanResult.advertencia}` : ''}`} />
+                        <TTSButton text={`Diagnosis: ${scanResult.diagnostico}. Suggested treatment: ${scanResult.tratamiento}.${scanResult.advertencia ? ` Alert: ${scanResult.advertencia}` : ''}`} />
                       </div>
-                      <p><strong>Diagnóstico:</strong> {scanResult.diagnostico}</p>
+                      <p><strong>Diagnosis:</strong> {scanResult.diagnostico}</p>
                       <p><strong>Tratamiento sugerido:</strong> {scanResult.tratamiento}</p>
                       <p style={{ color: scanResult.esUrgente ? '#f44336' : 'inherit' }}><strong>Alerta:</strong> {scanResult.advertencia}</p>
                     </div>
 
                     {mascotas.length === 0 ? (
-                      <p style={{ fontStyle: 'italic', fontSize: '12px', color: '#666' }}>Registra una mascota primero para poder guardar este diagnóstico en su historial.</p>
+                      <p style={{ fontStyle: 'italic', fontSize: '12px', color: '#666' }}>Register a pet first to save this diagnosis to its history.</p>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <label style={{ fontWeight: 'bold' }}>Asociar al expediente de:</label>
@@ -811,10 +811,10 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
                     <div style={{ padding: '12px', background: 'rgba(0,0,0,0.03)', borderRadius: '8px', border: '1px solid var(--game-border-color)' }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
-                        <TTSButton text={`Diagnóstico Fitosanitario: ${scanResult.diagnostico}. Acción Recomendada: ${scanResult.tratamiento}.${scanResult.advertencia ? ` Peligro: ${scanResult.advertencia}` : ''}`} />
+                        <TTSButton text={`Phytosanitary Diagnosis: ${scanResult.diagnostico}. Recommended Action: ${scanResult.tratamiento}.${scanResult.advertencia ? ` Danger: ${scanResult.advertencia}` : ''}`} />
                       </div>
-                      <p><strong>Diagnóstico Fitosanitario:</strong> {scanResult.diagnostico}</p>
-                      <p><strong>Acción Recomendada:</strong> {scanResult.tratamiento}</p>
+                      <p><strong>Phytosanitary Diagnosis:</strong> {scanResult.diagnostico}</p>
+                      <p><strong>Recommended Action:</strong> {scanResult.tratamiento}</p>
                       <p style={{ color: scanResult.esUrgente ? '#f44336' : 'inherit' }}><strong>Peligro:</strong> {scanResult.advertencia}</p>
                     </div>
 

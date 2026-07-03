@@ -322,7 +322,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
             <div>
               <h3 style={{ margin: '0', fontSize: '18px', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>{activePlant.nombreComun}</h3>
               <span style={{ fontSize: '12px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>
-                {activePlant.nombreCientifico || 'Sin taxonomía registrada'}
+                {activePlant.nombreCientifico || 'No taxonomy registered'}
               </span>
             </div>
           </div>
@@ -353,7 +353,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
               </p>
               <span style={{ color: 'var(--game-text, #555)', fontSize: '10.5px', lineHeight: '1.3' }}>
                 {activePlant.toxicidadFelina === 'Segura' 
-                  ? 'Planta inocua para gatos domésticos.' 
+                  ? 'Plant safe for domestic cats.' 
                   : `Compuesto: ${activePlant.compuestosToxicos || 'Oxalatos insolubles'}.`}
               </span>
             </div>
@@ -379,7 +379,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
                   </p>
                   <span style={{ color: 'var(--game-text, #555)', fontSize: '10.5px', lineHeight: '1.3' }}>
                     {toxCanina === 'Segura' 
-                      ? 'Planta inocua para perros domésticos.' 
+                      ? 'Plant safe for domestic dogs.' 
                       : `Compuesto: ${activePlant.compuestosToxicos || 'Oxalatos insolubles'}.`}
                   </span>
                 </div>
@@ -390,7 +390,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
           {/* Calculadora Agronómica de Evapotranspiración */}
           <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '16px' }}>
             <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: 'var(--game-text-bright, #333)', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)' }}>
-              Calculadora de Evapotranspiración y Riego
+              Evapotranspiration and Irrigation Calculator
             </h4>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
@@ -444,9 +444,9 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
             }}>
               <div>
                 <span style={{ fontSize: '11px', color: 'var(--game-text, #555)' }}>Frecuencia de Riego Proyectada</span>
-                <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--game-text, #888)' }}>Evapotranspiración por física foliar</p>
+                <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--game-text, #888)' }}>Evapotranspiration by leaf physics</p>
               </div>
-              <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--game-text-bright, #4caf50)' }}>Cada {nuevoIntervalo} días</span>
+              <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--game-text-bright, #4caf50)' }}>Every {nuevoIntervalo} days</span>
             </div>
 
             <button 
@@ -464,7 +464,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
                 fontFamily: 'var(--game-font, sans-serif)'
               }}
             >
-              {theme === 'terminal' ? 'APLICAR CÁLCULOS >' : theme === 'arcade' ? 'APPLY STATS' : 'Aplicar Frecuencia de Riego Dinámica'}
+              {theme === 'terminal' ? 'APLICAR CÁLCULOS >' : theme === 'arcade' ? 'APPLY STATS' : 'Apply Dynamic Watering Frequency'}
             </button>
           </div>
 
@@ -479,7 +479,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h4 style={{ margin: '0', fontSize: '13px', color: 'var(--game-text-bright, #2e7d32)', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)' }}>
-                🛰️ Climatología Satelital y Riego GPS
+                🌍 Satellite Climatology and GPS Irrigation
               </h4>
               <span style={{
                 fontSize: '10px',
@@ -495,7 +495,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
               </span>
             </div>
             <p style={{ margin: '0', fontSize: '11px', color: 'var(--game-text, #666)', lineHeight: '1.4', fontFamily: 'var(--game-font, sans-serif)' }}>
-              Calcula la frecuencia de riego óptima utilizando tu ubicación exacta y los sensores satelitales en vivo de Open-Meteo.
+              Calculate the optimal watering frequency using your exact location and live Open-Meteo satellite sensors.
             </p>
 
             {climaGPS && (
@@ -528,7 +528,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
                 border: 'var(--game-border, 1px solid #ffcdd2)',
                 fontFamily: 'var(--game-font, sans-serif)'
               }}>
-                ⚠️ Fallback Activo: {errorGPS} (Simulación estacional)
+                ⚠️ Fallback Active: {errorGPS} (Seasonal simulation)
               </div>
             )}
 
@@ -552,7 +552,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
                 fontFamily: 'var(--game-font, sans-serif)'
               }}
             >
-              {loadingGPS ? 'Consultando Satélites de Clima...' : 'Sincronizar y Ajustar por GPS 🛰️'}
+              {loadingGPS ? 'Consulting Climate Satellites...' : 'Sync and Adjust by GPS 🛰️'}
             </button>
           </div>
 
@@ -599,11 +599,11 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
               >
                 <option value="Excelente" style={{ background: 'var(--game-card-bg)' }}>Excelente</option>
                 <option value="Normal" style={{ background: 'var(--game-card-bg)' }}>Normal</option>
-                <option value="Clorosis/Lesión" style={{ background: 'var(--game-card-bg)' }}>Clorosis/Lesión</option>
+                <option value="Clorosis/Lesión" style={{ background: 'var(--game-card-bg)' }}>Chlorosis/Lesion</option>
               </select>
               <input
                 type="text"
-                placeholder="Añadir nota de poda, abono, brote..."
+                placeholder="Add pruning, fertilizer, sprout note..."
                 value={nota}
                 onChange={(e) => setNota(e.target.value)}
                 style={{
@@ -680,7 +680,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
                           onClick={() => eliminarNotaFoliar(d.id)}
                           style={{ background: '#d32f2f', color: '#fff', border: 'none', borderRadius: '3px', padding: '1px 5px', fontSize: '9px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'var(--game-font, sans-serif)' }}
                         >
-                          ¿Seguro?
+                          Sure?
                         </button>
                         <button 
                           type="button"
@@ -723,7 +723,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
             paddingBottom: '8px',
             fontFamily: 'var(--game-font, sans-serif)'
           }}>
-            Catálogo de Plantas ASPCA y Adopciones
+            ASPCA Plant Catalog and Adoptions
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '200px', overflowY: 'auto' }}>
             {CATALOGO_ASPCA.map(cat => (
@@ -740,10 +740,10 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
                   <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>{cat.nombreCientifico}</p>
                   <div style={{ display: 'flex', gap: '8px', marginTop: '2px' }}>
                     <span style={{ fontSize: '9px', fontWeight: 'bold', color: cat.toxicidadFelina === 'Segura' ? '#4caf50' : '#f44336', fontFamily: 'var(--game-font, sans-serif)' }}>
-                      🐈 {cat.toxicidadFelina === 'Segura' ? 'SEGURA' : 'TÓXICA'}
+                      🐈 {cat.toxicidadFelina === 'Segura' ? 'SAFE' : 'TOXIC'}
                     </span>
                     <span style={{ fontSize: '9px', fontWeight: 'bold', color: cat.toxicidadCanina === 'Segura' ? '#4caf50' : '#f44336', fontFamily: 'var(--game-font, sans-serif)' }}>
-                      🐕 {cat.toxicidadCanina === 'Segura' ? 'SEGURA' : 'TÓXICA'}
+                      🐕 {cat.toxicidadCanina === 'Segura' ? 'SAFE' : 'TOXIC'}
                     </span>
                   </div>
                 </div>

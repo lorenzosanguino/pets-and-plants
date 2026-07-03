@@ -1311,7 +1311,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                   <span>Factor: {factor.toFixed(2)}x</span>
                 </div>
                 <div>
-                  Riego ajustado a <strong>{intervaloAjustado} días</strong> (base: {baseIntervalo} días) debido a {motivos.length > 0 ? motivos.join(' y ') : 'clima templado'}.
+                  Watering adjusted to <strong>{intervaloAjustado} days</strong> (base: {baseIntervalo} days) due to {motivos.length > 0 ? motivos.join(' and ') : 'temperate weather'}.
                 </div>
                 <div style={{ fontSize: '10px', opacity: 0.8, fontStyle: 'italic' }}>
                   Sensor GPS: {Math.round(temp)}°C | {Math.round(hum)}% HR
@@ -1384,21 +1384,21 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                         <option value="Poda">Poda</option>
                         <option value="Tratamiento">Tratamiento</option>
                         <option value="Enfermedad">Enfermedad</option>
-                        <option value="Parásito">Parásito</option>
+                        <option value="Parásito">Parasite</option>
                         <option value="Otro">Otro</option>
                       </select>
                     </div>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <input 
                         type="text" 
-                        placeholder="Descripción (ej: Poda severa, trasplante, ácaros...)" 
+                        placeholder="Description (e.g.: Severe pruning, transplant, mites...)" 
                         value={histDesc} 
                         onChange={(e) => setHistDesc(e.target.value)} 
                         required
                         style={{ flex: 1, padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
                       />
                       <button type="submit" style={{ padding: '6px 12px', background: '#1a1a1a', color: theme === 'gaming' ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
-                        Añadir
+                        Add
                       </button>
                     </div>
                   </form>
@@ -1553,11 +1553,11 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                       >
                         <option value="Excelente">Excelente</option>
                         <option value="Normal">Normal</option>
-                        <option value="Clorosis/Lesión">Clorosis/Lesión</option>
+                        <option value="Clorosis/Lesión">Chlorosis/Lesion</option>
                       </select>
                       <input
                         type="text"
-                        placeholder="Nueva nota agrónoma..."
+                        placeholder="New agronomic note..."
                         value={nota}
                         onChange={(e) => setNota(e.target.value)}
                         style={{ flex: 1, minWidth: 0, padding: '8px 12px', border: 'var(--game-border, 1px solid #eaeaea)', borderRadius: 'var(--game-radius, 6px)', fontSize: '13px', background: 'var(--game-bg)', color: 'var(--game-text-bright)', outline: 'none' }}
@@ -1591,10 +1591,10 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                           </button>
                           <span style={{ fontSize: '10px', color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#c62828' : 'var(--game-text, #666)', textAlign: 'center', display: 'block', fontWeight: '500' }}>
                             {cuota.esIlimitado 
-                              ? '⚡ Modo Premium: Análisis ilimitados' 
+                              ? '✅ Premium Mode: Unlimited analyses' 
                               : cuota.restantes === 0 
-                                ? `❌ Límite diario alcanzado (Espera ${IAQuotaManager.obtenerMensajeTiempoRestante()} o añade tu API Key en Ajustes ⚙️)` 
-                                : `🔑 Te quedan ${cuota.restantes} análisis de IA hoy`}
+                                ? `⚠️ Daily limit reached (Wait ${IAQuotaManager.obtenerMensajeTiempoRestante()} or add your API Key in Settings 🔑)` 
+                                : `🔬 You have ${cuota.restantes} AI analyses left today`}
                           </span>
                         </div>
                       )}
@@ -1611,7 +1611,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                           let tratamiento = '';
                           let aislamiento = '';
 
-                          const diagKey = '[IA Diagnóstico Fitosanitario]:';
+                          const diagKey = '[AI Phytosanitary Diagnosis]:';
                           const tratKey = '| Tratamiento:';
                           const aisKey = '| Aislamiento sugerido:';
 
@@ -1649,7 +1649,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                           const esIAReporte = d.nota.startsWith('[IA');
                           const fechaFmt = new Date(d.fecha).toLocaleDateString();
                           const textoMostrar = esIAReporte 
-                            ? `análisis fitosanitario - (${fechaFmt})`
+                            ? `phytosanitary analysis - (${fechaFmt})`
                             : d.nota;
 
                           return (
@@ -1679,7 +1679,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                             >
                               <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--game-text, #888)', marginBottom: '2px', fontSize: '9px', alignItems: 'center' }}>
                                 <span>
-                                  ESTADO: {d.estadoGeneral.toUpperCase()} • {fechaFmt} {esIAReporte && '🔍 Click para ver análisis'}
+                                  STATUS: {d.estadoGeneral.toUpperCase()} • {fechaFmt} {esIAReporte && '📊 Click to view analysis'}
                                 </span>
                                 <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
                                   {deleteConfirmId === d.id ? (
@@ -1689,7 +1689,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                                         onClick={() => eliminarNotaFoliar(d.id)}
                                         style={{ background: '#d32f2f', color: '#fff', border: 'none', borderRadius: '3px', padding: '1px 4px', fontSize: '8px', fontWeight: 'bold', cursor: 'pointer' }}
                                       >
-                                        Sí
+                                        Yes
                                       </button>
                                       <button 
                                         type="button"
@@ -1748,7 +1748,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                 fontFamily: 'var(--game-font, sans-serif)'
               }}
             >
-              Exportar Ficha 📄
+              Export Record 📄
             </button>
             <button
               onClick={startLuxmeter}
@@ -1765,7 +1765,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                 fontFamily: 'var(--game-font, sans-serif)'
               }}
             >
-              Medir Luz ☀️
+              Measure Light ☀️
             </button>
             <button
               onClick={runChefIA}
@@ -1782,7 +1782,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                 fontFamily: 'var(--game-font, sans-serif)'
               }}
             >
-              Chef Nutricional 🌱
+              Nutritional Chef 🌱
             </button>
           </div>
 
@@ -1814,9 +1814,9 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                 boxSizing: 'border-box',
                 margin: 'auto'
               }} onClick={(e) => e.stopPropagation()}>
-                <h4 style={{ margin: '0 0 12px 0', color: '#c62828', fontSize: '18px', fontFamily: 'var(--game-font, sans-serif)' }}>⚠️ ¿Eliminar Planta?</h4>
+                <h4 style={{ margin: '0 0 12px 0', color: '#c62828', fontSize: '18px', fontFamily: 'var(--game-font, sans-serif)' }}>⚠️ Delete Plant?</h4>
                 <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: 'var(--game-text, #555)', fontFamily: 'var(--game-font, sans-serif)', lineHeight: '1.4' }}>
-                  ¿Estás seguro de que deseas eliminar permanentemente el registro de <strong>{planta.nombreComun}</strong>? Esta acción no se puede deshacer.
+                  Are you sure you want to permanently delete the record for <strong>{planta.nombreComun}</strong>? This action cannot be undone.
                 </p>
                 <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
                   <button 
@@ -1836,7 +1836,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                       fontFamily: 'var(--game-font, sans-serif)'
                     }}
                   >
-                    Cancelar
+                    Cancel
                   </button>
                   <button 
                     onClick={(e) => {
@@ -1855,7 +1855,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                       fontFamily: 'var(--game-font, sans-serif)'
                     }}
                   >
-                    Sí, eliminar 🗑️
+                    Yes, delete 🗑️
                   </button>
                 </div>
               </div>
@@ -1898,10 +1898,10 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--game-border-color, #f0f0f0)', paddingBottom: '12px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      🍂 Diagnóstico Fitosanitario por IA
+                      🍂 AI Phytosanitary Diagnosis
                     </h3>
                     <span style={{ fontSize: '11px', color: '#666', marginTop: '2px', fontWeight: '500' }}>
-                      Fecha: {iaReporteModal.fecha}
+                      Date: {iaReporteModal.fecha}
                     </span>
                   </div>
                   <button 
@@ -1925,21 +1925,21 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                   
                   <div style={{ background: 'rgba(76, 175, 80, 0.06)', borderLeft: '4px solid #4caf50', padding: '12px', borderRadius: '4px' }}>
                     <h4 style={{ margin: '0 0 6px 0', fontSize: '12px', fontWeight: 'bold', color: '#388e3c', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      📋 Diagnóstico Fitosanitario
+                      📋 Phytosanitary Diagnosis
                     </h4>
                     <p style={{ margin: 0, lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{iaReporteModal.diagnostico}</p>
                   </div>
 
                   <div style={{ background: 'rgba(33, 150, 243, 0.06)', borderLeft: '4px solid #2196f3', padding: '12px', borderRadius: '4px' }}>
                     <h4 style={{ margin: '0 0 6px 0', fontSize: '12px', fontWeight: 'bold', color: '#1976d2', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      💊 Tratamiento Sugerido
+                      💊 Suggested Treatment
                     </h4>
                     <p style={{ margin: 0, lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{iaReporteModal.tratamiento}</p>
                   </div>
 
                   <div style={{ background: 'rgba(255, 152, 0, 0.06)', borderLeft: '4px solid #ff9800', padding: '12px', borderRadius: '4px' }}>
                     <h4 style={{ margin: '0 0 6px 0', fontSize: '12px', fontWeight: 'bold', color: '#f57c00', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      🛡️ Aislamiento Sugerido
+                      🛡️ Suggested Isolation
                     </h4>
                     <p style={{ margin: 0, lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{iaReporteModal.aislamiento}</p>
                   </div>
@@ -1949,7 +1949,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                 {/* Botón inferior de cerrar y TTS */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', width: '100%' }}>
                   <TTSButton
-                    text={`Diagnóstico: ${iaReporteModal.diagnostico}. Tratamiento sugerido: ${iaReporteModal.tratamiento}. ${iaReporteModal.aislamiento ? `Aislamiento sugerido: ${iaReporteModal.aislamiento}` : ''}`}
+                    text={`Diagnosis: ${iaReporteModal.diagnostico}. Suggested treatment: ${iaReporteModal.tratamiento}. ${iaReporteModal.aislamiento ? `Suggested isolation: ${iaReporteModal.aislamiento}` : ''}`}
                     theme={theme}
                     size="normal"
                   />
@@ -1967,7 +1967,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                       fontFamily: 'var(--game-font, sans-serif)'
                     }}
                   >
-                    Cerrar
+                    Close
                   </button>
                 </div>
               </div>
@@ -1987,11 +1987,11 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
         <div className="modal-backdrop" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setShowChefModal(false)}>
           <div className="chef-modal-content" style={{ background: 'var(--game-card-bg, #fff)', borderRadius: theme === 'gaming' ? '0px' : '16px', padding: '24px', maxWidth: '480px', width: '90%', maxHeight: '80vh', overflowY: 'auto', border: 'var(--game-border, none)', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <strong style={{ fontSize: '15px', color: 'var(--game-text-bright)', fontFamily: 'var(--game-font, sans-serif)' }}>🍽️ Chef Nutricional IA — {planta.nombreComun}</strong>
+              <strong style={{ fontSize: '15px', color: 'var(--game-text-bright)', fontFamily: 'var(--game-font, sans-serif)' }}>🍽️ Nutritional Chef AI — {planta.nombreComun}</strong>
               <button type="button" onClick={() => setShowChefModal(false)} style={{ background: 'transparent', border: 'none', fontSize: '18px', cursor: 'pointer', color: 'var(--game-text)' }}>✕</button>
             </div>
             {chefLoading ? (
-              <div style={{ textAlign: 'center', padding: '32px', color: 'var(--game-text)', fontSize: '13px', fontStyle: 'italic' }}>⏳ Consultando con el agrónomo especialista...</div>
+              <div style={{ textAlign: 'center', padding: '32px', color: 'var(--game-text)', fontSize: '13px', fontStyle: 'italic' }}>⏳ Consulting with the specialist agronomist...</div>
             ) : chefRecipe ? (
               <div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
@@ -2029,10 +2029,10 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
           }}>
             <div>
               <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', color: 'var(--text-h, #08060d)', fontWeight: 800 }}>
-                Luxómetro Doméstico ☀️
+                Home Light Meter 🔦
               </h3>
               <p style={{ margin: 0, fontSize: '12px', color: 'var(--text, #6b6375)' }}>
-                Mide la radiación solar para optimizar la ubicación de la planta.
+                Measure solar radiation to optimize plant placement.
               </p>
             </div>
 
@@ -2053,7 +2053,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                   />
                 </div>
                 <span style={{ fontSize: '10px', color: '#16a34a', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  🟢 Cámara Activa (Analizando Luz)
+                  🟢 Camera Active (Analyzing Light)
                 </span>
                 <canvas ref={canvasRef} width="20" height="20" style={{ display: 'none' }} />
               </div>
@@ -2067,10 +2067,10 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                 {cameraError ? (
                   <p style={{ margin: '0 0 10px 0', color: '#b91c1c', fontWeight: '500' }}>⚠️ {cameraError}</p>
                 ) : (
-                  <p style={{ margin: '0 0 10px 0' }}>Iniciando cámara...</p>
+                  <p style={{ margin: '0 0 10px 0' }}>Starting camera...</p>
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-h)' }}>Simulación manual de Luxes:</label>
+                  <label style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-h)' }}>Manual Lux Simulation:</label>
                   <input 
                     type="range" 
                     min="200" 
@@ -2105,10 +2105,10 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
 
               <p style={{ margin: '8px 0 0 0', fontSize: '11px', color: 'var(--text, #6b6375)', lineHeight: 1.4 }}>
                 {luxValue < 1500 
-                  ? 'Intensidad baja. Apto para plantas de sombra (Helechos, Calatheas, Potos). Evita colocar aquí plantas de sol.'
+                  ? 'Low intensity. Suitable for shade plants (Ferns, Calatheas, Pothos). Avoid placing sun plants here.'
                   : luxValue < 5000 
-                    ? 'Luz filtrada/brillante. Ideal para la mayoría de plantas tropicales de interior (Monstera, Ficus, Pilea).'
-                    : 'Luz solar intensa. Óptimo para Suculentas, Cactus, plantas aromáticas y huerto doméstico.'
+                    ? 'Filtered/bright light. Ideal for most indoor tropical plants (Monstera, Ficus, Pilea).'
+                    : 'Intense sunlight. Optimal for Succulents, Cacti, aromatic plants, and home gardens.'
                 }
               </p>
             </div>

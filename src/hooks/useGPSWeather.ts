@@ -18,26 +18,26 @@ const evaluarYNotificarClimaExtremo = (c: any) => {
 
   if (temp > 32) {
     NotificationManager.sendNotification(
-      "🔥 Alerta de Calor Extremo",
-      `La temperatura actual es de ${Math.round(temp)}°C. Mantén a tus mascotas hidratadas y protege tus plantas del sol directo.`
+      "🔥 Extreme Heat Alert",
+      `The current temperature is ${Math.round(temp)}°C. Keep your pets hydrated and protect your plants from direct sunlight.`
     );
     notifEnviada = true;
   } else if (temp < 10) {
     NotificationManager.sendNotification(
-      "❄️ Alerta de Frío Extremo",
-      `La temperatura actual es de ${Math.round(temp)}°C. Resguarda tus plantas sensibles y cobija a tus mascotas en el interior.`
+      "❄️ Extreme Cold Alert",
+      `The current temperature is ${Math.round(temp)}°C. Shelter your sensitive plants and keep your pets warm indoors.`
     );
     notifEnviada = true;
   } else if (hum < 30) {
     NotificationManager.sendNotification(
-      "🏜️ Alerta de Sequedad Ambiental",
-      `La humedad relativa es muy baja (${Math.round(hum)}%). Comprueba el sustrato de tus plantas por si requiere riego extra.`
+      "🏜️ Low Humidity Alert",
+      `Relative humidity is very low (${Math.round(hum)}%). Check your plants' soil in case they need extra watering.`
     );
     notifEnviada = true;
   } else if (hum > 85) {
     NotificationManager.sendNotification(
-      "🌧️ Alerta de Humedad Saturada",
-      `Humedad ambiental del ${Math.round(hum)}%. Alto riesgo de hongos. Evita regar plantas crasas/suculentas hoy.`
+      "🌧️ High Humidity Alert",
+      `Ambient humidity at ${Math.round(hum)}%. High risk of fungus. Avoid watering succulents/cacti today.`
     );
     notifEnviada = true;
   }
@@ -102,7 +102,7 @@ export const useGPSWeather = (refreshData: (force?: boolean) => Promise<void>) =
 
       await refreshData(true);
       setGpsSyncSuccess(
-        `¡Sincronizado con éxito! Clima: ${Math.round(clima.temperatura)}°C, HR: ${clima.humedad}%`
+        `Synced successfully! Weather: ${Math.round(clima.temperatura)}°C, RH: ${clima.humedad}%`
       );
     } catch (err: any) {
       console.warn('Fallo GPS en hook useGPSWeather:', err);
@@ -150,11 +150,11 @@ export const useGPSWeather = (refreshData: (force?: boolean) => Promise<void>) =
         }
         await refreshData(true);
         setGpsSyncSuccess(
-          `¡Sincronizado! (Clima estimado): ${Math.round(climaSimulado.temperatura)}°C, HR: ${climaSimulado.humedad}%`
+          `Synced! (Estimated weather): ${Math.round(climaSimulado.temperatura)}°C, RH: ${climaSimulado.humedad}%`
         );
       } catch (innerErr) {
         console.warn('No se pudo realizar la sincronización climática GPS:', innerErr);
-        alert('No se pudo realizar la sincronización climática GPS.');
+        alert('GPS weather sync could not be completed.');
       }
     } finally {
       setLoadingGPS(false);
@@ -164,7 +164,7 @@ export const useGPSWeather = (refreshData: (force?: boolean) => Promise<void>) =
   const handleGPSToggle = async () => {
     if (gpsSyncEnabled === 'undecided') {
       const activar = window.confirm(
-        '¿Quieres activar la sincronización GPS automática? Esto adaptará el intervalo de riego de tus plantas al clima en tiempo real.'
+        'Do you want to activate automatic GPS synchronization? This will adapt the watering interval of your plants to the real-time weather.'
       );
       if (activar) {
         localStorage.setItem('petplant_gps_sync_enabled', 'true');

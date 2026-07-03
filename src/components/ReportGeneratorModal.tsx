@@ -19,12 +19,12 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
 }) => {
   // Configuración de campos
   const [clinicName, setClinicName] = useState(() => {
-    return localStorage.getItem('petplant_default_clinic_name') || 'Clínica de Cuidados Pet & Plant';
+    return localStorage.getItem('petplant_default_clinic_name') || 'Pet & Plant Care Clinic';
   });
 
   const getReportDefaultTitle = () => {
-    if (type === 'pet') return `Informe de Salud Veterinaria - ${(item as Mascota).nombre}`;
-    return `Ficha de Control Fitosanitario - ${(item as Planta).nombreComun}`;
+    if (type === 'pet') return `Veterinary Health Report - ${(item as Mascota).nombre}`;
+    return `Phytosanitary Control Sheet - ${(item as Planta).nombreComun}`;
   };
 
   const [reportTitle, setReportTitle] = useState(getReportDefaultTitle());
@@ -294,7 +294,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
 
       weightSectionHtml = `
         <div class="report-section">
-          <h3>Curva de Trazado de Peso</h3>
+          <h3>Weight Tracking Curve</h3>
           <div style="background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; padding: 12px; margin-top: 8px;">
             <svg viewBox="0 0 500 150" style="width: 100%; height: auto; display: block;">
               <line x1="${paddingX}" y1="${height - paddingY}" x2="${width - paddingX}" y2="${height - paddingY}" stroke="#e2e8f0" stroke-width="1" />
@@ -353,7 +353,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
 
       weightSectionHtml = `
         <div class="report-section">
-          <h3>Curva de Crecimiento (Altura)</h3>
+          <h3>Growth Curve (Height)</h3>
           <div style="background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; padding: 12px; margin-top: 8px;">
             <svg viewBox="0 0 500 150" style="width: 100%; height: auto; display: block;">
               <line x1="${paddingX}" y1="${height - paddingY}" x2="${width - paddingX}" y2="${height - paddingY}" stroke="#e2e8f0" stroke-width="1" />
@@ -373,16 +373,16 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
         <div class="report-section urgent-card ${activeDiag.esUrgente ? 'urgent-border' : ''}">
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid ${colors.border}; padding-bottom: 4px; margin-bottom: 8px;">
             <h4 style="margin: 0; color: ${colors.primary}; display: flex; align-items: center; gap: 5px;">
-              🩺 Diagnóstico Clínico por IA
+              🩺 AI Clinical Diagnosis
             </h4>
             <span style="font-size: 9px; font-weight: bold; background: ${activeDiag.esUrgente ? '#fde8e8; color: #e11d48;' : `${colors.bgLight}; color: ${colors.primary};`}; padding: 2px 6px; border-radius: 4px;">
-              ${activeDiag.esUrgente ? '🚨 ATENCIÓN URGENTE' : 'CONSULTA GENERAL'}
+              ${activeDiag.esUrgente ? '🚨 URGENT ATTENTION' : 'GENERAL CONSULTATION'}
             </span>
           </div>
-          <p><strong>Diagnóstico/Evaluación:</strong> ${escapeHTML(activeDiag.diagnostico)}</p>
-          <p><strong>Tratamiento sugerido:</strong> ${escapeHTML(activeDiag.tratamiento)}</p>
-          ${activeDiag.advertencia ? `<p><strong>Recomendaciones / Alertas:</strong> <span style="color: #c2410c; font-weight: 500;">${escapeHTML(activeDiag.advertencia)}</span></p>` : ''}
-          <div style="font-size: 8.5px; color: #94a3b8; text-align: right; margin-top: 4px;">Generado el: ${formatDate(activeDiag.fecha)}</div>
+          <p><strong>Diagnosis/Evaluation:</strong> ${escapeHTML(activeDiag.diagnostico)}</p>
+          <p><strong>Suggested Treatment:</strong> ${escapeHTML(activeDiag.tratamiento)}</p>
+          ${activeDiag.advertencia ? `<p><strong>Recommendations / Alerts:</strong> <span style="color: #c2410c; font-weight: 500;">${escapeHTML(activeDiag.advertencia)}</span></p>` : ''}
+          <div style="font-size: 8.5px; color: #94a3b8; text-align: right; margin-top: 4px;">Generated on: ${formatDate(activeDiag.fecha)}</div>
         </div>
       `;
     }
@@ -404,7 +404,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
 
       historySectionHtml = `
         <div class="report-section">
-          <h3>Historial de Diario Clínico y Eventos (${showFullHistory ? 'Todos' : 'Últimos 5'})</h3>
+          <h3>Clinical Diary & Events History (${showFullHistory ? 'All' : 'Last 5'})</h3>
           <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
             ${historyRows}
           </div>
@@ -417,7 +417,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
     if (customObservations.trim()) {
       notesSectionHtml = `
         <div class="report-section" style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 8px; padding: 12px; margin-top: 15px;">
-          <h4 style="margin: 0 0 6px 0; color: ${colors.primary};">📝 Observaciones del Profesional</h4>
+          <h4 style="margin: 0 0 6px 0; color: ${colors.primary};">📝 Professional Observations</h4>
           <div style="color: #334155; white-space: pre-wrap; font-size: 10.5px; line-height: 1.4;">${escapeHTML(customObservations)}</div>
         </div>
       `;
@@ -428,25 +428,25 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
     if (isPet) {
       infoTableHtml = `
         <table class="details-table">
-          <tr><th>Especie / Raza:</th><td>${escapeHTML(petItem.especie)} / ${escapeHTML(petItem.raza || 'No especificada')}</td></tr>
-          <tr><th>Sexo / Castrado:</th><td>${escapeHTML(petItem.sexo || 'No especificado')} / ${petItem.castrado ? 'Sí' : 'No'}</td></tr>
-          <tr><th>Fecha Nac. / Edad:</th><td>${formatDate(petItem.fechaNacimiento)} (${calcularEdadMascota(petItem.fechaNacimiento)})</td></tr>
-          <tr><th>Nro. de Microchip:</th><td>${escapeHTML(petItem.numeroChip || 'Sin microchip')}</td></tr>
-          <tr><th>Nivel Actividad:</th><td>${escapeHTML(petItem.actividad)}</td></tr>
-          ${petItem.porcionDiariaGramos ? `<tr><th>Porción Diaria:</th><td><strong>${petItem.porcionDiariaGramos} gramos</strong></td></tr>` : ''}
+          <tr><th>Species / Breed:</th><td>${escapeHTML(petItem.especie)} / ${escapeHTML(petItem.raza || 'Not specified')}</td></tr>
+          <tr><th>Sex / Neutered:</th><td>${escapeHTML(petItem.sexo || 'Not specified')} / ${petItem.castrado ? 'Yes' : 'No'}</td></tr>
+          <tr><th>DOB / Age:</th><td>${formatDate(petItem.fechaNacimiento)} (${calcularEdadMascota(petItem.fechaNacimiento)})</td></tr>
+          <tr><th>Microchip No.:</th><td>${escapeHTML(petItem.numeroChip || 'No microchip')}</td></tr>
+          <tr><th>Activity Level:</th><td>${escapeHTML(petItem.actividad)}</td></tr>
+          ${petItem.porcionDiariaGramos ? `<tr><th>Daily Portion:</th><td><strong>${petItem.porcionDiariaGramos} grams</strong></td></tr>` : ''}
         </table>
       `;
 
     } else if (isPlant) {
       infoTableHtml = `
         <table class="details-table">
-          <tr><th>Nombre Científico:</th><td><em>${escapeHTML(plantItem.nombreCientifico || 'No especificado')}</em></td></tr>
-          <tr><th>Ubicación / Clima:</th><td>${escapeHTML(plantItem.ubicacionHabitacion)} | 🌡️ Temp: ${plantItem.temperaturaZona}°C</td></tr>
-          <tr><th>Riego Específico:</th><td>💧 ${escapeHTML(plantItem.tipoRiegoEspecifico)} (Cada ${plantItem.intervaloRiegoDias} días)</td></tr>
-          <tr><th>Próximo Riego:</th><td>📅 ${formatDate(plantItem.proximaFechaRiego)}</td></tr>
-          <tr><th>Grosor de Hoja:</th><td>${escapeHTML(plantItem.grosorHoja)}</td></tr>
-          <tr><th>Toxicidad Felina:</th><td><span style="color: ${plantItem.toxicidadFelina === 'Segura' ? '#16a34a' : '#ef4444'}; font-weight: bold;">${escapeHTML(plantItem.toxicidadFelina)}</span></td></tr>
-          ${plantItem.toxicidadCanina ? `<tr><th>Toxicidad Canina:</th><td><span style="color: ${plantItem.toxicidadCanina === 'Segura' ? '#16a34a' : '#ef4444'}; font-weight: bold;">${escapeHTML(plantItem.toxicidadCanina)}</span></td></tr>` : ''}
+          <tr><th>Scientific Name:</th><td><em>${escapeHTML(plantItem.nombreCientifico || 'Not specified')}</em></td></tr>
+          <tr><th>Location / Climate:</th><td>${escapeHTML(plantItem.ubicacionHabitacion)} | 🌡️ Temp: ${plantItem.temperaturaZona}°C</td></tr>
+          <tr><th>Watering Type:</th><td>💧 ${escapeHTML(plantItem.tipoRiegoEspecifico)} (Every ${plantItem.intervaloRiegoDias} days)</td></tr>
+          <tr><th>Next Watering:</th><td>📅 ${formatDate(plantItem.proximaFechaRiego)}</td></tr>
+          <tr><th>Leaf Thickness:</th><td>${escapeHTML(plantItem.grosorHoja)}</td></tr>
+          <tr><th>Feline Toxicity:</th><td><span style="color: ${plantItem.toxicidadFelina === 'Segura' ? '#16a34a' : '#ef4444'}; font-weight: bold;">${escapeHTML(plantItem.toxicidadFelina)}</span></td></tr>
+          ${plantItem.toxicidadCanina ? `<tr><th>Canine Toxicity:</th><td><span style="color: ${plantItem.toxicidadCanina === 'Segura' ? '#16a34a' : '#ef4444'}; font-weight: bold;">${escapeHTML(plantItem.toxicidadCanina)}</span></td></tr>` : ''}
         </table>
       `;
     }
@@ -465,17 +465,17 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
       }).join('') + `
         <div class="checklist-item ${lastIntVal ? 'checked' : ''}">
           <span class="checkbox">${lastIntVal ? '✓' : '✗'}</span>
-          <span class="label">Desparasitación Int. ${lastIntVal ? `(${lastIntVal})` : ''}</span>
+          <span class="label">Internal Deworming ${lastIntVal ? `(${lastIntVal})` : ''}</span>
         </div>
         <div class="checklist-item ${lastExtVal ? 'checked' : ''}">
           <span class="checkbox">${lastExtVal ? '✓' : '✗'}</span>
-          <span class="label">Desparasitación Ext. ${lastExtVal ? `(${lastExtVal})` : ''}</span>
+          <span class="label">External Deworming ${lastExtVal ? `(${lastExtVal})` : ''}</span>
         </div>
       `;
 
       preventativeHtml = `
         <div class="report-section" style="margin-top: 10px;">
-          <h3>Control de Medicina Preventiva</h3>
+          <h3>Preventive Medicine Control</h3>
           <div class="checklist-grid">
             ${vaccineItems}
           </div>
@@ -489,11 +489,11 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
       signatureHtml = `
         <div class="signature-block">
           <div style="width: 45%;">
-            <div class="signature-line">Firma del Profesional / Veterinario</div>
-            <div style="font-size: 8px; color: #94a3b8; margin-top: 4px;">Fecha de emisión: ${new Date().toLocaleDateString('es-ES')}</div>
+            <div class="signature-line">Professional / Veterinarian Signature</div>
+            <div style="font-size: 8px; color: #94a3b8; margin-top: 4px;">Issue date: ${new Date().toLocaleDateString('en-US')}</div>
           </div>
           <div class="stamp-box">
-            <span>Sello Clínico</span>
+            <span>Clinical Stamp</span>
           </div>
         </div>
       `;
@@ -705,7 +705,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
             ${item.fotoUrl ? `<img src="${item.fotoUrl}" alt="${escapeHTML(isPlant ? plantItem.nombreComun : (item as Mascota).nombre)}" />` : `<div class="photo-placeholder">${isPlant ? '🌿' : (isPet && petItem.especie === 'Felino' ? '🐱' : '🐶')}</div>`}
           </div>
           <div>
-            <h3>Datos del Paciente</h3>
+            <h3>Patient Data</h3>
             ${infoTableHtml}
           </div>
           ${preventativeHtml}
@@ -1270,34 +1270,34 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
         {/* Panel de Configuración izquierdo */}
         <div className="config-pane">
           <div className="config-header">
-            <h2 className="config-title">Generador de Informes</h2>
-            <p className="config-subtitle">Diseña y descarga una ficha A4 PDF profesional para tu veterinaria</p>
+            <h2 className="config-title">Report Generator</h2>
+            <p className="config-subtitle">Design and download a professional A4 PDF sheet for your veterinary clinic</p>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Nombre de Clínica / Institución</label>
+            <label className="form-label">Clinic / Institution Name</label>
             <input 
               type="text" 
               className="form-input" 
               value={clinicName} 
               onChange={(e) => setClinicName(e.target.value)} 
-              placeholder="Ej. Clínica Veterinaria San Antón"
+              placeholder="E.g. St. Anthony Veterinary Clinic"
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Título del Reporte</label>
+            <label className="form-label">Report Title</label>
             <input 
               type="text" 
               className="form-input" 
               value={reportTitle} 
               onChange={(e) => setReportTitle(e.target.value)} 
-              placeholder="Ej. Informe de Salud Clínico"
+              placeholder="E.g. Clinical Health Report"
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Diseño Visual y Tema</label>
+            <label className="form-label">Visual Design & Theme</label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button 
                 type="button" 
@@ -1305,7 +1305,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                 style={{ flex: 1, fontWeight: selectedTheme === 'category' ? 'bold' : 'normal', border: selectedTheme === 'category' ? '2px solid var(--accent)' : '1px solid var(--border)' }}
                 onClick={() => setSelectedTheme('category')}
               >
-                🎨 Categoría ({isPet ? 'Azul' : 'Verde'})
+                🎨 Category ({isPet ? 'Blue' : 'Green'})
               </button>
               <button 
                 type="button" 
@@ -1313,19 +1313,19 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                 style={{ flex: 1, fontWeight: selectedTheme === 'grayscale' ? 'bold' : 'normal', border: selectedTheme === 'grayscale' ? '2px solid var(--accent)' : '1px solid var(--border)' }}
                 onClick={() => setSelectedTheme('grayscale')}
               >
-                🏁 Minimalista (Gris)
+                🏁 Minimalist (Gray)
               </button>
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Secciones a Incluir</label>
+            <label className="form-label">Sections to Include</label>
             <div className="toggle-group">
               {isPet && petItem.registroPeso && petItem.registroPeso.length > 0 && (
                 <div className="toggle-row" onClick={() => setIncludeWeightChart(!includeWeightChart)}>
                   <div className="toggle-text">
-                    <span className="toggle-title">Curva de Evolución de Peso</span>
-                    <span className="toggle-desc">Dibuja un trazado SVG lineal con los pesos</span>
+                    <span className="toggle-title">Weight Evolution Curve</span>
+                    <span className="toggle-desc">Draws a linear SVG trace of weight readings</span>
                   </div>
                   <div className={`switch-control ${includeWeightChart ? 'active' : ''}`}>
                     <div className="switch-knob" />
@@ -1336,8 +1336,8 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
               {diagsIA.length > 0 && (
                 <div className="toggle-row" onClick={() => setIncludeAIDiag(!includeAIDiag)}>
                   <div className="toggle-text">
-                    <span className="toggle-title">Diagnóstico Clínico por IA</span>
-                    <span className="toggle-desc">Incluye las sugerencias de la IA</span>
+                    <span className="toggle-title">AI Clinical Diagnosis</span>
+                    <span className="toggle-desc">Includes AI-generated suggestions</span>
                   </div>
                   <div className={`switch-control ${includeAIDiag ? 'active' : ''}`}>
                     <div className="switch-knob" />
@@ -1348,8 +1348,8 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
               {historyItems.length > 0 && (
                 <div className="toggle-row" onClick={() => setIncludeHistoryLogs(!includeHistoryLogs)}>
                   <div className="toggle-text">
-                    <span className="toggle-title">Historial Clínico / Diario</span>
-                    <span className="toggle-desc">Incluye las notas del diario</span>
+                    <span className="toggle-title">Clinical History / Diary</span>
+                    <span className="toggle-desc">Includes diary notes</span>
                   </div>
                   <div className={`switch-control ${includeHistoryLogs ? 'active' : ''}`}>
                     <div className="switch-knob" />
@@ -1360,8 +1360,8 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
               {includeHistoryLogs && historyItems.length > 5 && (
                 <div className="toggle-row" onClick={() => setShowFullHistory(!showFullHistory)}>
                   <div className="toggle-text">
-                    <span className="toggle-title">Mostrar Historial Completo</span>
-                    <span className="toggle-desc">Si se desactiva, mostrará sólo los últimos 5</span>
+                    <span className="toggle-title">Show Full History</span>
+                    <span className="toggle-desc">If disabled, shows only the last 5 entries</span>
                   </div>
                   <div className={`switch-control ${showFullHistory ? 'active' : ''}`}>
                     <div className="switch-knob" />
@@ -1371,8 +1371,8 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
 
               <div className="toggle-row" onClick={() => setIncludeSignature(!includeSignature)}>
                 <div className="toggle-text">
-                  <span className="toggle-title">Bloque de Firma y Sello</span>
-                  <span className="toggle-desc">Agrega pie de validación clínica</span>
+                  <span className="toggle-title">Signature & Stamp Block</span>
+                  <span className="toggle-desc">Adds clinical validation footer</span>
                 </div>
                 <div className={`switch-control ${includeSignature ? 'active' : ''}`}>
                   <div className="switch-knob" />
@@ -1383,7 +1383,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
 
           {includeAIDiag && diagsIA.length > 1 && (
             <div className="form-group">
-              <label className="form-label">Seleccionar Diagnóstico IA</label>
+              <label className="form-label">Select AI Diagnosis</label>
               <select 
                 className="form-input" 
                 value={selectedDiagId} 
@@ -1391,7 +1391,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
               >
                 {diagsIA.map((d) => (
                   <option key={d.id} value={d.id}>
-                    [{d.esUrgente ? '🚨 Urgente' : '🩺 Consulta'}] {formatDate(d.fecha)} - {d.diagnostico.slice(0, 45)}...
+                    [{d.esUrgente ? '🚨 Urgent' : '🩺 Consultation'}] {formatDate(d.fecha)} - {d.diagnostico.slice(0, 45)}...
                   </option>
                 ))}
               </select>
@@ -1399,22 +1399,22 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
           )}
 
           <div className="form-group">
-            <label className="form-label">Observaciones Adicionales / Firma de Notas</label>
+            <label className="form-label">Additional Observations / Notes</label>
             <textarea 
               className="form-input" 
               style={{ minHeight: '80px', resize: 'vertical' }}
               value={customObservations} 
               onChange={(e) => setCustomObservations(e.target.value)} 
-              placeholder="Redacta anotaciones adicionales sobre tratamientos, dieta o recomendaciones que aparecerán al pie..."
+              placeholder="Write additional notes on treatments, diet or recommendations that will appear at the bottom..."
             />
           </div>
 
           <div className="button-bar">
             <button type="button" className="btn-cancel" onClick={onClose}>
-              Cerrar
+              Close
             </button>
             <button type="button" className="btn-print" onClick={handlePrint}>
-              💾 Imprimir / Guardar PDF
+              💾 Print / Save PDF
             </button>
           </div>
         </div>
@@ -1423,7 +1423,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
         <div className="preview-pane">
           <div className="preview-header-bar">
             <span className="preview-label" style={{ fontWeight: 'bold', fontSize: '13px', color: '#1e293b' }}>
-              Vista Previa (A4 Escala)
+              Preview (A4 Scale)
             </span>
             <span className="preview-badge">PDF Interactivo</span>
           </div>
@@ -1457,18 +1457,18 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
 
                   {/* Tabla Identificativa */}
                   <div className="preview-section">
-                    <h3>Datos del Paciente</h3>
+                    <h3>Patient Data</h3>
                     {isPet && (
                       <table className="preview-details-table">
                         <tbody>
-                          <tr><th>Especie:</th><td>{petItem.especie}</td></tr>
-                          <tr><th>Raza:</th><td>{petItem.raza || 'No especificada'}</td></tr>
-                          <tr><th>Sexo / Castrado:</th><td>{petItem.sexo || 'No especificado'} / {petItem.castrado ? 'Sí' : 'No'}</td></tr>
-                          <tr><th>Fecha Nac.:</th><td>{formatDate(petItem.fechaNacimiento)}</td></tr>
-                          <tr><th>Edad:</th><td>{calcularEdadMascota(petItem.fechaNacimiento)}</td></tr>
-                          <tr><th>Chip N°:</th><td>{petItem.numeroChip || 'Sin microchip'}</td></tr>
-                          <tr><th>Actividad:</th><td>{petItem.actividad}</td></tr>
-                          {petItem.porcionDiariaGramos && <tr><th>Porción Diaria:</th><td>{petItem.porcionDiariaGramos}g</td></tr>}
+                          <tr><th>Species:</th><td>{petItem.especie}</td></tr>
+                          <tr><th>Breed:</th><td>{petItem.raza || 'Not specified'}</td></tr>
+                          <tr><th>Sex / Neutered:</th><td>{petItem.sexo || 'Not specified'} / {petItem.castrado ? 'Yes' : 'No'}</td></tr>
+                          <tr><th>DOB:</th><td>{formatDate(petItem.fechaNacimiento)}</td></tr>
+                          <tr><th>Age:</th><td>{calcularEdadMascota(petItem.fechaNacimiento)}</td></tr>
+                          <tr><th>Chip No.:</th><td>{petItem.numeroChip || 'No microchip'}</td></tr>
+                          <tr><th>Activity:</th><td>{petItem.actividad}</td></tr>
+                          {petItem.porcionDiariaGramos && <tr><th>Daily Portion:</th><td>{petItem.porcionDiariaGramos}g</td></tr>}
                         </tbody>
                       </table>
                     )}
@@ -1476,14 +1476,14 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                     {isPlant && (
                       <table className="preview-details-table">
                         <tbody>
-                          <tr><th>Nombre Científico:</th><td><em>{plantItem.nombreCientifico || 'No especificado'}</em></td></tr>
-                          <tr><th>Ubicación:</th><td>{plantItem.ubicacionHabitacion}</td></tr>
-                          <tr><th>Temp. Zona:</th><td>🌡️ {plantItem.temperaturaZona}°C</td></tr>
-                          <tr><th>Riego Específico:</th><td>💧 {plantItem.tipoRiegoEspecifico}</td></tr>
-                          <tr><th>Frecuencia Riego:</th><td>Cada {plantItem.intervaloRiegoDias} días</td></tr>
-                          <tr><th>Próximo Riego:</th><td>{formatDate(plantItem.proximaFechaRiego)}</td></tr>
-                          <tr><th>Grosor Hoja:</th><td>{plantItem.grosorHoja}</td></tr>
-                          <tr><th>Seguridad Felina:</th><td><span style={{ color: plantItem.toxicidadFelina === 'Segura' ? '#16a34a' : '#ef4444', fontWeight: 'bold' }}>{plantItem.toxicidadFelina}</span></td></tr>
+                          <tr><th>Scientific Name:</th><td><em>{plantItem.nombreCientifico || 'Not specified'}</em></td></tr>
+                          <tr><th>Location:</th><td>{plantItem.ubicacionHabitacion}</td></tr>
+                          <tr><th>Zone Temp.:</th><td>🌡️ {plantItem.temperaturaZona}°C</td></tr>
+                          <tr><th>Watering Type:</th><td>💧 {plantItem.tipoRiegoEspecifico}</td></tr>
+                          <tr><th>Watering Frequency:</th><td>Every {plantItem.intervaloRiegoDias} days</td></tr>
+                          <tr><th>Next Watering:</th><td>{formatDate(plantItem.proximaFechaRiego)}</td></tr>
+                          <tr><th>Leaf Thickness:</th><td>{plantItem.grosorHoja}</td></tr>
+                          <tr><th>Feline Safety:</th><td><span style={{ color: plantItem.toxicidadFelina === 'Segura' ? '#16a34a' : '#ef4444', fontWeight: 'bold' }}>{plantItem.toxicidadFelina}</span></td></tr>
                         </tbody>
                       </table>
                     )}
@@ -1492,7 +1492,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                   {/* Preventative (solo mascotas) */}
                   {isPet && petVaccines && (
                     <div className="preview-section">
-                      <h3>Preventiva y Vacunas</h3>
+                      <h3>Preventive Care & Vaccines</h3>
                       <div className="preview-checklist">
                         {petVaccines.map((v, idx) => {
                           const isChecked = (petItem.vacunasChecklist || []).includes(v);
@@ -1505,11 +1505,11 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                         })}
                         <div className={`preview-chk-item ${lastIntVal ? 'checked' : ''}`}>
                           <span className="chk-box">{lastIntVal ? '✓' : '✗'}</span>
-                          <span className="chk-lbl">Interna {lastIntVal ? `(${lastIntVal})` : ''}</span>
+                          <span className="chk-lbl">Internal {lastIntVal ? `(${lastIntVal})` : ''}</span>
                         </div>
                         <div className={`preview-chk-item ${lastExtVal ? 'checked' : ''}`}>
                           <span className="chk-box">{lastExtVal ? '✓' : '✗'}</span>
-                          <span className="chk-lbl">Externa {lastExtVal ? `(${lastExtVal})` : ''}</span>
+                          <span className="chk-lbl">External {lastExtVal ? `(${lastExtVal})` : ''}</span>
                         </div>
                       </div>
                     </div>
@@ -1521,7 +1521,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                   {/* Gráfico de peso */}
                   {isPet && includeWeightChart && petItem.registroPeso && petItem.registroPeso.length > 0 && (
                     <div className="preview-section">
-                      <h3>Curva de Trazado de Peso</h3>
+                      <h3>Weight Tracking Curve</h3>
                       {drawWeightChartSVG()}
                     </div>
                   )}
@@ -1531,15 +1531,15 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                     <div className={`preview-section preview-urgent-card ${activeDiag.esUrgente ? 'preview-urgent-border' : ''}`}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${colors.border}`, paddingBottom: '3px', marginBottom: '6px' }}>
                         <h4 style={{ margin: 0, color: colors.primary, fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          🩺 Diagnóstico Clínico por IA
+                          🩺 AI Clinical Diagnosis
                         </h4>
                         <span style={{ fontSize: '8.5px', fontWeight: 'bold', background: activeDiag.esUrgente ? '#fde8e8' : colors.bgLight, color: activeDiag.esUrgente ? '#e11d48' : colors.primary, padding: '1px 5px', borderRadius: '4px' }}>
-                          {activeDiag.esUrgente ? '🚨 URGENTE' : 'CONSULTA'}
+                          {activeDiag.esUrgente ? '🚨 URGENT' : 'CONSULTATION'}
                         </span>
                       </div>
-                      <p style={{ margin: '0 0 4px 0', fontSize: '10px' }}><strong>Diagnóstico:</strong> {activeDiag.diagnostico}</p>
-                      <p style={{ margin: '0 0 4px 0', fontSize: '10px' }}><strong>Tratamiento:</strong> {activeDiag.tratamiento}</p>
-                      {activeDiag.advertencia && <p style={{ margin: '0 0 4px 0', fontSize: '10px' }}><strong>Alerta:</strong> <span style={{ color: '#c2410c', fontWeight: '500' }}>{activeDiag.advertencia}</span></p>}
+                      <p style={{ margin: '0 0 4px 0', fontSize: '10px' }}><strong>Diagnosis:</strong> {activeDiag.diagnostico}</p>
+                      <p style={{ margin: '0 0 4px 0', fontSize: '10px' }}><strong>Treatment:</strong> {activeDiag.tratamiento}</p>
+                      {activeDiag.advertencia && <p style={{ margin: '0 0 4px 0', fontSize: '10px' }}><strong>Alert:</strong> <span style={{ color: '#c2410c', fontWeight: '500' }}>{activeDiag.advertencia}</span></p>}
                       <div style={{ fontSize: '8px', color: '#94a3b8', textAlign: 'right', marginTop: '2px' }}>{formatDate(activeDiag.fecha)}</div>
                     </div>
                   )}
@@ -1547,7 +1547,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                   {/* Historial Clínico */}
                   {includeHistoryLogs && displayedHistory.length > 0 && (
                     <div className="preview-section">
-                      <h3>Historial Diario Clínico</h3>
+                      <h3>Clinical Daily History</h3>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {displayedHistory.map((h, idx) => (
                           <div className="preview-timeline-item" style={{ borderLeftColor: h.color }} key={idx}>
@@ -1567,7 +1567,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                   {/* Observaciones manuales */}
                   {customObservations.trim() && (
                     <div className="preview-section" style={{ background: '#f8fafc', border: '1.5px dashed #cbd5e1', borderRadius: '8px', padding: '10px' }}>
-                      <h4 style={{ margin: '0 0 5px 0', color: colors.primary, fontSize: '10.5px' }}>📝 Observaciones del Profesional</h4>
+                      <h4 style={{ margin: '0 0 5px 0', color: colors.primary, fontSize: '10.5px' }}>📝 Professional Observations</h4>
                       <div style={{ color: '#334155', fontSize: '9.5px', whiteSpace: 'pre-wrap' }}>{customObservations}</div>
                     </div>
                   )}
@@ -1576,11 +1576,11 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                   {includeSignature && (
                     <div className="preview-signature-block">
                       <div style={{ width: '45%' }}>
-                        <div className="preview-sig-line">Firma del Profesional</div>
-                        <div style={{ fontSize: '7.5px', color: '#94a3b8', marginTop: '3px' }}>Fecha: {new Date().toLocaleDateString('es-ES')}</div>
+                        <div className="preview-sig-line">Professional Signature</div>
+                        <div style={{ fontSize: '7.5px', color: '#94a3b8', marginTop: '3px' }}>Date: {new Date().toLocaleDateString('en-US')}</div>
                       </div>
                       <div className="preview-stamp-box">
-                        <span>Sello Clínico</span>
+                        <span>Clinical Stamp</span>
                       </div>
                     </div>
                   )}
