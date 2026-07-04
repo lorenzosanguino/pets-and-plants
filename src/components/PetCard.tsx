@@ -1081,25 +1081,25 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
           {(['Felino', 'Canino', 'Hamster', 'Conejo', 'Cobaya'].includes(editEspecie) || (editEspecie === 'Otro' && editEsMamifero)) && (
             <div className="responsive-form-grid-2" style={{ gap: '10px' }}>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Sexo:</label>
+                <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>{locale === 'en' ? 'Sex:' : 'Sexo:'}</label>
                 <select 
                   value={editSexo} 
                   onChange={(e) => setEditSexo(e.target.value as 'Macho' | 'Hembra')}
                   style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: '#fff', color: '#000', fontSize: '13px' }}
                 >
-                  <option value="Macho">Macho ♂</option>
-                  <option value="Hembra">Hembra ♀</option>
+                  <option value="Macho">{locale === 'en' ? 'Male ♂' : 'Macho ♂'}</option>
+                  <option value="Hembra">{locale === 'en' ? 'Female ♀' : 'Hembra ♀'}</option>
                 </select>
               </div>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>¿Castrado/a?:</label>
+                <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>{locale === 'en' ? 'Neutered/Spayed?:' : '¿Castrado/a?:'}</label>
                 <select 
                   value={editCastrado ? 'si' : 'no'} 
                   onChange={(e) => setEditCastrado(e.target.value === 'si')}
                   style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: '#fff', color: '#000', fontSize: '13px' }}
                 >
-                  <option value="no">No</option>
-                  <option value="si">Sí</option>
+                  <option value="no">{locale === 'en' ? 'No' : 'No'}</option>
+                  <option value="si">{locale === 'en' ? 'Yes' : 'Sí'}</option>
                 </select>
               </div>
             </div>
@@ -1482,7 +1482,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
             }}>
               {esMamifero(mascota.especie) && mascota.sexo && (
                 <span style={{ ...getSexoBadgeStyle(), margin: 0, fontSize: '11px', padding: '2px 6px' }}>
-                  {mascota.sexo === 'Hembra' ? '♀ Hembra' : '♂ Macho'}
+                  {mascota.sexo === 'Hembra' ? (locale === 'en' ? '♀ Female' : '♀ Hembra') : (locale === 'en' ? '♂ Male' : '♂ Macho')}
                 </span>
               )}
               {mascota.fechaNacimiento && (
@@ -1492,7 +1492,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
               )}
               {expanded && esMamifero(mascota.especie) && mascota.castrado !== undefined && (
                 <span style={{ ...getCastradoBadgeStyle(), margin: 0, fontSize: '11px', padding: '2px 6px' }}>
-                  {mascota.castrado ? '✂️ Castrado/a' : '🥚 Sin castrar'}
+                  {mascota.castrado ? (locale === 'en' ? '✂️ Neutered/Spayed' : '✂️ Castrado/a') : (locale === 'en' ? '🥚 Intact' : '🥚 Sin castrar')}
                 </span>
               )}
             </div>

@@ -1,16 +1,21 @@
 /**
- * Calcula la edad de una mascota a partir de su fecha de nacimiento
- * y devuelve un texto descriptivo en español (ej. "3 años", "8 meses", "1 año y 2 meses").
+ * Calculates a pet's age from their date of birth and returns
+ * a descriptive localized string (e.g., "3 years", "8 months", "1 year and 2 months").
  */
 export function calcularEdadMascota(fechaNacimiento: string): string {
-  if (!fechaNacimiento) return 'Edad desconocida';
+  const locale = (typeof localStorage !== 'undefined' ? localStorage.getItem('petplant_locale') : 'es') || 'es';
+  const isEn = locale === 'en';
+
+  if (!fechaNacimiento) {
+    return isEn ? 'Unknown age' : 'Edad desconocida';
+  }
   
   const birthDate = new Date(fechaNacimiento);
   const today = new Date();
   
-  // Si la fecha de nacimiento no es válida, retornar edad desconocida
+  // If date of birth is invalid, return unknown age
   if (isNaN(birthDate.getTime())) {
-    return 'Edad desconocida';
+    return isEn ? 'Unknown age' : 'Edad desconocida';
   }
 
   let years = today.getFullYear() - birthDate.getFullYear();
@@ -27,21 +32,33 @@ export function calcularEdadMascota(fechaNacimiento: string): string {
   }
   
   if (years < 0) {
-    return 'Recién nacido';
+    return isEn ? 'Newborn' : 'Recién nacido';
   }
   
   if (years === 0) {
     if (months === 0) {
-      return 'Menos de 1 mes';
+      return isEn ? 'Less than 1 month' : 'Menos de 1 mes';
+    }
+    if (isEn) {
+      return months === 1 ? '1 month' : `${months} months`;
     }
     return months === 1 ? '1 mes' : `${months} meses`;
   }
   
   if (months === 0) {
+    if (isEn) {
+      return years === 1 ? '1 year' : `${years} years`;
+    }
     return years === 1 ? '1 año' : `${years} años`;
   }
   
-  const aniosText = years === 1 ? '1 año' : `${years} años`;
-  const mesesText = months === 1 ? '1 mes' : `${months} meses`;
-  return `${aniosText} y ${mesesText}`;
+  if (isEn) {
+    const yearsText = years === 1 ? '1 year' : `${years} years`;
+    const monthsText = months === 1 ? '1 month' : `${months} months`;
+    return `${yearsText} and ${monthsText}`;
+  } else {
+    const aniosText = years === 1 ? '1 año' : `${years} años`;
+    const mesesText = months === 1 ? '1 mes' : `${months} meses`;
+    return `${aniosText} y ${mesesText}`;
+  }
 }
