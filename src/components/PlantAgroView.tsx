@@ -643,7 +643,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
                   fontFamily: 'var(--game-font, sans-serif)'
                 }}
               >
-                {theme === 'terminal' ? 'GUARDAR ENTRADA >' : theme === 'arcade' ? 'SAVE DIARY' : 'Guardar Entrada de Diario'}
+                {theme === 'terminal' ? (isEn ? 'SAVE ENTRY >' : 'GUARDAR ENTRADA >') : theme === 'arcade' ? 'SAVE DIARY' : (isEn ? 'Save Diary Entry' : 'Guardar Entrada de Diario')}
               </button>
               {onOpenScanner && (
                 <button

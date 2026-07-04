@@ -6,6 +6,7 @@ import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
 import type { Mascota, Planta } from '../database/types';
 import { IAQuotaManager } from '../utils/iaQuota';
+import { useTranslations } from '../utils/i18n';
 
 interface ScannerModalProps {
   onClose: () => void;
@@ -20,6 +21,8 @@ interface ScannerModalProps {
 type ScanMode = 'registrar_mascota' | 'salud_mascota' | 'registrar_planta' | 'enfermedad_planta';
 
 export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, plantas, onUpdate, forcedMode, forcedAssetId }) => {
+  const { locale } = useTranslations();
+  const isEn = locale === 'en';
   const cuota = IAQuotaManager.obtenerEstadoCuota();
   const [mode, setMode] = useState<ScanMode>(forcedMode || 'registrar_mascota');
   const [loading, setLoading] = useState(false);
@@ -787,18 +790,18 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
                     </div>
 
                     {mascotas.length === 0 ? (
-                      <p style={{ fontStyle: 'italic', fontSize: '12px', color: '#666' }}>Register a pet first to save this diagnosis to its history.</p>
+                      <p style={{ fontStyle: 'italic', fontSize: '12px', color: '#666' }}>{isEn ? 'Register a pet first to save this diagnosis to its history.' : 'Register a pet first to save this diagnosis to its history.'}</p>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label style={{ fontWeight: 'bold' }}>Asociar al expediente de:</label>
+                        <label style={{ fontWeight: 'bold' }}>{isEn ? 'Associate to the record of:' : 'Asociar al expediente de:'}</label>
                         <div style={{ display: 'flex', gap: '8px' }}>
-                          <select value={selectedAssetId} onChange={(e) => setSelectedAssetId(e.target.value)} style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}>
+                           <select value={selectedAssetId} onChange={(e) => setSelectedAssetId(e.target.value)} style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}>
                             {mascotas.map(m => (
                               <option key={m.id} value={m.id}>{m.nombre}</option>
                             ))}
                           </select>
                           <button onClick={guardarReporteSaludEnDiario} style={{ padding: '8px 16px', background: 'var(--game-accent, #1976d2)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
-                            Guardar en Diario
+                            {isEn ? 'Save to Diary' : 'Guardar en Diario'}
                           </button>
                         </div>
                       </div>
@@ -815,14 +818,14 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
                       </div>
                       <p><strong>Phytosanitary Diagnosis:</strong> {scanResult.diagnostico}</p>
                       <p><strong>Recommended Action:</strong> {scanResult.tratamiento}</p>
-                      <p style={{ color: scanResult.esUrgente ? '#f44336' : 'inherit' }}><strong>Peligro:</strong> {scanResult.advertencia}</p>
+                      <p style={{ color: scanResult.esUrgente ? '#f44336' : 'inherit' }}><strong>{isEn ? 'Danger:' : 'Peligro:'}</strong> {scanResult.advertencia}</p>
                     </div>
 
                     {plantas.length === 0 ? (
-                      <p style={{ fontStyle: 'italic', fontSize: '12px', color: '#666' }}>Registra una planta primero para poder guardar esta alerta en su diario foliar.</p>
+                      <p style={{ fontStyle: 'italic', fontSize: '12px', color: '#666' }}>{isEn ? 'Register a plant first to save this alert to its foliar diary.' : 'Registra una planta primero para poder guardar esta alerta en su diario foliar.'}</p>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label style={{ fontWeight: 'bold' }}>Asociar al diario de:</label>
+                        <label style={{ fontWeight: 'bold' }}>{isEn ? 'Associate to the diary of:' : 'Asociar al diario de:'}</label>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <select value={selectedAssetId} onChange={(e) => setSelectedAssetId(e.target.value)} style={{ flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}>
                             {plantas.map(p => (
@@ -830,7 +833,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
                             ))}
                           </select>
                           <button onClick={guardarReporteEnfermedadEnDiario} style={{ padding: '8px 16px', background: 'var(--game-accent, #2e7d32)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
-                            Guardar en Diario
+                            {isEn ? 'Save to Diary' : 'Guardar en Diario'}
                           </button>
                         </div>
                       </div>
@@ -843,7 +846,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
 
 
                 <button onClick={resetScanner} style={{ padding: '8px', border: '1px solid var(--game-border-color)', borderRadius: '6px', cursor: 'pointer', background: 'none', color: 'var(--game-text)', fontSize: '12px', marginTop: '6px' }}>
-                  ↩ Volver a escanear
+                  {isEn ? '↩ Scan again' : '↩ Volver a escanear'}
                 </button>
               </div>
             )}

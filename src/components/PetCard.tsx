@@ -1112,7 +1112,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
             onClick={() => setIsEditing(false)}
             style={{ flex: 1, padding: '10px', border: '1px solid #ccc', borderRadius: '8px', background: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold', color: 'var(--game-text)' }}
           >
-            Cancelar
+            {locale === 'en' ? 'Cancel' : 'Cancelar'}
           </button>
           <button 
             type="button" 
@@ -1134,7 +1134,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
             }}
             style={{ flex: 1, padding: '10px', background: '#2e7d32', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
           >
-            Guardar 💾
+            {locale === 'en' ? 'Save 💾' : 'Guardar 💾'}
           </button>
         </div>
       </div>
