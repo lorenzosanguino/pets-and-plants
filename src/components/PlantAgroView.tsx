@@ -513,8 +513,8 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
               }}>
                 <div>📍 <strong>GPS:</strong> {climaGPS.latitud.toFixed(2)}, {climaGPS.longitud.toFixed(2)}</div>
                 <div>🌡️ <strong>Temp:</strong> {climaGPS.temperatura.toFixed(1)}°C</div>
-                <div>💧 <strong>Humedad:</strong> {climaGPS.humedad}% HR</div>
-                <div>📅 <strong>Estación:</strong> {climaGPS.estacion}</div>
+                <div>💧 <strong>Humidity:</strong> {climaGPS.humedad}% RH</div>
+                <div>📅 <strong>Season:</strong> {climaGPS.estacion === 'Verano' ? 'Summer' : climaGPS.estacion === 'Invierno' ? 'Winter' : 'Spring/Autumn'}</div>
               </div>
             )}
 

@@ -111,12 +111,12 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
     }}>
       <div>
         <h3 style={{ margin: '0 0 6px 0', fontSize: '18px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>
-          ✈️ Guía de Viajes y Vacaciones
+          ✈️ Travel & Vacation Guide
         </h3>
         <p style={{ margin: '0', fontSize: '13px', color: '#666', lineHeight: '1.4' }}>
-          {mode === 'plants' && 'Encuentra consejos expertos e ideas para mantener tus plantas seguras durante tus ausencias.'}
-          {mode === 'pets' && 'Directrices y checklist para el cuidado de tus perros y gatos cuando te vas de viaje.'}
-          {mode === 'travels' && 'Selecciona una categoría para ver consejos expertos e ideas para tus ausencias de vacaciones.'}
+          {mode === 'plants' && 'Find expert tips and ideas to keep your plants safe while you are away.'}
+          {mode === 'pets' && 'Guidelines and checklist for caring for your dogs and cats when you go on a trip.'}
+          {mode === 'travels' && 'Select a category to see expert tips and ideas for your vacation absences.'}
         </p>
       </div>
 
@@ -133,7 +133,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
                 fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap'
               }}
             >
-              🌿 Plantas
+              🌿 Plants
             </button>
           )}
           <button
@@ -145,7 +145,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
               fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap'
             }}
           >
-            🐱 Gatos
+            🐱 Cats
           </button>
           <button
             onClick={() => { setActiveTab('dogs'); setChatMessages([]); }}
@@ -156,7 +156,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
               fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap'
             }}
           >
-            🐶 Perros
+            🐶 Dogs
           </button>
 
         </div>
@@ -172,15 +172,15 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
         border: '1px solid #f0f0f0'
       }}>
         <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          💬 Consultar al Asesor de Viajes IA
+          💬 Ask the AI Travel Advisor
         </h4>
         <form onSubmit={handleAIQuery} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: chatMessages.length > 0 ? '16px' : 0 }}>
           <div style={{ display: 'flex', gap: '8px' }}>
             <input
               type="text"
               placeholder={
-                activeTab === 'plants' ? 'Pregunta sobre tus plantas...' : 
-                activeTab === 'cats' ? 'Pregunta sobre tus gatos...' : 'Pregunta sobre tus perros...'
+                activeTab === 'plants' ? 'Ask about your plants...' : 
+                activeTab === 'cats' ? 'Ask about your cats...' : 'Ask about your dogs...'
               }
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -200,7 +200,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
                 cursor: 'pointer'
               }}
             >
-              {loading ? 'Consultando...' : 'Preguntar 🤖'}
+              {loading ? 'Consulting...' : 'Ask 🤖'}
             </button>
           </div>
         </form>
@@ -242,7 +242,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', gap: '8px' }}>
                   <strong style={{ fontSize: '10px', color: msg.sender === 'user' ? (theme === 'gaming' ? '#8892b0' : '#555555') : '#666' }}>
-                    {msg.sender === 'user' ? 'Tú:' : 'Asesor de Viajes IA:'}
+                    {msg.sender === 'user' ? 'You:' : 'AI Travel Advisor:'}
                   </strong>
                 </div>
                 <div dangerouslySetInnerHTML={{ __html: renderMarkdownToHTML(msg.text) }} style={{ fontFamily: 'var(--game-font, sans-serif)' }} />
@@ -269,13 +269,13 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
         {activeTab === 'plants' && (
           <div>
             <h4 style={{ margin: '0 0 10px 0', color: '#2e7d32', fontWeight: 'bold', fontSize: '14px' }}>
-              💧 Soluciones de Riego Autónomo para Ausencias
+              💧 Autonomous Watering Solutions for Absences
             </h4>
             <ul style={{ margin: '0', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li><strong>Gel de Riego (Agua Solidificada):</strong> Ideal para plantas medianas. Coloca un sobre de hidrogel en la tierra húmeda; irá liberando humedad de forma gradual durante 10 a 15 días.</li>
-              <li><strong>Autorriego por Cordón de Algodón:</strong> Coloca un recipiente elevado lleno de agua junto a tus plantas. Introduce un extremo de un cordón de algodón o lana en el agua y entierra el otro extremo en el sustrato de cada maceta.</li>
-              <li><strong>Botellas de Plástico Invertidas:</strong> Llena una botella de plástico con agua, hazle un micro-agujero en el tapón con un alfiler y clávala del revés firmemente en la tierra de la maceta.</li>
-              <li><strong>Agrupación Estratégica:</strong> Junta todas tus plantas en la habitación menos calurosa. Al agruparlas, generan un microclima con mayor humedad ambiental, reduciendo la evaporación.</li>
+              <li><strong>Watering Gel (Solidified Water):</strong> Ideal for medium-sized plants. Place a packet of hydrogel in moist soil; it will gradually release moisture for 10 to 15 days.</li>
+              <li><strong>Cotton Wick Self-Watering:</strong> Place a raised container filled with water next to your plants. Insert one end of a cotton or wool wick into the water and bury the other end in the potting mix of each pot.</li>
+              <li><strong>Inverted Plastic Bottles:</strong> Fill a plastic bottle with water, poke a tiny hole in the cap with a pin, and push it upside down firmly into the soil of the pot.</li>
+              <li><strong>Strategic Grouping:</strong> Gather all your plants in the coolest room. Grouping them creates a microclimate with higher ambient humidity, reducing evaporation.</li>
             </ul>
           </div>
         )}
@@ -283,13 +283,13 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
         {activeTab === 'cats' && (
           <div>
             <h4 style={{ margin: '0 0 10px 0', color: '#1976d2', fontWeight: 'bold', fontSize: '14px' }}>
-              🐱 Directrices para dejar Gatos solos en Casa (Máx. 1 Semana)
+              🐱 Guidelines for Leaving Cats Alone at Home (Max. 1 Week)
             </h4>
             <ul style={{ margin: '0', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li><strong>Fuentes de Agua Eléctricas:</strong> Coloca al menos dos fuentes de agua con filtros. Los gatos prefieren el agua en movimiento y esto previene que se queden sin agua limpia si una fuente falla.</li>
-              <li><strong>Comederos Automáticos:</strong> Configura un dispensador automático de comida seca para liberar raciones controladas varias veces al día.</li>
-              <li><strong>Areneros Múltiples:</strong> Coloca al menos un arenero extra por cada gato que tengas. Es vital asegurar suficiente superficie limpia para evitar problemas de conducta.</li>
-              <li><strong>Visita de Cuidadores (Obligatorio):</strong> Aunque tengan comida y agua autónoma, encarga a un vecino o cuidador que los visite cada 48 horas como máximo para limpiar el arenero y comprobar su bienestar.</li>
+              <li><strong>Electric Water Fountains:</strong> Place at least two filtered water fountains. Cats prefer moving water, and this prevents them from running out of clean water if one fountain fails.</li>
+              <li><strong>Automatic Feeders:</strong> Set up an automatic dry-food dispenser to release controlled portions several times a day.</li>
+              <li><strong>Multiple Litter Boxes:</strong> Place at least one extra litter box per cat. It is vital to ensure enough clean surface area to avoid behavioural issues.</li>
+              <li><strong>Caretaker Visits (Mandatory):</strong> Even with autonomous food and water, ask a neighbour or carer to visit every 48 hours at most to clean the litter box and check their wellbeing.</li>
             </ul>
           </div>
         )}
@@ -297,13 +297,13 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
         {activeTab === 'dogs' && (
           <div>
             <h4 style={{ margin: '0 0 10px 0', color: '#e65100', fontWeight: 'bold', fontSize: '14px' }}>
-              🐶 Checklist y Consejos para Viajar con tu Perro
+              🐶 Checklist & Tips for Travelling with Your Dog
             </h4>
             <ul style={{ margin: '0', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li><strong>Seguridad en el Vehículo:</strong> Los perros nunca deben ir sueltos. Utiliza un arnés de seguridad homologado de doble anclaje conectado al cinturón, o un transportín.</li>
-              <li><strong>Documentación y Vacunas:</strong> Lleva su cartilla veterinaria oficial y asegúrate de que la vacuna de la Rabia y el microchip estén registrados y al día.</li>
-              <li><strong>Hidratación en Ruta:</strong> Realiza paradas cada 2 horas para que estire las patas, orine y beba agua fresca. Nunca lo dejes solo en el coche al sol.</li>
-              <li><strong>Botiquín del Viajero:</strong> Prepara un pequeño neceser con gasas, desinfectante (clorhexidina), sus medicamentos usuales y protectores para las almohadillas.</li>
+              <li><strong>Vehicle Safety:</strong> Dogs must never travel loose. Use a certified double-anchor safety harness connected to the seat belt, or a carrier crate.</li>
+              <li><strong>Documentation & Vaccinations:</strong> Bring their official vet record and make sure the Rabies vaccine and microchip are registered and up to date.</li>
+              <li><strong>Hydration on the Road:</strong> Stop every 2 hours so they can stretch, relieve themselves, and drink fresh water. Never leave them alone in a car in the sun.</li>
+              <li><strong>Traveller's First-Aid Kit:</strong> Prepare a small kit with gauze, antiseptic (chlorhexidine), their regular medications, and paw protectors.</li>
             </ul>
           </div>
         )}

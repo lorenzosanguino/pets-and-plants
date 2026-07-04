@@ -157,9 +157,9 @@ export const StatsView: React.FC<StatsViewProps> = ({
     const valUltimo = 'pesoKg' in ultimo ? (ultimo as any).pesoKg : ('alturaCm' in ultimo ? (ultimo as any).alturaCm : 0);
     const valPenultimo = 'pesoKg' in penultimo ? (penultimo as any).pesoKg : ('alturaCm' in penultimo ? (penultimo as any).alturaCm : 0);
     
-    if (valUltimo > valPenultimo) return { dir: 'up', emoji: '↑', texto: 'subiendo', color: '#4caf50' };
-    if (valUltimo < valPenultimo) return { dir: 'down', emoji: '↓', texto: 'bajando', color: '#ff5722' };
-    return { dir: 'stable', emoji: '→', texto: 'estable', color: '#9e9e9e' };
+    if (valUltimo > valPenultimo) return { dir: 'up', emoji: '↑', texto: 'rising', color: '#4caf50' };
+    if (valUltimo < valPenultimo) return { dir: 'down', emoji: '↓', texto: 'falling', color: '#ff5722' };
+    return { dir: 'stable', emoji: '→', texto: 'stable', color: '#9e9e9e' };
   };
 
   const tendenciasMascotas = mascotas
@@ -203,7 +203,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
         }}>
           <span style={{ fontSize: '28px' }}>🐾</span>
           <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--game-accent)' }}>{mascotas.length}</span>
-          <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text)', opacity: 0.8 }}>Mascotas</span>
+          <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text)', opacity: 0.8 }}>Pets</span>
         </div>
 
         <div style={{
@@ -220,7 +220,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
         }}>
           <span style={{ fontSize: '28px' }}>🌿</span>
           <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--game-accent)' }}>{plantas.length}</span>
-          <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text)', opacity: 0.8 }}>Plantas</span>
+          <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text)', opacity: 0.8 }}>Plants</span>
         </div>
 
 
@@ -249,15 +249,15 @@ export const StatsView: React.FC<StatsViewProps> = ({
             gap: '12px'
           }}>
             <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid var(--game-border-color, #e0e0e0)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>💧</span> Próximos Riegos
+              <span>💧</span> Upcoming Waterings
             </h3>
             {proximosRiegos.length === 0 ? (
-              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>No hay riegos pendientes en los próximos 7 días.</p>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>No waterings pending in the next 7 days.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {proximosRiegos.map(r => {
                   const isOverdue = r.dias < 0;
-                  const label = r.dias === 0 ? 'Hoy' : r.dias === 1 ? 'Mañana' : isOverdue ? `Hace ${Math.abs(r.dias)} días` : `En ${r.dias} días`;
+                  const label = r.dias === 0 ? 'Today' : r.dias === 1 ? 'Tomorrow' : isOverdue ? `${Math.abs(r.dias)} days ago` : `In ${r.dias} days`;
                   return (
                     <div key={r.id} style={{
                       display: 'flex',
@@ -301,10 +301,10 @@ export const StatsView: React.FC<StatsViewProps> = ({
             gap: '12px'
           }}>
             <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid var(--game-border-color, #e0e0e0)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>💊</span> Medicación Pendiente (24h)
+              <span>💊</span> Pending Medication (24h)
             </h3>
             {medicamentosAlertas.length === 0 ? (
-              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>Sin dosis pendientes para hoy.</p>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>No doses pending for today.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {medicamentosAlertas.map((med, idx) => {
@@ -313,15 +313,15 @@ export const StatsView: React.FC<StatsViewProps> = ({
                   if (isOverdue) {
                     const absMin = Math.abs(med.minutos);
                     if (absMin < 60) {
-                      label = `Atrasado ${absMin}m`;
+                      label = `Overdue ${absMin}m`;
                     } else {
-                      label = `Atrasado ${Math.round(absMin / 60)}h`;
+                      label = `Overdue ${Math.round(absMin / 60)}h`;
                     }
                   } else {
                     if (med.minutos < 60) {
-                      label = `En ${med.minutos}m`;
+                      label = `In ${med.minutos}m`;
                     } else {
-                      label = `En ${Math.round(med.minutos / 60)}h`;
+                      label = `In ${Math.round(med.minutos / 60)}h`;
                     }
                   }
                   return (
@@ -367,15 +367,15 @@ export const StatsView: React.FC<StatsViewProps> = ({
             gap: '12px'
           }}>
             <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid var(--game-border-color, #e0e0e0)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>💉</span> Vacunas y Revisiones (30d)
+              <span>💉</span> Vaccines & Checkups (30d)
             </h3>
             {proximasVacunas.length === 0 ? (
-              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>Sin vacunas ni revisiones pendientes en los próximos 30 días.</p>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>No vaccines or checkups pending in the next 30 days.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {proximasVacunas.map((v, idx) => {
                   const isOverdue = v.dias < 0;
-                  const label = v.dias === 0 ? 'Hoy' : v.dias === 1 ? 'Mañana' : isOverdue ? `Hace ${Math.abs(v.dias)} días` : `En ${v.dias} días`;
+                  const label = v.dias === 0 ? 'Today' : v.dias === 1 ? 'Tomorrow' : isOverdue ? `${Math.abs(v.dias)} days ago` : `In ${v.dias} days`;
                   return (
                     <div key={idx} style={{
                       display: 'flex',
@@ -424,10 +424,10 @@ export const StatsView: React.FC<StatsViewProps> = ({
             gap: '12px'
           }}>
             <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid var(--game-border-color, #e0e0e0)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>⚠️</span> Convivencia y Toxicidad Cruzada
+              <span>⚠️</span> Cohabitation & Cross-Toxicity
             </h3>
             {!tieneFelino && !tieneCanino ? (
-              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>Añade perros o gatos para comprobar la toxicidad cruzada con tus plantas.</p>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>Add dogs or cats to check cross-toxicity with your plants.</p>
             ) : plantasToxicas.length === 0 ? (
               <div style={{
                 padding: '10px 12px',
@@ -439,7 +439,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
                 gap: '8px'
               }}>
                 <span style={{ fontSize: '18px' }}>✅</span>
-                <span style={{ fontSize: '12.5px', color: '#2e7d32', fontWeight: 'bold' }}>¡Hogar seguro! Ninguna planta de tu hogar es tóxica para tus mascotas.</span>
+                <span style={{ fontSize: '12.5px', color: '#2e7d32', fontWeight: 'bold' }}>🏡 Safe home! None of the plants in your home are toxic to your pets.</span>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -453,7 +453,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
                   fontWeight: 'bold',
                   marginBottom: '4px'
                 }}>
-                  ⚠️ Detectamos plantas potencialmente peligrosas para tus animales:
+                  ⚠️ We detected potentially dangerous plants for your animals:
                 </div>
                 {plantasToxicas.map(p => {
                   const esFelinoTox = tieneFelino && p.toxicidadFelina && p.toxicidadFelina !== 'Segura';
@@ -514,10 +514,10 @@ export const StatsView: React.FC<StatsViewProps> = ({
             gap: '12px'
           }}>
             <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid var(--game-border-color, #e0e0e0)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>⚖️</span> Curvas y Tendencias de Peso
+              <span>⚖️</span> Weight Curves & Trends
             </h3>
             {tendenciasMascotas.length === 0 ? (
-              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>Añade al menos 2 registros de peso en tus mascotas para analizar la tendencia.</p>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>Add at least 2 weight records for your pets to analyze the trend.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {tendenciasMascotas.map((t, idx) => (
@@ -534,7 +534,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
                       <span style={{ fontSize: '18px' }}>{t.emoji}</span>
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--game-text-bright, #111)' }}>{t.nombre}</span>
-                        <span style={{ fontSize: '11px', color: 'var(--game-text)', opacity: 0.7 }}>Último peso: {t.ultimoValor}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--game-text)', opacity: 0.7 }}>Last weight: {t.ultimoValor}</span>
                       </div>
                     </div>
                     <span style={{

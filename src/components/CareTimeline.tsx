@@ -60,8 +60,8 @@ export const CareTimeline: React.FC<CareTimelineProps> = ({ plantas, mascotas, o
           id: `peso-${m.id}`,
           targetId: m.id,
           type: 'peso',
-          title: `Pesar a ${m.nombre}`,
-          detail: "Mantener actualizada la curva de condición corporal",
+          title: `Weigh ${m.nombre}`,
+          detail: "Keep the body condition curve up to date",
           date: hoy,
           color: '#2196f3',
           emoji: '⚖️'
@@ -72,8 +72,8 @@ export const CareTimeline: React.FC<CareTimelineProps> = ({ plantas, mascotas, o
       /*
       if (m.especie === 'Felino' || m.especie === 'Canino') {
         const checklistRequerido = m.especie === 'Felino'
-          ? ['Trivalente Felina', 'Leucemia Felina', 'Rabia', 'Desparasitación Interna', 'Desparasitación Externa']
-          : ['Parvovirus', 'Moquillo', 'Adenovirus', 'Rabia', 'Leptospirosis', 'Desparasitación Interna', 'Desparasitación Externa'];
+          ? ['Feline Trivalent', 'Feline Leukemia', 'Rabies', 'Internal Deworming', 'External Deworming']
+          : ['Parvovirus', 'Distemper', 'Adenovirus', 'Rabies', 'Leptospirosis', 'Internal Deworming', 'External Deworming'];
 
         const marcados = m.vacunasChecklist || [];
         const pendientes = checklistRequerido.filter(v => !marcados.includes(v));
@@ -83,11 +83,11 @@ export const CareTimeline: React.FC<CareTimelineProps> = ({ plantas, mascotas, o
             id: `vacuna-pendiente-${m.id}-${v}`,
             targetId: m.id,
             type: 'vacuna',
-            title: `Vacunar ${v} a ${m.nombre}`,
-            detail: `Pendiente en el plan de medicina preventiva de ${m.nombre}`,
+            title: `Vaccinate ${v} for ${m.nombre}`,
+            detail: `Pending in the preventive medicine plan for ${m.nombre}`,
             date: hoy,
             color: '#f59e0b',
-            emoji: v.includes('Desparasitación') ? '💊' : '💉'
+            emoji: v.includes('Deworming') ? '💊' : '💉'
           });
         });
       }
@@ -114,7 +114,7 @@ export const CareTimeline: React.FC<CareTimelineProps> = ({ plantas, mascotas, o
       const m = mascotas.find(item => item.id === tarea.targetId);
       if (m) {
         const vName = tarea.id.replace(`vacuna-pendiente-${m.id}-`, '');
-        const confirmar = window.confirm(`¿Estás seguro/a de marcar "${vName}" para ${m.nombre} como colocada/realizada? Esta acción no se puede deshacer.`);
+        const confirmar = window.confirm(`Are you sure you want to mark "${vName}" for ${m.nombre} as placed/done? This action cannot be undone.`);
         if (!confirmar) return;
 
         const current = m.vacunasChecklist || [];
@@ -144,12 +144,12 @@ export const CareTimeline: React.FC<CareTimelineProps> = ({ plantas, mascotas, o
       gap: '16px'
     }}>
       <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#1a1a1a', borderBottom: '1px solid #f0f0f0', paddingBottom: '8px' }}>
-        Agenda Semanal de Cuidados ({tareas.length})
+        Weekly Care Agenda ({tareas.length})
       </h3>
       
       {tareas.length === 0 ? (
         <p style={{ fontSize: '13px', color: '#888', textAlign: 'center', margin: '20px 0' }}>
-          🎉 Todo al día. No hay tareas programadas para esta semana.
+          🎉 All up to date. No tasks scheduled for this week.
         </p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', position: 'relative' }}>
@@ -182,7 +182,7 @@ export const CareTimeline: React.FC<CareTimelineProps> = ({ plantas, mascotas, o
                     onClick={() => completarTarea(t)}
                     style={{ padding: '4px 8px', background: '#e8f5e9', color: '#2e7d32', border: '1px solid #c8e6c9', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
                   >
-                    Completar ✓
+                    Complete ✓
                   </button>
                 )}
               </div>

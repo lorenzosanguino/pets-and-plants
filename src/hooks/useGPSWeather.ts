@@ -120,7 +120,7 @@ export const useGPSWeather = (refreshData: (force?: boolean) => Promise<void>) =
           // Usamos coordenadas neutrales (lat=40 genérica) — WeatherService ya tiene fallback por mes/estación
           climaSimulado = await WeatherService.obtenerClimaEnVivo(40, 0).catch(() =>
             // Última opción: objeto climático mínimo seguro
-            ({ latitud: 0, longitud: 0, temperatura: 20, humedad: 55, estacion: 'Primavera/Otoño' as const, mesNombre: 'Desconocido' })
+            ({ latitud: 0, longitud: 0, temperatura: 20, humedad: 55, estacion: 'Primavera/Otoño' as const, mesNombre: 'Unknown' })
           );
           // Guardar en caché para próximas sesiones
           localStorage.setItem('petplant_last_gps_weather', JSON.stringify(climaSimulado));

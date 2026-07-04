@@ -27,7 +27,7 @@ export const BiometricChart: React.FC<BiometricChartProps> = ({
   if (sortedData.length === 0) {
     return (
       <div style={{ padding: '20px', textAlign: 'center', color: '#888', fontSize: '12px', background: 'rgba(0,0,0,0.01)', borderRadius: '8px', border: '1px dashed rgba(0,0,0,0.1)' }}>
-        No hay datos registrados todavía. Añade al menos un registro para comenzar.
+        No data recorded yet. Add at least one record to get started.
       </div>
     );
   }
@@ -93,8 +93,8 @@ export const BiometricChart: React.FC<BiometricChartProps> = ({
       position: 'relative' // Required for absolute tooltip alignment
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '11px', color: 'var(--game-text)' }}>
-        <strong>Evolución ({yLabel})</strong>
-        <span>{sortedData.length} registros</span>
+        <strong>Evolution ({yLabel})</strong>
+        <span>{sortedData.length} records</span>
       </div>
 
       <div style={{ width: '100%', overflowX: 'auto' }}>
@@ -274,7 +274,7 @@ export const BiometricChart: React.FC<BiometricChartProps> = ({
         }}>
           <strong style={{ fontSize: '12px', color }}>{points[hoveredIndex].val} {yLabel}</strong>
           <span style={{ fontSize: '9px', opacity: 0.75 }}>
-            Registrado: {new Date(sortedData[hoveredIndex].fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
+            Recorded: {new Date(sortedData[hoveredIndex].fecha).toLocaleDateString('en-US', { day: '2-digit', month: 'long', year: 'numeric' })}
           </span>
         </div>
       )}

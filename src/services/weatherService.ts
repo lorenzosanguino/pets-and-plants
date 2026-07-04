@@ -14,7 +14,7 @@ export class WeatherService {
   static getCoordenadasGPS(): Promise<{ latitude: number; longitude: number }> {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(new Error("La geolocalización no está soportada por este navegador."));
+        reject(new Error("Geolocation is not supported by this browser."));
         return;
       }
       navigator.geolocation.getCurrentPosition(
@@ -25,7 +25,7 @@ export class WeatherService {
           });
         },
         (error) => {
-          reject(new Error(`Acceso GPS denegado o error: ${error.message}`));
+          reject(new Error(`GPS access denied or error: ${error.message}`));
         },
         { enableHighAccuracy: true, timeout: 5000 }
       );
@@ -39,7 +39,10 @@ export class WeatherService {
   static async obtenerClimaEnVivo(lat: number, lon: number): Promise<DatosClimaticos> {
     const ahora = new Date();
     const mes = ahora.getMonth(); // 0 = Enero, 5 = Junio, 10 = Noviembre
-    const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    const nombresMeses = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const nombresMesesEs = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    const locale = (typeof window !== 'undefined' ? localStorage.getItem('petplant_locale') : null) || 'es';
+    const mesesActual = locale === 'en' ? nombresMeses : nombresMesesEs;
     
     // Determinar estación según latitud (Hemisferio Norte)
     let estacion: 'Verano' | 'Invierno' | 'Primavera/Otoño' = 'Primavera/Otoño';
@@ -68,7 +71,7 @@ export class WeatherService {
         temperatura: data.current?.temperature_2m ?? 20,
         humedad: data.current?.relative_humidity_2m ?? 50,
         estacion,
-        mesNombre: nombresMeses[mes]
+        mesNombre: mesesActual[mes]
       };
     } catch (err) {
       console.warn("Fallo de red en Open-Meteo, usando fallback estimado por mes y latitud:", err);
@@ -91,7 +94,7 @@ export class WeatherService {
         temperatura: tempEstimada,
         humedad: humEstimada,
         estacion,
-        mesNombre: nombresMeses[mes]
+        mesNombre: mesesActual[mes]
       };
     }
   }

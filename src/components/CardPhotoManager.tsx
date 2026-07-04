@@ -82,7 +82,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
         setActivePhoto(newPhotoBase64);
       } catch (err: any) {
         console.error(err);
-        setError("Error al optimizar y procesar la imagen.");
+        setError("Error optimizing and processing the image.");
       } finally {
         setLoading(false);
         // BUG-3 FIX: Reset file input so same file can be re-uploaded
@@ -96,7 +96,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
   };
 
   const handleDeletePhoto = (photoToDelete: string) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar esta foto?")) {
+    if (!window.confirm("Are you sure you want to delete this photo?")) {
       return;
     }
     const updatedPhotos = allPhotos.filter(p => p !== photoToDelete);
@@ -181,7 +181,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0' }}>
         <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>
-          📸 Galería de Fotos del Expediente
+          📸 Record Photo Gallery
         </h4>
         <button
           type="button"
@@ -200,7 +200,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
             fontFamily: 'var(--game-font, sans-serif)'
           }}
         >
-          {loading ? 'Subiendo...' : '+ Añadir Foto 📷'}
+          {loading ? 'Uploading...' : '+ Add Photo 📷'}
         </button>
       </div>
 
@@ -223,7 +223,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
                 fontFamily: 'var(--game-font, sans-serif)'
               }}
             >
-              ✏️ Editar Ficha
+              ✏️ Edit Record
             </button>
           ) : <div />}
           {onDeleteCard ? (
@@ -243,7 +243,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
                 fontFamily: 'var(--game-font, sans-serif)'
               }}
             >
-              🗑️ Eliminar Ficha
+              🗑️ Delete Record
             </button>
           ) : <div />}
         </div>
@@ -312,7 +312,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
           })()}>
             <img
               src={activePhoto}
-              alt="Vista previa"
+              alt="Preview"
               loading="lazy"
               onClick={() => setShowLightbox(true)}
               style={{
@@ -380,7 +380,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
                 boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
                 zIndex: 2
               }}>
-                Principal ★
+                Primary ★
               </span>
             )}
             
@@ -409,7 +409,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
                     boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
                   }}
                 >
-                  Hacer Principal ⭐
+                  Set as Primary ⭐
                 </button>
               )}
               <button
@@ -427,7 +427,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
                   boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
                 }}
               >
-                Editar 🎨
+                Edit 🎨
               </button>
               <button
                 type="button"
@@ -444,7 +444,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
                   boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
                 }}
               >
-                Eliminar 🗑️
+                Delete 🗑️
               </button>
             </div>
           </div>
@@ -506,7 +506,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
                 >
                   <img
                     src={photo}
-                    alt={`Miniatura ${idx + 1}`}
+                    alt={`Thumbnail ${idx + 1}`}
                     loading="lazy"
                     style={{
                       width: '100%',
@@ -541,7 +541,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
           fontSize: '12px',
           color: '#777'
         }}>
-          No hay fotos cargadas en este expediente. Pulsa el botón superior para subir fotos de tu mascota o planta.
+          No photos uploaded for this record. Press the button above to upload photos of your pet or plant.
         </div>
       )}
 
