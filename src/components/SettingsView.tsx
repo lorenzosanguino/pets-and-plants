@@ -96,31 +96,31 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const runCloudDiagnostics = async () => {
     setRunningDiag(true);
-    setDiagnosticLog("Iniciando pruebas de diagnóstico de la nube...\n");
+    setDiagnosticLog("Starting cloud diagnostic tests...\n");
     
     const log = (msg: string) => {
       setDiagnosticLog(prev => prev + msg + "\n");
     };
 
     try {
-      log("1. Comprobando claves del navegador...");
-      log(`API Key presente: ${isCloudEnabled ? "SÍ" : "NO"}`);
+      log("1. Checking browser keys...");
+      log(`API Key present: ${isCloudEnabled ? "YES" : "NO"}`);
       
-      log("\n2. Cargando SDK de Firebase lazy-loaded...");
+      log("\n2. Loading lazy-loaded Firebase SDK...");
       const firebaseInstance = getFirebaseCached() ?? await initFirebase();
-      log("SDK de Firebase cargado en memoria.");
+      log("Firebase SDK loaded in memory.");
 
       const authInstance = firebaseInstance.auth;
       const FirebaseSyncServiceInstance = firebaseInstance.FirebaseSyncService;
 
-      log(`Estado de autenticación del usuario: ${authInstance?.currentUser ? `Conectado (${authInstance.currentUser.email})` : "No autenticado / Invitado"}`);
+      log(`User authentication status: ${authInstance?.currentUser ? `Connected (${authInstance.currentUser.email})` : "Not authenticated / Guest"}`);
 
-      log("\n3. Verificando estado de red del navegador...");
-      log(`Navegador Online: ${navigator.onLine ? "SÍ" : "NO"}`);
+      log("\n3. Checking browser network status...");
+      log(`Browser Online: ${navigator.onLine ? "YES" : "NO"}`);
 
-      log("\n4. Probando escritura directa en la base de datos (Firestore)...");
+      log("\n4. Testing direct write to the database (Firestore)...");
       if (!FirebaseSyncServiceInstance.isCloudEnabled()) {
-        log("Firebase está desactivado en la configuración o usando credenciales dummy.");
+        log("Firebase is disabled in config or using dummy credentials.");
         setRunningDiag(false);
         return;
       }
@@ -130,11 +130,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       const testHogarId = authInstance?.currentUser 
         ? `HOGAR-DIAG-${authInstance.currentUser.uid}` 
         : "HOGAR-DIAG-GUEST";
-      log(`Intentando escribir en colección 'hogares' con el documento de prueba '${testHogarId}'...`);
+      log(`Attempting to write to 'hogares' collection with test document '${testHogarId}'...`);
       
       const uploadPromise = FirebaseSyncServiceInstance.uploadChanges(
         testHogarId,
-        "Test de Diagnóstico",
+        "Diagnostic Test",
         [], // mascotas
         [], // plantas
         uiTheme
@@ -142,40 +142,40 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       // Usar un timeout de 8 segundos para la prueba
       const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error("Timeout de red en la escritura de Firestore (8s). Posible bloqueo de WebSockets o gRPC por tu operador móvil.")), 8000)
+        setTimeout(() => reject(new Error("Network timeout on Firestore write (8s). Possible WebSocket or gRPC block by your mobile operator.")), 8000)
       );
 
       await Promise.race([uploadPromise, timeoutPromise]);
-      log("✅ ¡Escritura en Firestore completada con éxito!");
+      log("✅ Firestore write completed successfully!");
 
-      log("\n5. Probando lectura directa desde la base de datos (Firestore)...");
+      log("\n5. Testing direct read from the database (Firestore)...");
       const readPromise = FirebaseSyncServiceInstance.getHogarData(testHogarId);
       const readTimeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error("Timeout de red en la lectura de Firestore (8s).")), 8000)
+        setTimeout(() => reject(new Error("Network timeout on Firestore read (8s).")), 8000)
       );
 
       const readData = await Promise.race([readPromise, readTimeoutPromise]);
-      log(`✅ ¡Lectura de prueba completada con éxito!`);
-      log(`Documento de prueba temporal: "${testHogarId}"`);
-      log(`Nombre del hogar en el documento de prueba: "${readData?.nombre}"`);
-      log("\n🎉 DIAGNÓSTICO EXITOSO: Tu conexión con Firebase Cloud funciona perfectamente.");
+      log(`✅ Test read completed successfully!`);
+      log(`Temporary test document: "${testHogarId}"`);
+      log(`Home name in test document: "${readData?.nombre}"`);
+      log("\n🎉 DIAGNOSTIC SUCCESSFUL: Your Firebase Cloud connection is working perfectly.");
 
     } catch (err: any) {
-      log(`\n❌ ERROR DETECTADO: ${err.message || String(err)}`);
+      log(`\n❌ ERROR DETECTED: ${err.message || String(err)}`);
       console.error(err);
       
       const errMsg = (err.message || String(err)).toLowerCase();
-      log("\n💡 RECOMENDACIONES:");
+      log("\n💡 RECOMMENDATIONS:");
       if (errMsg.includes("timeout")) {
-        log("- Estás en una red móvil (5G/4G) que podría estar bloqueando WebSockets o conexiones persistentes de Firebase.");
-        log("- Intenta conectarte a una red WiFi o desactivar/activar el modo avión para refrescar la red móvil.");
+        log("- You are on a mobile network (5G/4G) that might be blocking WebSockets or persistent Firebase connections.");
+        log("- Try connecting to a WiFi network or toggle airplane mode to refresh the mobile network.");
       } else if (errMsg.includes("permission") || errMsg.includes("insufficient")) {
-        log("- Firestore está rechazando el acceso. Esto puede deberse a que no has iniciado sesión con Google.");
-        log("- Ve a la sección superior de Ajustes, cierra sesión e inicia sesión con Google de nuevo.");
+        log("- Firestore is rejecting access. This may be because you are not signed in with Google.");
+        log("- Go to the top Settings section, sign out, and sign in with Google again.");
       } else if (errMsg.includes("apikey") || errMsg.includes("api-key") || errMsg.includes("key")) {
-        log("- La API Key de Firebase no es válida. Revisa las variables de entorno en Vercel.");
+        log("- The Firebase API Key is not valid. Check the environment variables in Vercel.");
       } else {
-        log("- Intenta recargar la página en modo normal. Si tienes un bloqueador de publicidad o VPN, desactívalo temporalmente.");
+        log("- Try reloading the page in normal mode. If you have an ad blocker or VPN, disable it temporarily.");
       }
     } finally {
       setRunningDiag(false);
@@ -190,10 +190,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       await fbSync.uploadChanges(hogarId, hogarNombre, localPayload.mascotas, localPayload.plantas, uiTheme);
       localStorage.setItem('petplant_db_last_updated', getNowTimestamp().toString());
       setShowConflictModal(false);
-      dispararLogroVisual("CONFLICTO RESUELTO", "Se han subido tus datos locales a la nube.", "victory");
+      dispararLogroVisual("CONFLICT RESOLVED", "Your local data has been uploaded to the cloud.", "victory");
     } catch (err) {
       console.error(err);
-      alert("Error al sincronizar con datos locales.");
+      alert("Error syncing with local data.");
     } finally {
       setConflictLoading(false);
     }
@@ -211,11 +211,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       );
       localStorage.setItem('petplant_db_last_updated', (remoteDataInfo.timestamp || getNowTimestamp()).toString());
       setShowConflictModal(false);
-      dispararLogroVisual("CONFLICTO RESUELTO", "Se han descargado los datos de la nube.", "victory");
+      dispararLogroVisual("CONFLICT RESOLVED", "Cloud data has been downloaded.", "victory");
       setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
       console.error(err);
-      alert("Error al sincronizar con datos de la nube.");
+      alert("Error syncing with cloud data.");
     } finally {
       setConflictLoading(false);
     }
@@ -252,11 +252,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       localStorage.setItem('petplant_db_last_updated', now.toString());
 
       setShowConflictModal(false);
-      dispararLogroVisual("FUSIÓN COMPLETADA 🤝", "Datos locales y remotos unidos con éxito.", "victory");
+      dispararLogroVisual("MERGE COMPLETED 🤝", "Local and remote data merged successfully.", "victory");
       setTimeout(() => window.location.reload(), 1500);
     } catch (err) {
       console.error(err);
-      alert("Error al realizar la fusión de datos.");
+      alert("Error performing data merge.");
     } finally {
       setConflictLoading(false);
     }
@@ -737,7 +737,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(hogarId!);
-                    dispararLogroVisual("CÓDIGO COPIADO", "Compártelo con tu familia por chat", 'lvl_up');
+                    dispararLogroVisual("CODE COPIED", "Share it with your family by chat", 'lvl_up');
                   }}
                   style={{
                     padding: '6px 12px',
@@ -756,7 +756,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <button
                   onClick={() => setShowQR(prev => !prev)}
                   aria-expanded={showQR}
-                  aria-label={showQR ? 'Ocultar código QR de invitación' : 'Mostrar código QR de invitación'}
+                  aria-label={showQR ? 'Hide invitation QR code' : 'Show invitation QR code'}
                   style={{
                     padding: '6px 12px',
                     background: 'transparent',
@@ -800,7 +800,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     size={180}
                     level="M"
                     includeMargin={false}
-                    aria-label={`Código QR para unirse al hogar ${hogarNombre}`}
+                    aria-label={`QR code to join the home ${hogarNombre}`}
                   />
                 </div>
                 <p style={{ margin: '0', fontSize: '10px', color: '#999', fontFamily: 'monospace', textAlign: 'center' }}>
@@ -1007,10 +1007,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             fontWeight: 'bold',
             fontFamily: 'var(--game-font, sans-serif)'
           }}>
-            🔑 Clave API de Gemini Personal
+            🔑 Personal Gemini API Key
           </h3>
           <p style={{ margin: '0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', lineHeight: '1.4' }}>
-            Evita el límite de cuota diario de la clave pública añadiendo tu propia clave API gratuita de Google Gemini. Tus datos se guardan localmente en tu navegador de forma segura.
+            Avoid the daily quota limit of the public key by adding your own free Google Gemini API key. Your data is stored locally in your browser securely.
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', maxWidth: '500px' }}>
@@ -1042,7 +1042,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               cursor: 'pointer',
               fontSize: '14px'
             }}
-            title={showApiKey ? "Ocultar clave" : "Mostrar clave"}
+            title={showApiKey ? "Hide key" : "Show key"}
           >
             {showApiKey ? "👁️" : "🙈"}
           </button>
@@ -1052,10 +1052,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             onClick={() => {
               if (customApiKey.trim()) {
                 localStorage.setItem('petplant_gemini_api_key', customApiKey.trim());
-                dispararLogroVisual("CLAVE API GUARDADA", "Usando tu clave personal de Gemini", 'lvl_up');
+                dispararLogroVisual("API KEY SAVED", "Using your personal Gemini key", 'lvl_up');
               } else {
                 localStorage.removeItem('petplant_gemini_api_key');
-                dispararLogroVisual("CLAVE REMOVIDA", "Usando clave de demostración por defecto", 'victory');
+                dispararLogroVisual("KEY REMOVED", "Using default demo key", 'victory');
               }
             }}
             style={{
@@ -1071,14 +1071,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
             }}
           >
-            Guardar Clave API
+            Save API Key
           </button>
           {localStorage.getItem('petplant_gemini_api_key') && (
             <button
               onClick={() => {
                 localStorage.removeItem('petplant_gemini_api_key');
                 setCustomApiKey('');
-                dispararLogroVisual("CLAVE REMOVIDA", "Usando clave de demostración por defecto", 'victory');
+                dispararLogroVisual("KEY REMOVED", "Using default demo key", 'victory');
               }}
               style={{
                 padding: '10px 20px',
@@ -1092,7 +1092,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 fontFamily: 'var(--game-font, sans-serif)'
               }}
             >
-              Eliminar Clave
+              Remove Key
             </button>
           )}
         </div>
@@ -1118,7 +1118,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </h3>
           {user ? (
             <p style={{ margin: '0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)' }}>
-              Conectado con cuenta de {localStorage.getItem('petplant_login_provider') === 'microsoft' ? 'Microsoft / Hotmail' : 'Google'} como <strong>{user.name}</strong> ({user.email})
+              Connected with {localStorage.getItem('petplant_login_provider') === 'microsoft' ? 'Microsoft / Hotmail' : 'Google'} account as <strong>{user.name}</strong> ({user.email})
             </p>
           ) : (
             <p style={{ margin: '0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)' }}>
@@ -1142,7 +1142,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               fontFamily: 'var(--game-font, sans-serif)'
             }}
           >
-            Cerrar Sesión 🚪
+            Sign Out 🚪
           </button>
         ) : (
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
@@ -1164,7 +1164,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 boxShadow: '0 4px 10px rgba(66, 133, 244, 0.2)'
               }}
             >
-              Iniciar Sesión con Google 🔑
+              Sign in with Google 🔑
             </button>
             <button
               onClick={handleMicrosoftSignIn}
@@ -1190,7 +1190,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <rect x="0" y="11.5" width="10.5" height="10.5" fill="#00a4ef"/>
                 <rect x="11.5" y="11.5" width="10.5" height="10.5" fill="#ffb900"/>
               </svg>
-              Iniciar Sesión con Microsoft 🔑
+              Sign in with Microsoft 🔑
             </button>
           </div>
         )}
@@ -1212,12 +1212,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             fontWeight: 'bold',
             fontFamily: 'var(--game-font, sans-serif)'
           }}>
-            📱 Aplicación de Escritorio y Móvil
+            📱 Desktop & Mobile App
           </h3>
           {deferredPrompt ? (
             <>
               <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', lineHeight: '1.4' }}>
-                Instala Pet & Plant Pro directamente en tu dispositivo para un acceso rápido y soporte completo sin conexión.
+                Install Pet & Plant Pro directly on your device for quick access and full offline support.
               </p>
               <button
                 onClick={handleInstallPWA}
@@ -1236,12 +1236,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   transition: 'all 0.2s'
                 }}
               >
-                Instalar Aplicación en Dispositivo 📲
+                Install App on Device 📲
               </button>
             </>
           ) : (
             <p style={{ margin: '0', fontSize: '13px', color: '#2e7d32', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              ✓ Aplicación instalada o funcionando en modo standalone de pantalla de inicio.
+              ✓ App installed or running in home screen standalone mode.
             </p>
           )}
         </div>
@@ -1267,10 +1267,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             fontWeight: 'bold',
             fontFamily: 'var(--game-font, sans-serif)'
           }}>
-            💾 Copia de Seguridad Local (Exportar/Importar)
+            💾 Local Backup (Export/Import)
           </h3>
           <p style={{ margin: '0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', lineHeight: '1.4' }}>
-            Guarda una copia de respaldo completa de tu ecosistema (mascotas, plantas, exóticos, agenda y chats) en un archivo JSON en tu ordenador, o restaura tus datos desde un archivo guardado previamente.
+            Save a complete backup of your ecosystem (pets, plants, exotics, calendar and chats) in a JSON file on your computer, or restore your data from a previously saved file.
           </p>
         </div>
         
@@ -1291,7 +1291,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               transition: 'all 0.2s'
             }}
           >
-            Exportar Datos (JSON) 📤
+            Export Data (JSON) 📤
           </button>
           
           <label
@@ -1311,7 +1311,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               transition: 'all 0.2s'
             }}
           >
-            Importar Datos (JSON) 📥
+            Import Data (JSON) 📥
             <input
               type="file"
               accept=".json"
@@ -1338,10 +1338,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             fontWeight: 'bold',
             fontFamily: 'var(--game-font, sans-serif)'
           }}>
-            🛡️ Auditoría de Privacidad y OWASP
+            🛡️ Privacy & OWASP Audit
           </h3>
           <p style={{ margin: '0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', lineHeight: '1.4' }}>
-            Tu privacidad y seguridad son prioritarias. A continuación se detallan los controles de seguridad locales y remotos validados por el estándar OWASP ASVS aplicados a este ecosistema.
+            Your privacy and security are a priority. Below are the local and remote security controls validated by the OWASP ASVS standard applied to this ecosystem.
           </p>
         </div>
 
@@ -1362,10 +1362,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <span style={{ fontSize: '20px' }}>🔒</span>
             <div>
               <strong style={{ fontSize: '13px', display: 'block', color: 'var(--game-text-bright, #333)', marginBottom: '4px' }}>
-                Sandbox de IndexedDB Local
+                Local IndexedDB Sandbox
               </strong>
               <span style={{ fontSize: '11px', color: 'var(--game-text, #555)', lineHeight: '1.4' }}>
-                Todos los datos biométricos, médicos y diarios clínicos permanecen aislados localmente del navegador, previniendo fugas no deseadas.
+                All biometric, medical and clinical diary data remains locally isolated in the browser, preventing unwanted leaks.
               </span>
               <span style={{
                 marginTop: '6px',
@@ -1378,7 +1378,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 borderRadius: '8px',
                 textTransform: 'uppercase'
               }}>
-                Validado ✓
+                Validated ✓
               </span>
             </div>
           </div>
@@ -1395,10 +1395,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <span style={{ fontSize: '20px' }}>🧹</span>
             <div>
               <strong style={{ fontSize: '13px', display: 'block', color: 'var(--game-text-bright, #333)', marginBottom: '4px' }}>
-                Sanitización XSS Preventiva
+                Preventive XSS Sanitization
               </strong>
               <span style={{ fontSize: '11px', color: 'var(--game-text, #555)', lineHeight: '1.4' }}>
-                Cualquier entrada de texto en formularios de registro o diarios clínicos es filtrada antes de renderizarse para evitar scripts maliciosos.
+                Any text input in registration forms or clinical diaries is filtered before rendering to prevent malicious scripts.
               </span>
               <span style={{
                 marginTop: '6px',
@@ -1411,7 +1411,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 borderRadius: '8px',
                 textTransform: 'uppercase'
               }}>
-                Validado ✓
+                Validated ✓
               </span>
             </div>
           </div>
@@ -1428,10 +1428,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <span style={{ fontSize: '20px' }}>🔑</span>
             <div>
               <strong style={{ fontSize: '13px', display: 'block', color: 'var(--game-text-bright, #333)', marginBottom: '4px' }}>
-                Enmascaramiento de Clave Gemini
+                Gemini Key Masking
               </strong>
               <span style={{ fontSize: '11px', color: 'var(--game-text, #555)', lineHeight: '1.4' }}>
-                Tu llave API personal de Gemini se almacena cifrada localmente y nunca se comparte ni se expone a servidores externos.
+                Your personal Gemini API key is stored encrypted locally and is never shared or exposed to external servers.
               </span>
               <span style={{
                 marginTop: '6px',
@@ -1444,7 +1444,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 borderRadius: '8px',
                 textTransform: 'uppercase'
               }}>
-                Validado ✓
+                Validated ✓
               </span>
             </div>
           </div>
@@ -1461,10 +1461,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <span style={{ fontSize: '20px' }}>📡</span>
             <div>
               <strong style={{ fontSize: '13px', display: 'block', color: 'var(--game-text-bright, #333)', marginBottom: '4px' }}>
-                Sincronización HTTPS HSTS
+                HTTPS HSTS Synchronization
               </strong>
               <span style={{ fontSize: '11px', color: 'var(--game-text, #555)', lineHeight: '1.4' }}>
-                La comunicación con Firestore y Microsoft Graph se realiza mediante HTTPS SSL/TLS estricto con cabeceras HSTS preventivas de interceptación.
+                Communication with Firestore and Microsoft Graph is carried out via strict HTTPS SSL/TLS with HSTS headers to prevent interception.
               </span>
               <span style={{
                 marginTop: '6px',
@@ -1477,7 +1477,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 borderRadius: '8px',
                 textTransform: 'uppercase'
               }}>
-                Validado ✓
+                Validated ✓
               </span>
             </div>
           </div>
@@ -1512,28 +1512,28 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           }}>
             <div>
               <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', color: 'var(--game-text-bright, #1a1a1a)', fontWeight: 'bold' }}>
-                🔄 Resolutor de Conflictos de Sincronización
+                🔄 Sync Conflict Resolution
               </h3>
               <p style={{ margin: 0, fontSize: '12px', color: 'var(--game-text, #666)' }}>
-                Se han comparado los datos del dispositivo local y el servidor de la nube. Por favor selecciona cómo deseas resolver las diferencias.
+                Local device and cloud server data have been compared. Please select how you want to resolve the differences.
               </p>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginTop: '4px' }}>
               {/* Local Column */}
               <div style={{ padding: '12px', background: 'rgba(25, 118, 210, 0.03)', border: '1px solid rgba(25, 118, 210, 0.2)', borderRadius: '8px' }}>
-                <strong style={{ fontSize: '13px', color: '#1976d2', display: 'block', marginBottom: '8px' }}>💻 Datos Locales (Dispositivo)</strong>
-                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Última Sincro:</strong> {localDataInfo.timestamp > 0 ? new Date(localDataInfo.timestamp).toLocaleString() : 'Nunca (Modo Local)'}</p>
-                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Mascotas ({localDataInfo.mascotasCount}):</strong> {localDataInfo.mascotasNames || 'Ninguna'}</p>
-                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Plantas ({localDataInfo.plantasCount}):</strong> {localDataInfo.plantasNames || 'Ninguna'}</p>
+                <strong style={{ fontSize: '13px', color: '#1976d2', display: 'block', marginBottom: '8px' }}>💻 Local Data (Device)</strong>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Last Sync:</strong> {localDataInfo.timestamp > 0 ? new Date(localDataInfo.timestamp).toLocaleString() : 'Never (Local Mode)'}</p>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Pets ({localDataInfo.mascotasCount}):</strong> {localDataInfo.mascotasNames || 'None'}</p>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Plants ({localDataInfo.plantasCount}):</strong> {localDataInfo.plantasNames || 'None'}</p>
               </div>
 
               {/* Remote Column */}
               <div style={{ padding: '12px', background: 'rgba(76, 175, 80, 0.03)', border: '1px solid rgba(76, 175, 80, 0.2)', borderRadius: '8px' }}>
-                <strong style={{ fontSize: '13px', color: '#2e7d32', display: 'block', marginBottom: '8px' }}>☁️ Datos Remotos (Nube)</strong>
-                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Última Sincro:</strong> {remoteDataInfo.timestamp > 0 ? new Date(remoteDataInfo.timestamp).toLocaleString() : 'Sin datos'}</p>
-                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Mascotas ({remoteDataInfo.mascotasCount}):</strong> {remoteDataInfo.mascotasNames || 'Ninguna'}</p>
-                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Plantas ({remoteDataInfo.plantasCount}):</strong> {remoteDataInfo.plantasNames || 'Ninguna'}</p>
+                <strong style={{ fontSize: '13px', color: '#2e7d32', display: 'block', marginBottom: '8px' }}>☁️ Remote Data (Cloud)</strong>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Last Sync:</strong> {remoteDataInfo.timestamp > 0 ? new Date(remoteDataInfo.timestamp).toLocaleString() : 'No data'}</p>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Pets ({remoteDataInfo.mascotasCount}):</strong> {remoteDataInfo.mascotasNames || 'None'}</p>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Plants ({remoteDataInfo.plantasCount}):</strong> {remoteDataInfo.plantasNames || 'None'}</p>
               </div>
             </div>
 
@@ -1560,7 +1560,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   textAlign: 'center'
                 }}
               >
-                🤝 Fusionar Ambos Conjuntos (Fusión Inteligente sin pérdidas)
+                🤝 Merge Both Sets (Smart Lossless Merge)
               </button>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -1578,7 +1578,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     cursor: 'pointer'
                   }}
                 >
-                  💻 Conservar Local
+                  💻 Keep Local
                 </button>
                 <button
                   type="button"
@@ -1594,7 +1594,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     cursor: 'pointer'
                   }}
                 >
-                  ☁️ Conservar Nube
+                  ☁️ Keep Cloud
                 </button>
               </div>
 
@@ -1612,7 +1612,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   marginTop: '4px'
                 }}
               >
-                Cancelar
+                Cancel
               </button>
             </div>
           </div>
