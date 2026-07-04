@@ -1,7 +1,7 @@
 {
   "name": "Pet & Plant Pro",
   "short_name": "PetPlantPro",
-  "description": "Centro Inteligente Seguro para el Cuidado Clínico y Botánico",
+  "description": "Secure Intelligent Center for Clinical and Botanical Care",
   "start_url": "/",
   "scope": "/",
   "id": "/?source=pwa",

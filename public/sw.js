@@ -1,4 +1,4 @@
-const CACHE_NAME = 'petplant-cache-v8';
+const CACHE_NAME = 'petplant-cache-v9';
 const ASSETS = [
   '/',
   '/index.html',
@@ -124,12 +124,12 @@ self.addEventListener('fetch', (e) => {
 
 // Web Push Events
 self.addEventListener('push', (e) => {
-  let data = { title: 'Ecosistema de Bienestar', body: 'Mensaje de alerta push' };
+  let data = { title: 'Ecosystem Alert', body: 'Push notification alert' };
   if (e.data) {
     try {
       data = e.data.json();
-    } catch (err) {
-      data = { title: 'Ecosistema de Bienestar', body: e.data.text() };
+    } catch {
+      data = { title: 'Ecosystem Alert', body: e.data.text() };
     }
   }
   const options = {
@@ -166,7 +166,7 @@ self.addEventListener('notificationclick', (e) => {
 self.addEventListener('message', (e) => {
   if (e.data && e.data.type === 'SIMULATE_PUSH') {
     const options = {
-      body: e.data.body || 'Alerta de recordatorio',
+      body: e.data.body || 'Reminder alert',
       icon: '/favicon.svg',
       badge: '/favicon.svg',
       vibrate: [200, 100, 200],
@@ -174,7 +174,7 @@ self.addEventListener('message', (e) => {
         url: '/'
       }
     };
-    self.registration.showNotification(e.data.title || 'Push Simulada', options);
+    self.registration.showNotification(e.data.title || 'Simulated Push', options);
   }
 });
 
