@@ -25,6 +25,9 @@ export interface DiagnosticoPlanta {
 export class PlantDiagnosticService {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   static diagnose(_imageBlob: Blob): Promise<DiagnosticoPlanta> {
+    const locale = (typeof localStorage !== 'undefined' ? localStorage.getItem('petplant_locale') : 'es') || 'es';
+    const isEn = locale === 'en';
+
     console.warn(
       '[PlantDiagnosticService] MODO SIMULACIÓN: devolviendo diagnóstico de demostración. ' +
       'El endpoint real (' + APP_CONFIG.API_ENDPOINTS.PLANT_DIAGNOSTIC + ') no está disponible. ' +
@@ -36,16 +39,24 @@ export class PlantDiagnosticService {
         const diagnosticos: DiagnosticoPlanta[] = [
           {
             detectado: true,
-            problema: "Clorosis férrica foliar por alcalinidad del agua",
+            problema: isEn 
+              ? "Foliar iron chlorosis due to water alkalinity"
+              : "Clorosis férrica foliar por alcalinidad del agua",
             probabilidad: 0.94,
-            tratamientoRecomendado: "Regar con agua destilada acidificada ligeramente y añadir sustrato con perlita y humus de lombriz.",
+            tratamientoRecomendado: isEn
+              ? "Water with slightly acidified distilled water and add substrate with perlite and worm humus."
+              : "Regar con agua destilada acidificada ligeramente y añadir sustrato con perlita y humus de lombriz.",
             toxicidadFelina: "Segura"
           },
           {
             detectado: true,
-            problema: "Intoxicación mecánica en hojas por mordedura felina compulsiva",
+            problema: isEn
+              ? "Mechanical leaf toxicity from compulsive feline chewing"
+              : "Intoxicación mecánica en hojas por mordedura felina compulsiva",
             probabilidad: 0.88,
-            tratamientoRecomendado: "Elevar la planta de su ubicación actual. Proveer Catgrass (hierba gatera) en zonas bajas para enriquecimiento ambiental.",
+            tratamientoRecomendado: isEn
+              ? "Elevate the plant from its current location. Provide Catgrass in low areas for environmental enrichment."
+              : "Elevar la planta de su ubicación actual. Proveer Catgrass (hierba gatera) en zonas bajas para enriquecimiento ambiental.",
             toxicidadFelina: "Tóxica leve (irritante)"
           }
         ];
