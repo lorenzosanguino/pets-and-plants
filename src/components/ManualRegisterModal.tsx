@@ -136,19 +136,19 @@ export const ManualPetForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
       {errorMsg && <p style={{ color: '#f44336', fontSize: '12px', background: 'rgba(244,67,54,0.1)', padding: '8px', borderRadius: '6px', margin: '0' }}>{errorMsg}</p>}
 
       <div>
-        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Nombre Mascota:</label>
+        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>{isEn ? 'Pet Name:' : 'Nombre Mascota:'}</label>
         <input 
           type="text" 
           value={nombre} 
           onChange={(e) => setNombre(e.target.value)} 
           required 
-          placeholder="Nombre del animal"
+          placeholder={isEn ? "Animal name" : "Nombre del animal"}
           style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
         />
       </div>
 
       <div>
-        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Fecha de Nacimiento:</label>
+        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>{isEn ? 'Date of Birth:' : 'Fecha de Nacimiento:'}</label>
         <input 
           type="date" 
           value={fechaNacimiento} 

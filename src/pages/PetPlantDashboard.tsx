@@ -1433,7 +1433,7 @@ export const PetPlantDashboard: React.FC = () => {
                         gap: '6px'
                       }}
                     >
-                      <span>➕</span> Registro Manual
+                      <span>➕</span> {t('btnManualRegister')}
                     </button>
                   </div>
                 </div>

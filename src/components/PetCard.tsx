@@ -2035,7 +2035,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                   }}
                 >
                   <p style={{ margin: '0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    💊 Medicación Crónica y Tratamientos
+                    💊 {locale === 'en' ? 'Chronic Medication and Treatments' : 'Medicación Crónica y Tratamientos'}
                   </p>
                   <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontWeight: 'bold' }}>
                     {showMedicacion ? '▲' : '▼'}
@@ -2079,21 +2079,21 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                                     background: med.activo ? (isOverdue ? '#fde8e8' : '#e2fbe8') : '#e9ecef',
                                     color: med.activo ? (isOverdue ? '#c82333' : '#1e7e34') : '#6c757d'
                                   }}>
-                                    {med.activo ? (isOverdue ? 'Atrasada' : 'Activo') : 'Inactivo'}
+                                    {med.activo ? (isOverdue ? (locale === 'en' ? 'Overdue' : 'Atrasada') : (locale === 'en' ? 'Active' : 'Activo')) : (locale === 'en' ? 'Inactive' : 'Inactivo')}
                                   </span>
                                 </div>
                               </div>
                               <div style={{ fontSize: '11px', color: 'var(--game-text)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <div><strong>Frecuencia:</strong> {med.frecuencia}</div>
-                                <div><strong>Rango:</strong> Desde {med.fechaInicio}{med.fechaFin ? ` hasta ${med.fechaFin}` : ''}</div>
+                                <div><strong>{locale === 'en' ? 'Frequency:' : 'Frecuencia:'}</strong> {med.frecuencia === 'Diario' ? (locale === 'en' ? 'Daily' : 'Diario') : med.frecuencia}</div>
+                                <div><strong>{locale === 'en' ? 'Range:' : 'Rango:'}</strong> {locale === 'en' ? 'From' : 'Desde'} {med.fechaInicio}{med.fechaFin ? ` ${locale === 'en' ? 'to' : 'hasta'} ${med.fechaFin}` : ''}</div>
                                 {med.activo && (
                                   <div style={{ color: isOverdue ? 'var(--game-accent, #d32f2f)' : 'inherit', fontWeight: isOverdue ? 'bold' : 'normal' }}>
-                                    <strong>Próxima dosis:</strong> {proximaDosisFormateada}
+                                    <strong>{locale === 'en' ? 'Next dose:' : 'Próxima dosis:'}</strong> {proximaDosisFormateada}
                                   </div>
                                 )}
                                 {med.historialTomas && med.historialTomas.length > 0 && (
                                   <div>
-                                    <strong>Tomas registradas:</strong> {med.historialTomas.length} (Última: {new Date(med.historialTomas[med.historialTomas.length - 1]).toLocaleString()})
+                                    <strong>{locale === 'en' ? 'Doses registered:' : 'Tomas registradas:'}</strong> {med.historialTomas.length} ({locale === 'en' ? 'Last:' : 'Última:'} {new Date(med.historialTomas[med.historialTomas.length - 1]).toLocaleString()})
                                   </div>
                                 )}
                               </div>
@@ -2116,7 +2116,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                                       cursor: 'pointer'
                                     }}
                                   >
-                                    💊 Registrar Toma
+                                    💊 {locale === 'en' ? 'Record Dose' : 'Registrar Toma'}
                                   </button>
                                 )}
                                 {med.activo && (
@@ -2167,25 +2167,25 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
 
                     {/* Formulario Registrar Nuevo Medicamento */}
                     <form onSubmit={agregarMedicacion} style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px dashed rgba(0,0,0,0.1)', paddingTop: '10px' }} className="no-print">
-                      <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>Añadir nuevo tratamiento:</span>
+                      <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>{locale === 'en' ? 'Add new treatment:' : 'Añadir nuevo tratamiento:'}</span>
                       <div className="responsive-form-grid-2">
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Nombre:</label>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>{locale === 'en' ? 'Name:' : 'Nombre:'}</label>
                           <input 
                             type="text" 
                             value={medNombre}
                             onChange={(e) => setMedNombre(e.target.value)}
-                            placeholder="Ej: Insulina, Metacam..."
+                            placeholder={locale === 'en' ? "E.g.: Insulin, Metacam..." : "Ej: Insulina, Metacam..."}
                             style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
                           />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Dosis:</label>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>{locale === 'en' ? 'Dose:' : 'Dosis:'}</label>
                           <input 
                             type="text" 
                             value={medDosis}
                             onChange={(e) => setMedDosis(e.target.value)}
-                            placeholder="Ej: 2 UI, 1 pastilla, 0.5ml..."
+                            placeholder={locale === 'en' ? "E.g.: 2 UI, 1 pill, 0.5ml..." : "Ej: 2 UI, 1 pastilla, 0.5ml..."}
                             style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
                           />
                         </div>
@@ -2193,28 +2193,28 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
 
                       <div className="responsive-form-grid-2">
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Frecuencia:</label>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>{locale === 'en' ? 'Frequency:' : 'Frecuencia:'}</label>
                           <select 
                             value={medFrecuencia} 
                             onChange={(e) => setMedFrecuencia(e.target.value)}
                             style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
                           >
-                            <option value="Diario">Diario (Cada 24h)</option>
-                            <option value="Cada 12 horas">Cada 12 horas</option>
-                            <option value="Cada 8 horas">Cada 8 horas</option>
-                            <option value="Cada 6 horas">Cada 6 horas</option>
-                            <option value="Semanal">Semanal</option>
-                            <option value="Otras">Otras</option>
+                            <option value="Diario">{locale === 'en' ? 'Daily (Every 24h)' : 'Diario (Cada 24h)'}</option>
+                            <option value="Cada 12 horas">{locale === 'en' ? 'Every 12 hours' : 'Cada 12 horas'}</option>
+                            <option value="Cada 8 horas">{locale === 'en' ? 'Every 8 hours' : 'Cada 8 horas'}</option>
+                            <option value="Cada 6 horas">{locale === 'en' ? 'Every 6 hours' : 'Cada 6 horas'}</option>
+                            <option value="Semanal">{locale === 'en' ? 'Weekly' : 'Semanal'}</option>
+                            <option value="Otras">{locale === 'en' ? 'Other' : 'Otras'}</option>
                           </select>
                         </div>
                         {medFrecuencia === 'Otras' && (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                            <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Especificar Frecuencia:</label>
+                            <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>{locale === 'en' ? 'Specify Frequency:' : 'Especificar Frecuencia:'}</label>
                             <input 
                               type="text" 
                               value={medFrecuenciaPersonalizada}
                               onChange={(e) => setMedFrecuenciaPersonalizada(e.target.value)}
-                              placeholder="Ej: Cada 48 horas"
+                              placeholder={locale === 'en' ? "E.g.: Every 48 hours" : "Ej: Cada 48 horas"}
                               style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
                             />
                           </div>
@@ -2265,7 +2265,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                           cursor: 'pointer'
                         }}
                       >
-                        + Añadir Medicación
+                        {locale === 'en' ? '+ Add Medication' : '+ Añadir Medicación'}
                       </button>
                     </form>
                   </div>

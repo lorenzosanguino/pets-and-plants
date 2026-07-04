@@ -1137,15 +1137,15 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
               let bgRiego: string;
 
               if (regadaHoy) {
-                textoRiego = 'Riego: regada hoy 💧';
+                textoRiego = locale === 'en' ? 'Watering: watered today 💧' : 'Riego: regada hoy 💧';
                 colorRiego = '#2e7d32';
                 bgRiego = 'rgba(46, 125, 80, 0.08)';
               } else if (diasRestantes > 0) {
-                textoRiego = `Riego: quedan ${diasRestantes} días 📅`;
+                textoRiego = locale === 'en' ? `Watering: ${diasRestantes} days left 📅` : `Riego: quedan ${diasRestantes} días 📅`;
                 colorRiego = '#1976d2';
                 bgRiego = 'rgba(25, 118, 210, 0.08)';
               } else {
-                textoRiego = 'Riego: ¡toca regar hoy! ⚠️';
+                textoRiego = locale === 'en' ? 'Watering: due today! ⚠️' : 'Riego: ¡toca regar hoy! ⚠️';
                 colorRiego = '#d32f2f';
                 bgRiego = 'rgba(211, 47, 47, 0.08)';
               }
@@ -1338,7 +1338,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                 boxShadow: '0 2px 4px rgba(76,175,80,0.2)'
               }}
             >
-              {theme === 'gaming' ? 'WATER STRIKE' : 'Regar Planta 💧'}
+              {theme === 'gaming' ? 'WATER STRIKE' : (locale === 'en' ? 'Water Plant 💧' : 'Regar Planta 💧')}
             </button>
           </div>
 

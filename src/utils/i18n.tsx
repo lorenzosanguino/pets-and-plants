@@ -24,6 +24,7 @@ const translations: Record<Language, TranslationDictionary> = {
     btnPlants: "Plantas 🌿",
     btnTravels: "Guía de Viajes ✈️",
     btnConsultants: "Consultor IA 💬",
+    btnManualRegister: "Registro Manual",
 
     // General Actions
     close: "Cerrar",
@@ -120,6 +121,7 @@ const translations: Record<Language, TranslationDictionary> = {
     btnPlants: "Plants 🌿",
     btnTravels: "Travel Guide ✈️",
     btnConsultants: "AI Consultant 💬",
+    btnManualRegister: "Manual Register",
 
     // General Actions
     close: "Close",
