@@ -1,7 +1,7 @@
 import { PublicClientApplication } from '@azure/msal-browser';
 import type { Mascota, Planta, EventoCalendario, ChatHistorial } from '../database/types';
 
-const CLIENT_ID = import.meta.env.VITE_MICROSOFT_CLIENT_ID || "d0cf24a6-7788-46ea-9774-4b53fa4b9f29"; // Placeholder public developer client ID
+const CLIENT_ID = import.meta.env.VITE_MICROSOFT_CLIENT_ID || "";
 
 const msalConfig = {
   auth: {
