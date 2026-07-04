@@ -971,9 +971,9 @@ export const PetPlantDashboard: React.FC = () => {
                   onClick={handleGoogleSignIn}
                   style={{
                     padding: '14px 28px',
-                    background: '#4285F4',
-                    color: '#fff',
-                    border: 'none',
+                    background: '#ffffff',
+                    color: '#1f1f1f',
+                    border: '1px solid #747775',
                     borderRadius: '30px',
                     fontSize: '15px',
                     fontWeight: 'bold',
@@ -981,7 +981,7 @@ export const PetPlantDashboard: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
-                    boxShadow: '0 4px 20px rgba(66, 133, 244, 0.35)',
+                    boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
                     fontFamily: 'var(--game-font, sans-serif)',
                     transition: 'all 0.2s',
                     width: '100%',
@@ -989,7 +989,7 @@ export const PetPlantDashboard: React.FC = () => {
                     justifyContent: 'center'
                   }}
                 >
-                  <svg width="20" height="20" viewBox="0 0 18 18" fill="none" style={{ background: '#fff', borderRadius: '50%', padding: '2px', flexShrink: 0 }}>
+                  <svg width="20" height="20" viewBox="0 0 18 18" fill="none" style={{ borderRadius: '50%', padding: '2px', flexShrink: 0 }}>
                     <path d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.47h4.84c-.21 1.12-.84 2.07-1.8 2.71v2.24h2.9c1.7-1.57 2.7-3.88 2.7-6.58z" fill="#4285F4"/>
                     <path d="M9 18c2.43 0 4.47-.8 5.96-2.22l-2.9-2.24c-.8.54-1.84.87-3.06.87-2.35 0-4.33-1.58-5.04-3.71H.92v2.3C2.4 15.96 5.48 18 9 18z" fill="#34A853"/>
                     <path d="M3.96 10.7c-.18-.54-.28-1.12-.28-1.7s.1-1.16.28-1.7V5H.92C.33 6.18 0 7.55 0 9s.33 2.82.92 4l3.04-2.3z" fill="#FBBC05"/>

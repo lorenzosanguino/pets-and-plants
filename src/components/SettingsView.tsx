@@ -1150,9 +1150,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onClick={handleGoogleSignIn}
               style={{
                 padding: '10px 20px',
-                background: '#4285F4',
-                color: '#fff',
-                border: 'none',
+                background: '#ffffff',
+                color: '#1f1f1f',
+                border: '1px solid #747775',
                 borderRadius: '8px',
                 fontSize: '13px',
                 fontWeight: 'bold',
@@ -1161,7 +1161,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                boxShadow: '0 4px 10px rgba(66, 133, 244, 0.2)'
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
               }}
             >
               Sign in with Google 🔑
