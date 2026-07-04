@@ -449,7 +449,7 @@ export const PetPlantDashboard: React.FC = () => {
       ledColor = '#f44336'; // Red
       text = 'Offline';
       isPulsing = true;
-      titleTip = 'Sin conexión a internet. Funcionando en modo local.';
+      titleTip = 'No internet connection. Running in local mode.';
     } else {
       // Online
       const provider = localStorage.getItem('petplant_login_provider');
@@ -457,26 +457,26 @@ export const PetPlantDashboard: React.FC = () => {
         ledColor = '#2196f3'; // Blue (Online, local database only)
         text = 'Online (Local)';
         isPulsing = false;
-        titleTip = 'Conectado a internet. Datos guardados localmente. Configura la nube en Ajustes para sincronizar.';
+        titleTip = 'Connected to the internet. Data saved locally. Configure the cloud in Settings to sync.';
       } else {
         // Connected to Cloud (via Google, Microsoft or direct Hogar code)
         if (syncStatus === 'synced' || syncStatus === 'idle') {
           ledColor = '#4caf50'; // Green
-          text = provider === 'microsoft' ? 'Nube (MS)' : 'Nube (Hogar)';
+          text = provider === 'microsoft' ? 'Cloud (MS)' : 'Cloud (Home)';
           isPulsing = false;
           titleTip = provider === 'microsoft'
-            ? 'Copia de seguridad en Microsoft OneDrive sincronizada y al día.'
-            : 'Grupo Hogar en la nube (Firebase Firestore) totalmente sincronizado en tiempo real.';
+            ? 'Microsoft OneDrive backup synced and up to date.'
+            : 'Home Group on cloud (Firebase Firestore) fully synced in real time.';
         } else if (syncStatus === 'syncing') {
           ledColor = '#ffeb3b'; // Yellow
-          text = 'Sincronizando...';
+          text = 'Syncing...';
           isPulsing = true;
-          titleTip = 'Actualizando cambios con la nube...';
+          titleTip = 'Updating changes with the cloud...';
         } else {
           ledColor = '#ff9800'; // Orange
-          text = 'Error Nube';
+          text = 'Cloud Error';
           isPulsing = true;
-          titleTip = `Fallo en la comunicación con la nube. Detalles: ${syncErrorMessage || 'Error desconocido'}.`;
+          titleTip = `Failed to communicate with the cloud. Details: ${syncErrorMessage || 'Unknown error'}.`;
         }
       }
     }
@@ -486,7 +486,7 @@ export const PetPlantDashboard: React.FC = () => {
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', margin: '4px 0' }}>
           <button 
             type="button"
-            title={`${titleTip} (Haz clic para forzar sincronización y comprobar la nube)`}
+            title={`${titleTip} (Click to force sync and check the cloud)`}
             onClick={forceSyncToCloud}
             style={{
               display: 'inline-flex',
@@ -627,19 +627,19 @@ export const PetPlantDashboard: React.FC = () => {
       info.title = t('appTitlePlants');
     } else if (experienceMode === 'travels') {
       info.icon = '✈️';
-      info.title = 'Guía de Viajes y Vacaciones';
+      info.title = 'Travel & Vacation Guide';
       info.desc = '';
     } else if (experienceMode === 'consultants') {
       info.icon = '💬';
-      info.title = 'Consultores de Inteligencia Artificial';
+      info.title = 'AI Consultants';
       info.desc = '';
     } else if (experienceMode === 'stats') {
       info.icon = '📈';
-      info.title = 'Métricas y Estadísticas';
+      info.title = 'Metrics & Statistics';
       info.desc = '';
     } else if (experienceMode === 'settings') {
       info.icon = '⚙️';
-      info.title = 'Ajustes del Sistema';
+      info.title = 'System Settings';
       info.desc = '';
     }
     return info;
@@ -742,7 +742,7 @@ export const PetPlantDashboard: React.FC = () => {
                 Instalar Pet & Plant Pro
               </strong>
               <span style={{ fontSize: '12px', color: 'var(--game-text, #666)' }}>
-                Instala la aplicación en tu pantalla de inicio para acceso instantáneo y soporte offline completo.
+                Install the app on your home screen for instant access and full offline support.
               </span>
             </div>
           </div>
@@ -765,7 +765,7 @@ export const PetPlantDashboard: React.FC = () => {
               onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
               onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
-              Instalar 📲
+              Install 📲
             </button>
             <button
               onClick={() => setDismissedInstallBanner(true)}
@@ -780,7 +780,7 @@ export const PetPlantDashboard: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'center'
               }}
-              title="Descartar"
+              title="Dismiss"
             >
               ✕
             </button>
@@ -853,7 +853,7 @@ export const PetPlantDashboard: React.FC = () => {
                 color: uiTheme === 'gaming' ? '#e0e0e0' : (uiTheme === 'kawaii' ? '#b05273' : '#2e7d32'),
                 fontWeight: uiTheme === 'gaming' ? '500' : 'normal'
               }}>
-                Cargando tu ecosistema seguro...
+                Loading your secure ecosystem...
               </p>
             </div>
           </div>
@@ -879,7 +879,7 @@ export const PetPlantDashboard: React.FC = () => {
                 boxSizing: 'border-box'
               }}>
                 <span style={{ fontSize: '9px', color: uiTheme === 'gaming' ? '#66fcf1' : '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Sesión Detectada ({localStorage.getItem('petplant_login_provider') === 'microsoft' ? 'Microsoft / Hotmail' : 'Google'})
+                  Session Detected ({localStorage.getItem('petplant_login_provider') === 'microsoft' ? 'Microsoft / Hotmail' : 'Google'})
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', borderBottom: uiTheme === 'gaming' ? '1px solid #2e3b4e' : '1px solid #eee', paddingBottom: '4px' }}>
                   {user.photoURL ? (
@@ -915,7 +915,7 @@ export const PetPlantDashboard: React.FC = () => {
                       transition: 'all 0.2s'
                     }}
                   >
-                    Continuar al Dashboard 🚀
+                    Continue to Dashboard 🚀
                   </button>
 
                   {deferredPrompt && (
@@ -940,7 +940,7 @@ export const PetPlantDashboard: React.FC = () => {
                         transition: 'all 0.2s'
                       }}
                     >
-                      Instalar App en tu Dispositivo 📱
+                      Install App on your Device 📱
                     </button>
                   )}
 
@@ -960,7 +960,7 @@ export const PetPlantDashboard: React.FC = () => {
                       transition: 'all 0.2s'
                     }}
                   >
-                    Cerrar Sesión / Usar otra cuenta 🚪
+                    Sign Out / Use another account 🚪
                   </button>
 
                 </div>
@@ -995,7 +995,7 @@ export const PetPlantDashboard: React.FC = () => {
                     <path d="M3.96 10.7c-.18-.54-.28-1.12-.28-1.7s.1-1.16.28-1.7V5H.92C.33 6.18 0 7.55 0 9s.33 2.82.92 4l3.04-2.3z" fill="#FBBC05"/>
                     <path d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.1C13.46.7 11.43 0 9 0 5.48 0 2.4 2.04.92 5.04l3.04 2.3c.7-2.13 2.69-3.76 5.04-3.76z" fill="#EA4335"/>
                   </svg>
-                  Iniciar Sesión con Google
+                  Sign in with Google
                 </button>
 
                 <button
@@ -1026,7 +1026,7 @@ export const PetPlantDashboard: React.FC = () => {
                     <rect x="0" y="11.5" width="10.5" height="10.5" fill="#00a4ef"/>
                     <rect x="11.5" y="11.5" width="10.5" height="10.5" fill="#ffb900"/>
                   </svg>
-                  Iniciar Sesión con Microsoft / Hotmail
+                  Sign in with Microsoft / Hotmail
                 </button>
 
 

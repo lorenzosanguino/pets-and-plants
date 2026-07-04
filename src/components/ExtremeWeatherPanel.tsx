@@ -1,5 +1,6 @@
 import React from 'react';
 import type { DatosClimaticos } from '../services/weatherService';
+import { useTranslations } from '../utils/i18n';
 
 interface ExtremeWeatherPanelProps {
   clima: DatosClimaticos | null;
@@ -27,6 +28,8 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
   loadingGPS,
   theme = 'nature'
 }) => {
+  const { t, locale } = useTranslations();
+  const isEn = locale === 'en';
 
   const obtenerAlertasClimaticas = (c: DatosClimaticos | null): AlertaClimatica[] => {
     if (!c) return [];
@@ -34,63 +37,103 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
     const temp = c.temperatura;
     const hum = c.humedad;
 
-    // 1. Calor Extremo
+    // 1. Extreme Heat
     if (temp > 32) {
       alerts.push({
         tipo: 'danger',
-        titulo: `🔥 OLA DE CALOR EXTREMA (${Math.round(temp)}°C)`,
+        titulo: isEn
+          ? `🔥 EXTREME HEATWAVE (${Math.round(temp)}°C)`
+          : `🔥 OLA DE CALOR EXTREMA (${Math.round(temp)}°C)`,
         icon: '🥵',
-        mensaje: 'La temperatura supera los 32°C. Es fundamental tomar medidas preventivas inmediatas.',
-        riesgoMascotas: 'Peligro inminente de golpe de calor. Evita pasear sobre asfalto caliente (quema almohadillas), no los dejes en vehículos y asegura agua fresca continua.',
-        riesgoPlantas: 'Deshidratación y quemaduras foliares. Mueve las plantas sensibles a la sombra, riega temprano o al atardecer y pulveriza agua para elevar la humedad.'
+        mensaje: isEn
+          ? 'Temperature exceeds 32°C. Taking immediate preventive measures is essential.'
+          : 'La temperatura supera los 32°C. Es fundamental tomar medidas preventivas inmediatas.',
+        riesgoMascotas: isEn
+          ? 'Imminent danger of heat stroke. Avoid walking on hot asphalt (burns pads), do not leave them in vehicles, and ensure continuous fresh water.'
+          : 'Peligro inminente de golpe de calor. Evita pasear sobre asfalto caliente (quema almohadillas), no los dejes en vehículos y asegura agua fresca continua.',
+        riesgoPlantas: isEn
+          ? 'Dehydration and leaf burns. Move sensitive plants to shade, water early or at dusk, and spray water to raise humidity.'
+          : 'Deshidratación y quemaduras foliares. Mueve las plantas sensibles a la sombra, riega temprano o al atardecer y pulveriza agua para elevar la humedad.'
       });
     }
 
-    // 2. Frío Extremo
+    // 2. Extreme Cold
     if (temp < 10) {
       alerts.push({
         tipo: 'danger',
-        titulo: `❄️ OLA DE FRÍO EXTREMO (${Math.round(temp)}°C)`,
+        titulo: isEn
+          ? `❄️ EXTREME COLD WAVE (${Math.round(temp)}°C)`
+          : `❄️ OLA DE FRÍO EXTREMO (${Math.round(temp)}°C)`,
         icon: '🥶',
-        mensaje: 'La temperatura está por debajo de los 10°C. Protege del frío a tus plantas y animales.',
-        riesgoMascotas: 'Riesgo de hipotermia en cachorros, ancianos o pelo corto. Mantén las camas resguardadas e introduce a las mascotas sensibles en interiores.',
-        riesgoPlantas: 'Riesgo de heladas y necrosis radicular. Protege las plantas tropicales de corrientes de aire helado y traslada macetas a zonas resguardadas.'
+        mensaje: isEn
+          ? 'Temperature is below 10°C. Protect your plants and animals from the cold.'
+          : 'La temperatura está por debajo de los 10°C. Protege del frío a tus plantas y animales.',
+        riesgoMascotas: isEn
+          ? 'Risk of hypothermia in puppies, seniors, or short-haired pets. Keep beds sheltered and bring sensitive pets indoors.'
+          : 'Riesgo de hipotermia en cachorros, ancianos o pelo corto. Mantén las camas resguardadas e introduce a las mascotas sensibles en interiores.',
+        riesgoPlantas: isEn
+          ? 'Risk of frost and root necrosis. Protect tropical plants from freezing drafts and move pots to sheltered areas.'
+          : 'Riesgo de heladas y necrosis radicular. Protege las plantas tropicales de corrientes de aire helado y traslada macetas a zonas resguardadas.'
       });
     }
 
-    // 3. Sequedad Extrema
+    // 3. Extreme Dryness
     if (hum < 30) {
       alerts.push({
         tipo: 'warning',
-        titulo: `🏜️ SEQUEDAD EXTREMA EN EL AMBIENTE (${Math.round(hum)}% HR)`,
+        titulo: isEn
+          ? `🏜️ EXTREME DRYNESS IN THE AIR (${Math.round(hum)}% RH)`
+          : `🏜️ SEQUEDAD EXTREMA EN EL AMBIENTE (${Math.round(hum)}% HR)`,
         icon: '🌵',
-        mensaje: 'La humedad relativa es inferior al 30%. Clima extremadamente seco.',
-        riesgoMascotas: 'Aumento de la transpiración y fatiga. Proporciona agua limpia y fresca constantemente, e incentiva su consumo con fuentes en movimiento.',
-        riesgoPlantas: 'El compost se seca muy rápido. Agrupa las plantas para crear un microclima compartido y coloca platos con grava húmeda bajo las macetas.'
+        mensaje: isEn
+          ? 'Relative humidity is below 30%. Extremely dry weather.'
+          : 'La humedad relativa es inferior al 30%. Clima extremadamente seco.',
+        riesgoMascotas: isEn
+          ? 'Increased perspiration and fatigue. Provide clean, fresh water constantly, and encourage drinking with moving fountains.'
+          : 'Aumento de la transpiración y fatiga. Proporciona agua limpia y fresca constantemente, e incentiva su consumo con fuentes en movimiento.',
+        riesgoPlantas: isEn
+          ? 'Compost dries very fast. Group plants to create a shared microclimate and place saucers with wet gravel under the pots.'
+          : 'El compost se seca muy rápido. Agrupa las plantas para crear un microclima compartido y coloca platos con grava húmeda bajo las macetas.'
       });
     }
 
-    // 4. Humedad Extrema
+    // 4. Extreme Humidity
     if (hum > 85) {
       alerts.push({
         tipo: 'info',
-        titulo: `🌧️ HUMEDAD AMBIENTAL SATURADA (${Math.round(hum)}% HR)`,
+        titulo: isEn
+          ? `🌧️ SATURATED AIR HUMIDITY (${Math.round(hum)}% RH)`
+          : `🌧️ HUMEDAD AMBIENTAL SATURADA (${Math.round(hum)}% HR)`,
         icon: '🍄',
-        mensaje: 'La humedad relativa supera el 85%. Riesgo fúngico y bacteriano elevado.',
-        riesgoMascotas: 'Riesgo de dermatitis en el pelaje y problemas respiratorios. Mantén las zonas de descanso secas, limpias y bien ventiladas.',
-        riesgoPlantas: 'Alto riesgo de hongos (mildiú, oídio) y pudrición radicular. Suspende riegos en cactus/suculentas y ventila bien el espacio de cultivo.'
+        mensaje: isEn
+          ? 'Relative humidity exceeds 85%. High fungal and bacterial risk.'
+          : 'La humedad relativa supera el 85%. Riesgo fúngico y bacteriano elevado.',
+        riesgoMascotas: isEn
+          ? 'Risk of coat dermatitis and respiratory problems. Keep sleeping areas dry, clean, and well ventilated.'
+          : 'Riesgo de dermatitis en el pelaje y problemas respiratorios. Mantén las zonas de descanso secas, limpias y bien ventiladas.',
+        riesgoPlantas: isEn
+          ? 'High risk of fungi (mildew, powdery mildew) and root rot. Suspend watering for cacti/succulents and ventilate the growing space well.'
+          : 'Alto riesgo de hongos (mildiú, oídio) y pudrición radicular. Suspende riegos en cactus/suculentas y ventila bien el espacio de cultivo.'
       });
     }
 
-    // 5. Confortable (Si no hay alertas extremas)
+    // 5. Comfortable (no extreme alerts)
     if (alerts.length === 0) {
       alerts.push({
         tipo: 'success',
-        titulo: `🌤️ CONDICIONES ÓPTIMAS (${Math.round(temp)}°C - ${Math.round(hum)}% HR)`,
+        titulo: isEn
+          ? `🌤️ OPTIMAL CONDITIONS (${Math.round(temp)}°C - ${Math.round(hum)}% RH)`
+          : `🌤️ CONDICIONES ÓPTIMAS (${Math.round(temp)}°C - ${Math.round(hum)}% HR)`,
         icon: '✨',
-        mensaje: 'Condiciones climáticas idóneas para tu ecosistema. No hay alertas extremas activas.',
-        riesgoMascotas: 'Clima ideal para paseos, actividad al aire libre y bienestar general de tus mascotas.',
-        riesgoPlantas: 'Ambiente perfecto para el desarrollo de brotes, fotosíntesis eficiente y absorción de riego balanceada.'
+        mensaje: isEn
+          ? 'Ideal weather conditions for your ecosystem. No active extreme alerts.'
+          : 'Condiciones climáticas idóneas para tu ecosistema. No hay alertas extremas activas.',
+        riesgoMascotas: isEn
+          ? 'Ideal weather for walks, outdoor activity, and general pet well-being.'
+          : 'Clima ideal para paseos, actividad al aire libre y bienestar general de tus mascotas.',
+        riesgoPlantas: isEn
+          ? 'Perfect environment for shoot development, efficient photosynthesis, and balanced watering absorption.'
+          : 'Ambiente perfecto para el desarrollo de brotes, fotosíntesis eficiente y absorción de riego balanceada.'
       });
     }
 
@@ -99,7 +142,6 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
 
   const alertas = obtenerAlertasClimaticas(clima);
 
-  // Determinar la severidad máxima para el estilo del contenedor unificado
   const tiposAlerta = alertas.map(a => a.tipo);
   let tipoMaximo: 'danger' | 'warning' | 'info' | 'success' = 'success';
   if (tiposAlerta.includes('danger')) {
@@ -156,10 +198,10 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
             color: 'var(--game-text-bright, #2c3e50)',
             fontFamily: 'var(--game-font, sans-serif)'
           }}>
-            Panel de Diagnóstico Climatológico y Alertas
+            {t('weatherPanelTitle')}
           </h3>
         </div>
-        
+
         {gpsSyncEnabled === 'active' && (
           <button
             onClick={sincronizarTodasLasPlantasPorGPS}
@@ -179,14 +221,14 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
               gap: '4px'
             }}
           >
-            {loadingGPS ? 'Sincronizando...' : 'Actualizar clima 🔄'}
+            {loadingGPS ? t('weatherUpdating') : t('weatherUpdateBtn')}
           </button>
         )}
       </div>
 
       {/* Main Content */}
       {gpsSyncEnabled !== 'active' ? (
-        // GPS Inactivo
+        // GPS Inactive
         <div style={{
           padding: '24px 16px',
           textAlign: 'center',
@@ -201,10 +243,10 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
           <span style={{ fontSize: '32px' }}>🛰️</span>
           <div>
             <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', color: 'var(--game-text-bright)', fontWeight: 'bold' }}>
-              Monitoreo Satelital de Clima Extremo Inactivo
+              {t('weatherInactiveTitle')}
             </h4>
             <p style={{ margin: 0, fontSize: '11px', color: 'var(--game-text, #666)', lineHeight: '1.4', maxWidth: '400px' }}>
-              Activa la sincronización GPS para obtener mediciones de temperatura y humedad en tiempo real y recibir alertas automatizadas para tus mascotas y plantas.
+              {t('weatherInactiveDesc')}
             </p>
           </div>
           <button
@@ -222,19 +264,19 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
               fontFamily: 'var(--game-font, sans-serif)'
             }}
           >
-            Activar Sincronización GPS 🛰️
+            {t('weatherActiveGpsBtn')}
           </button>
         </div>
       ) : !clima ? (
-        // GPS Activo pero cargando / sin datos
+        // GPS Active but loading / no data
         <div style={{ padding: '20px', textAlign: 'center', color: '#666', fontSize: '12px' }}>
-          Esperando lecturas del sensor satelital GPS... 🛰️
+          {t('weatherWaitingGps')}
         </div>
       ) : (
-        // GPS Activo con Clima cargado
+        // GPS Active with climate data loaded
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          
-          {/* Alertas Render Unificado */}
+
+          {/* Unified Alerts Render */}
           <div
             style={{
               border: `1.5px solid ${borderCol}`,
@@ -247,7 +289,7 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
               transition: 'all 0.3s'
             }}
           >
-            {/* Lista de Alertas Activas */}
+            {/* Active Alerts List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {alertas.map((alerta, idx) => {
                 let alertaTitleCol = '#2e7d32';
@@ -256,9 +298,9 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
                 else if (alerta.tipo === 'info') alertaTitleCol = '#1565c0';
 
                 return (
-                  <div key={idx} style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
+                  <div key={idx} style={{
+                    display: 'flex',
+                    flexDirection: 'column',
                     gap: '4px',
                     borderBottom: idx < alertas.length - 1 ? '1px dashed rgba(0,0,0,0.06)' : 'none',
                     paddingBottom: idx < alertas.length - 1 ? '10px' : '0px'
@@ -277,7 +319,7 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
               })}
             </div>
 
-            {/* Columnas de Diagnóstico adaptativo */}
+            {/* Adaptive Diagnosis Columns */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -285,7 +327,7 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
               borderTop: '1px solid rgba(0,0,0,0.05)',
               paddingTop: '12px'
             }}>
-              {/* Mascotas */}
+              {/* Pets */}
               <div style={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -296,7 +338,7 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
                 border: '1px solid rgba(0,0,0,0.03)'
               }}>
                 <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#1565c0', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  🐾 Cuidado de Mascotas
+                  {t('weatherPetCareTitle')}
                 </span>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {alertas.map((alerta, idx) => (
@@ -308,7 +350,7 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
                 </div>
               </div>
 
-              {/* Plantas */}
+              {/* Plants */}
               <div style={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -319,7 +361,7 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
                 border: '1px solid rgba(0,0,0,0.03)'
               }}>
                 <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#2e7d32', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  🌿 Manejo de Cultivo
+                  {t('weatherPlantCareTitle')}
                 </span>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {alertas.map((alerta, idx) => (
@@ -333,7 +375,7 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
             </div>
 
           </div>
-          
+
         </div>
       )}
     </div>

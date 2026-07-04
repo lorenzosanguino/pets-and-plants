@@ -198,7 +198,16 @@ const translations: Record<Language, TranslationDictionary> = {
     hogarDiagRunning: "Running...",
     hogarDiagBtn: "Run Diagnostics 🔍",
     cloudSessionTitle: "☁️ Cloud Session",
-    cloudSessionNoLogin: "You are not logged in. Your data is saved locally in your browser. Sign in to securely save your data in the cloud."
+    cloudSessionNoLogin: "You are not logged in. Your data is saved locally in your browser. Sign in to securely save your data in the cloud.",
+    weatherPanelTitle: "Weather Diagnosis & Alerts Panel",
+    weatherUpdating: "Syncing...",
+    weatherUpdateBtn: "Update Weather 🔄",
+    weatherInactiveTitle: "Extreme Weather Satellite Monitoring Inactive",
+    weatherInactiveDesc: "Activate GPS synchronization to obtain real-time temperature and humidity measurements and receive automated alerts for your pets and plants.",
+    weatherActiveGpsBtn: "Activate GPS Sync 🛰️",
+    weatherWaitingGps: "Waiting for GPS satellite sensor readings... 🛰️",
+    weatherPetCareTitle: "🐾 Pet Care",
+    weatherPlantCareTitle: "🌿 Crop Management"
   }
 };
 
