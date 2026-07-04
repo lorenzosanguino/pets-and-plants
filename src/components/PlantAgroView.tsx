@@ -55,7 +55,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
   setSelectedPlantId: propSetSelectedPlantId,
   onOpenScanner
 }) => {
-  const { t, locale } = useTranslations();
+  const { locale } = useTranslations();
   const isEn = locale === 'en';
   const theme = localStorage.getItem('petplant_game_theme') || 'adventure';
 

@@ -163,7 +163,6 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
   } | null>(null);
 
   // Collapsible sections states
-  const [showRiego, setShowRiego] = useState(false);
   const [showIncidencias, setShowIncidencias] = useState(false);
   const [showCrecimiento, setShowCrecimiento] = useState(false);
   const [showDiarioFoliar, setShowDiarioFoliar] = useState(false);
@@ -1607,7 +1606,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                     ) : (
                       (() => {
                         const parseIAReportePlanta = (nota: string) => {
-                          let diagnostico = '';
+                          let diagnostico: string;
                           let tratamiento = '';
                           let aislamiento = '';
 

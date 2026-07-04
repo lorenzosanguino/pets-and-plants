@@ -490,7 +490,6 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
       if (standardCanine.includes(vName)) {
         tipo = vName;
       } else {
-        tipo = 'Otras';
         personalizada = vName;
       }
     }
@@ -530,7 +529,6 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
       if (standardCanine.includes(vName)) {
         tipo = vName;
       } else {
-        tipo = 'Otras';
         personalizada = vName;
       }
     }

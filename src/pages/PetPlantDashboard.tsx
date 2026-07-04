@@ -93,10 +93,7 @@ export const PetPlantDashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSubtype, setFilterSubtype] = useState('all');
 
-  useEffect(() => {
-    setSearchQuery('');
-    setFilterSubtype('all');
-  }, [experienceMode]);
+
 
   // Page transition ripple states
   const [rippleX, setRippleX] = useState(0);
@@ -197,6 +194,8 @@ export const PetPlantDashboard: React.FC = () => {
     setTimeout(() => {
       setExperienceMode(mode);
       setActiveTab(tab);
+      setSearchQuery('');
+      setFilterSubtype('all');
     }, 250);
 
     setTimeout(() => {

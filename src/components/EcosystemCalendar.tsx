@@ -147,7 +147,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
       return;
     }
 
-    let icsContent = [
+    const icsContent = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
       "PRODID:-//PetPlantApp//Ecosystem Calendar//ES",
@@ -160,7 +160,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
       if (dateParts.length !== 3) return;
       const dateStr = dateParts.join(''); // YYYYMMDD
 
-      const cleanSummary = ev.texto.replace(/[\,]/g, '\\,').replace(/[\;]/g, '\\;');
+      const cleanSummary = ev.texto.replace(/,/g, '\\,').replace(/;/g, '\\;');
       const categoryLabel = ev.categoria.toUpperCase();
 
       icsContent.push("BEGIN:VEVENT");

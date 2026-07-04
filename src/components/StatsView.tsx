@@ -11,8 +11,7 @@ interface StatsViewProps {
 export const StatsView: React.FC<StatsViewProps> = ({
   mascotas = [],
   plantas = [],
-  clima,
-  uiTheme: _uiTheme
+  clima
 }) => {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
@@ -309,7 +308,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {medicamentosAlertas.map((med, idx) => {
                   const isOverdue = med.minutos < 0;
-                  let label = '';
+                  let label: string;
                   if (isOverdue) {
                     const absMin = Math.abs(med.minutos);
                     if (absMin < 60) {

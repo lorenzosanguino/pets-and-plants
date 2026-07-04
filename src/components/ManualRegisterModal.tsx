@@ -11,7 +11,7 @@ interface FormProps {
 }
 
 export const ManualPetForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
-  const { t, locale } = useTranslations();
+  const { locale } = useTranslations();
   const isEn = locale === 'en';
 
   const [nombre, setNombre] = useState('');
@@ -283,7 +283,7 @@ export const ManualPetForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
 };
 
 export const ManualPlantForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
-  const { t, locale } = useTranslations();
+  const { locale } = useTranslations();
   const isEn = locale === 'en';
 
   const [nombreComun, setNombreComun] = useState('');

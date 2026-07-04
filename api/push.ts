@@ -27,7 +27,7 @@ export default async function handler(req: Request) {
   let body: any;
   try {
     body = await req.json();
-  } catch (err) {
+  } catch {
     return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
