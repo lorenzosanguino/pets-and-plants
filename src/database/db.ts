@@ -5,129 +5,176 @@ const DB_VERSION = 4;
 
 export interface CatalogoMascota {
   raza: string;
+  razaEn?: string;
   especie: 'Felino' | 'Canino';
   pesoAdultoKg: number;
   actividadSugerida: 'Baja' | 'Moderada' | 'Alta';
+  actividadSugeridaEn?: string;
 }
 
 export const CATALOGO_MASCOTAS: CatalogoMascota[] = [
-  { raza: "Siamés", especie: "Felino", pesoAdultoKg: 4.0, actividadSugerida: "Moderada" },
-  { raza: "Persa", especie: "Felino", pesoAdultoKg: 4.5, actividadSugerida: "Baja" },
-  { raza: "Maine Coon", especie: "Felino", pesoAdultoKg: 8.0, actividadSugerida: "Alta" },
-  { raza: "Común Europeo", especie: "Felino", pesoAdultoKg: 4.2, actividadSugerida: "Moderada" },
-  { raza: "Golden Retriever", especie: "Canino", pesoAdultoKg: 30.0, actividadSugerida: "Alta" },
-  { raza: "Pastor Alemán", especie: "Canino", pesoAdultoKg: 35.0, actividadSugerida: "Alta" },
-  { raza: "Labrador", especie: "Canino", pesoAdultoKg: 28.0, actividadSugerida: "Alta" },
-  { raza: "Bulldog Francés", especie: "Canino", pesoAdultoKg: 12.0, actividadSugerida: "Baja" },
-  { raza: "Chihuahua", especie: "Canino", pesoAdultoKg: 2.5, actividadSugerida: "Moderada" },
-  { raza: "Caniche", especie: "Canino", pesoAdultoKg: 6.5, actividadSugerida: "Moderada" }
+  { raza: "Siamés", razaEn: "Siamese", especie: "Felino", pesoAdultoKg: 4.0, actividadSugerida: "Moderada", actividadSugeridaEn: "Moderate" },
+  { raza: "Persa", razaEn: "Persian", especie: "Felino", pesoAdultoKg: 4.5, actividadSugerida: "Baja", actividadSugeridaEn: "Low" },
+  { raza: "Maine Coon", razaEn: "Maine Coon", especie: "Felino", pesoAdultoKg: 8.0, actividadSugerida: "Alta", actividadSugeridaEn: "High" },
+  { raza: "Común Europeo", razaEn: "European Shorthair", especie: "Felino", pesoAdultoKg: 4.2, actividadSugerida: "Moderada", actividadSugeridaEn: "Moderate" },
+  { raza: "Golden Retriever", razaEn: "Golden Retriever", especie: "Canino", pesoAdultoKg: 30.0, actividadSugerida: "Alta", actividadSugeridaEn: "High" },
+  { raza: "Pastor Alemán", razaEn: "German Shepherd", especie: "Canino", pesoAdultoKg: 35.0, actividadSugerida: "Alta", actividadSugeridaEn: "High" },
+  { raza: "Labrador", razaEn: "Labrador", especie: "Canino", pesoAdultoKg: 28.0, actividadSugerida: "Alta", actividadSugeridaEn: "High" },
+  { raza: "Bulldog Francés", razaEn: "French Bulldog", especie: "Canino", pesoAdultoKg: 12.0, actividadSugerida: "Baja", actividadSugeridaEn: "Low" },
+  { raza: "Chihuahua", razaEn: "Chihuahua", especie: "Canino", pesoAdultoKg: 2.5, actividadSugerida: "Moderada", actividadSugeridaEn: "Moderate" },
+  { raza: "Caniche", razaEn: "Poodle", especie: "Canino", pesoAdultoKg: 6.5, actividadSugerida: "Moderada", actividadSugeridaEn: "Moderate" }
 ];
 
 export const CATALOGO_ASPCA: CatalogoPlanta[] = [
   {
     id: 'cat-1',
     nombreComun: 'Helecho de Boston',
+    nombreComunEn: 'Boston Fern',
     nombreCientifico: 'Nephrolepis exaltata',
     toxicidadFelina: 'Segura',
     toxicidadCanina: 'Segura',
     tipoRiego: 'Agua blanda reposada',
+    tipoRiegoEn: 'Settled soft water',
     ubicacionSugerida: 'Interior',
-    descripcion: 'Planta de alta evapotranspiración foliar. Totalmente inocua para gatos domésticos.'
+    ubicacionSugeridaEn: 'Indoor',
+    descripcion: 'Planta de alta evapotranspiración foliar. Totalmente inocua para gatos domésticos.',
+    descripcionEn: 'Plant with high leaf evapotranspiration. Totally harmless to domestic cats.'
   },
   {
     id: 'cat-2',
     nombreComun: 'Peperomia',
+    nombreComunEn: 'Baby Rubber Plant',
     nombreCientifico: 'Peperomia obtusifolia',
     toxicidadFelina: 'Segura',
     toxicidadCanina: 'Segura',
     tipoRiego: 'Agua del grifo reposada',
+    tipoRiegoEn: 'Settled tap water',
     ubicacionSugerida: 'Interior',
-    descripcion: 'Hojas gruesas semisuculentas que retienen agua. Segura para convivencia.'
+    ubicacionSugeridaEn: 'Indoor',
+    descripcion: 'Hojas gruesas semisuculentas que retienen agua. Segura para convivencia.',
+    descripcionEn: 'Thick semi-succulent leaves that retain water. Safe for pet cohabitation.'
   },
   {
     id: 'cat-3',
     nombreComun: 'Calathea',
+    nombreComunEn: 'Calathea',
     nombreCientifico: 'Calathea lancifolia',
     toxicidadFelina: 'Segura',
     toxicidadCanina: 'Segura',
     tipoRiego: 'Agua destilada',
+    tipoRiegoEn: 'Distilled water',
     ubicacionSugerida: 'Interior',
-    descripcion: 'Requiere alta humedad ambiental y agua pura libre de cloro y sales.'
+    ubicacionSugeridaEn: 'Indoor',
+    descripcion: 'Requiere alta humedad ambiental y agua pura libre de cloro y sales.',
+    descripcionEn: 'Requires high ambient humidity and pure water free of chlorine and salts.'
   },
   {
     id: 'cat-4',
     nombreComun: 'Costilla de Adán (Monstera)',
+    nombreComunEn: 'Swiss Cheese Plant (Monstera)',
     nombreCientifico: 'Monstera deliciosa',
     toxicidadFelina: 'Altamente tóxica (urgencia)',
     toxicidadCanina: 'Altamente tóxica (urgencia)',
     compuestosToxicos: 'Oxalatos de calcio insolubles',
+    compuestosToxicosEn: 'Insoluble calcium oxalates',
     tipoRiego: 'Agua blanda reposada',
+    tipoRiegoEn: 'Settled soft water',
     ubicacionSugerida: 'Interior',
-    descripcion: 'Contiene cristales en forma de aguja. La ingesta causa sialorrea, dolor oral agudo y emesis.'
+    ubicacionSugeridaEn: 'Indoor',
+    descripcion: 'Contiene cristales en forma de aguja. La ingesta causa sialorrea, dolor oral agudo y emesis.',
+    descripcionEn: 'Contains needle-shaped crystals. Ingestion causes sialorrhea, acute oral pain, and emesis.'
   },
   {
     id: 'cat-5',
     nombreComun: 'Poto',
+    nombreComunEn: 'Pothos',
     nombreCientifico: 'Epipremnum aureum',
     toxicidadFelina: 'Tóxica leve (irritante)',
     toxicidadCanina: 'Tóxica leve (irritante)',
     compuestosToxicos: 'Oxalatos de calcio',
+    compuestosToxicosEn: 'Calcium oxalates',
     tipoRiego: 'Agua del grifo reposada',
+    tipoRiegoEn: 'Settled tap water',
     ubicacionSugerida: 'Interior',
-    descripcion: 'Frecuente en interiores. Provoca hinchazón de mucosas y malestar gastrointestinal leve.'
+    ubicacionSugeridaEn: 'Indoor',
+    descripcion: 'Frecuente en interiores. Provoca hinchazón de mucosas y malestar gastrointestinal leve.',
+    descripcionEn: 'Common indoors. Causes swelling of mucous membranes and mild gastrointestinal discomfort.'
   },
   {
     id: 'cat-6',
     nombreComun: 'Lirio de la Paz',
+    nombreComunEn: 'Peace Lily',
     nombreCientifico: 'Spathiphyllum',
     toxicidadFelina: 'Altamente tóxica (urgencia)',
     toxicidadCanina: 'Altamente tóxica (urgencia)',
     compuestosToxicos: 'Oxalatos insolubles',
+    compuestosToxicosEn: 'Insoluble oxalates',
     tipoRiego: 'Agua blanda reposada',
+    tipoRiegoEn: 'Settled soft water',
     ubicacionSugerida: 'Interior',
-    descripcion: 'Muy peligrosa. Causa inflamación de las vías respiratorias y malestar sistémico.'
+    ubicacionSugeridaEn: 'Indoor',
+    descripcion: 'Muy peligrosa. Causa inflamación de las vías respiratorias y malestar sistémico.',
+    descripcionEn: 'Very dangerous. Causes inflammation of the airways and systemic discomfort.'
   },
   {
     id: 'cat-7',
     nombreComun: 'Lavanda',
+    nombreComunEn: 'Lavender',
     nombreCientifico: 'Lavandula',
     toxicidadFelina: 'Tóxica leve (irritante)',
     toxicidadCanina: 'Tóxica leve (irritante)',
     compuestosToxicos: 'Linalol y acetato de linalilo',
+    compuestosToxicosEn: 'Linalool and linalyl acetate',
     tipoRiego: 'Agua del grifo reposada',
+    tipoRiegoEn: 'Settled tap water',
     ubicacionSugerida: 'Exterior',
-    descripcion: 'Planta aromática exterior. La ingesta masiva causa malestar digestivo.'
+    ubicacionSugeridaEn: 'Outdoor',
+    descripcion: 'Planta aromática exterior. La ingesta masiva causa malestar digestivo.',
+    descripcionEn: 'Outdoor aromatic plant. Massive ingestion causes digestive discomfort.'
   },
   {
     id: 'cat-8',
     nombreComun: 'Romero',
+    nombreComunEn: 'Rosemary',
     nombreCientifico: 'Rosmarinus officinalis',
     toxicidadFelina: 'Segura',
     toxicidadCanina: 'Segura',
     tipoRiego: 'Agua del grifo reposada',
+    tipoRiegoEn: 'Settled tap water',
     ubicacionSugerida: 'Exterior',
-    descripcion: 'Hierba leñosa perenne aromática segura para mascotas.'
+    ubicacionSugeridaEn: 'Outdoor',
+    descripcion: 'Hierba leñosa perenne aromática segura para mascotas.',
+    descripcionEn: 'Woody evergreen aromatic herb safe for pets.'
   },
   {
     id: 'cat-9',
     nombreComun: 'Rosal',
+    nombreComunEn: 'Rose Bush',
     nombreCientifico: 'Rosa',
     toxicidadFelina: 'Segura',
     toxicidadCanina: 'Segura',
     tipoRiego: 'Agua del grifo reposada',
+    tipoRiegoEn: 'Settled tap water',
     ubicacionSugerida: 'Exterior',
-    descripcion: 'Flores hermosas seguras para mascotas, aunque cuidado con las espinas en las ramas.'
+    ubicacionSugeridaEn: 'Outdoor',
+    descripcion: 'Flores hermosas seguras para mascotas, aunque cuidado con las espinas en las ramas.',
+    descripcionEn: 'Beautiful flowers safe for pets, though beware of thorns on the branches.'
   },
   {
     id: 'cat-10',
     nombreComun: 'Aloe Vera',
+    nombreComunEn: 'Aloe Vera',
     nombreCientifico: 'Aloe barbadensis',
     toxicidadFelina: 'Tóxica leve (irritante)',
     toxicidadCanina: 'Tóxica leve (irritante)',
     compuestosToxicos: 'Saponinas y antraquinonas',
+    compuestosToxicosEn: 'Saponins and anthraquinones',
     tipoRiego: 'Agua del grifo reposada',
+    tipoRiegoEn: 'Settled tap water',
     ubicacionSugerida: 'Interior',
-    descripcion: 'Suculenta medicinal. Su ingesta causa diarrea y letargia en mascotas.'
+    ubicacionSugeridaEn: 'Indoor',
+    descripcion: 'Suculenta medicinal. Su ingesta causa diarrea y letargia en mascotas.',
+    descripcionEn: 'Medicinal succulent. Ingestion causes diarrhea and lethargy in pets.'
   }
 ];
 

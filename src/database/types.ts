@@ -139,13 +139,18 @@ export interface ChatHistorial {
 export interface CatalogoPlanta {
   id: string;
   nombreComun: string;
+  nombreComunEn?: string;
   nombreCientifico: string;
   toxicidadFelina: NivelToxicidadFelina;
   toxicidadCanina: NivelToxicidadCanina;
   compuestosToxicos?: string;
+  compuestosToxicosEn?: string;
   tipoRiego: TipoRiego;
+  tipoRiegoEn?: string;
   ubicacionSugerida?: 'Interior' | 'Exterior';
+  ubicacionSugeridaEn?: string;
   descripcion: string;
+  descripcionEn?: string;
 }
 
 export interface AccionSincronizacion {

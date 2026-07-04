@@ -5,21 +5,22 @@ import { LocalDatabase, CATALOGO_ASPCA } from '../database/db';
 import { WeatherService } from '../services/weatherService';
 import type { DatosClimaticos } from '../services/weatherService';
 import { safeUUID } from '../utils/uuid';
+import { useTranslations } from '../utils/i18n';
 
-const crearNuevaPlanta = (cat: CatalogoPlanta): Planta => {
+const crearNuevaPlanta = (cat: CatalogoPlanta, isEn: boolean): Planta => {
   const current = Date.now();
   return {
     id: safeUUID(),
-    nombreComun: cat.nombreComun,
+    nombreComun: isEn ? (cat.nombreComunEn || cat.nombreComun) : cat.nombreComun,
     nombreCientifico: cat.nombreCientifico,
-    ubicacionHabitacion: "Salón",
+    ubicacionHabitacion: isEn ? "Living Room" : "Salón",
     tipoRiegoEspecifico: cat.tipoRiego,
     intervaloRiegoDias: 7,
     ultimaFechaRiego: new Date(current).toISOString(),
     proximaFechaRiego: new Date(current + 7 * 24 * 3600 * 1000).toISOString(),
     toxicidadFelina: cat.toxicidadFelina,
     toxicidadCanina: cat.toxicidadCanina,
-    compuestosToxicos: cat.compuestosToxicos,
+    compuestosToxicos: isEn ? (cat.compuestosToxicosEn || cat.compuestosToxicos) : cat.compuestosToxicos,
     grosorHoja: 'Normal',
     temperaturaZona: 22,
     diarioFoliar: []
@@ -54,6 +55,8 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
   setSelectedPlantId: propSetSelectedPlantId,
   onOpenScanner
 }) => {
+  const { t, locale } = useTranslations();
+  const isEn = locale === 'en';
   const theme = localStorage.getItem('petplant_game_theme') || 'adventure';
 
   const [localSelectedPlantId, setLocalSelectedPlantId] = useState<string>(plantas[0]?.id || '');
@@ -232,7 +235,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
   };
 
   const agregarPlantaDesdeCatalogo = async (cat: CatalogoPlanta) => {
-    const nuevaPlanta = crearNuevaPlanta(cat);
+    const nuevaPlanta = crearNuevaPlanta(cat, isEn);
 
     await LocalDatabase.savePlanta(nuevaPlanta);
     setSelectedPlantId(nuevaPlanta.id);
@@ -241,8 +244,12 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
     // Trigger achievement
     window.dispatchEvent(new CustomEvent('petplant_achievement', {
       detail: {
-        texto: `¡NUEVO CULTIVO BOTÁNICO: ${cat.nombreComun.toUpperCase()}!`,
-        subtitulo: `Se ha añadido al jardín correctamente.`,
+        texto: isEn 
+          ? `NEW BOTANICAL CROP: ${(cat.nombreComunEn || cat.nombreComun).toUpperCase()}!` 
+          : `¡NUEVO CULTIVO BOTÁNICO: ${cat.nombreComun.toUpperCase()}!`,
+        subtitulo: isEn 
+          ? `Has been successfully added to your garden.` 
+          : `Se ha añadido al jardín correctamente.`,
         tipo: theme === 'arcade' ? 'victory' : 'lvl_up'
       }
     }));
@@ -736,7 +743,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
                 alignItems: 'center'
               }}>
                 <div style={{ maxWidth: '75%' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>{cat.nombreComun}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)' }}>{isEn ? (cat.nombreComunEn || cat.nombreComun) : cat.nombreComun}</span>
                   <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>{cat.nombreCientifico}</p>
                   <div style={{ display: 'flex', gap: '8px', marginTop: '2px' }}>
                     <span style={{ fontSize: '9px', fontWeight: 'bold', color: cat.toxicidadFelina === 'Segura' ? '#4caf50' : '#f44336', fontFamily: 'var(--game-font, sans-serif)' }}>
@@ -765,7 +772,7 @@ export const PlantAgroView: React.FC<PlantAgroViewProps> = ({
                     fontFamily: 'var(--game-font, sans-serif)'
                   }}
                 >
-                  {theme === 'terminal' ? 'ADOPT >' : theme === 'arcade' ? 'ADD LVL' : 'Adoptar'}
+                  {theme === 'terminal' ? 'ADOPT >' : theme === 'arcade' ? 'ADD LVL' : (isEn ? 'Adopt' : 'Adoptar')}
                 </button>
               </div>
             ))}
