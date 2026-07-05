@@ -232,6 +232,28 @@ export class GeminiAPIService {
    * Las peticiones de texto puro (sin imagen) se cachean en sessionStorage por 4 horas.
    */
   static async requestGemini(payload: any, signal: AbortSignal): Promise<Response> {
+    // 1. Check Rate Limiter
+    const { RateLimiter } = await import('../utils/rateLimiter');
+    if (!RateLimiter.consume('gemini', 1)) {
+      const waitTime = RateLimiter.getSecondsToNextRefill('gemini');
+      const locale = typeof localStorage !== 'undefined' ? localStorage.getItem('petplant_locale') : 'es';
+      const isEn = locale === 'en';
+      const errMsg = isEn 
+        ? `AI Quota exceeded. Please wait ${waitTime}s for a token refill.` 
+        : `Límite de IA excedido. Por favor espera ${waitTime}s para recargar tokens.`;
+      
+      return new Response(JSON.stringify({
+        error: {
+          message: errMsg,
+          code: 429,
+          status: 'RESOURCE_EXHAUSTED'
+        }
+      }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     // Intentar caché solo en peticiones sin imagen (para que sean deterministas)
     const hasImage = payload?.contents?.some((c: any) =>
       c?.parts?.some((p: any) => p?.inlineData)

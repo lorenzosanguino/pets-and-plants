@@ -1,182 +1,12 @@
-import type { Mascota, Planta, CatalogoPlanta, EventoCalendario, ChatHistorial, AccionSincronizacion, NotificacionProgramada } from './types';
+import type { Mascota, Planta, EventoCalendario, ChatHistorial, AccionSincronizacion, NotificacionProgramada } from './types';
+import { CATALOGO_MASCOTAS, type CatalogoMascota } from './catalogoMascotas';
+import { CATALOGO_ASPCA } from './catalogoASPCA';
+
+export { CATALOGO_MASCOTAS, CATALOGO_ASPCA };
+export type { CatalogoMascota };
 
 const DB_NAME = 'PetPlantDB';
 const DB_VERSION = 4;
-
-export interface CatalogoMascota {
-  raza: string;
-  razaEn?: string;
-  especie: 'Felino' | 'Canino';
-  pesoAdultoKg: number;
-  actividadSugerida: 'Baja' | 'Moderada' | 'Alta';
-  actividadSugeridaEn?: string;
-}
-
-export const CATALOGO_MASCOTAS: CatalogoMascota[] = [
-  { raza: "Siamés", razaEn: "Siamese", especie: "Felino", pesoAdultoKg: 4.0, actividadSugerida: "Moderada", actividadSugeridaEn: "Moderate" },
-  { raza: "Persa", razaEn: "Persian", especie: "Felino", pesoAdultoKg: 4.5, actividadSugerida: "Baja", actividadSugeridaEn: "Low" },
-  { raza: "Maine Coon", razaEn: "Maine Coon", especie: "Felino", pesoAdultoKg: 8.0, actividadSugerida: "Alta", actividadSugeridaEn: "High" },
-  { raza: "Común Europeo", razaEn: "European Shorthair", especie: "Felino", pesoAdultoKg: 4.2, actividadSugerida: "Moderada", actividadSugeridaEn: "Moderate" },
-  { raza: "Golden Retriever", razaEn: "Golden Retriever", especie: "Canino", pesoAdultoKg: 30.0, actividadSugerida: "Alta", actividadSugeridaEn: "High" },
-  { raza: "Pastor Alemán", razaEn: "German Shepherd", especie: "Canino", pesoAdultoKg: 35.0, actividadSugerida: "Alta", actividadSugeridaEn: "High" },
-  { raza: "Labrador", razaEn: "Labrador", especie: "Canino", pesoAdultoKg: 28.0, actividadSugerida: "Alta", actividadSugeridaEn: "High" },
-  { raza: "Bulldog Francés", razaEn: "French Bulldog", especie: "Canino", pesoAdultoKg: 12.0, actividadSugerida: "Baja", actividadSugeridaEn: "Low" },
-  { raza: "Chihuahua", razaEn: "Chihuahua", especie: "Canino", pesoAdultoKg: 2.5, actividadSugerida: "Moderada", actividadSugeridaEn: "Moderate" },
-  { raza: "Caniche", razaEn: "Poodle", especie: "Canino", pesoAdultoKg: 6.5, actividadSugerida: "Moderada", actividadSugeridaEn: "Moderate" }
-];
-
-export const CATALOGO_ASPCA: CatalogoPlanta[] = [
-  {
-    id: 'cat-1',
-    nombreComun: 'Helecho de Boston',
-    nombreComunEn: 'Boston Fern',
-    nombreCientifico: 'Nephrolepis exaltata',
-    toxicidadFelina: 'Segura',
-    toxicidadCanina: 'Segura',
-    tipoRiego: 'Agua blanda reposada',
-    tipoRiegoEn: 'Settled soft water',
-    ubicacionSugerida: 'Interior',
-    ubicacionSugeridaEn: 'Indoor',
-    descripcion: 'Planta de alta evapotranspiración foliar. Totalmente inocua para gatos domésticos.',
-    descripcionEn: 'Plant with high leaf evapotranspiration. Totally harmless to domestic cats.'
-  },
-  {
-    id: 'cat-2',
-    nombreComun: 'Peperomia',
-    nombreComunEn: 'Baby Rubber Plant',
-    nombreCientifico: 'Peperomia obtusifolia',
-    toxicidadFelina: 'Segura',
-    toxicidadCanina: 'Segura',
-    tipoRiego: 'Agua del grifo reposada',
-    tipoRiegoEn: 'Settled tap water',
-    ubicacionSugerida: 'Interior',
-    ubicacionSugeridaEn: 'Indoor',
-    descripcion: 'Hojas gruesas semisuculentas que retienen agua. Segura para convivencia.',
-    descripcionEn: 'Thick semi-succulent leaves that retain water. Safe for pet cohabitation.'
-  },
-  {
-    id: 'cat-3',
-    nombreComun: 'Calathea',
-    nombreComunEn: 'Calathea',
-    nombreCientifico: 'Calathea lancifolia',
-    toxicidadFelina: 'Segura',
-    toxicidadCanina: 'Segura',
-    tipoRiego: 'Agua destilada',
-    tipoRiegoEn: 'Distilled water',
-    ubicacionSugerida: 'Interior',
-    ubicacionSugeridaEn: 'Indoor',
-    descripcion: 'Requiere alta humedad ambiental y agua pura libre de cloro y sales.',
-    descripcionEn: 'Requires high ambient humidity and pure water free of chlorine and salts.'
-  },
-  {
-    id: 'cat-4',
-    nombreComun: 'Costilla de Adán (Monstera)',
-    nombreComunEn: 'Swiss Cheese Plant (Monstera)',
-    nombreCientifico: 'Monstera deliciosa',
-    toxicidadFelina: 'Altamente tóxica (urgencia)',
-    toxicidadCanina: 'Altamente tóxica (urgencia)',
-    compuestosToxicos: 'Oxalatos de calcio insolubles',
-    compuestosToxicosEn: 'Insoluble calcium oxalates',
-    tipoRiego: 'Agua blanda reposada',
-    tipoRiegoEn: 'Settled soft water',
-    ubicacionSugerida: 'Interior',
-    ubicacionSugeridaEn: 'Indoor',
-    descripcion: 'Contiene cristales en forma de aguja. La ingesta causa sialorrea, dolor oral agudo y emesis.',
-    descripcionEn: 'Contains needle-shaped crystals. Ingestion causes sialorrhea, acute oral pain, and emesis.'
-  },
-  {
-    id: 'cat-5',
-    nombreComun: 'Poto',
-    nombreComunEn: 'Pothos',
-    nombreCientifico: 'Epipremnum aureum',
-    toxicidadFelina: 'Tóxica leve (irritante)',
-    toxicidadCanina: 'Tóxica leve (irritante)',
-    compuestosToxicos: 'Oxalatos de calcio',
-    compuestosToxicosEn: 'Calcium oxalates',
-    tipoRiego: 'Agua del grifo reposada',
-    tipoRiegoEn: 'Settled tap water',
-    ubicacionSugerida: 'Interior',
-    ubicacionSugeridaEn: 'Indoor',
-    descripcion: 'Frecuente en interiores. Provoca hinchazón de mucosas y malestar gastrointestinal leve.',
-    descripcionEn: 'Common indoors. Causes swelling of mucous membranes and mild gastrointestinal discomfort.'
-  },
-  {
-    id: 'cat-6',
-    nombreComun: 'Lirio de la Paz',
-    nombreComunEn: 'Peace Lily',
-    nombreCientifico: 'Spathiphyllum',
-    toxicidadFelina: 'Altamente tóxica (urgencia)',
-    toxicidadCanina: 'Altamente tóxica (urgencia)',
-    compuestosToxicos: 'Oxalatos insolubles',
-    compuestosToxicosEn: 'Insoluble oxalates',
-    tipoRiego: 'Agua blanda reposada',
-    tipoRiegoEn: 'Settled soft water',
-    ubicacionSugerida: 'Interior',
-    ubicacionSugeridaEn: 'Indoor',
-    descripcion: 'Muy peligrosa. Causa inflamación de las vías respiratorias y malestar sistémico.',
-    descripcionEn: 'Very dangerous. Causes inflammation of the airways and systemic discomfort.'
-  },
-  {
-    id: 'cat-7',
-    nombreComun: 'Lavanda',
-    nombreComunEn: 'Lavender',
-    nombreCientifico: 'Lavandula',
-    toxicidadFelina: 'Tóxica leve (irritante)',
-    toxicidadCanina: 'Tóxica leve (irritante)',
-    compuestosToxicos: 'Linalol y acetato de linalilo',
-    compuestosToxicosEn: 'Linalool and linalyl acetate',
-    tipoRiego: 'Agua del grifo reposada',
-    tipoRiegoEn: 'Settled tap water',
-    ubicacionSugerida: 'Exterior',
-    ubicacionSugeridaEn: 'Outdoor',
-    descripcion: 'Planta aromática exterior. La ingesta masiva causa malestar digestivo.',
-    descripcionEn: 'Outdoor aromatic plant. Massive ingestion causes digestive discomfort.'
-  },
-  {
-    id: 'cat-8',
-    nombreComun: 'Romero',
-    nombreComunEn: 'Rosemary',
-    nombreCientifico: 'Rosmarinus officinalis',
-    toxicidadFelina: 'Segura',
-    toxicidadCanina: 'Segura',
-    tipoRiego: 'Agua del grifo reposada',
-    tipoRiegoEn: 'Settled tap water',
-    ubicacionSugerida: 'Exterior',
-    ubicacionSugeridaEn: 'Outdoor',
-    descripcion: 'Hierba leñosa perenne aromática segura para mascotas.',
-    descripcionEn: 'Woody evergreen aromatic herb safe for pets.'
-  },
-  {
-    id: 'cat-9',
-    nombreComun: 'Rosal',
-    nombreComunEn: 'Rose Bush',
-    nombreCientifico: 'Rosa',
-    toxicidadFelina: 'Segura',
-    toxicidadCanina: 'Segura',
-    tipoRiego: 'Agua del grifo reposada',
-    tipoRiegoEn: 'Settled tap water',
-    ubicacionSugerida: 'Exterior',
-    ubicacionSugeridaEn: 'Outdoor',
-    descripcion: 'Flores hermosas seguras para mascotas, aunque cuidado con las espinas en las ramas.',
-    descripcionEn: 'Beautiful flowers safe for pets, though beware of thorns on the branches.'
-  },
-  {
-    id: 'cat-10',
-    nombreComun: 'Aloe Vera',
-    nombreComunEn: 'Aloe Vera',
-    nombreCientifico: 'Aloe barbadensis',
-    toxicidadFelina: 'Tóxica leve (irritante)',
-    toxicidadCanina: 'Tóxica leve (irritante)',
-    compuestosToxicos: 'Saponinas y antraquinonas',
-    compuestosToxicosEn: 'Saponins and anthraquinones',
-    tipoRiego: 'Agua del grifo reposada',
-    tipoRiegoEn: 'Settled tap water',
-    ubicacionSugerida: 'Interior',
-    ubicacionSugeridaEn: 'Indoor',
-    descripcion: 'Suculenta medicinal. Su ingesta causa diarrea y letargia en mascotas.',
-    descripcionEn: 'Medicinal succulent. Ingestion causes diarrhea and lethargy in pets.'
-  }
-];
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 function openDB(): Promise<IDBDatabase> {
@@ -188,26 +18,43 @@ function openDB(): Promise<IDBDatabase> {
     }
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
       const db = request.result;
-      if (!db.objectStoreNames.contains('mascotas')) {
-        db.createObjectStore('mascotas', { keyPath: 'id' });
-      }
-      if (!db.objectStoreNames.contains('plantas')) {
-        db.createObjectStore('plantas', { keyPath: 'id' });
-      }
+      const oldVersion = event.oldVersion;
 
-      if (!db.objectStoreNames.contains('eventos_calendario')) {
-        db.createObjectStore('eventos_calendario', { keyPath: 'id' });
-      }
-      if (!db.objectStoreNames.contains('chats_consultor')) {
-        db.createObjectStore('chats_consultor', { keyPath: 'id' });
-      }
-      if (!db.objectStoreNames.contains('cola_sincronizacion')) {
-        db.createObjectStore('cola_sincronizacion', { keyPath: 'id' });
-      }
-      if (!db.objectStoreNames.contains('notificaciones_programadas')) {
-        db.createObjectStore('notificaciones_programadas', { keyPath: 'id' });
+      const migrations: Record<number, (database: IDBDatabase) => void> = {
+        1: (db) => {
+          if (!db.objectStoreNames.contains('mascotas')) {
+            db.createObjectStore('mascotas', { keyPath: 'id' });
+          }
+          if (!db.objectStoreNames.contains('plantas')) {
+            db.createObjectStore('plantas', { keyPath: 'id' });
+          }
+        },
+        2: (db) => {
+          if (!db.objectStoreNames.contains('eventos_calendario')) {
+            db.createObjectStore('eventos_calendario', { keyPath: 'id' });
+          }
+          if (!db.objectStoreNames.contains('chats_consultor')) {
+            db.createObjectStore('chats_consultor', { keyPath: 'id' });
+          }
+        },
+        3: (db) => {
+          if (!db.objectStoreNames.contains('cola_sincronizacion')) {
+            db.createObjectStore('cola_sincronizacion', { keyPath: 'id' });
+          }
+        },
+        4: (db) => {
+          if (!db.objectStoreNames.contains('notificaciones_programadas')) {
+            db.createObjectStore('notificaciones_programadas', { keyPath: 'id' });
+          }
+        }
+      };
+
+      for (let v = oldVersion + 1; v <= DB_VERSION; v++) {
+        if (migrations[v]) {
+          migrations[v](db);
+        }
       }
     };
 
@@ -231,6 +78,197 @@ function openDB(): Promise<IDBDatabase> {
 }
 
 export class LocalDatabase {
+  private static _cryptoPin: string | null = null;
+
+  static setCryptoPin(pin: string | null) {
+    LocalDatabase._cryptoPin = pin;
+  }
+
+  static getCryptoPin(): string | null {
+    return LocalDatabase._cryptoPin;
+  }
+
+  static isEncryptionEnabled(): boolean {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('petplant_crypto_enabled') === 'true';
+  }
+
+  private static async encryptMascota(mascota: Mascota): Promise<Mascota> {
+    if (!LocalDatabase.isEncryptionEnabled() || !LocalDatabase._cryptoPin) return mascota;
+    const { encryptText } = await import('../utils/crypto');
+    const pin = LocalDatabase._cryptoPin;
+
+    const encryptedIncidents = await Promise.all(
+      (mascota.historialPasado || []).map(async (h) => {
+        if (h.descripcion && !h.descripcion.startsWith('ENC:')) {
+          return { ...h, descripcion: 'ENC:' + await encryptText(h.descripcion, pin) };
+        }
+        return h;
+      })
+    );
+
+    const encryptedDiario = await Promise.all(
+      (mascota.diarioClinico || []).map(async (d) => {
+        if (d.nota && !d.nota.startsWith('ENC:')) {
+          return { ...d, nota: 'ENC:' + await encryptText(d.nota, pin) };
+        }
+        return d;
+      })
+    );
+
+    return {
+      ...mascota,
+      historialPasado: encryptedIncidents,
+      diarioClinico: encryptedDiario
+    };
+  }
+
+  private static async decryptMascota(mascota: Mascota): Promise<Mascota> {
+    if (!LocalDatabase._cryptoPin) return mascota;
+    const { decryptText } = await import('../utils/crypto');
+    const pin = LocalDatabase._cryptoPin;
+
+    const decryptedIncidents = await Promise.all(
+      (mascota.historialPasado || []).map(async (h) => {
+        if (h.descripcion && h.descripcion.startsWith('ENC:')) {
+          try {
+            return { ...h, descripcion: await decryptText(h.descripcion.substring(4), pin) };
+          } catch {
+            return { ...h, descripcion: '🔒 [Locked - Incorrect Security PIN]' };
+          }
+        }
+        return h;
+      })
+    );
+
+    const decryptedDiario = await Promise.all(
+      (mascota.diarioClinico || []).map(async (d) => {
+        if (d.nota && d.nota.startsWith('ENC:')) {
+          try {
+            return { ...d, nota: await decryptText(d.nota.substring(4), pin) };
+          } catch {
+            return { ...d, nota: '🔒 [Locked - Incorrect Security PIN]' };
+          }
+        }
+        return d;
+      })
+    );
+
+    return {
+      ...mascota,
+      historialPasado: decryptedIncidents,
+      diarioClinico: decryptedDiario
+    };
+  }
+
+  private static async encryptPlanta(planta: Planta): Promise<Planta> {
+    if (!LocalDatabase.isEncryptionEnabled() || !LocalDatabase._cryptoPin) return planta;
+    const { encryptText } = await import('../utils/crypto');
+    const pin = LocalDatabase._cryptoPin;
+
+    const encryptedIncidents = await Promise.all(
+      (planta.historialPasado || []).map(async (h) => {
+        if (h.descripcion && !h.descripcion.startsWith('ENC:')) {
+          return { ...h, descripcion: 'ENC:' + await encryptText(h.descripcion, pin) };
+        }
+        return h;
+      })
+    );
+
+    const encryptedDiario = await Promise.all(
+      (planta.diarioFoliar || []).map(async (d) => {
+        if (d.nota && !d.nota.startsWith('ENC:')) {
+          return { ...d, nota: 'ENC:' + await encryptText(d.nota, pin) };
+        }
+        return d;
+      })
+    );
+
+    return {
+      ...planta,
+      historialPasado: encryptedIncidents,
+      diarioFoliar: encryptedDiario
+    };
+  }
+
+  private static async decryptPlanta(planta: Planta): Promise<Planta> {
+    if (!LocalDatabase._cryptoPin) return planta;
+    const { decryptText } = await import('../utils/crypto');
+    const pin = LocalDatabase._cryptoPin;
+
+    const decryptedIncidents = await Promise.all(
+      (planta.historialPasado || []).map(async (h) => {
+        if (h.descripcion && h.descripcion.startsWith('ENC:')) {
+          try {
+            return { ...h, descripcion: await decryptText(h.descripcion.substring(4), pin) };
+          } catch {
+            return { ...h, descripcion: '🔒 [Locked - Incorrect Security PIN]' };
+          }
+        }
+        return h;
+      })
+    );
+
+    const decryptedDiario = await Promise.all(
+      (planta.diarioFoliar || []).map(async (d) => {
+        if (d.nota && d.nota.startsWith('ENC:')) {
+          try {
+            return { ...d, nota: await decryptText(d.nota.substring(4), pin) };
+          } catch {
+            return { ...d, nota: '🔒 [Locked - Incorrect Security PIN]' };
+          }
+        }
+        return d;
+      })
+    );
+
+    return {
+      ...planta,
+      historialPasado: decryptedIncidents,
+      diarioFoliar: decryptedDiario
+    };
+  }
+
+  private static async encryptChat(chat: ChatHistorial): Promise<ChatHistorial> {
+    if (!LocalDatabase.isEncryptionEnabled() || !LocalDatabase._cryptoPin) return chat;
+    const { encryptText } = await import('../utils/crypto');
+    const pin = LocalDatabase._cryptoPin;
+
+    const encryptedMessages = await Promise.all(
+      (chat.mensajes || []).map(async (m) => {
+        let texto = m.texto;
+        if (texto && !texto.startsWith('ENC:')) {
+          texto = 'ENC:' + await encryptText(texto, pin);
+        }
+        return { ...m, texto };
+      })
+    );
+
+    return { ...chat, mensajes: encryptedMessages };
+  }
+
+  private static async decryptChat(chat: ChatHistorial): Promise<ChatHistorial> {
+    if (!LocalDatabase._cryptoPin) return chat;
+    const { decryptText } = await import('../utils/crypto');
+    const pin = LocalDatabase._cryptoPin;
+
+    const decryptedMessages = await Promise.all(
+      (chat.mensajes || []).map(async (m) => {
+        let texto = m.texto;
+        if (texto && texto.startsWith('ENC:')) {
+          try {
+            texto = await decryptText(texto.substring(4), pin);
+          } catch {
+            texto = '🔒 [Locked - Incorrect Security PIN]';
+          }
+        }
+        return { ...m, texto };
+      })
+    );
+
+    return { ...chat, mensajes: decryptedMessages };
+  }
+
   /** Cuando es true, los métodos save* NO añaden acciones a la cola de sincronización.
    * Se activa exclusivamente durante seedInitialData() para evitar propagar datos demo a la nube. */
   private static _isSeedingInProgress = false;
@@ -241,23 +279,28 @@ export class LocalDatabase {
       const store = tx.objectStore('mascotas');
       const req = store.getAll();
 
-      req.onsuccess = () => resolve(req.result || []);
+      req.onsuccess = async () => {
+        const list = req.result || [];
+        const decrypted = await Promise.all(list.map(m => LocalDatabase.decryptMascota(m)));
+        resolve(decrypted);
+      };
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
     });
   }
 
   static async saveMascota(mascota: Mascota): Promise<void> {
+    const encrypted = await LocalDatabase.encryptMascota(mascota);
     const db = await openDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction('mascotas', 'readwrite');
       const store = tx.objectStore('mascotas');
-      store.put(mascota);
+      store.put(encrypted);
 
       tx.oncomplete = () => {
         if (!LocalDatabase._isSeedingInProgress) {
           import('../services/syncQueue').then(({ SyncQueueService }) => {
-            SyncQueueService.enqueue('save_mascota', mascota).catch(err => console.error(err));
+            SyncQueueService.enqueue('save_mascota', encrypted).catch(err => console.error(err));
           });
         }
         resolve();
@@ -274,23 +317,28 @@ export class LocalDatabase {
       const store = tx.objectStore('plantas');
       const req = store.getAll();
 
-      req.onsuccess = () => resolve(req.result || []);
+      req.onsuccess = async () => {
+        const list = req.result || [];
+        const decrypted = await Promise.all(list.map(p => LocalDatabase.decryptPlanta(p)));
+        resolve(decrypted);
+      };
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
     });
   }
 
   static async savePlanta(planta: Planta): Promise<void> {
+    const encrypted = await LocalDatabase.encryptPlanta(planta);
     const db = await openDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction('plantas', 'readwrite');
       const store = tx.objectStore('plantas');
-      store.put(planta);
+      store.put(encrypted);
 
       tx.oncomplete = () => {
         if (!LocalDatabase._isSeedingInProgress) {
           import('../services/syncQueue').then(({ SyncQueueService }) => {
-            SyncQueueService.enqueue('save_planta', planta).catch(err => console.error(err));
+            SyncQueueService.enqueue('save_planta', encrypted).catch(err => console.error(err));
           });
         }
         resolve();
@@ -354,23 +402,30 @@ export class LocalDatabase {
       const tx = db.transaction('chats_consultor', 'readonly');
       const store = tx.objectStore('chats_consultor');
       const req = store.get(id);
-      req.onsuccess = () => resolve(req.result || null);
+      req.onsuccess = async () => {
+        if (!req.result) {
+          resolve(null);
+        } else {
+          const decrypted = await LocalDatabase.decryptChat(req.result);
+          resolve(decrypted);
+        }
+      };
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
     });
   }
 
   static async saveChatHistorial(chat: ChatHistorial): Promise<void> {
+    const mensajesLimitados = chat.mensajes.slice(-20);
+    const chatLimitado = { ...chat, mensajes: mensajesLimitados };
+    const encrypted = await LocalDatabase.encryptChat(chatLimitado);
+
     const db = await openDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction('chats_consultor', 'readwrite');
       const store = tx.objectStore('chats_consultor');
       
-      // Limitar el array de mensajes a los últimos 20 para optimizar almacenamiento local
-      const mensajesLimitados = chat.mensajes.slice(-20);
-      const chatLimitado = { ...chat, mensajes: mensajesLimitados };
-
-      store.put(chatLimitado);
+      store.put(encrypted);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));

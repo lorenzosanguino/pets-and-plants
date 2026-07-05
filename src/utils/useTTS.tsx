@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useTranslations } from './i18n';
 
 export const useTTS = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -28,14 +29,15 @@ export const useTTS = () => {
 
     const sentenceText = sentencesQueueRef.current[currentSentenceIndexRef.current];
     const utterance = new SpeechSynthesisUtterance(sentenceText);
-    utterance.lang = 'es-ES';
+    const savedLocale = (typeof window !== 'undefined' ? localStorage.getItem('petplant_locale') : null) || 'es';
+    utterance.lang = savedLocale === 'en' ? 'en-US' : 'es-ES';
     utterance.rate = rateRef.current;
     utterance.pitch = 1;
     utterance.volume = 1;
 
     const voices = window.speechSynthesis.getVoices();
-    const spanishVoice = voices.find(v => v.lang.startsWith('es'));
-    if (spanishVoice) utterance.voice = spanishVoice;
+    const voice = voices.find(v => v.lang.startsWith(savedLocale));
+    if (voice) utterance.voice = voice;
 
     utterance.onend = () => {
       cleanUtterance(utterance);
@@ -173,6 +175,7 @@ interface TTSButtonProps {
 
 export const TTSButton: React.FC<TTSButtonProps> = ({ text, theme = 'nature', size = 'small' }) => {
   const { speak, isSpeaking, isSupported, rate, setSpeed } = useTTS();
+  const { locale } = useTranslations();
   if (!isSupported || !text?.trim()) return null;
 
   const isSmall = size === 'small';
@@ -182,7 +185,7 @@ export const TTSButton: React.FC<TTSButtonProps> = ({ text, theme = 'nature', si
       <button
         type="button"
         onClick={() => speak(text)}
-        title={isSpeaking ? 'Detener lectura' : 'Escuchar respuesta'}
+        title={isSpeaking ? (locale === 'en' ? 'Stop reading' : 'Detener lectura') : (locale === 'en' ? 'Listen to response' : 'Escuchar respuesta')}
         style={{
           padding: isSmall ? '3px 8px' : '5px 12px',
           background: isSpeaking ? 'rgba(239,68,68,0.1)' : 'rgba(0,0,0,0.04)',
@@ -199,14 +202,14 @@ export const TTSButton: React.FC<TTSButtonProps> = ({ text, theme = 'nature', si
           flexShrink: 0
         }}
       >
-        {isSpeaking ? '⏹ Detener' : '🔊 Escuchar'}
+        {isSpeaking ? (locale === 'en' ? '⏹ Stop' : '⏹ Detener') : (locale === 'en' ? '🔊 Listen' : '🔊 Escuchar')}
       </button>
 
       {isSpeaking && (
         <button
           type="button"
           onClick={() => setSpeed(rate === 1.5 ? 1.15 : 1.5)}
-          title="Alternar velocidad de lectura (x1.15 / x1.5)"
+          title={locale === 'en' ? 'Toggle reading speed (x1.15 / x1.5)' : 'Alternar velocidad de lectura (x1.15 / x1.5)'}
           style={{
             padding: isSmall ? '3px 8px' : '5px 12px',
             background: rate === 1.5 

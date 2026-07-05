@@ -1142,5 +1142,101 @@ select {
   }
 }
 
+/* ==========================================================================
+   ANIMACIONES PREMIUM Y MEJORAS DE DISEÑO GLASSMORPHISM
+   ========================================================================== */
+
+/* Latido de Corazón */
+.heartbeat-anim {
+  animation: pulseHeart 1.6s infinite ease-in-out;
+  display: inline-block;
+  transform-origin: center;
+  cursor: pointer;
+}
+
+.heartbeat-fast {
+  animation: pulseHeart 0.5s infinite ease-in-out;
+  display: inline-block;
+  transform-origin: center;
+  cursor: pointer;
+}
+
+@keyframes pulseHeart {
+  0% { transform: scale(1); }
+  14% { transform: scale(1.22); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.22); }
+  70% { transform: scale(1); }
+}
+
+/* Gotas de Agua Cayendo */
+.water-drop {
+  position: absolute;
+  width: 4px;
+  height: 12px;
+  background: linear-gradient(180deg, rgba(33, 150, 243, 0.85) 0%, rgba(33, 150, 243, 0) 100%);
+  border-radius: 50% 50% 0 0;
+  pointer-events: none;
+  z-index: 999;
+  animation: waterDrip 0.8s linear forwards;
+}
+
+@keyframes waterDrip {
+  0% {
+    transform: translateY(-20px) scaleY(1);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  80% {
+    transform: translateY(120px) scaleY(1.2);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(160px) scaleY(0.4);
+    opacity: 0;
+  }
+}
+
+/* Efecto Shimmer en Botones */
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-20deg);
+  transition: none;
+}
+
+.btn-shimmer:hover::after {
+  animation: shimmerGlow 1.2s ease-out infinite;
+}
+
+@keyframes shimmerGlow {
+  0% { left: -150%; }
+  50% { left: 150%; }
+  100% { left: 150%; }
+}
+
+/* Glassmorphism Mejorado */
+.glass-card {
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
 
 

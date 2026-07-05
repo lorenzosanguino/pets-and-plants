@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import type { EventoCalendario } from '../database/types';
 import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
+import { useTranslations } from '../utils/i18n';
 
 const getNowTimestamp = (): number => Date.now();
 
@@ -14,6 +15,7 @@ interface EcosystemCalendarProps {
 }
 
 export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = [], mascotas = [], onUpdate }) => {
+  const { locale } = useTranslations();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [eventos, setEventos] = useState<EventoCalendario[]>([]);
   const [selectedDayStr, setSelectedDayStr] = useState<string | null>(() => {
@@ -66,8 +68,8 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
         if (diasDesdePeso >= 7 || !ultimoPeso) {
           tareas.push({
             type: 'peso',
-            title: `Pesar a ${m.nombre}`,
-            detail: "Mantener actualizada la curva de peso",
+            title: locale === 'en' ? `Weigh ${m.nombre}` : `Pesar a ${m.nombre}`,
+            detail: locale === 'en' ? "Keep weight curve up to date" : "Mantener actualizada la curva de peso",
             emoji: '⚖️',
             color: '#9c27b0',
             targetId: m.id
@@ -87,8 +89,10 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
               const timeStr = new Date(med.proximaDosis).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
               tareas.push({
                 type: 'medicacion',
-                title: `${med.nombre} (${med.dosis}) para ${m.nombre}`,
-                detail: `Hora programada: ${timeStr} - Frecuencia: ${med.frecuencia}`,
+                title: locale === 'en' ? `${med.nombre} (${med.dosis}) for ${m.nombre}` : `${med.nombre} (${med.dosis}) para ${m.nombre}`,
+                detail: locale === 'en'
+                  ? `Scheduled time: ${timeStr} - Frequency: ${med.frecuencia === 'Diario' ? 'Daily' : med.frecuencia === 'Cada 12 horas' ? 'Every 12 hours' : med.frecuencia === 'Cada 8 horas' ? 'Every 8 hours' : med.frecuencia === 'Cada 6 horas' ? 'Every 6 hours' : med.frecuencia === 'Semanal' ? 'Weekly' : med.frecuencia}`
+                  : `Hora programada: ${timeStr} - Frecuencia: ${med.frecuencia}`,
                 emoji: '💊',
                 color: '#d32f2f',
                 targetId: m.id,

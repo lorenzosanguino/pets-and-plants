@@ -6,6 +6,7 @@ import { LocalDatabase } from '../database/db';
 import { TTSButton } from '../utils/useTTS';
 import type { ChatMensaje } from '../database/types';
 import { renderMarkdownToHTML } from '../utils/markdown';
+import { useTranslations } from '../utils/i18n';
 
 interface ChatMessage {
   id: string;
@@ -34,6 +35,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
   onNavigateToAsset,
   onUpdate
 }) => {
+  const { locale } = useTranslations();
   const theme = localStorage.getItem('petplant_game_theme') || 'adventure';
 
   const [activeConsultant, setActiveConsultant] = useState<'veterinario' | 'agronomo'>(
@@ -742,7 +744,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
                   whiteSpace: 'nowrap'
                 }}
               >
-                🐾 Veterinario
+                🐾 {locale === 'en' ? 'Veterinary' : 'Veterinario'}
               </button>
               <button
                 type="button"
@@ -760,7 +762,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
                   whiteSpace: 'nowrap'
                 }}
               >
-                🌿 Agronomist
+                🌿 {locale === 'en' ? 'Agronomist' : 'Agrónomo'}
               </button>
 
             </div>
@@ -830,9 +832,9 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px'
-                }} title={hasApiKey ? "Gemini AI active (Real Query)" : "Offline demo mode (Set your API Key in Settings ⚙️)"}>
+                }} title={hasApiKey ? (locale === 'en' ? "Gemini AI active (Real Query)" : "Gemini AI activa (Consulta Real)") : (locale === 'en' ? "Offline demo mode (Set your API Key in Settings ⚙️)" : "Modo demo offline (Configura tu API Key en Ajustes ⚙️)")}>
                   <span>{hasApiKey ? '💎' : '⚠️'}</span>
-                  <span>{hasApiKey ? 'Consulta Real' : 'Consulta Simulada'}</span>
+                  <span>{hasApiKey ? (locale === 'en' ? 'Real Query' : 'Consulta Real') : (locale === 'en' ? 'Simulated Query' : 'Consulta Simulada')}</span>
                 </div>
               );
             })()}
@@ -855,9 +857,9 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
                 fontFamily: 'var(--game-font, sans-serif)',
                 transition: 'all 0.2s'
               }}
-              title="Borrar todo el historial de chat para este consultor"
+              title={locale === 'en' ? "Clear all chat history for this consultant" : "Borrar todo el historial de chat para este consultor"}
             >
-              🗑️ Limpiar Chat
+              🗑️ {locale === 'en' ? 'Clear Chat' : 'Limpiar Chat'}
             </button>
           </div>
         </div>
@@ -978,7 +980,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
                   transition: 'all 0.2s',
                   flexShrink: 0
                 }}
-                title="Dictar por Voz 🎙️"
+                title={locale === 'en' ? "Dictate by Voice 🎙️" : "Dictar por Voz 🎙️"}
               >
                 🎙️
               </button>
@@ -988,10 +990,10 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
               type="text"
               placeholder={
                 isListening
-                  ? "Escuchando... Hable ahora 🎙️"
+                  ? (locale === 'en' ? "Listening... Speak now 🎙️" : "Escuchando... Hable ahora 🎙️")
                   : activeConsultant === 'veterinario'
-                    ? "Pregunta sobre heridas, pulgas, garrapatas o dieta..."
-                    : "Pregunta sobre hojas amarillas, riego, sustratos..."
+                    ? (locale === 'en' ? "Ask about wounds, fleas, ticks, or diet..." : "Pregunta sobre heridas, pulgas, garrapatas o dieta...")
+                    : (locale === 'en' ? "Ask about yellow leaves, watering, substrates..." : "Pregunta sobre hojas amarillas, riego, sustratos...")
               }
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
@@ -1027,7 +1029,9 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
                 flexShrink: 0
               }}
             >
-              {loadingIA ? (theme === 'terminal' ? 'ANALIZANDO...' : 'Analizando...') : (theme === 'terminal' ? 'ENVIAR >' : 'Enviar')}
+              {loadingIA 
+                ? (theme === 'terminal' ? (locale === 'en' ? 'ANALYZING...' : 'ANALIZANDO...') : (locale === 'en' ? 'Analyzing...' : 'Analizando...')) 
+                : (theme === 'terminal' ? (locale === 'en' ? 'SEND >' : 'ENVIAR >') : (locale === 'en' ? 'Send' : 'Enviar'))}
             </button>
           </form>
 

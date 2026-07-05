@@ -1,6 +1,7 @@
 import React from 'react';
 import type { DatosClimaticos } from '../services/weatherService';
 import { useTranslations } from '../utils/i18n';
+import { WeatherFXOverlay } from './WeatherFXOverlay';
 
 interface ExtremeWeatherPanelProps {
   clima: DatosClimaticos | null;
@@ -177,8 +178,11 @@ export const ExtremeWeatherPanel: React.FC<ExtremeWeatherPanelProps> = ({
       flexDirection: 'column',
       gap: '16px',
       boxSizing: 'border-box',
-      width: '100%'
+      width: '100%',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
+      <WeatherFXOverlay clima={clima} opacity={0.08} />
       {/* Header */}
       <div style={{
         display: 'flex',

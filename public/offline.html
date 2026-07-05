@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline - Pet & Plant Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #f3f7f4;
+      --text-color: #2e7d32;
+      --card-bg: #ffffff;
+      --btn-bg: #2e7d32;
+      --btn-text: #ffffff;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: var(--bg-color);
+      font-family: 'Outfit', sans-serif;
+      color: #333;
+      text-align: center;
+      box-sizing: border-box;
+    }
+    .container {
+      max-width: 420px;
+      padding: 30px;
+      background: var(--card-bg);
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(46, 125, 50, 0.08);
+      border: 1px solid rgba(46, 125, 50, 0.1);
+      margin: 16px;
+    }
+    .emoji-box {
+      font-size: 64px;
+      margin-bottom: 16px;
+      animation: float 3s ease-in-out infinite;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-color);
+      margin: 0 0 10px 0;
+    }
+    p {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.5;
+      margin: 0 0 24px 0;
+    }
+    .btn {
+      display: inline-block;
+      width: 100%;
+      padding: 12px;
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      box-sizing: border-box;
+      box-shadow: 0 4px 12px rgba(46, 125, 50, 0.2);
+      transition: transform 0.1s, opacity 0.1s;
+    }
+    .btn:active {
+      transform: scale(0.98);
+      opacity: 0.95;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="emoji-box">📡❌</div>
+    <h1 id="title">Offline Mode Active</h1>
+    <p id="desc">You are currently disconnected from the internet. Pet & Plant Pro works fully offline using your local database, but cloud synchronization requires a network connection.</p>
+    <button class="btn" onclick="window.location.reload()"><span id="btn-text">Retry Connection 🔄</span></button>
+  </div>
+
+  <script>
+    // Detect local language preference from localStorage
+    const locale = localStorage.getItem('petplant_locale') || 'es';
+    if (locale === 'es') {
+      document.getElementById('title').innerText = 'Modo Sin Conexión';
+      document.getElementById('desc').innerText = 'Actualmente no estás conectado a internet. Pet & Plant Pro funciona completamente offline usando tu base de datos local, pero la sincronización en la nube requiere conexión de red.';
+      document.getElementById('btn-text').innerText = 'Reintentar Conexión 🔄';
+    }
+  </script>
+</body>
+</html>

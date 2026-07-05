@@ -175,7 +175,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
           💬 Ask the AI Travel Advisor
         </h4>
         <form onSubmit={handleAIQuery} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: chatMessages.length > 0 ? '16px' : 0 }}>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <input
               type="text"
               placeholder={
@@ -184,12 +184,13 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
               }
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              style={{ flex: 1, padding: '8px 12px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '8px', background: '#fff', color: '#000' }}
+              style={{ flex: '1 1 200px', padding: '8px 12px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '8px', background: '#fff', color: '#000', minWidth: '150px' }}
             />
             <button
               type="submit"
               disabled={loading}
               style={{
+                flex: '1 0 auto',
                 padding: '8px 16px',
                 background: activeTab === 'plants' ? '#2e7d32' : (activeTab === 'cats' ? '#1976d2' : '#e65100'),
                 color: '#fff',
@@ -197,7 +198,8 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
                 borderRadius: '8px',
                 fontSize: '12px',
                 fontWeight: 'bold',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                textAlign: 'center'
               }}
             >
               {loading ? 'Consulting...' : 'Ask 🤖'}

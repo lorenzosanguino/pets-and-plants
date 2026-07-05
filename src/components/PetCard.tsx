@@ -25,11 +25,31 @@ interface PetCardProps {
 
 const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenScanner, isExpanded, onToggleExpand, theme: propTheme }) => {
   const { locale } = useTranslations();
+  const traducirNombreVacuna = (name: string) => {
+    if (locale !== 'en') return name;
+    if (name === 'Trivalente Felina (1ª dosis)') return 'Feline Trivalent (1st dose)';
+    if (name === 'Trivalente Felina (2ª dosis)') return 'Feline Trivalent (2nd dose)';
+    if (name === 'Leucemia Felina') return 'Feline Leukemia';
+    if (name === 'Rabia') return 'Rabies';
+    if (name === 'Parvovirus') return 'Parvovirus';
+    if (name === 'Moquillo') return 'Distemper';
+    if (name === 'Adenovirus') return 'Adenovirus';
+    if (name === 'Leptospirosis') return 'Leptospirosis';
+    if (name === 'Bordetella') return 'Bordetella';
+    return name;
+  };
   const cuota = IAQuotaManager.obtenerEstadoCuota();
   const [localExpanded, setLocalExpanded] = useState(false);
   const expanded = isExpanded !== undefined ? isExpanded : localExpanded;
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [showAvatarLightbox, setShowAvatarLightbox] = useState(false);
+  const [heartSpeed, setHeartSpeed] = useState<'normal' | 'fast'>('normal');
+  const acelerarLatido = () => {
+    setHeartSpeed('fast');
+    setTimeout(() => {
+      setHeartSpeed('normal');
+    }, 1200);
+  };
 
   const cardRef = useRef<HTMLDivElement>(null);
   const [isIntersecting, setIsIntersecting] = useState(false);
@@ -1470,7 +1490,15 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
               maxWidth: '100%',
               lineHeight: '1.2'
             }} title={mascota.nombre}>
-              {mascota.nombre}
+              {mascota.nombre}{' '}
+              <span 
+                className={heartSpeed === 'fast' ? 'heartbeat-fast' : 'heartbeat-anim'} 
+                onClick={(e) => { e.stopPropagation(); acelerarLatido(); }}
+                title={locale === 'en' ? 'Healthy vital sign! (Tap to speed up ❤️)' : '¡Constante vital saludable! (Pulsa para acelerar ❤️)'}
+                style={{ fontSize: '15px', verticalAlign: 'middle', userSelect: 'none' }}
+              >
+                ❤️
+              </span>
               {theme === 'kawaii' && ' (｡♥‿♥｡)'}
             </h3>
             <div style={{ 
@@ -1537,14 +1565,14 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
 
           {/* Raza en Detalles */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', background: 'var(--game-card-bg, #fafafa)', padding: '8px 12px', borderRadius: 'var(--game-radius, 8px)', border: '1px solid var(--game-border-color, #eee)', color: 'var(--game-text-bright)' }}>
-            <span style={{ fontWeight: 'bold' }}>🐾 Raza:</span>
-            <span>{mascota.raza || 'Sin especificar'}</span>
+            <span style={{ fontWeight: 'bold' }}>🐾 {locale === 'en' ? 'Breed:' : 'Raza:'}</span>
+            <span>{mascota.raza || (locale === 'en' ? 'Unspecified' : 'Sin especificar')}</span>
           </div>
 
           {/* Fecha de Nacimiento y Edad en Detalles */}
           {mascota.fechaNacimiento && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', background: 'var(--game-card-bg, #fafafa)', padding: '8px 12px', borderRadius: 'var(--game-radius, 8px)', border: '1px solid var(--game-border-color, #eee)', color: 'var(--game-text-bright)' }}>
-              <span style={{ fontWeight: 'bold' }}>🎂 Edad:</span>
+              <span style={{ fontWeight: 'bold' }}>🎂 {locale === 'en' ? 'Age:' : 'Edad:'}</span>
               <span>
                 {(() => {
                   const parts = mascota.fechaNacimiento.split('-');
@@ -1557,7 +1585,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
 
           {/* Formulario/Editor de Chip */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', background: 'var(--game-card-bg, #fafafa)', padding: '8px 12px', borderRadius: 'var(--game-radius, 8px)', border: '1px solid var(--game-border-color, #eee)', color: 'var(--game-text-bright)' }}>
-            <span style={{ fontWeight: 'bold' }}>Número Microchip:</span>
+            <span style={{ fontWeight: 'bold' }}>{locale === 'en' ? 'Microchip Number:' : 'Número Microchip:'}</span>
             {editChip ? (
               <div style={{ display: 'flex', gap: '6px', width: '100%' }}>
                 <input 
@@ -1571,8 +1599,8 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>{mascota.numeroChip || 'No registrado'}</span>
-                <button type="button" onClick={() => setEditChip(true)} style={{ background: 'none', border: 'none', color: '#1976d2', cursor: 'pointer', fontSize: '12px', padding: 0 }}>✏️ Editar</button>
+                <span>{mascota.numeroChip || (locale === 'en' ? 'Not registered' : 'No registrado')}</span>
+                <button type="button" onClick={() => setEditChip(true)} style={{ background: 'none', border: 'none', color: '#1976d2', cursor: 'pointer', fontSize: '12px', padding: 0 }}>✏️ {locale === 'en' ? 'Edit' : 'Editar'}</button>
               </div>
             )}
           </div>
@@ -1583,7 +1611,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
             <input
               type="number"
               step="0.1"
-              placeholder="Nuevo peso (kg)"
+              placeholder={locale === 'en' ? "New weight (kg)" : "Nuevo peso (kg)"}
               value={nuevoPeso}
               onChange={(e) => setNuevoPeso(e.target.value)}
               style={{
@@ -1614,7 +1642,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                 flexShrink: 0
               }}
             >
-              Pesar ⚖️
+              {locale === 'en' ? 'Weigh ⚖️' : 'Pesar ⚖️'}
             </button>
           </form>
 
@@ -1634,7 +1662,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                   }}
                 >
                   <p style={{ margin: '0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    💉 Vacunación: Plan Preventivo e Historial
+                    💉 {locale === 'en' ? 'Vaccination: Preventive Plan & History' : 'Vacunación: Plan Preventivo e Historial'}
                   </p>
                   <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontWeight: 'bold' }}>
                     {showVacunas ? '▲' : '▼'}
@@ -1678,7 +1706,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                                   textDecoration: isChecked ? 'line-through' : 'none', 
                                   opacity: isChecked ? 0.7 : 1 
                                 }}>
-                                  {vName}
+                                  {traducirNombreVacuna(vName)}
                                 </span>
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1691,7 +1719,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                                     background: '#e2fbe8',
                                     color: '#1e7e34'
                                   }}>
-                                    ✓ Aplicada
+                                    ✓ {locale === 'en' ? 'Applied' : 'Aplicada'}
                                   </span>
                                 ) : (
                                   <button
@@ -1711,7 +1739,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                                       cursor: 'pointer'
                                     }}
                                   >
-                                    ➕ Registrar
+                                    ➕ {locale === 'en' ? 'Register' : 'Registrar'}
                                   </button>
                                 )}
                                 {isChecked && (
@@ -1734,7 +1762,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                                       fontSize: '11px',
                                       padding: '2px'
                                     }}
-                                    title="Eliminar registro"
+                                    title={locale === 'en' ? 'Delete record' : 'Eliminar registro'}
                                   >
                                     🗑️
                                   </button>
@@ -1752,11 +1780,11 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                                 paddingLeft: '20px',
                                 opacity: 0.8
                               }}>
-                                <span><strong>Fecha:</strong> {record.fecha ? record.fecha.split('T')[0] : 'S/F'}</span>
-                                <span><strong>Lote:</strong> {record.lote}</span>
+                                <span><strong>{locale === 'en' ? 'Date:' : 'Fecha:'}</strong> {record.fecha ? record.fecha.split('T')[0] : 'S/F'}</span>
+                                <span><strong>{locale === 'en' ? 'Batch/Lot:' : 'Lote:'}</strong> {record.lote}</span>
                                 {record.proximaDosis && (
                                   <span style={{ color: 'var(--game-accent)' }}>
-                                    <strong>Próxima:</strong> {record.proximaDosis.split('T')[0]}
+                                    <strong>{locale === 'en' ? 'Next Dose:' : 'Próxima:'}</strong> {record.proximaDosis.split('T')[0]}
                                   </span>
                                 )}
                               </div>
@@ -1780,7 +1808,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                       return (
                         <div style={{ marginTop: '10px', borderTop: '1px dashed var(--game-border-color, #eee)', paddingTop: '10px' }}>
                           <p style={{ margin: '0 0 6px 0', fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)' }}>
-                            Otras vacunas administradas:
+                            {locale === 'en' ? 'Other vaccines administered:' : 'Otras vacunas administradas:'}
                           </p>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             {adicionales.map((v, keyIdx) => {
@@ -1799,9 +1827,9 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                     <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>{vName}</span>
                                     <div style={{ fontSize: '10px', color: 'var(--game-text)', display: 'flex', gap: '8px', opacity: 0.8 }}>
-                                      <span>Fecha: {v.fecha ? v.fecha.split('T')[0] : 'S/F'}</span>
-                                      <span>Lote: {v.lote}</span>
-                                      {v.proximaDosis && <span style={{ color: 'var(--game-accent)' }}>Próxima: {v.proximaDosis.split('T')[0]}</span>}
+                                      <span>{locale === 'en' ? 'Date:' : 'Fecha:'} {v.fecha ? v.fecha.split('T')[0] : 'S/F'}</span>
+                                      <span>{locale === 'en' ? 'Batch/Lot:' : 'Lote:'} {v.lote}</span>
+                                      {v.proximaDosis && <span style={{ color: 'var(--game-accent)' }}>{locale === 'en' ? 'Next:' : 'Próxima:'} {v.proximaDosis.split('T')[0]}</span>}
                                     </div>
                                   </div>
                                   <button
@@ -1830,10 +1858,10 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
 
                     {/* Formulario Registrar Nueva Vacuna integrado */}
                     <form onSubmit={agregarRegistroVacuna} style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px dashed rgba(0,0,0,0.1)', paddingTop: '10px', marginTop: '12px' }} className="no-print">
-                      <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>Registrar nueva dosis:</span>
+                      <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>{locale === 'en' ? 'Record new dose:' : 'Registrar nueva dosis:'}</span>
                       <div className="responsive-form-grid-2">
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Tipo:</label>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>{locale === 'en' ? 'Type:' : 'Tipo:'}</label>
                           <select 
                             value={vacunaTipo} 
                             onChange={(e) => {
@@ -1846,37 +1874,37 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                           >
                             {mascota.especie === 'Felino' && (
                               <>
-                                <option value="Trivalente">Trivalente</option>
-                                <option value="Leucemia">Leucemia</option>
-                                <option value="Rabia">Rabia</option>
-                                <option value="Otras">Otras</option>
+                                <option value="Trivalente">{locale === 'en' ? 'Trivalent' : 'Trivalente'}</option>
+                                <option value="Leucemia">{locale === 'en' ? 'Leukemia' : 'Leucemia'}</option>
+                                <option value="Rabia">{locale === 'en' ? 'Rabies' : 'Rabia'}</option>
+                                <option value="Otras">{locale === 'en' ? 'Others' : 'Otras'}</option>
                               </>
                             )}
                             {mascota.especie === 'Canino' && (
                               <>
                                 <option value="Parvovirus">Parvovirus</option>
-                                <option value="Moquillo">Moquillo</option>
+                                <option value="Moquillo">{locale === 'en' ? 'Distemper' : 'Moquillo'}</option>
                                 <option value="Adenovirus">Adenovirus</option>
-                                <option value="Rabia">Rabia</option>
+                                <option value="Rabia">{locale === 'en' ? 'Rabies' : 'Rabia'}</option>
                                 <option value="Leptospirosis">Leptospirosis</option>
                                 <option value="Bordetella">Bordetella</option>
-                                <option value="Otras">Otras</option>
+                                <option value="Otras">{locale === 'en' ? 'Others' : 'Otras'}</option>
                               </>
                             )}
                             {mascota.especie !== 'Felino' && mascota.especie !== 'Canino' && (
-                              <option value="Otras">Otras</option>
+                              <option value="Otras">{locale === 'en' ? 'Others' : 'Otras'}</option>
                             )}
                           </select>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Lote:</label>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>{locale === 'en' ? 'Batch/Lot:' : 'Lote:'}</label>
                           <input 
                             id={`vacuna-lote-${mascota.id}`}
                             type="text" 
                             value={vacunaLote}
                             onChange={(e) => setVacunaLote(e.target.value)}
-                            placeholder="Ej: LT-4819"
+                            placeholder={locale === 'en' ? "E.g.: LT-4819" : "Ej: LT-4819"}
                             style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
                           />
                         </div>
@@ -1884,12 +1912,12 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
 
                       {(vacunaTipo === 'Otras' || (mascota.especie !== 'Felino' && mascota.especie !== 'Canino')) && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Especificar Vacuna:</label>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>{locale === 'en' ? 'Specify Vaccine:' : 'Especificar Vacuna:'}</label>
                           <input 
                             type="text" 
                             value={vacunaPersonalizada}
                             onChange={(e) => setVacunaPersonalizada(e.target.value)}
-                            placeholder="Ej: Nobivac KC, Tos de las Perreras..."
+                            placeholder={locale === 'en' ? "E.g.: Nobivac KC, Kennel Cough..." : "Ej: Nobivac KC, Tos de las Perreras..."}
                             style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '4px', border: '1px solid #ccc', background: '#fff', color: '#000' }}
                           />
                         </div>
@@ -1897,7 +1925,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
 
                       <div className="responsive-form-grid-2">
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Fecha colocación:</label>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>{locale === 'en' ? 'Date Administered:' : 'Fecha colocación:'}</label>
                           <input 
                             type="date" 
                             value={vacunaFecha}
@@ -1907,7 +1935,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Próxima dosis (Opcional):</label>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>{locale === 'en' ? 'Next Dose (Optional):' : 'Próxima dosis (Opcional):'}</label>
                           <input 
                             type="date" 
                             value={vacunaProxima}
@@ -1932,7 +1960,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                           alignSelf: 'flex-start'
                         }}
                       >
-                        Registrar Vacuna
+                        {locale === 'en' ? 'Register Vaccine' : 'Registrar Vacuna'}
                       </button>
                     </form>
                   </div>
@@ -1952,7 +1980,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                   }}
                 >
                   <p style={{ margin: '0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    🛡️ Desparasitación Periódica
+                    🛡️ {locale === 'en' ? 'Regular Deworming' : 'Desparasitación Periódica'}
                   </p>
                   <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontWeight: 'bold' }}>
                     {showDesparasitacion ? '▲' : '▼'}
@@ -1975,7 +2003,9 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{ fontWeight: 'bold', fontSize: '12px', color: 'var(--game-text-bright)' }}>
-                              {vName === 'Desparasitación Interna' ? '💊 Interna (cada 3 meses)' : '🛡️ Externa (cada mes)'}
+                              {vName === 'Desparasitación Interna' 
+                                ? (locale === 'en' ? '💊 Internal (every 3 months)' : '💊 Interna (cada 3 meses)') 
+                                : (locale === 'en' ? '🛡️ External (every month)' : '🛡️ Externa (cada mes)')}
                             </span>
                             <span style={{
                               fontSize: '10px',
@@ -1985,12 +2015,12 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                               background: info.status === 'Al día' ? '#e2fbe8' : '#fde8e8',
                               color: info.status === 'Al día' ? '#1e7e34' : '#c82333'
                             }}>
-                              {info.status}
+                              {locale === 'en' ? (info.status === 'Al día' ? 'Up to date' : info.status === 'Vencida' ? 'Overdue' : 'Pending') : info.status}
                             </span>
                           </div>
                           <div style={{ fontSize: '11px', color: 'var(--game-text)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <div><strong>Última toma:</strong> {formatearFechaSimple(info.lastDate)}</div>
-                            <div><strong>Próxima toma:</strong> {formatearFechaSimple(info.nextDate)}</div>
+                            <div><strong>{locale === 'en' ? 'Last Dose:' : 'Última toma:'}</strong> {formatearFechaSimple(info.lastDate)}</div>
+                            <div><strong>{locale === 'en' ? 'Next Dose:' : 'Próxima toma:'}</strong> {formatearFechaSimple(info.nextDate)}</div>
                           </div>
                           <button
                             type="button"
@@ -2011,7 +2041,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                               marginTop: '2px'
                             }}
                           >
-                            Registrar Toma
+                            {locale === 'en' ? 'Record Dose' : 'Registrar Toma'}
                           </button>
                         </div>
                       );
@@ -2045,14 +2075,14 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
                       {(!mascota.medicamentos || mascota.medicamentos.length === 0) ? (
                         <p style={{ margin: '0', fontSize: '11px', color: 'var(--game-text)', opacity: 0.7 }}>
-                          No hay tratamientos registrados.
+                          {locale === 'en' ? 'No treatments registered.' : 'No hay tratamientos registrados.'}
                         </p>
                       ) : (
                         mascota.medicamentos.map(med => {
                           const isOverdue = med.activo && med.proximaDosis && (new Date() > new Date(med.proximaDosis));
                           const proximaDosisFormateada = med.proximaDosis 
                             ? new Date(med.proximaDosis).toLocaleString() 
-                            : 'Tratamiento inactivo/finalizado';
+                            : (locale === 'en' ? 'Treatment inactive/completed' : 'Tratamiento inactivo/finalizado');
                           return (
                             <div key={med.id} style={{
                               background: 'var(--game-card-bg, #fafafa)',
@@ -2135,7 +2165,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                                       cursor: 'pointer'
                                     }}
                                   >
-                                    Dar de baja
+                                    {locale === 'en' ? 'Deactivate' : 'Dar de baja'}
                                   </button>
                                 )}
                                 <button
@@ -2154,7 +2184,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                                     cursor: 'pointer'
                                   }}
                                 >
-                                  Eliminar
+                                  {locale === 'en' ? 'Delete' : 'Eliminar'}
                                 </button>
                               </div>
                             </div>
@@ -2221,7 +2251,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
 
                       <div className="responsive-form-grid-3">
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Fecha inicio:</label>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>{locale === 'en' ? 'Start Date:' : 'Fecha inicio:'}</label>
                           <input 
                             type="date" 
                             value={medFechaInicio}
@@ -2230,7 +2260,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                           />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Fecha fin (opcional):</label>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>{locale === 'en' ? 'End Date (optional):' : 'Fecha fin (opcional):'}</label>
                           <input 
                             type="date" 
                             value={medFechaFin}
@@ -2239,7 +2269,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                           />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>Próxima toma/Inicio:</label>
+                          <label style={{ fontSize: '10px', color: 'var(--game-text)' }}>{locale === 'en' ? 'Next Dose / Start Date:' : 'Próxima toma/Inicio:'}</label>
                           <input 
                             type="datetime-local" 
                             value={medHoraProxima}
@@ -2541,7 +2571,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                 fontFamily: 'var(--game-font, sans-serif)'
               }}
             >
-              Exportar Ficha 📄
+              {locale === 'en' ? 'Export Record 📄' : 'Exportar Ficha 📄'}
             </button>
             <button
               onClick={runChefIA}
@@ -2558,7 +2588,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                 fontFamily: 'var(--game-font, sans-serif)'
               }}
             >
-              Chef Nutricional 🍖
+              {locale === 'en' ? 'Nutritional Chef 🍖' : 'Chef Nutricional 🍖'}
             </button>
           </div>
 

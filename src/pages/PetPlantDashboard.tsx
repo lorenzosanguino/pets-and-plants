@@ -8,6 +8,7 @@ import { useGPSWeather } from '../hooks/useGPSWeather';
 import { useTranslations } from '../utils/i18n';
 import { ExtremeWeatherPanel } from '../components/ExtremeWeatherPanel';
 import { playSoundClick, playSoundSuccess } from '../utils/audioFeedback';
+import { WeatherFXOverlay } from '../components/WeatherFXOverlay';
 
 
 // ── Lazy-loaded components (se descargan solo cuando se necesitan) ──────────
@@ -71,7 +72,7 @@ const ChunkLoader: React.FC<{ height?: string }> = ({ height = '120px' }) => (
 // Helper functions moved to custom hooks
 
 export const PetPlantDashboard: React.FC = () => {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   
   const [uiTheme, setUiTheme] = useState<'gaming' | 'nature' | 'kawaii'>(() => {
     const saved = localStorage.getItem('petplant_game_theme');
@@ -92,6 +93,29 @@ export const PetPlantDashboard: React.FC = () => {
   // Estados para Búsqueda y Filtros (P3)
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSubtype, setFilterSubtype] = useState('all');
+
+  const obtenerFondoPorHora = () => {
+    const hora = new Date().getHours();
+    const esOscuro = uiTheme === 'gaming';
+
+    if (hora >= 6 && hora < 9) {
+      return esOscuro
+        ? 'linear-gradient(135deg, #3a1c2a 0%, #1a1525 100%)'
+        : 'linear-gradient(135deg, #ffe5d9 0%, #ffcad4 50%, #d8e2dc 100%)';
+    } else if (hora >= 9 && hora < 18) {
+      return esOscuro
+        ? 'linear-gradient(135deg, #0d1e2d 0%, #071017 100%)'
+        : 'linear-gradient(135deg, #e8f5e9 0%, #e0f7fa 100%)';
+    } else if (hora >= 18 && hora < 21) {
+      return esOscuro
+        ? 'linear-gradient(135deg, #401020 0%, #1f0515 100%)'
+        : 'linear-gradient(135deg, #ffdee9 0%, #b5fffc 100%)';
+    } else {
+      return esOscuro
+        ? 'linear-gradient(135deg, #050b14 0%, #12131c 100%)'
+        : 'linear-gradient(135deg, #d3cbb8 0%, #c4cbd6 100%)';
+    }
+  };
 
 
 
@@ -534,7 +558,7 @@ export const PetPlantDashboard: React.FC = () => {
               fontFamily: 'var(--game-font, sans-serif)',
               opacity: 0.85
             }}>
-              (Pulsar para sincronizar 🔄)
+              {locale === 'en' ? '(Tap to sync 🔄)' : '(Pulsar para sincronizar 🔄)'}
             </span>
           )}
         </div>
@@ -1180,11 +1204,11 @@ export const PetPlantDashboard: React.FC = () => {
       <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           
           {/* Header Ecosistema */}
-          <div className="ecosystem-header-responsive" style={{
-            background: 'var(--game-card-bg, #ffffff)',
+          <div className="ecosystem-header-responsive glass-card" style={{
+            background: obtenerFondoPorHora(),
             borderRadius: '16px',
             padding: '20px 24px',
-            border: 'var(--game-border, 1px solid #f0f0f0)',
+            border: 'var(--game-border, 1px solid rgba(255,255,255,0.25))',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
@@ -1192,9 +1216,12 @@ export const PetPlantDashboard: React.FC = () => {
             textAlign: 'center',
             marginBottom: '16px',
             gap: '16px',
-            flexWrap: 'wrap'
+            flexWrap: 'wrap',
+            position: 'relative',
+            overflow: 'hidden'
           }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+            <WeatherFXOverlay clima={climaActual} opacity={0.08} />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', zIndex: 2 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                 <span style={{ fontSize: '24px' }}>{headerInfo.icon}</span>
                 <h1 style={{ margin: '0', fontSize: '20px', color: 'var(--game-text-bright, #1a1a1a)', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)', textAlign: 'center' }}>
@@ -1214,7 +1241,8 @@ export const PetPlantDashboard: React.FC = () => {
               flexDirection: 'column',
               gap: '8px',
               width: '100%',
-              alignItems: 'center'
+              alignItems: 'center',
+              zIndex: 2
             }}>
               <div style={{
                 display: 'flex',
@@ -1380,7 +1408,9 @@ export const PetPlantDashboard: React.FC = () => {
                 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--game-text-bright, #2c3e50)', fontFamily: 'var(--game-font, sans-serif)' }}>
-                      {experienceMode === 'pets' ? '🐾 Registro de Mascotas' : '🌿 Registro de Plantas'}
+                      {experienceMode === 'pets'
+                        ? (locale === 'en' ? '🐾 Pet Registration' : '🐾 Registro de Mascotas')
+                        : (locale === 'en' ? '🌿 Plant Registration' : '🌿 Registro de Plantas')}
                     </span>
                   </div>
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -1408,7 +1438,7 @@ export const PetPlantDashboard: React.FC = () => {
                         gap: '6px'
                       }}
                     >
-                      <span>📷</span> Registrar con IA (Escanear)
+                      <span>📷</span> {locale === 'en' ? 'Register with AI (Scan)' : 'Registrar con IA (Escanear)'}
                     </button>
                     <button
                       onClick={() => {
@@ -1454,7 +1484,13 @@ export const PetPlantDashboard: React.FC = () => {
                     <span style={{ cursor: 'default' }}>🔍</span>
                     <input 
                       type="text" 
-                      placeholder={experienceMode === 'pets' ? "Buscar por nombre o raza..." : experienceMode === 'plants' ? "Buscar por nombre..." : "Buscar por nombre o tipo..."}
+                      placeholder={
+                        experienceMode === 'pets'
+                          ? (locale === 'en' ? "Search by name or breed..." : "Buscar por nombre o raza...")
+                          : experienceMode === 'plants'
+                            ? (locale === 'en' ? "Search by name..." : "Buscar por nombre...")
+                            : (locale === 'en' ? "Search by name or type..." : "Buscar por nombre o tipo...")
+                      }
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '13px', color: 'var(--game-text)' }}
@@ -1467,9 +1503,10 @@ export const PetPlantDashboard: React.FC = () => {
                   <select
                     value={filterSubtype}
                     onChange={(e) => setFilterSubtype(e.target.value)}
+                    aria-label={experienceMode === 'pets' ? "Filter by species" : experienceMode === 'plants' ? "Filter by room" : "Filter items"}
                     style={{ padding: '6px 10px', fontSize: '12px', borderRadius: '8px', border: '1px solid #ccc', background: '#fff', color: '#000', cursor: 'pointer', flexShrink: 0 }}
                   >
-                    <option value="all">Todos</option>
+                    <option value="all">{locale === 'en' ? 'All' : 'Todos'}</option>
                     {experienceMode === 'pets' && Array.from(new Set(mascotas.map(m => m.especie))).map(esp => (
                       <option key={esp} value={esp}>{esp}</option>
                     ))}
@@ -1488,7 +1525,7 @@ export const PetPlantDashboard: React.FC = () => {
                     /* Mis Mascotas */
                     <div style={{ background: 'var(--game-card-bg, #ffffff)', borderRadius: '16px', padding: '20px', border: 'var(--game-border, 1px solid #f0f0f0)', display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #e3f2fd', paddingBottom: '8px', width: '100%', boxSizing: 'border-box' }}>
-                        <h2 style={{ margin: '0', fontSize: '17px', color: '#1976d2', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)' }}>🐾 Mis Mascotas</h2>
+                        <h2 style={{ margin: '0', fontSize: '17px', color: '#1976d2', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)' }}>🐾 {locale === 'en' ? 'My Pets' : 'Mis Mascotas'}</h2>
                       </div>
                       
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', boxSizing: 'border-box' }}>
@@ -1500,7 +1537,7 @@ export const PetPlantDashboard: React.FC = () => {
                             return matchesSearch && matchesFilter;
                           });
                           if (filtered.length === 0) {
-                            return <p style={{ fontSize: '12px', color: 'var(--game-text, #888)', fontStyle: 'italic', textAlign: 'center', padding: '12px', fontFamily: 'var(--game-font, sans-serif)' }}>No se encontraron mascotas.</p>;
+                            return <p style={{ fontSize: '12px', color: 'var(--game-text, #888)', fontStyle: 'italic', textAlign: 'center', padding: '12px', fontFamily: 'var(--game-font, sans-serif)' }}>{locale === 'en' ? 'No pets found.' : 'No se encontraron mascotas.'}</p>;
                           }
                           return filtered.map(m => (
                             <Suspense key={m.id} fallback={<ChunkLoader height="80px" />}>
@@ -1527,7 +1564,7 @@ export const PetPlantDashboard: React.FC = () => {
                     /* Mis Plantas */
                     <div style={{ background: 'var(--game-card-bg, #ffffff)', borderRadius: '16px', padding: '20px', border: 'var(--game-border, 1px solid #f0f0f0)', display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #e8f5e9', paddingBottom: '8px', width: '100%', boxSizing: 'border-box' }}>
-                        <h2 style={{ margin: '0', fontSize: '17px', color: '#2e7d32', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)' }}>🌿 Mis Plantas</h2>
+                        <h2 style={{ margin: '0', fontSize: '17px', color: '#2e7d32', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)' }}>🌿 {locale === 'en' ? 'My Plants' : 'Mis Plantas'}</h2>
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', boxSizing: 'border-box' }}>
@@ -1539,7 +1576,7 @@ export const PetPlantDashboard: React.FC = () => {
                             return matchesSearch && matchesFilter;
                           });
                           if (filtered.length === 0) {
-                            return <p style={{ fontSize: '12px', color: 'var(--game-text, #888)', fontStyle: 'italic', textAlign: 'center', padding: '12px', fontFamily: 'var(--game-font, sans-serif)' }}>No se encontraron plantas.</p>;
+                            return <p style={{ fontSize: '12px', color: 'var(--game-text, #888)', fontStyle: 'italic', textAlign: 'center', padding: '12px', fontFamily: 'var(--game-font, sans-serif)' }}>{locale === 'en' ? 'No plants found.' : 'No se encontraron plantas.'}</p>;
                           }
                           return filtered.map(p => (
                             <Suspense key={p.id} fallback={<ChunkLoader height="80px" />}>

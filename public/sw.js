@@ -1,10 +1,11 @@
-const CACHE_NAME = 'petplant-cache-v9';
+const CACHE_NAME = 'petplant-cache-v1783263256806';
 const ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/favicon.svg',
-  '/icons.svg'
+  '/icons.svg',
+  '/offline.html'
 ];
 
 // Limita el tamaño de la caché eliminando las entradas más antiguas (FIFO)
@@ -115,8 +116,13 @@ self.addEventListener('fetch', (e) => {
           return cachedResponse;
         }
 
-        // Si no está en caché, dejamos que el error de red se propague
-        return fetchPromise;
+        // Si no está en caché, dejamos que el error de red se propague o cargue el offline fallback
+        return fetchPromise.catch((err) => {
+          if (e.request.mode === 'navigate') {
+            return caches.match('/offline.html');
+          }
+          throw err;
+        });
       })
     );
   }

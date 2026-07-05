@@ -94,6 +94,60 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [diagnosticLog, setDiagnosticLog] = useState<string>('');
   const [runningDiag, setRunningDiag] = useState<boolean>(false);
 
+  // Local Database Encryption States
+  const [isCryptoEnabled, setIsCryptoEnabled] = useState(() => LocalDatabase.isEncryptionEnabled());
+  const [pinInput, setPinInput] = useState('');
+  const [currentPin, setCurrentPin] = useState(() => LocalDatabase.getCryptoPin() || '');
+  const [cryptoError, setCryptoError] = useState<string | null>(null);
+
+  const handleToggleCrypto = (enabled: boolean) => {
+    if (enabled) {
+      if (pinInput.length < 4) {
+        setCryptoError(locale === 'en' ? 'Security PIN must be at least 4 digits.' : 'El PIN de seguridad debe tener al menos 4 dígitos.');
+        return;
+      }
+      localStorage.setItem('petplant_crypto_enabled', 'true');
+      LocalDatabase.setCryptoPin(pinInput);
+      setIsCryptoEnabled(true);
+      setCurrentPin(pinInput);
+      setPinInput('');
+      setCryptoError(null);
+      dispararLogroVisual("ENCRYPTION ON", locale === 'en' ? "Clinical logs are now securely encrypted" : "Datos clínicos cifrados con éxito", "lvl_up");
+    } else {
+      if (pinInput !== currentPin) {
+        setCryptoError(locale === 'en' ? 'Incorrect Security PIN.' : 'PIN de seguridad incorrecto.');
+        return;
+      }
+      localStorage.setItem('petplant_crypto_enabled', 'false');
+      LocalDatabase.setCryptoPin(null);
+      setIsCryptoEnabled(false);
+      setCurrentPin('');
+      setPinInput('');
+      setCryptoError(null);
+      dispararLogroVisual("ENCRYPTION OFF", locale === 'en' ? "Local database encryption disabled" : "Cifrado local desactivado", "lvl_up");
+    }
+  };
+
+  const handleUnlockDatabase = () => {
+    if (pinInput.length < 4) {
+      setCryptoError(locale === 'en' ? 'PIN must be at least 4 digits.' : 'El PIN debe tener al menos 4 dígitos.');
+      return;
+    }
+    LocalDatabase.setCryptoPin(pinInput);
+    setCurrentPin(pinInput);
+    setPinInput('');
+    setCryptoError(null);
+    dispararLogroVisual("DATABASE UNLOCKED", locale === 'en' ? "Clinical records decrypted" : "Base de datos desbloqueada", "victory");
+  };
+
+  const handleLockDatabase = () => {
+    LocalDatabase.setCryptoPin(null);
+    setCurrentPin('');
+    setPinInput('');
+    setCryptoError(null);
+    dispararLogroVisual("DATABASE LOCKED", locale === 'en' ? "Memory keys cleared" : "Claves de memoria limpiadas", "lvl_up");
+  };
+
   const runCloudDiagnostics = async () => {
     setRunningDiag(true);
     setDiagnosticLog("Starting cloud diagnostic tests...\n");
@@ -1319,6 +1373,141 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               style={{ display: 'none' }}
             />
           </label>
+        </div>
+      </div>
+
+      {/* LOCAL SECURITY & ENCRYPTION */}
+      <div style={{
+        borderTop: 'var(--game-border, 1px solid #f0f0f0)',
+        paddingTop: '24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px'
+      }}>
+        <div>
+          <h3 style={{ 
+            margin: '0 0 4px 0', 
+            fontSize: '18px', 
+            color: 'var(--game-text-bright, #1a1a1a)', 
+            fontWeight: 'bold',
+            fontFamily: 'var(--game-font, sans-serif)'
+          }}>
+            {locale === 'en' ? '🔐 Local Database Encryption' : '🔐 Cifrado de Base de Datos Local'}
+          </h3>
+          <p style={{ margin: '0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', lineHeight: '1.4' }}>
+            {locale === 'en' 
+              ? 'Encrypt your clinical history, medical incidents, and AI chats locally using AES-GCM 256-bit encryption.' 
+              : 'Cifra localmente tu historial clínico, incidencias médicas y chats de IA utilizando criptografía AES-GCM de 256 bits.'}
+          </p>
+        </div>
+
+        <div style={{
+          padding: '16px',
+          background: 'var(--game-card-bg, #fafafa)',
+          border: '1px solid var(--game-border-color, #e0e0e0)',
+          borderRadius: uiTheme === 'gaming' ? '0px' : '12px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>
+              {locale === 'en' ? 'Local Encryption Status:' : 'Estado del cifrado local:'}
+            </span>
+            <span style={{
+              fontSize: '11px',
+              fontWeight: 'bold',
+              padding: '4px 8px',
+              borderRadius: '20px',
+              background: isCryptoEnabled ? '#e8f5e9' : '#ffebee',
+              color: isCryptoEnabled ? '#2e7d32' : '#c62828'
+            }}>
+              {isCryptoEnabled 
+                ? (locale === 'en' ? 'ACTIVE' : 'ACTIVO') 
+                : (locale === 'en' ? 'DISABLED' : 'DESACTIVADO')}
+            </span>
+          </div>
+
+          {isCryptoEnabled && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0', paddingTop: '10px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>
+                {locale === 'en' ? 'Database Lock Status:' : 'Estado de bloqueo:'}
+              </span>
+              <span style={{
+                fontSize: '11px',
+                fontWeight: 'bold',
+                padding: '4px 8px',
+                borderRadius: '20px',
+                background: currentPin ? '#e3f2fd' : '#fff3e0',
+                color: currentPin ? '#1565c0' : '#ef6c00'
+              }}>
+                {currentPin 
+                  ? (locale === 'en' ? '🔓 UNLOCKED' : '🔓 DESBLOQUEADA') 
+                  : (locale === 'en' ? '🔒 LOCKED' : '🔒 BLOQUEADA')}
+              </span>
+            </div>
+          )}
+
+          {cryptoError && (
+            <div style={{ padding: '8px 12px', background: '#ffebee', color: '#c62828', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>
+              ⚠️ {cryptoError}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+            <label style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text)' }}>
+              {isCryptoEnabled 
+                ? (locale === 'en' ? 'Enter Security PIN (4+ digits):' : 'Introduce el PIN de seguridad (mínimo 4 dígitos):')
+                : (locale === 'en' ? 'Configure a new Security PIN (4+ digits):' : 'Configura un nuevo PIN de seguridad (mínimo 4 dígitos):')
+              }
+            </label>
+            <input 
+              type="password" 
+              pattern="[0-9]*"
+              inputMode="numeric"
+              value={pinInput}
+              onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
+              placeholder="e.g. 1234"
+              style={{ padding: '10px', border: '1.5px solid var(--game-border-color)', borderRadius: '6px', fontSize: '14px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '6px' }}>
+            {!isCryptoEnabled ? (
+              <button 
+                onClick={() => handleToggleCrypto(true)}
+                style={{ flex: 1, minWidth: '150px', padding: '10px', background: '#2e7d32', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+              >
+                🔑 {locale === 'en' ? 'Enable Encryption' : 'Activar Cifrado'}
+              </button>
+            ) : (
+              <>
+                {!currentPin ? (
+                  <button 
+                    onClick={handleUnlockDatabase}
+                    style={{ flex: 1, minWidth: '120px', padding: '10px', background: '#1565c0', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+                  >
+                    🔓 {locale === 'en' ? 'Unlock Records' : 'Desbloquear Expediente'}
+                  </button>
+                ) : (
+                  <>
+                    <button 
+                      onClick={handleLockDatabase}
+                      style={{ flex: 1, minWidth: '120px', padding: '10px', background: '#ef6c00', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+                    >
+                      🔒 {locale === 'en' ? 'Lock Local Session' : 'Cerrar Sesión Local'}
+                    </button>
+                    <button 
+                      onClick={() => handleToggleCrypto(false)}
+                      style={{ flex: 1, minWidth: '120px', padding: '10px', background: '#c62828', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+                    >
+                      ❌ {locale === 'en' ? 'Disable Encryption' : 'Desactivar Cifrado'}
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
 

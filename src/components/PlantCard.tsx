@@ -12,6 +12,7 @@ import { GeminiAPIService } from '../services/geminiAPI';
 import { TTSButton } from '../utils/useTTS';
 import { useTranslations } from '../utils/i18n';
 import { playSoundWater } from '../utils/audioFeedback';
+import { WeatherFXOverlay } from './WeatherFXOverlay';
 interface PlantCardProps {
   planta: Planta;
   clima?: any;
@@ -24,11 +25,19 @@ interface PlantCardProps {
 
 const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, clima, onUpdate, onOpenScanner, isExpanded, onToggleExpand, theme: propTheme }) => {
   const { locale } = useTranslations();
+  const obtenerTipoRiegoTraducido = (tipo: string) => {
+    if (locale !== 'en') return tipo;
+    if (tipo === 'Agua del grifo reposada') return 'Rested tap water';
+    if (tipo === 'Agua destilada/lluvia') return 'Distilled/rain water';
+    if (tipo === 'Agua filtrada') return 'Filtered water';
+    return tipo;
+  };
   const cuota = IAQuotaManager.obtenerEstadoCuota();
   const [localExpanded, setLocalExpanded] = useState(false);
   const expanded = isExpanded !== undefined ? isExpanded : localExpanded;
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [showAvatarLightbox, setShowAvatarLightbox] = useState(false);
+  const [gotasRiego, setGotasRiego] = useState<{ id: number; left: number; delay: number }[]>([]);
 
   const cardRef = useRef<HTMLDivElement>(null);
   const [isIntersecting, setIsIntersecting] = useState(false);
@@ -238,6 +247,17 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
       try { playSoundWater(); } catch { /* Ignore audio playback error */ }
       onUpdate();
 
+      // Generar gotas de riego interactivas
+      const nuevasGotas = Array.from({ length: 12 }).map((_, idx) => ({
+        id: Date.now() + idx,
+        left: Math.random() * 80 + 10,
+        delay: Math.random() * 0.4
+      }));
+      setGotasRiego(nuevasGotas);
+      setTimeout(() => {
+        setGotasRiego([]);
+      }, 1500);
+
       const activeHogarId = localStorage.getItem('petplant_hogar_id');
       if (activeHogarId) {
         import('../utils/notificationManager').then(({ NotificationManager }) => {
@@ -446,7 +466,9 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
     return list;
   };
 
-  const nombresDias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const nombresDias = locale === 'en' 
+    ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] 
+    : ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
   const renderCalendarioRiegoSemanal = () => {
     const dias = obtenerDiasRiego();
@@ -464,7 +486,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
         width: '100%'
       }}>
         <p style={{ margin: '0 0 10px 0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          💧 Calendario de Riego Semanal
+          💧 {locale === 'en' ? 'Weekly Watering Calendar' : 'Calendario de Riego Semanal'}
         </p>
         <div style={{
           display: 'flex',
@@ -487,7 +509,9 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
             if (esMismoDia(d, currentUltima)) {
               status = esHoy ? 'watered-today' : 'watered';
               icon = '💧';
-              label = esHoy ? 'Regada hoy' : 'Regada';
+              label = esHoy 
+                ? (locale === 'en' ? 'Watered today' : 'Regada hoy') 
+                : (locale === 'en' ? 'Watered' : 'Regada');
               color = '#1976d2';
             } else if (esHoy) {
               const proxTime = new Date(currentProxima).getTime();
@@ -495,12 +519,12 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
               if (proxTime <= hoyTime || esMismoDia(d, currentProxima)) {
                 status = 'due';
                 icon = '⚠️';
-                label = 'Toca regar';
+                label = locale === 'en' ? 'Due' : 'Toca regar';
                 color = '#e53935';
               } else {
                 status = 'safe';
                 icon = '🍃';
-                label = 'Hidratada';
+                label = locale === 'en' ? 'Hydrated' : 'Hidratada';
                 color = '#4caf50';
               }
             } else if (esPasado) {
@@ -512,7 +536,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
               if (esMismoDia(d, currentProxima)) {
                 status = 'scheduled';
                 icon = '📅';
-                label = 'Toca regar';
+                label = locale === 'en' ? 'Due' : 'Toca regar';
                 color = '#ff9800';
               } else {
                 status = 'none';
@@ -561,9 +585,9 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                       marginTop: '2px',
                       fontFamily: 'var(--game-font, sans-serif)'
                     }}
-                    title="Regar ahora"
+                    title={locale === 'en' ? 'Water now' : 'Regar ahora'}
                   >
-                    REGAR
+                    {locale === 'en' ? 'WATER' : 'REGAR'}
                   </button>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
@@ -653,7 +677,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
           color: 'var(--game-text-bright, #2e7d32)',
           marginBottom: '4px'
         }}>
-          <span>Nivel de Hidratación</span>
+           <span>{locale === 'en' ? 'Hydration Level' : 'Nivel de Hidratación'}</span>
           <span>{percent}%</span>
         </div>
         <div style={{ 
@@ -839,7 +863,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
     }
 
     const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const showAnimations = expanded && isIntersecting && !prefersReducedMotion;
+    const showAnimations = isIntersecting && !prefersReducedMotion;
 
     // Geometric Greenhouse/Terrarium glass frame watermark
     const renderGreenhouseFrame = () => {
@@ -857,7 +881,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
 
       return (
         <svg viewBox="0 0 100 100" style={frameStyle} className="greenhouse-frame">
-          {showAnimations && (
+          {showAnimations && expanded && (
             <style>{`
               @keyframes floatGreenhouse {
                 0% { transform: translateY(0px) rotate(-3deg); }
@@ -884,112 +908,11 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
     return (
       <div style={backgroundStyle}>
         {renderGreenhouseFrame()}
-
         {showAnimations && (
-          <>
-            {diasRestantes <= 0 ? (
-              <svg width="100%" height="100%" style={{ opacity: 0.18, position: 'absolute', top: 0, left: 0 }}>
-                <style>{`
-                  @keyframes floatDust {
-                    0% { transform: translateY(110%) translateX(0); opacity: 0; }
-                    50% { opacity: 0.8; }
-                    100% { transform: translateY(-10%) translateX(15px); opacity: 0; }
-                  }
-                  .dust1 { animation: floatDust 6s infinite ease-in-out; }
-                  .dust2 { animation: floatDust 8s infinite ease-in-out; animation-delay: 2s; }
-                  .dust3 { animation: floatDust 7s infinite ease-in-out; animation-delay: 4s; }
-                  @keyframes heatwaveDry {
-                    0% { transform: translateY(10px) skewX(3deg); opacity: 0.2; }
-                    50% { transform: translateY(0px) skewX(-3deg); opacity: 0.6; }
-                    100% { transform: translateY(-10px) skewX(3deg); opacity: 0.2; }
-                  }
-                  .hwd1 { animation: heatwaveDry 4s infinite ease-in-out; }
-                  .hwd2 { animation: heatwaveDry 5s infinite ease-in-out; animation-delay: 2s; }
-                `}</style>
-                <circle className="dust1" cx="20%" cy="80%" r="3" fill="#8d6e63" />
-                <circle className="dust2" cx="50%" cy="90%" r="4.5" fill="#a1887f" />
-                <circle className="dust3" cx="80%" cy="85%" r="2.5" fill="#8d6e63" />
-                <path className="hwd1" d="M15,120 Q35,70 55,120 T95,120 T135,120" fill="none" stroke="#ffb74d" strokeWidth="1.5" />
-                <path className="hwd2" d="M105,120 Q125,70 145,120 T185,120 T225,120" fill="none" stroke="#ffa726" strokeWidth="1.5" />
-              </svg>
-            ) : (
-              <svg width="100%" height="100%" style={{ opacity: 0.18, position: 'absolute', top: 0, left: 0 }}>
-                <style>{`
-                  @keyframes ripple {
-                    0% { r: 5; opacity: 0.8; stroke-width: 2; }
-                    100% { r: 70; opacity: 0; stroke-width: 0.5; }
-                  }
-                  .rip1 { animation: ripple 6s infinite cubic-bezier(0.1, 0.8, 0.3, 1); }
-                  .rip2 { animation: ripple 6s infinite cubic-bezier(0.1, 0.8, 0.3, 1); animation-delay: 3s; }
-                  @keyframes floatDew {
-                    0% { transform: translateY(110%) scale(0.8); opacity: 0; }
-                    50% { opacity: 1; }
-                    100% { transform: translateY(-10%) scale(1.2); opacity: 0; }
-                  }
-                  .dew1 { animation: floatDew 5s infinite ease-in-out; }
-                  .dew2 { animation: floatDew 6.5s infinite ease-in-out; animation-delay: 1.5s; }
-                  .dew3 { animation: floatDew 5.8s infinite ease-in-out; animation-delay: 3s; }
-                `}</style>
-                <circle className="rip1" cx="80%" cy="80%" r="5" fill="none" stroke="#4db6ac" />
-                <circle className="rip2" cx="80%" cy="80%" r="5" fill="none" stroke="#80deea" />
-                <circle className="dew1" cx="20%" cy="90%" r="3.5" fill="#80deea" />
-                <circle className="dew2" cx="70%" cy="90%" r="2.5" fill="#a5d6a7" />
-                <circle className="dew3" cx="45%" cy="85%" r="4.5" fill="#81c784" />
-              </svg>
-            )}
-
-            {clima && temp > 28 && (
-              <svg width="100%" height="100%" style={{ opacity: 0.08, position: 'absolute', top: 0, left: 0 }}>
-                <style>{`
-                  @keyframes heatwave {
-                    0% { transform: translateY(10px) skewX(2deg); opacity: 0.3; }
-                    50% { transform: translateY(0px) skewX(-2deg); opacity: 0.7; }
-                    100% { transform: translateY(-10px) skewX(2deg); opacity: 0.3; }
-                  }
-                  .hw1 { animation: heatwave 3.5s infinite ease-in-out; }
-                  .hw2 { animation: heatwave 4.5s infinite ease-in-out; animation-delay: 1.5s; }
-                `}</style>
-                <path className="hw1" d="M10,120 Q30,70 50,120 T90,120 T130,120" fill="none" stroke="#ffb74d" strokeWidth="2" />
-                <path className="hw2" d="M110,120 Q130,70 150,120 T190,120 T230,120" fill="none" stroke="#ffa726" strokeWidth="2" />
-              </svg>
-            )}
-
-            {clima && temp < 15 && (
-              <svg width="100%" height="100%" style={{ opacity: 0.12, position: 'absolute', top: 0, left: 0 }}>
-                <style>{`
-                  @keyframes driftSnow {
-                    0% { transform: translateY(-10px) rotate(0deg); opacity: 0; }
-                    50% { opacity: 0.8; }
-                    100% { transform: translateY(110%) rotate(360deg); opacity: 0; }
-                  }
-                  .sn1 { animation: driftSnow 9s infinite linear; }
-                  .sn2 { animation: driftSnow 12s infinite linear; animation-delay: 3s; }
-                  .sn3 { animation: driftSnow 10s infinite linear; animation-delay: 6s; }
-                `}</style>
-                <text className="sn1" x="15%" y="-10" fontSize="10" fill="#90caf9">❄</text>
-                <text className="sn2" x="55%" y="-10" fontSize="12" fill="#bbdefb">❄</text>
-                <text className="sn3" x="85%" y="-10" fontSize="9" fill="#90caf9">❄</text>
-              </svg>
-            )}
-
-            {clima && hum > 75 && (
-              <svg width="100%" height="100%" style={{ opacity: 0.12, position: 'absolute', top: 0, left: 0 }}>
-                <style>{`
-                  @keyframes fallRain {
-                    0% { transform: translateY(-20px) translateX(-5px); opacity: 0; }
-                    30% { opacity: 0.8; }
-                    100% { transform: translateY(110%) translateX(25px); opacity: 0; }
-                  }
-                  .rn1 { animation: fallRain 2.2s infinite linear; }
-                  .rn2 { animation: fallRain 2.8s infinite linear; animation-delay: 0.8s; }
-                  .rn3 { animation: fallRain 2.4s infinite linear; animation-delay: 1.6s; }
-                `}</style>
-                <line className="rn1" x1="20%" y1="-10" x2="25%" y2="15" stroke="#90caf9" strokeWidth="1.5" />
-                <line className="rn2" x1="60%" y1="-10" x2="65%" y2="15" stroke="#90caf9" strokeWidth="1.5" />
-                <line className="rn3" x1="85%" y1="-10" x2="90%" y2="15" stroke="#90caf9" strokeWidth="1.5" />
-              </svg>
-            )}
-          </>
+          <WeatherFXOverlay 
+            clima={clima} 
+            opacity={expanded ? 0.14 : 0.05} 
+          />
         )}
       </div>
     );
@@ -1014,6 +937,18 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
       maxWidth: '100%'
     }}>
       {renderMicroClimaBackground()}
+      {/* Gotas de Agua Cayendo (Efecto de Riego) */}
+      {gotasRiego.map(g => (
+        <div 
+          key={g.id}
+          className="water-drop"
+          style={{
+            left: `${g.left}%`,
+            animationDelay: `${g.delay}s`,
+            top: '0px'
+          }}
+        />
+      ))}
       {/* Cabecera (Click para expandir/colapsar) */}
       <div 
         onClick={toggleExpanded}
@@ -1246,12 +1181,22 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
               boxSizing: 'border-box'
             }}>
               <p style={{ margin: 0, fontWeight: 'bold', color: planta.toxicidadFelina === 'Segura' ? '#4caf50' : '#f44336', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                🐈 Felinos: {planta.toxicidadFelina === 'Segura' ? 'Segura' : planta.toxicidadFelina === 'Tóxica leve (irritante)' ? 'Tóxica Leve' : 'Muy Tóxica'}
+                🐈 {locale === 'en' ? 'Felines:' : 'Felinos:'} {
+                  planta.toxicidadFelina === 'Segura' 
+                    ? (locale === 'en' ? 'Safe' : 'Segura') 
+                    : planta.toxicidadFelina === 'Tóxica leve (irritante)' 
+                      ? (locale === 'en' ? 'Mildly Toxic' : 'Tóxica Leve') 
+                      : (locale === 'en' ? 'Highly Toxic' : 'Muy Tóxica')
+                }
               </p>
               <span style={{ color: 'var(--game-text, #555)', fontSize: '10.5px', lineHeight: '1.3' }}>
                 {planta.toxicidadFelina === 'Segura' 
-                  ? 'Planta inocua para gatos domésticos.' 
-                  : `Compuesto: ${planta.compuestosToxicos || 'Irritante foliar'}.`}
+                  ? (locale === 'en' ? 'Plant safe for domestic cats.' : 'Planta inocua para gatos domésticos.') 
+                  : `${locale === 'en' ? 'Compound:' : 'Compuesto:'} ${
+                      planta.compuestosToxicos === 'Irritante foliar' || !planta.compuestosToxicos
+                        ? (locale === 'en' ? 'Leaf irritant' : 'Irritante foliar')
+                        : planta.compuestosToxicos
+                    }.`}
               </span>
             </div>
 
@@ -1270,12 +1215,22 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                   boxSizing: 'border-box'
                 }}>
                   <p style={{ margin: 0, fontWeight: 'bold', color: toxCanina === 'Segura' ? '#4caf50' : '#f44336', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    🐕 Caninos: {toxCanina === 'Segura' ? 'Segura' : toxCanina === 'Tóxica leve (irritante)' ? 'Tóxica Leve' : 'Muy Tóxica'}
+                    🐕 {locale === 'en' ? 'Canines:' : 'Caninos:'} {
+                      toxCanina === 'Segura' 
+                        ? (locale === 'en' ? 'Safe' : 'Segura') 
+                        : toxCanina === 'Tóxica leve (irritante)' 
+                          ? (locale === 'en' ? 'Mildly Toxic' : 'Tóxica Leve') 
+                          : (locale === 'en' ? 'Highly Toxic' : 'Muy Tóxica')
+                    }
                   </p>
                   <span style={{ color: 'var(--game-text, #555)', fontSize: '10.5px', lineHeight: '1.3' }}>
                     {toxCanina === 'Segura' 
-                      ? 'Planta inocua para perros domésticos.' 
-                      : `Compuesto: ${planta.compuestosToxicos || 'Irritante foliar'}.`}
+                      ? (locale === 'en' ? 'Plant safe for domestic dogs.' : 'Planta inocua para perros domésticos.') 
+                      : `${locale === 'en' ? 'Compound:' : 'Compuesto:'} ${
+                          planta.compuestosToxicos === 'Irritante foliar' || !planta.compuestosToxicos
+                            ? (locale === 'en' ? 'Leaf irritant' : 'Irritante foliar')
+                            : planta.compuestosToxicos
+                        }.`}
                   </span>
                 </div>
               );
@@ -1285,9 +1240,11 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
           {/* Barra de Riego Dinámica */}
           <div style={{ borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--game-text, #666)', marginBottom: '8px', fontFamily: 'var(--game-font, sans-serif)' }}>
-              <span>Riego ({planta.tipoRiegoEspecifico})</span>
+              <span>{locale === 'en' ? 'Watering' : 'Riego'} ({obtenerTipoRiegoTraducido(planta.tipoRiegoEspecifico)})</span>
               <span style={{ color: 'var(--game-text-bright)' }}>
-                {diasRestantes > 0 ? `Quedan ${diasRestantes} días` : '¡Requiere agua hoy!'}
+                {diasRestantes > 0 
+                  ? (locale === 'en' ? `${diasRestantes} days left` : `Quedan ${diasRestantes} días`) 
+                  : (locale === 'en' ? 'Needs water today!' : '¡Requiere agua hoy!')}
               </span>
             </div>
             {renderMedidorHidratacion()}
@@ -1306,14 +1263,17 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                 gap: '4px'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
-                  <span>⛅ Ajuste Climático Dinámico</span>
-                  <span>Factor: {factor.toFixed(2)}x</span>
+                  <span>⛅ {locale === 'en' ? 'Dynamic Climate Adjuster' : 'Ajuste Climático Dinámico'}</span>
+                  <span>{locale === 'en' ? 'Factor:' : 'Factor:'} {factor.toFixed(2)}x</span>
                 </div>
                 <div>
-                  Watering adjusted to <strong>{intervaloAjustado} days</strong> (base: {baseIntervalo} days) due to {motivos.length > 0 ? motivos.join(' and ') : 'temperate weather'}.
+                  {locale === 'en' 
+                    ? <>Watering adjusted to <strong>{intervaloAjustado} days</strong> (base: {baseIntervalo} days) due to {motivos.length > 0 ? motivos.join(' and ') : 'temperate weather'}.</>
+                    : <>Riego ajustado a <strong>{intervaloAjustado} días</strong> (base: {baseIntervalo} días) debido a {motivos.length > 0 ? motivos.join(' y ') : 'clima templado'}.</>
+                  }
                 </div>
                 <div style={{ fontSize: '10px', opacity: 0.8, fontStyle: 'italic' }}>
-                  Sensor GPS: {Math.round(temp)}°C | {Math.round(hum)}% HR
+                  {locale === 'en' ? 'GPS Sensor:' : 'Sensor GPS:'} {Math.round(temp)}°C | {Math.round(hum)}% {locale === 'en' ? 'RH' : 'HR'}
                 </div>
               </div>
             )}
@@ -1357,7 +1317,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                 }}
               >
                 <p style={{ margin: '0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  📋 Historial de Podas e Incidencias
+                  📋 {locale === 'en' ? 'Pruning & Incident History' : 'Historial de Podas e Incidencias'}
                 </p>
                 <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontWeight: 'bold' }}>
                   {showIncidencias ? '▲' : '▼'}
@@ -1380,31 +1340,31 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                         onChange={(e) => setHistTipo(e.target.value as any)}
                         style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
                       >
-                        <option value="Poda">Poda</option>
-                        <option value="Tratamiento">Tratamiento</option>
-                        <option value="Enfermedad">Enfermedad</option>
-                        <option value="Parásito">Parasite</option>
-                        <option value="Otro">Otro</option>
+                        <option value="Poda">{locale === 'en' ? 'Pruning' : 'Poda'}</option>
+                        <option value="Tratamiento">{locale === 'en' ? 'Treatment' : 'Tratamiento'}</option>
+                        <option value="Enfermedad">{locale === 'en' ? 'Disease' : 'Enfermedad'}</option>
+                        <option value="Parásito">{locale === 'en' ? 'Parasite' : 'Parásito'}</option>
+                        <option value="Otro">{locale === 'en' ? 'Other' : 'Otro'}</option>
                       </select>
                     </div>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <input 
                         type="text" 
-                        placeholder="Description (e.g.: Severe pruning, transplant, mites...)" 
+                        placeholder={locale === 'en' ? "Description (e.g.: Severe pruning, transplant, mites...)" : "Descripción (ej: Poda severa, trasplante, ácaros...)"} 
                         value={histDesc} 
                         onChange={(e) => setHistDesc(e.target.value)} 
                         required
                         style={{ flex: 1, padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
                       />
                       <button type="submit" style={{ padding: '6px 12px', background: '#1a1a1a', color: theme === 'gaming' ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
-                        Add
+                        {locale === 'en' ? 'Add' : 'Añadir'}
                       </button>
                     </div>
                   </form>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '120px', overflowY: 'auto' }}>
                     {(planta.historialPasado || []).length === 0 ? (
-                      <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>Sin incidencias registradas.</span>
+                      <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>{locale === 'en' ? 'No incidents recorded.' : 'Sin incidencias registradas.'}</span>
                     ) : (
                       (planta.historialPasado || []).map(h => (
                         <div key={h.id} style={{ padding: '6px 8px', background: 'var(--game-accent-light, #fafafa)', borderRadius: '4px', borderLeft: '3px solid #4caf50', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1447,7 +1407,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                 }}
               >
                 <p style={{ margin: '0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  📈 Historial de Crecimiento (Altura)
+                  📈 {locale === 'en' ? 'Growth History (Height)' : 'Historial de Crecimiento (Altura)'}
                 </p>
                 <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontWeight: 'bold' }}>
                   {showCrecimiento ? '▲' : '▼'}
@@ -1470,7 +1430,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <BiometricChart
                           data={chartData}
-                          yLabel="Altura (cm)"
+                          yLabel={locale === 'en' ? "Height (cm)" : "Altura (cm)"}
                           color={accentColor}
                           theme={theme as any}
                         />
@@ -1478,7 +1438,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                           <input
                             type="number"
                             step="0.1"
-                            placeholder="Nueva altura (cm)"
+                            placeholder={locale === 'en' ? "New height (cm)" : "Nueva altura (cm)"}
                             value={nuevoCrecimiento}
                             onChange={(e) => setNuevoCrecimiento(e.target.value)}
                             style={{
@@ -1509,7 +1469,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                               flexShrink: 0
                             }}
                           >
-                            Medir 📏
+                            {locale === 'en' ? 'Measure 📏' : 'Medir 📏'}
                           </button>
                         </form>
                       </div>
@@ -1534,7 +1494,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                 }}
               >
                 <p style={{ margin: '0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  📓 Diario Foliar y Diagnóstico
+                  📓 {locale === 'en' ? 'Leaf Diary & Diagnosis' : 'Diario Foliar y Diagnóstico'}
                 </p>
                 <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontWeight: 'bold' }}>
                   {showDiarioFoliar ? '▲' : '▼'}
@@ -1550,13 +1510,13 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                         onChange={(e) => setEstadoHoja(e.target.value as any)}
                         style={{ padding: '6px', border: 'var(--game-border, 1px solid #eaeaea)', borderRadius: 'var(--game-radius, 6px)', fontSize: '12px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
                       >
-                        <option value="Excelente">Excelente</option>
-                        <option value="Normal">Normal</option>
-                        <option value="Clorosis/Lesión">Chlorosis/Lesion</option>
+                        <option value="Excelente">{locale === 'en' ? 'Excellent' : 'Excelente'}</option>
+                        <option value="Normal">{locale === 'en' ? 'Normal' : 'Normal'}</option>
+                        <option value="Clorosis/Lesión">{locale === 'en' ? 'Chlorosis/Lesion' : 'Clorosis/Lesión'}</option>
                       </select>
                       <input
                         type="text"
-                        placeholder="New agronomic note..."
+                        placeholder={locale === 'en' ? "New agronomic note..." : "Nueva nota agrónoma..."}
                         value={nota}
                         onChange={(e) => setNota(e.target.value)}
                         style={{ flex: 1, minWidth: 0, padding: '8px 12px', border: 'var(--game-border, 1px solid #eaeaea)', borderRadius: 'var(--game-radius, 6px)', fontSize: '13px', background: 'var(--game-bg)', color: 'var(--game-text-bright)', outline: 'none' }}
@@ -1564,7 +1524,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <button type="submit" style={{ padding: '8px', background: 'var(--game-accent, #1a1a1a)', color: theme === 'gaming' ? '#000' : '#fff', border: 'none', borderRadius: 'var(--game-radius, 6px)', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'var(--game-font, sans-serif)' }}>
-                        Registrar Nota
+                        {locale === 'en' ? 'Record Note' : 'Registrar Nota'}
                       </button>
                       {onOpenScanner && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
@@ -1586,7 +1546,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                               transition: 'transform 0.2s'
                             }}
                           >
-                            Analizar Enfermedad Foliar por IA 🍂 📷
+                            {locale === 'en' ? 'Analyze Leaf Disease with AI 🍂 📷' : 'Analizar Enfermedad Foliar por IA 🍂 📷'}
                           </button>
                           <span style={{ fontSize: '10px', color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#c62828' : 'var(--game-text, #666)', textAlign: 'center', display: 'block', fontWeight: '500' }}>
                             {cuota.esIlimitado 
@@ -1602,7 +1562,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '160px', overflowY: 'auto' }}>
                     {(planta.diarioFoliar || []).length === 0 ? (
-                      <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>Sin notas en el diario foliar.</span>
+                      <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>{locale === 'en' ? 'No notes in leaf diary.' : 'Sin notas en el diario foliar.'}</span>
                     ) : (
                       (() => {
                         const parseIAReportePlanta = (nota: string) => {
