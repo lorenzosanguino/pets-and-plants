@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect, useRef, lazy } from 'react';
-import type { Planta, NivelToxicidadFelina, NivelToxicidadCanina } from '../database/types';
+import type { Planta, NivelToxicidadFelina, NivelToxicidadCanina, EntradaDiarioFoliar } from '../database/types';
 import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
 import { CardPhotoManager } from './CardPhotoManager';
@@ -367,7 +367,98 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
       }, 150);
     } catch (err) {
       console.warn('Camera error for Luxmeter:', err);
-      setCameraError('No se pudo acceder a la cámara trasera. Puedes simular el nivel de luz ambiente usando el control deslizante.');
+      setCameraError(locale === 'en' ? 'Could not access the rear camera. You can simulate the ambient light level using the slider.' : 'No se pudo acceder a la cámara trasera. Puedes simular el nivel de luz ambiente usando el control deslizante.');
+    }
+  };
+
+  const evaluarLuzPlanta = () => {
+    const grosor = planta.grosorHoja; // 'Crasa' | 'Normal' | 'Delgada'
+    
+    let recomendacion = '';
+    let recomendacionEn = '';
+    let colorBadge = '#475569';
+    let bgBadge = '#f1f5f9';
+    
+    if (grosor === 'Crasa') {
+      if (luxValue >= 5000) {
+        recomendacion = '🟢 Luz Perfecta: Nivel de radiación ideal para plantas crasas y de sol directo.';
+        recomendacionEn = '🟢 Perfect Light: Ideal radiation level for succulent and direct sun plants.';
+        colorBadge = '#16a34a';
+        bgBadge = '#f0fdf4';
+      } else {
+        recomendacion = '🔴 Luz Insuficiente: Tu planta crasa necesita más sol directo (mínimo 5,000 Lux). Evita la sombra.';
+        recomendacionEn = '🔴 Insufficient Light: Your succulent plant needs more direct sun (minimum 5,000 Lux). Avoid shade.';
+        colorBadge = '#b91c1c';
+        bgBadge = '#fdf2f2';
+      }
+    } else if (grosor === 'Delgada') {
+      if (luxValue < 1500) {
+        recomendacion = '🟢 Luz Perfecta: Entorno de sombra ideal para helechos y plantas de hojas delgadas.';
+        recomendacionEn = '🟢 Perfect Light: Ideal shade environment for ferns and thin-leaf plants.';
+        colorBadge = '#16a34a';
+        bgBadge = '#f0fdf4';
+      } else if (luxValue < 5000) {
+        recomendacion = '🟡 Luz Aceptable: Luz filtrada tolerable, pero vigila que las puntas de las hojas no se sequen.';
+        recomendacionEn = '🟡 Acceptable Light: Tolerable filtered light, but watch out for leaf tips drying.';
+        colorBadge = '#c2410c';
+        bgBadge = '#fff7ed';
+      } else {
+        recomendacion = '🔴 Peligro - Luz Excesiva: El sol directo puede quemar las hojas delgadas de esta planta.';
+        recomendacionEn = '🔴 Danger - Excessive Light: Direct sun can burn the thin leaves of this plant.';
+        colorBadge = '#b91c1c';
+        bgBadge = '#fdf2f2';
+      }
+    } else {
+      if (luxValue >= 1500 && luxValue < 5000) {
+        recomendacion = '🟢 Luz Perfecta: Nivel ideal de luz indirecta/filtrada para plantas tropicales.';
+        recomendacionEn = '🟢 Perfect Light: Ideal level of indirect/filtered light for tropical plants.';
+        colorBadge = '#16a34a';
+        bgBadge = '#f0fdf4';
+      } else if (luxValue < 1500) {
+        recomendacion = '🔴 Luz Insuficiente: Esta planta de interior necesita más luz indirecta para fotosíntesis.';
+        recomendacionEn = '🔴 Insufficient Light: This indoor plant needs more indirect light for photosynthesis.';
+        colorBadge = '#b91c1c';
+        bgBadge = '#fdf2f2';
+      } else {
+        recomendacion = '🔴 Peligro - Luz Excesiva: Demasiado sol directo. Puede provocar clorosis o quemaduras foliares.';
+        recomendacionEn = '🔴 Danger - Excessive Light: Too much direct sun. May cause chlorosis or leaf burn.';
+        colorBadge = '#b91c1c';
+        bgBadge = '#fdf2f2';
+      }
+    }
+    
+    return {
+      texto: locale === 'en' ? recomendacionEn : recomendacion,
+      color: colorBadge,
+      bg: bgBadge
+    };
+  };
+
+  const aplicarLecturaLuxometro = async () => {
+    const evaluacion = evaluarLuzPlanta();
+    const nuevaEntrada: EntradaDiarioFoliar = {
+      id: safeUUID(),
+      fecha: new Date().toISOString(),
+      nota: `[Light Meter]: ${luxValue.toLocaleString('es-ES')} Lux | ${evaluacion.texto}`,
+      estadoGeneral: planta.diarioFoliar && planta.diarioFoliar.length > 0
+        ? planta.diarioFoliar[planta.diarioFoliar.length - 1].estadoGeneral
+        : 'Normal'
+    };
+
+    const diarioActualizado = [...(planta.diarioFoliar || []), nuevaEntrada];
+    const plantaActualizada = {
+      ...planta,
+      diarioFoliar: diarioActualizado
+    };
+
+    try {
+      await LocalDatabase.savePlanta(plantaActualizada);
+      localStorage.setItem('petplant_db_last_updated', Date.now().toString());
+      closeLuxmeter();
+      onUpdate();
+      alert(locale === 'en' ? 'Light measurement saved successfully in the Leaf Diary!' : '¡Lectura de luz guardada con éxito en el Diario Foliar!');
+    } catch (err) {
+      console.error('Error saving light measurement:', err);
     }
   };
 
@@ -1988,58 +2079,58 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
           }}>
             <div>
               <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', color: 'var(--text-h, #08060d)', fontWeight: 800 }}>
-                Home Light Meter 🔦
+                {locale === 'en' ? 'Home Light Meter 🔦' : 'Luxómetro Doméstico 🔦'}
               </h3>
               <p style={{ margin: 0, fontSize: '12px', color: 'var(--text, #6b6375)' }}>
-                Measure solar radiation to optimize plant placement.
+                {locale === 'en' ? 'Measure solar radiation to optimize plant placement.' : 'Mide la radiación solar para optimizar la ubicación de la planta.'}
               </p>
             </div>
 
             {/* Video stream rendering if active */}
             {cameraActive && !cameraError ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                <div style={{
-                  width: '120px', height: '120px', borderRadius: '50%',
-                  overflow: 'hidden', border: '3px solid var(--accent, #8f20e6)',
-                  boxShadow: '0 4px 10px rgba(0,0,0,0.15)', background: '#000'
-                }}>
-                  <video 
-                    ref={videoRef} 
-                    autoPlay 
-                    playsInline 
-                    muted 
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                  />
-                </div>
-                <span style={{ fontSize: '10px', color: '#16a34a', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  🟢 Camera Active (Analyzing Light)
-                </span>
-                <canvas ref={canvasRef} width="20" height="20" style={{ display: 'none' }} />
-              </div>
+               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                 <div style={{
+                   width: '120px', height: '120px', borderRadius: '50%',
+                   overflow: 'hidden', border: '3px solid var(--accent, #8f20e6)',
+                   boxShadow: '0 4px 10px rgba(0,0,0,0.15)', background: '#000'
+                 }}>
+                   <video 
+                     ref={videoRef} 
+                     autoPlay 
+                     playsInline 
+                     muted 
+                     style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                   />
+                 </div>
+                 <span style={{ fontSize: '10px', color: '#16a34a', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                   {locale === 'en' ? '🟢 Camera Active (Analyzing Light)' : '🟢 Cámara Activa (Analizando Luz)'}
+                 </span>
+                 <canvas ref={canvasRef} width="20" height="20" style={{ display: 'none' }} />
+               </div>
             ) : (
-              <div style={{ 
-                padding: '16px', borderRadius: '12px', 
-                background: 'var(--accent-bg, rgba(143,32,230,0.05))', 
-                border: '1px solid var(--accent-border, rgba(143,32,230,0.2))',
-                fontSize: '11.5px', color: 'var(--text, #6b6375)' 
-              }}>
-                {cameraError ? (
-                  <p style={{ margin: '0 0 10px 0', color: '#b91c1c', fontWeight: '500' }}>⚠️ {cameraError}</p>
-                ) : (
-                  <p style={{ margin: '0 0 10px 0' }}>Starting camera...</p>
-                )}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-h)' }}>Manual Lux Simulation:</label>
-                  <input 
-                    type="range" 
-                    min="200" 
-                    max="12000" 
-                    value={luxValue} 
-                    onChange={(e) => setLuxValue(parseInt(e.target.value))} 
-                    style={{ width: '100%', accentColor: 'var(--accent, #8f20e6)' }}
-                  />
-                </div>
-              </div>
+               <div style={{ 
+                 padding: '16px', borderRadius: '12px', 
+                 background: 'var(--accent-bg, rgba(143,32,230,0.05))', 
+                 border: '1px solid var(--accent-border, rgba(143,32,230,0.2))',
+                 fontSize: '11.5px', color: 'var(--text, #6b6375)' 
+               }}>
+                 {cameraError ? (
+                   <p style={{ margin: '0 0 10px 0', color: '#b91c1c', fontWeight: '500' }}>⚠️ {cameraError}</p>
+                 ) : (
+                   <p style={{ margin: '0 0 10px 0' }}>{locale === 'en' ? 'Starting camera...' : 'Iniciando cámara...'}</p>
+                 )}
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
+                   <label style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-h)' }}>{locale === 'en' ? 'Manual Lux Simulation:' : 'Simulación manual de Luxes:'}</label>
+                   <input 
+                     type="range" 
+                     min="200" 
+                     max="12000" 
+                     value={luxValue} 
+                     onChange={(e) => setLuxValue(parseInt(e.target.value))} 
+                     style={{ width: '100%', accentColor: 'var(--accent, #8f20e6)' }}
+                   />
+                 </div>
+               </div>
             )}
 
             {/* Dial del luxómetro */}
@@ -2059,33 +2150,71 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                 color: luxValue < 1500 ? '#475569' : (luxValue < 5000 ? '#c2410c' : '#16a34a'),
                 border: '1px solid ' + (luxValue < 1500 ? '#cbd5e1' : (luxValue < 5000 ? '#fed7aa' : '#bbf7d0'))
               }}>
-                {luxValue < 1500 ? '🌑 Sombra' : (luxValue < 5000 ? '⛅ Semisombra' : '☀️ Sol Directo')}
+                {luxValue < 1500 
+                  ? (locale === 'en' ? '🌑 Shade' : '🌑 Sombra') 
+                  : (luxValue < 5000 
+                      ? (locale === 'en' ? '⛅ Semi-shade' : '⛅ Semisombra') 
+                      : (locale === 'en' ? '☀️ Direct Sun' : '☀️ Sol Directo'))}
               </div>
 
               <p style={{ margin: '8px 0 0 0', fontSize: '11px', color: 'var(--text, #6b6375)', lineHeight: 1.4 }}>
                 {luxValue < 1500 
-                  ? 'Low intensity. Suitable for shade plants (Ferns, Calatheas, Pothos). Avoid placing sun plants here.'
+                  ? (locale === 'en' ? 'Low intensity. Suitable for shade plants (Ferns, Calatheas, Pothos). Avoid placing sun plants here.' : 'Intensidad baja. Apto para plantas de sombra (Helechos, Calatheas, Potos). Evita colocar aquí plantas de sol.')
                   : luxValue < 5000 
-                    ? 'Filtered/bright light. Ideal for most indoor tropical plants (Monstera, Ficus, Pilea).'
-                    : 'Intense sunlight. Optimal for Succulents, Cacti, aromatic plants, and home gardens.'
+                    ? (locale === 'en' ? 'Filtered/bright light. Ideal for most indoor tropical plants (Monstera, Ficus, Pilea).' : 'Luz filtrada/brillante. Ideal para la mayoría de plantas tropicales de interior (Monstera, Ficus, Pilea).')
+                    : (locale === 'en' ? 'Intense sunlight. Optimal for Succulents, Cacti, aromatic plants, and home gardens.' : 'Luz solar intensa. Óptimo para Suculentas, Cactus, plantas aromáticas y huerto doméstico.')
                 }
               </p>
             </div>
 
-            <button 
-              type="button" 
-              onClick={closeLuxmeter}
-              style={{
-                width: '100%', padding: '10px',
-                background: 'var(--accent, #8f20e6)', color: 'white',
-                border: 'none', borderRadius: '8px',
-                fontWeight: 'bold', fontSize: '13.5px', cursor: 'pointer'
-              }}
-            >
-              Cerrar
-            </button>
-          </div>
-        </div>
+            {/* Evaluador de Compatibilidad Agrónoma en tiempo real */}
+            {(() => {
+              const evaluacion = evaluarLuzPlanta();
+              return (
+                <div style={{
+                  fontSize: '11.5px',
+                  fontWeight: 'bold',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  background: evaluacion.bg,
+                  color: evaluacion.color,
+                  border: `1px solid ${evaluacion.color}40`,
+                  textAlign: 'left',
+                  lineHeight: 1.4
+                }}>
+                  {evaluacion.texto}
+                </div>
+              );
+            })()}
+
+            <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+              <button 
+                type="button" 
+                onClick={aplicarLecturaLuxometro}
+                style={{
+                  flex: 1, padding: '10px',
+                  background: '#2e7d32', color: 'white',
+                  border: 'none', borderRadius: '8px',
+                  fontWeight: 'bold', fontSize: '13px', cursor: 'pointer'
+                }}
+              >
+                {locale === 'en' ? 'Save Reading 💾' : 'Guardar Medición 💾'}
+               </button>
+               <button 
+                 type="button" 
+                 onClick={closeLuxmeter}
+                 style={{
+                   flex: 1, padding: '10px',
+                   background: '#f0f0f0', color: '#333',
+                   border: '1px solid #ccc', borderRadius: '8px',
+                   fontWeight: 'bold', fontSize: '13px', cursor: 'pointer'
+                 }}
+               >
+                 {locale === 'en' ? 'Close' : 'Cerrar'}
+               </button>
+             </div>
+           </div>
+         </div>
       )}
 
       {showAvatarLightbox && planta.fotoUrl && (
