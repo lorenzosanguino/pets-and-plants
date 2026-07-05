@@ -25,8 +25,10 @@ export interface RegistrarPlantaResult {
   nombreComun: string;
   nombreCientifico: string;
   toxicidadFelina: 'Segura' | 'Tóxica leve (irritante)' | 'Altamente tóxica (urgencia)';
+  toxicidadCanina?: 'Segura' | 'Tóxica leve (irritante)' | 'Altamente tóxica (urgencia)';
   compuestosToxicos?: string;
   intervaloRiegoSugeridoDias: number;
+  grosorHoja: 'Crasa' | 'Normal' | 'Delgada';
 }
 
 // Base de datos de diagnósticos expertos clínicos simulados para pruebas inmediatas
@@ -168,9 +170,10 @@ const REGISTRAR_PLANTA_SCHEMA = {
     toxicidadFelina: { type: 'STRING', enum: ['Segura', 'Tóxica leve (irritante)', 'Altamente tóxica (urgencia)'] },
     toxicidadCanina: { type: 'STRING', enum: ['Segura', 'Tóxica leve (irritante)', 'Altamente tóxica (urgencia)'] },
     compuestosToxicos: { type: 'STRING' },
-    intervaloRiegoSugeridoDias: { type: 'INTEGER' }
+    intervaloRiegoSugeridoDias: { type: 'INTEGER' },
+    grosorHoja: { type: 'STRING', enum: ['Crasa', 'Normal', 'Delgada'] }
   },
-  required: ['nombreComun', 'nombreCientifico', 'toxicidadFelina', 'toxicidadCanina', 'compuestosToxicos', 'intervaloRiegoSugeridoDias']
+  required: ['nombreComun', 'nombreCientifico', 'toxicidadFelina', 'toxicidadCanina', 'compuestosToxicos', 'intervaloRiegoSugeridoDias', 'grosorHoja']
 };
 
 
@@ -1041,8 +1044,8 @@ El usuario se encuentra en las siguientes coordenadas y condiciones climáticas 
             : "Actúa como un veterinario clínico experto con especialización en patología comparada y medicina preventiva. Realiza una evaluación exhaustiva y rigurosa de la imagen y los datos clínicos del usuario. Analiza la morfología de las lesiones, eritemas, distensión, secreciones, parásitos o anomalías de comportamiento visual. Tu diagnóstico debe ser altamente técnico y preciso en su terminología médica. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas cuatro claves de texto: 'diagnostico' (descripción detallada con terminología clínica, ej. 'Sospecha de dermatitis húmeda aguda con eritema periférico' en lugar de 'herida'), 'tratamiento' (instrucciones paso a paso detalladas para primeros auxilios preventivos en el hogar), 'advertencia' (alertas clínicas críticas, signos de empeoramiento o riesgos de patógenos vectoriales como ehrlichia/babesia), y 'esUrgente' (un booleano true/false que indica si requiere derivación inmediata a urgencias hospitalarias veterinarias).";
         } else if (mode === 'registrar_planta') {
           systemInstruction = locale === 'en'
-            ? "Act as a professional plant taxonomist and systematic botanist. Comprehensively analyze leaf morphology (structure, arrangement, and margins of pinnae/leaves), branching patterns, petiole color and texture, and general stem arrangement in the pot to distinguish with absolute precision similar-looking species (for example, strictly differentiating an Areca [Dypsis lutescens], characterized by clustered yellowish stems resembling bamboo canes with more erect leaflets, from a Parlour Palm [Chamaedorea elegans], which has thinner, solitary green stems with arching soft leaves, or from a Kentia). Determine its common name, exact scientific name, and its feline and canine toxicity based on the plant's active principles (must be one of these strings: 'Segura', 'Tóxica leve (irritante)' or 'Altamente tóxica (urgencia)'). Identify the underlying toxic chemical compounds (e.g., calcium oxalate crystals, saponins, lycorine alkaloids) and the ideal watering interval in days. Return your response strictly in a flat JSON format with exactly these text keys: 'nombreComun', 'nombreCientifico', 'toxicidadFelina', 'toxicidadCanina', 'compuestosToxicos', and 'intervaloRiegoSugeridoDias' (numeric)."
-            : "Actúa como un taxónomo botánico y experto fitólogo sistemático a nivel profesional. Analiza de manera exhaustiva la morfología foliar (estructura, disposición y bordes de las pinnas/hojas), patrones de ramificación, color y textura de pecíolos, y la disposición general de los tallos en la maceta para distinguir con absoluta precisión especies de aspecto similar (por ejemplo, diferenciar estrictamente una Areca [Dypsis lutescens], que se caracteriza por múltiples tallos amarillentos agrupados que asemejan cañas de bambú con folíolos más erectos, de una Palma de Salón [Chamaedorea elegans], que tiene tallos más finos, verdes y solitarios con hojas arqueadas y suaves, o de una Kentia). Determina su nombre común, nombre científico exacto y su toxicidad felina y canina basada en los principios activos de la planta (deben ser uno de estos strings: 'Segura', 'Tóxica leve (irritante)' o 'Altamente tóxica (urgencia)'). Identifica los compuestos químicos tóxicos subyacentes (ej. cristales de oxalato de calcio, saponinas, alcaloides licorina) y el intervalo de riego ideal en días. Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas claves de texto: 'nombreComun', 'nombreCientifico', 'toxicidadFelina', 'toxicidadCanina', 'compuestosToxicos' e 'intervaloRiegoSugeridoDias' (numérico).";
+            ? "Act as a professional plant taxonomist and systematic botanist. Comprehensively analyze leaf morphology (structure, arrangement, and margins of pinnae/leaves), branching patterns, petiole color and texture, and general stem arrangement in the pot to distinguish with absolute precision similar-looking species. Determine its common name, exact scientific name, its feline and canine toxicity based on the plant's active principles (must be one of these strings: 'Segura', 'Tóxica leve (irritante)' or 'Altamente tóxica (urgencia)'). Identify the underlying toxic chemical compounds (e.g., calcium oxalate crystals, saponins, lycorine alkaloids), the ideal watering interval in days, and classify the leaf thickness as 'Crasa' (thick succulent leaves), 'Normal' (regular thickness like monstera/pothos), or 'Delgada' (thin delicate leaves like ferns). Return your response strictly in a flat JSON format with exactly these text keys: 'nombreComun', 'nombreCientifico', 'toxicidadFelina', 'toxicidadCanina', 'compuestosToxicos', 'intervaloRiegoSugeridoDias' (numeric), and 'grosorHoja' ('Crasa' | 'Normal' | 'Delgada')."
+            : "Actúa como un taxónomo botánico y experto fitólogo sistemático a nivel profesional. Analiza de manera exhaustiva la morfología foliar (estructura, disposición y bordes de las pinnas/hojas), patrones de ramificación, color y textura de pecíolos, y la disposición general de los tallos en la maceta para distinguir con absoluta precisión especies de aspecto similar. Determina su nombre común, nombre científico exacto y su toxicidad felina y canina basada en los principios activos de la planta (deben ser uno de estos strings: 'Segura', 'Tóxica leve (irritante)' o 'Altamente tóxica (urgencia)'). Identifica los compuestos químicos tóxicos subyacentes (ej. cristales de oxalato de calcio, saponinas, alcaloides licorina), el intervalo de riego ideal en días, y clasifica el grosor de la hoja como 'Crasa' (hojas suculentas gruesas), 'Normal' (grosor regular como poto/monstera) o 'Delgada' (hojas delgadas delicadas como helechos). Devuelve tu respuesta estrictamente en un formato JSON plano con exactamente estas claves de texto: 'nombreComun', 'nombreCientifico', 'toxicidadFelina', 'toxicidadCanina', 'compuestosToxicos', 'intervaloRiegoSugeridoDias' (numérico) y 'grosorHoja' ('Crasa' | 'Normal' | 'Delgada').";
         } else if (mode === 'enfermedad_planta') {
           systemInstruction = locale === 'en'
             ? "Act as an expert agronomist, phytopathologist, and clinical botanist. Scrutinize the image, identifying patterns of leaf damage, chlorosis, apical necrosis, vascular wilt, presence of pests, or leaf mycosis. Return your response strictly in a flat JSON format with exactly these four text keys: 'diagnostico' (detailed and precise phytopathological diagnosis, e.g., 'Symmetric leaf apical necrosis compatible with osmotic stress due to soluble salt accumulation' instead of 'brown tips'), 'tratamiento' (detailed step-by-step instructions covering cultural, physical, and biological or phytosanitary treatments like potassium soap/neem oil), 'advertencia' (risks of sooty mold, total defoliation, or horizontal spread to healthy crops), and 'esUrgente' (a boolean true/false indicating whether it requires immediate isolation or shock intervention to save the plant)."
@@ -1167,7 +1170,8 @@ El usuario se encuentra en las siguientes coordenadas y condiciones climáticas 
         toxicidadFelina: 'Segura',
         toxicidadCanina: 'Segura',
         compuestosToxicos: '',
-        intervaloRiegoSugeridoDias: 5
+        intervaloRiegoSugeridoDias: 5,
+        grosorHoja: 'Delgada'
       };
 
 

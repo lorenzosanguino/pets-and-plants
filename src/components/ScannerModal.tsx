@@ -54,6 +54,8 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
   const [plantToxicidadCanina, setPlantToxicidadCanina] = useState<'Segura' | 'Tóxica leve (irritante)' | 'Altamente tóxica (urgencia)'>('Segura');
   const [plantCompuestosToxicos, setPlantCompuestosToxicos] = useState('');
   const [plantUltimoRiegoOpcion, setPlantUltimoRiegoOpcion] = useState('hoy');
+  const [plantGrosorHoja, setPlantGrosorHoja] = useState<'Crasa' | 'Normal' | 'Delgada'>('Normal');
+  const [showManualEdit, setShowManualEdit] = useState(false);
 
 
   // Estados para asociar diagnósticos de salud/enfermedad
@@ -67,6 +69,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
     setCapturedDataUrl(primaryImage.dataUrl);
     setLoading(true);
     setErrorMsg('');
+    setShowManualEdit(false);
 
     try {
       const res = await GeminiAPIService.analizarSmartScanner(primaryImage.blob, mode, customQuery);
@@ -90,6 +93,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
         setPlantToxicidad(res.toxicidadFelina || 'Segura');
         setPlantToxicidadCanina(res.toxicidadCanina || 'Segura');
         setPlantCompuestosToxicos(res.compuestosToxicos || '');
+        setPlantGrosorHoja(res.grosorHoja || 'Normal');
       } else if (mode === 'salud_mascota') {
         if (forcedAssetId) {
           setSelectedAssetId(forcedAssetId);
@@ -116,6 +120,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
     setCapturedDataUrl(image.dataUrl);
     setLoading(true);
     setErrorMsg('');
+    setShowManualEdit(false);
 
     try {
       const res = await GeminiAPIService.analizarSmartScanner(image.blob, mode, customQuery);
@@ -138,6 +143,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
         setPlantToxicidad(res.toxicidadFelina || 'Segura');
         setPlantToxicidadCanina(res.toxicidadCanina || 'Segura');
         setPlantCompuestosToxicos(res.compuestosToxicos || '');
+        setPlantGrosorHoja(res.grosorHoja || 'Normal');
       } else if (mode === 'salud_mascota') {
         if (!selectedAssetId) {
           if (forcedAssetId) {
@@ -260,7 +266,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
       toxicidadFelina: plantToxicidad,
       toxicidadCanina: plantToxicidadCanina,
       compuestosToxicos: plantCompuestosToxicos || undefined,
-      grosorHoja: 'Normal',
+      grosorHoja: plantGrosorHoja,
       temperaturaZona: 20,
       diarioFoliar: [],
       fotoUrl: capturedDataUrl, // Foto obligatoria
@@ -707,74 +713,172 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
 
                 {/* FORMULARIO MODO: Registrar Planta */}
                 {mode === 'registrar_planta' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div>
-                      <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Common Name:</label>
-                      <input type="text" value={plantNombreComun} onChange={(e) => setPlantNombreComun(e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
+                  scanResult && !showManualEdit ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', textAlign: 'left', padding: '16px', background: 'var(--accent-bg, rgba(46,125,50,0.05))', border: '1px solid var(--accent-border, rgba(46,125,50,0.25))', borderRadius: '12px' }}>
+                      <div style={{ textAlign: 'center', borderBottom: '1px dashed rgba(0,0,0,0.1)', paddingBottom: '10px' }}>
+                        <span style={{ fontSize: '24px' }}>🌱</span>
+                        <h4 style={{ margin: '4px 0 0 0', color: 'var(--text-h, #2e7d32)', fontWeight: 'bold', fontSize: '15px' }}>
+                          {locale === 'en' ? 'AI Identified Plant Species' : 'Especie Identificada por IA'}
+                        </h4>
+                      </div>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div>
+                          <strong style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--text, #666)' }}>
+                            {locale === 'en' ? 'Common Name:' : 'Nombre Común:'}
+                          </strong>
+                          <div style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--text-h)' }}>{plantNombreComun}</div>
+                        </div>
+                        <div>
+                          <strong style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--text, #666)' }}>
+                            {locale === 'en' ? 'Scientific Name:' : 'Nombre Científico:'}
+                          </strong>
+                          <div style={{ fontSize: '14px', fontStyle: 'italic', color: 'var(--text-h)' }}>{plantNombreCientifico || 'N/A'}</div>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px' }}>
+                        <div style={{ padding: '8px', background: 'rgba(255,255,255,0.7)', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                          <span style={{ fontSize: '10px', textTransform: 'uppercase', display: 'block', color: '#666' }}>
+                            {locale === 'en' ? 'Watering Frequency:' : 'Riego Recomendado:'}
+                          </span>
+                          <strong style={{ fontSize: '12.5px', color: '#1b5e20' }}>
+                            💧 {locale === 'en' ? `Every ${plantIntervaloRiego} days` : `Cada ${plantIntervaloRiego} días`}
+                          </strong>
+                        </div>
+                        <div style={{ padding: '8px', background: 'rgba(255,255,255,0.7)', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                          <span style={{ fontSize: '10px', textTransform: 'uppercase', display: 'block', color: '#666' }}>
+                            {locale === 'en' ? 'Leaf Type:' : 'Grosor de Hoja:'}
+                          </span>
+                          <strong style={{ fontSize: '12.5px', color: '#1b5e20' }}>
+                            🍃 {plantGrosorHoja === 'Crasa' ? (locale === 'en' ? 'Succulent (Crasa)' : 'Suculenta (Crasa)') : plantGrosorHoja === 'Delgada' ? (locale === 'en' ? 'Delicate (Thin)' : 'Delicada (Delgada)') : (locale === 'en' ? 'Regular (Normal)' : 'Regular (Normal)')}
+                          </strong>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: plantToxicidad === 'Segura' ? '#f0fdf4' : '#fef2f2', borderRadius: '6px', border: `1px solid ${plantToxicidad === 'Segura' ? '#bbf7d0' : '#fecaca'}` }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>🐱 {locale === 'en' ? 'Feline Safety:' : 'Seguridad Felina:'}</span>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: plantToxicidad === 'Segura' ? '#16a34a' : '#dc2626' }}>
+                            {plantToxicidad === 'Segura' ? (locale === 'en' ? 'SAFE' : 'SEGURA') : (locale === 'en' ? 'TOXIC' : 'TÓXICA')}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: plantToxicidadCanina === 'Segura' ? '#f0fdf4' : '#fef2f2', borderRadius: '6px', border: `1px solid ${plantToxicidadCanina === 'Segura' ? '#bbf7d0' : '#fecaca'}` }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold' }}>🐶 {locale === 'en' ? 'Canine Safety:' : 'Seguridad Canina:'}</span>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: plantToxicidadCanina === 'Segura' ? '#16a34a' : '#dc2626' }}>
+                            {plantToxicidadCanina === 'Segura' ? (locale === 'en' ? 'SAFE' : 'SEGURA') : (locale === 'en' ? 'TOXIC' : 'TÓXICA')}
+                          </span>
+                        </div>
+                      </div>
+
+                      <button 
+                        onClick={guardarPlantaEscaneada} 
+                        className="btn-shimmer"
+                        style={{ padding: '12px', background: '#2e7d32', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 10px rgba(46, 125, 50, 0.25)', marginTop: '8px' }}
+                      >
+                        {locale === 'en' ? 'Confirm and Register Instant 💾' : 'Confirmar y Registrar al Instante 💾'}
+                      </button>
+
+                      <div style={{ textAlign: 'center', marginTop: '4px' }}>
+                        <span 
+                          onClick={() => setShowManualEdit(true)} 
+                          style={{ fontSize: '11.5px', color: 'var(--accent, #8f20e6)', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold' }}
+                        >
+                          ⚙️ {locale === 'en' ? 'Need to adjust details manually?' : '¿Necesitas ajustar detalles a mano?'}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Scientific Name:</label>
-                      <input type="text" value={plantNombreCientifico} onChange={(e) => setPlantNombreCientifico(e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       <div>
-                        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Location:</label>
-                        <input type="text" value={plantUbicacion} onChange={(e) => setPlantUbicacion(e.target.value)} style={{ width: '100%', padding: '5px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
+                        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>{locale === 'en' ? 'Common Name:' : 'Nombre Común:'}</label>
+                        <input type="text" value={plantNombreComun} onChange={(e) => setPlantNombreComun(e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
                       </div>
                       <div>
-                        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Recommended watering every (days):</label>
-                        <input type="number" value={plantIntervaloRiego} onChange={(e) => setPlantIntervaloRiego(e.target.value)} style={{ width: '100%', padding: '5px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
+                        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>{locale === 'en' ? 'Scientific Name:' : 'Nombre Científico:'}</label>
+                        <input type="text" value={plantNombreCientifico} onChange={(e) => setPlantNombreCientifico(e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
                       </div>
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Tipo de Riego:</label>
-                      <select value={plantTipoRiego} onChange={(e) => setPlantTipoRiego(e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}>
-                        <option value="Agua del grifo reposada">Agua del grifo reposada</option>
-                        <option value="Agua blanda reposada">Agua blanda reposada</option>
-                        <option value="Agua destilada">Agua destilada</option>
-                        <option value="Agua de lluvia">Agua de lluvia</option>
-                      </select>
-                    </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div>
+                          <label style={{ fontSize: '11px', fontWeight: 'bold' }}>{locale === 'en' ? 'Location:' : 'Ubicación:'}</label>
+                          <input type="text" value={plantUbicacion} onChange={(e) => setPlantUbicacion(e.target.value)} style={{ width: '100%', padding: '5px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '11px', fontWeight: 'bold' }}>{locale === 'en' ? 'Recommended watering every (days):' : 'Riego recomendado cada (días):'}</label>
+                          <input type="number" value={plantIntervaloRiego} onChange={(e) => setPlantIntervaloRiego(e.target.value)} style={{ width: '100%', padding: '5px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div>
+                          <label style={{ fontSize: '11px', fontWeight: 'bold' }}>{locale === 'en' ? 'Watering Type:' : 'Tipo de Riego:'}</label>
+                          <select value={plantTipoRiego} onChange={(e) => setPlantTipoRiego(e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}>
+                            <option value="Agua del grifo reposada">{locale === 'en' ? 'Rested tap water' : 'Agua del grifo reposada'}</option>
+                            <option value="Agua blanda reposada">{locale === 'en' ? 'Rested soft water' : 'Agua blanda reposada'}</option>
+                            <option value="Agua destilada">{locale === 'en' ? 'Distilled water' : 'Agua destilada'}</option>
+                            <option value="Agua de lluvia">{locale === 'en' ? 'Rainwater' : 'Agua de lluvia'}</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '11px', fontWeight: 'bold' }}>{locale === 'en' ? 'Leaf Thickness:' : 'Grosor de Hoja:'}</label>
+                          <select value={plantGrosorHoja} onChange={(e) => setPlantGrosorHoja(e.target.value as any)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}>
+                            <option value="Normal">{locale === 'en' ? 'Regular (Normal)' : 'Regular (Normal)'}</option>
+                            <option value="Crasa">{locale === 'en' ? 'Succulent (Crasa)' : 'Suculenta (Crasa)'}</option>
+                            <option value="Delgada">{locale === 'en' ? 'Delicate (Thin)' : 'Delicada (Delgada)'}</option>
+                          </select>
+                        </div>
+                      </div>
 
-                    <div>
-                      <label style={{ fontSize: '11px', fontWeight: 'bold' }}>When was the last watering?</label>
-                      <select value={plantUltimoRiegoOpcion} onChange={(e) => setPlantUltimoRiegoOpcion(e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)', fontSize: '12px' }}>
-                        <option value="hoy">Hoy 💧</option>
-                        <option value="ayer">Ayer</option>
-                        <option value="hace_2">2 days ago</option>
-                        <option value="hace_3">3 days ago</option>
-                        <option value="hace_5">5 days ago</option>
-                        <option value="hace_7">7 days ago (1 week)</option>
-                        <option value="necesita_ya">Requiere riego ya (Desconocido / Hace mucho)</option>
-                      </select>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                       <div>
-                        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Toxicidad Felina:</label>
-                        <select value={plantToxicidad} onChange={(e) => setPlantToxicidad(e.target.value as any)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)', fontSize: '12px' }}>
-                          <option value="Segura">Segura 🐈</option>
-                          <option value="Tóxica leve (irritante)">Mildly Toxic ⚠️</option>
-                          <option value="Altamente tóxica (urgencia)">Highly Toxic 🚨</option>
+                        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>{locale === 'en' ? 'When was the last watering?' : '¿Cuándo fue el último riego?'}</label>
+                        <select value={plantUltimoRiegoOpcion} onChange={(e) => setPlantUltimoRiegoOpcion(e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)', fontSize: '12px' }}>
+                          <option value="hoy">{locale === 'en' ? 'Today 💧' : 'Hoy 💧'}</option>
+                          <option value="ayer">{locale === 'en' ? 'Yesterday' : 'Ayer'}</option>
+                          <option value="hace_2">{locale === 'en' ? '2 days ago' : '2 days ago'}</option>
+                          <option value="hace_3">{locale === 'en' ? '3 days ago' : '3 days ago'}</option>
+                          <option value="hace_5">{locale === 'en' ? '5 days ago' : '5 days ago'}</option>
+                          <option value="hace_7">{locale === 'en' ? '7 days ago (1 week)' : '7 days ago (1 week)'}</option>
+                          <option value="necesita_ya">{locale === 'en' ? 'Needs watering now (Unknown)' : 'Requiere riego ya (Desconocido)'}</option>
                         </select>
                       </div>
-                      <div>
-                        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Toxicidad Canina:</label>
-                        <select value={plantToxicidadCanina} onChange={(e) => setPlantToxicidadCanina(e.target.value as any)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)', fontSize: '12px' }}>
-                          <option value="Segura">Segura 🐕</option>
-                          <option value="Tóxica leve (irritante)">Mildly Toxic ⚠️</option>
-                          <option value="Altamente tóxica (urgencia)">Highly Toxic 🚨</option>
-                        </select>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div>
+                          <label style={{ fontSize: '11px', fontWeight: 'bold' }}>{locale === 'en' ? 'Feline Toxicity:' : 'Toxicidad Felina:'}</label>
+                          <select value={plantToxicidad} onChange={(e) => setPlantToxicidad(e.target.value as any)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)', fontSize: '12px' }}>
+                            <option value="Segura">{locale === 'en' ? 'Safe 🐈' : 'Segura 🐈'}</option>
+                            <option value="Tóxica leve (irritante)">{locale === 'en' ? 'Mildly Toxic ⚠️' : 'Tóxica leve ⚠️'}</option>
+                            <option value="Altamente tóxica (urgencia)">{locale === 'en' ? 'Highly Toxic 🚨' : 'Muy Tóxica 🚨'}</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '11px', fontWeight: 'bold' }}>{locale === 'en' ? 'Canine Toxicity:' : 'Toxicidad Canina:'}</label>
+                          <select value={plantToxicidadCanina} onChange={(e) => setPlantToxicidadCanina(e.target.value as any)} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)', fontSize: '12px' }}>
+                            <option value="Segura">{locale === 'en' ? 'Safe 🐕' : 'Segura 🐕'}</option>
+                            <option value="Tóxica leve (irritante)">{locale === 'en' ? 'Mildly Toxic ⚠️' : 'Tóxica leve ⚠️'}</option>
+                            <option value="Altamente tóxica (urgencia)">{locale === 'en' ? 'Highly Toxic 🚨' : 'Muy Tóxica 🚨'}</option>
+                          </select>
+                        </div>
                       </div>
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>{locale === 'en' ? 'Compounds:' : 'Compuestos:'}</label>
+                        <input type="text" placeholder={locale === 'en' ? 'E.g. Oxalates' : 'Ej: Oxalatos'} value={plantCompuestosToxicos} onChange={(e) => setPlantCompuestosToxicos(e.target.value)} style={{ width: '100%', padding: '5px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
+                      </div>
+                      <button onClick={guardarPlantaEscaneada} disabled={!plantNombreComun.trim()} style={{ padding: '12px', background: '#2e7d32', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: plantNombreComun.trim() ? 'pointer' : 'not-allowed', marginTop: '10px', opacity: plantNombreComun.trim() ? 1 : 0.6 }}>
+                        {locale === 'en' ? 'Register Plant 💾' : 'Registrar Planta 💾'}
+                      </button>
+                      
+                      {scanResult && (
+                        <div style={{ textAlign: 'center', marginTop: '4px' }}>
+                          <span 
+                            onClick={() => setShowManualEdit(false)} 
+                            style={{ fontSize: '11.5px', color: 'var(--accent, #8f20e6)', textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold' }}
+                          >
+                            👈 {locale === 'en' ? 'Back to AI Identified Summary' : 'Volver a la Ficha de IA'}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Compuestos:</label>
-                      <input type="text" placeholder="Ej: Oxalatos" value={plantCompuestosToxicos} onChange={(e) => setPlantCompuestosToxicos(e.target.value)} style={{ width: '100%', padding: '5px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }} />
-                    </div>
-                    <button onClick={guardarPlantaEscaneada} disabled={!plantNombreComun.trim()} style={{ padding: '12px', background: '#2e7d32', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: plantNombreComun.trim() ? 'pointer' : 'not-allowed', marginTop: '10px', opacity: plantNombreComun.trim() ? 1 : 0.6 }}>
-                      Registrar Planta 💾
-                    </button>
-                  </div>
+                  )
                 )}
 
                 {/* FORMULARIO MODO: Salud Mascota */}
