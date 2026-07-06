@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import type { Mascota, Planta } from '../database/types';
 import { calcularEdadMascota } from '../utils/age';
 import { escapeHTML } from '../utils/escape';
+import { useTranslations } from '../utils/i18n';
 
 interface ReportGeneratorModalProps {
   isOpen: boolean;
@@ -17,14 +18,17 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
   item,
   type
 }) => {
+  const { locale } = useTranslations();
+  const isEn = locale === 'en';
+
   // Configuración de campos
   const [clinicName, setClinicName] = useState(() => {
-    return localStorage.getItem('petplant_default_clinic_name') || 'Pet & Plant Care Clinic';
+    return localStorage.getItem('petplant_default_clinic_name') || (isEn ? 'Pet & Plant Care Clinic' : 'Clínica de Cuidados Pet & Plant');
   });
 
   const getReportDefaultTitle = () => {
-    if (type === 'pet') return `Veterinary Health Report - ${(item as Mascota).nombre}`;
-    return `Phytosanitary Control Sheet - ${(item as Planta).nombreComun}`;
+    if (type === 'pet') return isEn ? `Veterinary Health Report - ${(item as Mascota).nombre}` : `Informe de Salud Veterinaria - ${(item as Mascota).nombre}`;
+    return isEn ? `Phytosanitary Control Sheet - ${(item as Planta).nombreComun}` : `Ficha de Control Fitosanitario - ${(item as Planta).nombreComun}`;
   };
 
   const [reportTitle, setReportTitle] = useState(getReportDefaultTitle());
@@ -353,7 +357,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
 
       weightSectionHtml = `
         <div class="report-section">
-          <h3>Growth Curve (Height)</h3>
+          <h3>${isEn ? 'Growth Curve (Weight)' : 'Curva de Crecimiento (Peso)'}</h3>
           <div style="background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; padding: 12px; margin-top: 8px;">
             <svg viewBox="0 0 500 150" style="width: 100%; height: auto; display: block;">
               <line x1="${paddingX}" y1="${height - paddingY}" x2="${width - paddingX}" y2="${height - paddingY}" stroke="#e2e8f0" stroke-width="1" />
@@ -373,16 +377,16 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
         <div class="report-section urgent-card ${activeDiag.esUrgente ? 'urgent-border' : ''}">
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid ${colors.border}; padding-bottom: 4px; margin-bottom: 8px;">
             <h4 style="margin: 0; color: ${colors.primary}; display: flex; align-items: center; gap: 5px;">
-              🩺 AI Clinical Diagnosis
+              🩺 ${isEn ? 'AI Clinical Diagnosis' : 'Diagnóstico Clínico por IA'}
             </h4>
             <span style="font-size: 9px; font-weight: bold; background: ${activeDiag.esUrgente ? '#fde8e8; color: #e11d48;' : `${colors.bgLight}; color: ${colors.primary};`}; padding: 2px 6px; border-radius: 4px;">
-              ${activeDiag.esUrgente ? '🚨 URGENT ATTENTION' : 'GENERAL CONSULTATION'}
+              ${activeDiag.esUrgente ? (isEn ? '🚨 URGENT ATTENTION' : '🚨 ATENCIÓN URGENTE') : (isEn ? 'GENERAL CONSULTATION' : 'CONSULTA GENERAL')}
             </span>
           </div>
-          <p><strong>Diagnosis/Evaluation:</strong> ${escapeHTML(activeDiag.diagnostico)}</p>
-          <p><strong>Suggested Treatment:</strong> ${escapeHTML(activeDiag.tratamiento)}</p>
-          ${activeDiag.advertencia ? `<p><strong>Recommendations / Alerts:</strong> <span style="color: #c2410c; font-weight: 500;">${escapeHTML(activeDiag.advertencia)}</span></p>` : ''}
-          <div style="font-size: 8.5px; color: #94a3b8; text-align: right; margin-top: 4px;">Generated on: ${formatDate(activeDiag.fecha)}</div>
+          <p><strong>${isEn ? 'Diagnosis/Evaluation:' : 'Diagnóstico/Evaluación:'}</strong> ${escapeHTML(activeDiag.diagnostico)}</p>
+          <p><strong>${isEn ? 'Suggested Treatment:' : 'Tratamiento Sugerido:'}</strong> ${escapeHTML(activeDiag.tratamiento)}</p>
+          ${activeDiag.advertencia ? `<p><strong>${isEn ? 'Recommendations / Alerts:' : 'Recomendaciones / Alertas:'}</strong> <span style="color: #c2410c; font-weight: 500;">${escapeHTML(activeDiag.advertencia)}</span></p>` : ''}
+          <div style="font-size: 8.5px; color: #94a3b8; text-align: right; margin-top: 4px;">${isEn ? 'Generated on:' : 'Generado el:'} ${formatDate(activeDiag.fecha)}</div>
         </div>
       `;
     }
@@ -404,7 +408,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
 
       historySectionHtml = `
         <div class="report-section">
-          <h3>Clinical Diary & Events History (${showFullHistory ? 'All' : 'Last 5'})</h3>
+          <h3>${isEn ? 'Clinical Diary & Events History' : 'Diario Clínico e Historial de Eventos'} (${showFullHistory ? (isEn ? 'All' : 'Todos') : (isEn ? 'Last 5' : 'Últimos 5')})</h3>
           <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
             ${historyRows}
           </div>
@@ -417,7 +421,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
     if (customObservations.trim()) {
       notesSectionHtml = `
         <div class="report-section" style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 8px; padding: 12px; margin-top: 15px;">
-          <h4 style="margin: 0 0 6px 0; color: ${colors.primary};">📝 Professional Observations</h4>
+          <h4 style="margin: 0 0 6px 0; color: ${colors.primary};">📝 ${isEn ? 'Professional Observations' : 'Observaciones Profesionales'}</h4>
           <div style="color: #334155; white-space: pre-wrap; font-size: 10.5px; line-height: 1.4;">${escapeHTML(customObservations)}</div>
         </div>
       `;
@@ -428,25 +432,25 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
     if (isPet) {
       infoTableHtml = `
         <table class="details-table">
-          <tr><th>Species / Breed:</th><td>${escapeHTML(petItem.especie)} / ${escapeHTML(petItem.raza || 'Not specified')}</td></tr>
-          <tr><th>Sex / Neutered:</th><td>${escapeHTML(petItem.sexo || 'Not specified')} / ${petItem.castrado ? 'Yes' : 'No'}</td></tr>
-          <tr><th>DOB / Age:</th><td>${formatDate(petItem.fechaNacimiento)} (${calcularEdadMascota(petItem.fechaNacimiento)})</td></tr>
-          <tr><th>Microchip No.:</th><td>${escapeHTML(petItem.numeroChip || 'No microchip')}</td></tr>
-          <tr><th>Activity Level:</th><td>${escapeHTML(petItem.actividad)}</td></tr>
-          ${petItem.porcionDiariaGramos ? `<tr><th>Daily Portion:</th><td><strong>${petItem.porcionDiariaGramos} grams</strong></td></tr>` : ''}
+          <tr><th>${isEn ? 'Species / Breed:' : 'Especie / Raza:'}</th><td>${escapeHTML(petItem.especie)} / ${escapeHTML(petItem.raza || (isEn ? 'Not specified' : 'Sin especificar'))}</td></tr>
+          <tr><th>${isEn ? 'Sex / Neutered:' : 'Sexo / Castrado:'}</th><td>${escapeHTML(petItem.sexo || (isEn ? 'Not specified' : 'Sin especificar'))} / ${petItem.castrado ? (isEn ? 'Yes' : 'Sí') : 'No'}</td></tr>
+          <tr><th>${isEn ? 'DOB / Age:' : 'Nacimiento / Edad:'}</th><td>${formatDate(petItem.fechaNacimiento)} (${calcularEdadMascota(petItem.fechaNacimiento)})</td></tr>
+          <tr><th>${isEn ? 'Microchip No.:' : 'Nº Microchip:'}</th><td>${escapeHTML(petItem.numeroChip || (isEn ? 'No microchip' : 'Sin microchip'))}</td></tr>
+          <tr><th>${isEn ? 'Activity Level:' : 'Nivel de Actividad:'}</th><td>${escapeHTML(petItem.actividad)}</td></tr>
+          ${petItem.porcionDiariaGramos ? `<tr><th>${isEn ? 'Daily Portion:' : 'Porción Diaria:'}</th><td><strong>${petItem.porcionDiariaGramos} ${isEn ? 'grams' : 'gramos'}</strong></td></tr>` : ''}
         </table>
       `;
 
     } else if (isPlant) {
       infoTableHtml = `
         <table class="details-table">
-          <tr><th>Scientific Name:</th><td><em>${escapeHTML(plantItem.nombreCientifico || 'Not specified')}</em></td></tr>
-          <tr><th>Location / Climate:</th><td>${escapeHTML(plantItem.ubicacionHabitacion)} | 🌡️ Temp: ${plantItem.temperaturaZona}°C</td></tr>
-          <tr><th>Watering Type:</th><td>💧 ${escapeHTML(plantItem.tipoRiegoEspecifico)} (Every ${plantItem.intervaloRiegoDias} days)</td></tr>
-          <tr><th>Next Watering:</th><td>📅 ${formatDate(plantItem.proximaFechaRiego)}</td></tr>
-          <tr><th>Leaf Thickness:</th><td>${escapeHTML(plantItem.grosorHoja)}</td></tr>
-          <tr><th>Feline Toxicity:</th><td><span style="color: ${plantItem.toxicidadFelina === 'Segura' ? '#16a34a' : '#ef4444'}; font-weight: bold;">${escapeHTML(plantItem.toxicidadFelina)}</span></td></tr>
-          ${plantItem.toxicidadCanina ? `<tr><th>Canine Toxicity:</th><td><span style="color: ${plantItem.toxicidadCanina === 'Segura' ? '#16a34a' : '#ef4444'}; font-weight: bold;">${escapeHTML(plantItem.toxicidadCanina)}</span></td></tr>` : ''}
+          <tr><th>${isEn ? 'Scientific Name:' : 'Nombre Científico:'}</th><td><em>${escapeHTML(plantItem.nombreCientifico || (isEn ? 'Not specified' : 'Sin especificar'))}</em></td></tr>
+          <tr><th>${isEn ? 'Location / Climate:' : 'Ubicación / Clima:'}</th><td>${escapeHTML(plantItem.ubicacionHabitacion)} | 🌡️ Temp: ${plantItem.temperaturaZona}°C</td></tr>
+          <tr><th>${isEn ? 'Watering Type:' : 'Tipo de Riego:'}</th><td>💧 ${escapeHTML(plantItem.tipoRiegoEspecifico)} (${isEn ? 'Every' : 'Cada'} ${plantItem.intervaloRiegoDias} ${isEn ? 'days' : 'días'})</td></tr>
+          <tr><th>${isEn ? 'Next Watering:' : 'Próximo Riego:'}</th><td>📅 ${formatDate(plantItem.proximaFechaRiego)}</td></tr>
+          <tr><th>${isEn ? 'Leaf Thickness:' : 'Grosor de Hoja:'}</th><td>${escapeHTML(plantItem.grosorHoja)}</td></tr>
+          <tr><th>${isEn ? 'Feline Toxicity:' : 'Toxicidad Felina:'}</th><td><span style="color: ${plantItem.toxicidadFelina === 'Segura' ? '#16a34a' : '#ef4444'}; font-weight: bold;">${escapeHTML(plantItem.toxicidadFelina)}</span></td></tr>
+          ${plantItem.toxicidadCanina ? `<tr><th>${isEn ? 'Canine Toxicity:' : 'Toxicidad Canina:'}</th><td><span style="color: ${plantItem.toxicidadCanina === 'Segura' ? '#16a34a' : '#ef4444'}; font-weight: bold;">${escapeHTML(plantItem.toxicidadCanina)}</span></td></tr>` : ''}
         </table>
       `;
     }
@@ -465,17 +469,17 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
       }).join('') + `
         <div class="checklist-item ${lastIntVal ? 'checked' : ''}">
           <span class="checkbox">${lastIntVal ? '✓' : '✗'}</span>
-          <span class="label">Internal Deworming ${lastIntVal ? `(${lastIntVal})` : ''}</span>
+          <span class="label">${isEn ? 'Internal Deworming' : 'Desparasitación Interna'} ${lastIntVal ? `(${lastIntVal})` : ''}</span>
         </div>
         <div class="checklist-item ${lastExtVal ? 'checked' : ''}">
           <span class="checkbox">${lastExtVal ? '✓' : '✗'}</span>
-          <span class="label">External Deworming ${lastExtVal ? `(${lastExtVal})` : ''}</span>
+          <span class="label">${isEn ? 'External Deworming' : 'Desparasitación Externa'} ${lastExtVal ? `(${lastExtVal})` : ''}</span>
         </div>
       `;
 
       preventativeHtml = `
         <div class="report-section" style="margin-top: 10px;">
-          <h3>Preventive Medicine Control</h3>
+          <h3>${isEn ? 'Preventive Medicine Control' : 'Control de Medicina Preventiva'}</h3>
           <div class="checklist-grid">
             ${vaccineItems}
           </div>
@@ -489,11 +493,11 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
       signatureHtml = `
         <div class="signature-block">
           <div style="width: 45%;">
-            <div class="signature-line">Professional / Veterinarian Signature</div>
-            <div style="font-size: 8px; color: #94a3b8; margin-top: 4px;">Issue date: ${new Date().toLocaleDateString('en-US')}</div>
+            <div class="signature-line">${isEn ? 'Professional / Veterinarian Signature' : 'Firma Profesional / Veterinaria'}</div>
+            <div style="font-size: 8px; color: #94a3b8; margin-top: 4px;">${isEn ? 'Issue date:' : 'Fecha de emisión:'} ${new Date().toLocaleDateString(isEn ? 'en-US' : 'es-ES')}</div>
           </div>
           <div class="stamp-box">
-            <span>Clinical Stamp</span>
+            <span>${isEn ? 'Clinical Stamp' : 'Sello Clínico'}</span>
           </div>
         </div>
       `;
@@ -1270,34 +1274,34 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
         {/* Panel de Configuración izquierdo */}
         <div className="config-pane">
           <div className="config-header">
-            <h2 className="config-title">Report Generator</h2>
-            <p className="config-subtitle">Design and download a professional A4 PDF sheet for your veterinary clinic</p>
+            <h2 className="config-title">{isEn ? 'Report Generator' : 'Generador de Informes'}</h2>
+            <p className="config-subtitle">{isEn ? 'Design and download a professional A4 PDF sheet for your veterinary clinic' : 'Diseña y descarga una ficha profesional en formato PDF A4 para tu clínica veterinaria'}</p>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Clinic / Institution Name</label>
+            <label className="form-label">{isEn ? 'Clinic / Institution Name' : 'Nombre de la Clínica / Institución'}</label>
             <input 
               type="text" 
               className="form-input" 
               value={clinicName} 
               onChange={(e) => setClinicName(e.target.value)} 
-              placeholder="E.g. St. Anthony Veterinary Clinic"
+              placeholder={isEn ? "E.g. St. Anthony Veterinary Clinic" : "Ej. Clínica Veterinaria San Antonio"}
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Report Title</label>
+            <label className="form-label">{isEn ? 'Report Title' : 'Título del Informe'}</label>
             <input 
               type="text" 
               className="form-input" 
               value={reportTitle} 
               onChange={(e) => setReportTitle(e.target.value)} 
-              placeholder="E.g. Clinical Health Report"
+              placeholder={isEn ? "E.g. Clinical Health Report" : "Ej. Informe de Salud Clínica"}
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Visual Design & Theme</label>
+            <label className="form-label">{isEn ? 'Visual Design & Theme' : 'Diseño Visual y Tema'}</label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button 
                 type="button" 
@@ -1305,7 +1309,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                 style={{ flex: 1, fontWeight: selectedTheme === 'category' ? 'bold' : 'normal', border: selectedTheme === 'category' ? '2px solid var(--accent)' : '1px solid var(--border)' }}
                 onClick={() => setSelectedTheme('category')}
               >
-                🎨 Category ({isPet ? 'Blue' : 'Green'})
+                🎨 {isEn ? `Category (${isPet ? 'Blue' : 'Green'})` : `Categoría (${isPet ? 'Azul' : 'Verde'})`}
               </button>
               <button 
                 type="button" 
@@ -1313,19 +1317,19 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                 style={{ flex: 1, fontWeight: selectedTheme === 'grayscale' ? 'bold' : 'normal', border: selectedTheme === 'grayscale' ? '2px solid var(--accent)' : '1px solid var(--border)' }}
                 onClick={() => setSelectedTheme('grayscale')}
               >
-                🏁 Minimalist (Gray)
+                🏁 {isEn ? 'Minimalist (Gray)' : 'Minimalista (Gris)'}
               </button>
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Sections to Include</label>
+            <label className="form-label">{isEn ? 'Sections to Include' : 'Secciones a Incluir'}</label>
             <div className="toggle-group">
               {isPet && petItem.registroPeso && petItem.registroPeso.length > 0 && (
                 <div className="toggle-row" onClick={() => setIncludeWeightChart(!includeWeightChart)}>
                   <div className="toggle-text">
-                    <span className="toggle-title">Weight Evolution Curve</span>
-                    <span className="toggle-desc">Draws a linear SVG trace of weight readings</span>
+                    <span className="toggle-title">{isEn ? 'Weight Evolution Curve' : 'Curva de Evolución de Peso'}</span>
+                    <span className="toggle-desc">{isEn ? 'Draws a linear SVG trace of weight readings' : 'Dibuja una traza lineal en SVG de los registros de peso'}</span>
                   </div>
                   <div className={`switch-control ${includeWeightChart ? 'active' : ''}`}>
                     <div className="switch-knob" />
@@ -1336,8 +1340,8 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
               {diagsIA.length > 0 && (
                 <div className="toggle-row" onClick={() => setIncludeAIDiag(!includeAIDiag)}>
                   <div className="toggle-text">
-                    <span className="toggle-title">AI Clinical Diagnosis</span>
-                    <span className="toggle-desc">Includes AI-generated suggestions</span>
+                    <span className="toggle-title">{isEn ? 'AI Clinical Diagnosis' : 'Diagnóstico Clínico por IA'}</span>
+                    <span className="toggle-desc">{isEn ? 'Includes AI-generated suggestions' : 'Incluye las sugerencias de tratamiento generadas por la IA'}</span>
                   </div>
                   <div className={`switch-control ${includeAIDiag ? 'active' : ''}`}>
                     <div className="switch-knob" />
@@ -1348,8 +1352,8 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
               {historyItems.length > 0 && (
                 <div className="toggle-row" onClick={() => setIncludeHistoryLogs(!includeHistoryLogs)}>
                   <div className="toggle-text">
-                    <span className="toggle-title">Clinical History / Diary</span>
-                    <span className="toggle-desc">Includes diary notes</span>
+                    <span className="toggle-title">{isEn ? 'Clinical History / Diary' : 'Historial Clínico / Diario'}</span>
+                    <span className="toggle-desc">{isEn ? 'Includes diary notes' : 'Incluye las notas y observaciones del diario'}</span>
                   </div>
                   <div className={`switch-control ${includeHistoryLogs ? 'active' : ''}`}>
                     <div className="switch-knob" />
@@ -1360,8 +1364,8 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
               {includeHistoryLogs && historyItems.length > 5 && (
                 <div className="toggle-row" onClick={() => setShowFullHistory(!showFullHistory)}>
                   <div className="toggle-text">
-                    <span className="toggle-title">Show Full History</span>
-                    <span className="toggle-desc">If disabled, shows only the last 5 entries</span>
+                    <span className="toggle-title">{isEn ? 'Show Full History' : 'Mostrar Historial Completo'}</span>
+                    <span className="toggle-desc">{isEn ? 'If disabled, shows only the last 5 entries' : 'Si está desactivado, muestra sólo los últimos 5 registros'}</span>
                   </div>
                   <div className={`switch-control ${showFullHistory ? 'active' : ''}`}>
                     <div className="switch-knob" />
@@ -1371,8 +1375,8 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
 
               <div className="toggle-row" onClick={() => setIncludeSignature(!includeSignature)}>
                 <div className="toggle-text">
-                  <span className="toggle-title">Signature & Stamp Block</span>
-                  <span className="toggle-desc">Adds clinical validation footer</span>
+                  <span className="toggle-title">{isEn ? 'Signature & Stamp Block' : 'Bloque de Firma y Sello'}</span>
+                  <span className="toggle-desc">{isEn ? 'Adds clinical validation footer' : 'Añade el pie de firma para validación médica'}</span>
                 </div>
                 <div className={`switch-control ${includeSignature ? 'active' : ''}`}>
                   <div className="switch-knob" />
@@ -1383,7 +1387,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
 
           {includeAIDiag && diagsIA.length > 1 && (
             <div className="form-group">
-              <label className="form-label">Select AI Diagnosis</label>
+              <label className="form-label">{isEn ? 'Select AI Diagnosis' : 'Selecciona el Diagnóstico de IA'}</label>
               <select 
                 className="form-input" 
                 value={selectedDiagId} 
@@ -1391,7 +1395,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
               >
                 {diagsIA.map((d) => (
                   <option key={d.id} value={d.id}>
-                    [{d.esUrgente ? '🚨 Urgent' : '🩺 Consultation'}] {formatDate(d.fecha)} - {d.diagnostico.slice(0, 45)}...
+                    [{d.esUrgente ? (isEn ? '🚨 Urgent' : '🚨 Urgente') : (isEn ? '🩺 Consultation' : '🩺 Consulta')}] {formatDate(d.fecha)} - {d.diagnostico.slice(0, 45)}...
                   </option>
                 ))}
               </select>
@@ -1399,22 +1403,22 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
           )}
 
           <div className="form-group">
-            <label className="form-label">Additional Observations / Notes</label>
+            <label className="form-label">{isEn ? 'Additional Observations / Notes' : 'Observaciones / Notas Adicionales'}</label>
             <textarea 
               className="form-input" 
               style={{ minHeight: '80px', resize: 'vertical' }}
               value={customObservations} 
               onChange={(e) => setCustomObservations(e.target.value)} 
-              placeholder="Write additional notes on treatments, diet or recommendations that will appear at the bottom..."
+              placeholder={isEn ? "Write additional notes on treatments, diet or recommendations that will appear at the bottom..." : "Escribe notas adicionales sobre tratamientos, dieta o recomendaciones que aparecerán al pie..."}
             />
           </div>
 
           <div className="button-bar">
             <button type="button" className="btn-cancel" onClick={onClose}>
-              Close
+              {isEn ? 'Close' : 'Cerrar'}
             </button>
             <button type="button" className="btn-print" onClick={handlePrint}>
-              💾 Print / Save PDF
+              {isEn ? '💾 Print / Save PDF' : '💾 Imprimir / Guardar PDF'}
             </button>
           </div>
         </div>
@@ -1423,9 +1427,9 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
         <div className="preview-pane">
           <div className="preview-header-bar">
             <span className="preview-label" style={{ fontWeight: 'bold', fontSize: '13px', color: '#1e293b' }}>
-              Preview (A4 Scale)
+              {isEn ? 'Preview (A4 Scale)' : 'Previsualización (Escala A4)'}
             </span>
-            <span className="preview-badge">PDF Interactivo</span>
+            <span className="preview-badge">{isEn ? 'Interactive PDF' : 'PDF Interactivo'}</span>
           </div>
 
           <div className="a4-page-scroller">
@@ -1457,18 +1461,18 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
 
                   {/* Tabla Identificativa */}
                   <div className="preview-section">
-                    <h3>Patient Data</h3>
+                    <h3>{isEn ? 'Patient Data' : 'Datos del Paciente'}</h3>
                     {isPet && (
                       <table className="preview-details-table">
                         <tbody>
-                          <tr><th>Species:</th><td>{petItem.especie}</td></tr>
-                          <tr><th>Breed:</th><td>{petItem.raza || 'Not specified'}</td></tr>
-                          <tr><th>Sex / Neutered:</th><td>{petItem.sexo || 'Not specified'} / {petItem.castrado ? 'Yes' : 'No'}</td></tr>
-                          <tr><th>DOB:</th><td>{formatDate(petItem.fechaNacimiento)}</td></tr>
-                          <tr><th>Age:</th><td>{calcularEdadMascota(petItem.fechaNacimiento)}</td></tr>
-                          <tr><th>Chip No.:</th><td>{petItem.numeroChip || 'No microchip'}</td></tr>
-                          <tr><th>Activity:</th><td>{petItem.actividad}</td></tr>
-                          {petItem.porcionDiariaGramos && <tr><th>Daily Portion:</th><td>{petItem.porcionDiariaGramos}g</td></tr>}
+                          <tr><th>{isEn ? 'Species:' : 'Especie:'}</th><td>{petItem.especie}</td></tr>
+                          <tr><th>{isEn ? 'Breed:' : 'Raza:'}</th><td>{petItem.raza || (isEn ? 'Not specified' : 'Sin especificar')}</td></tr>
+                          <tr><th>{isEn ? 'Sex / Neutered:' : 'Sexo / Castrado:'}</th><td>{petItem.sexo || (isEn ? 'Not specified' : 'Sin especificar')} / {petItem.castrado ? (isEn ? 'Yes' : 'Sí') : 'No'}</td></tr>
+                          <tr><th>{isEn ? 'DOB:' : 'Nacimiento:'}</th><td>{formatDate(petItem.fechaNacimiento)}</td></tr>
+                          <tr><th>{isEn ? 'Age:' : 'Edad:'}</th><td>{calcularEdadMascota(petItem.fechaNacimiento)}</td></tr>
+                          <tr><th>{isEn ? 'Chip No.:' : 'Nº Chip:'}</th><td>{petItem.numeroChip || (isEn ? 'No microchip' : 'Sin microchip')}</td></tr>
+                          <tr><th>{isEn ? 'Activity:' : 'Actividad:'}</th><td>{petItem.actividad}</td></tr>
+                          {petItem.porcionDiariaGramos && <tr><th>{isEn ? 'Daily Portion:' : 'Porción Diaria:'}</th><td>{petItem.porcionDiariaGramos}g</td></tr>}
                         </tbody>
                       </table>
                     )}
@@ -1476,14 +1480,14 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                     {isPlant && (
                       <table className="preview-details-table">
                         <tbody>
-                          <tr><th>Scientific Name:</th><td><em>{plantItem.nombreCientifico || 'Not specified'}</em></td></tr>
-                          <tr><th>Location:</th><td>{plantItem.ubicacionHabitacion}</td></tr>
-                          <tr><th>Zone Temp.:</th><td>🌡️ {plantItem.temperaturaZona}°C</td></tr>
-                          <tr><th>Watering Type:</th><td>💧 {plantItem.tipoRiegoEspecifico}</td></tr>
-                          <tr><th>Watering Frequency:</th><td>Every {plantItem.intervaloRiegoDias} days</td></tr>
-                          <tr><th>Next Watering:</th><td>{formatDate(plantItem.proximaFechaRiego)}</td></tr>
-                          <tr><th>Leaf Thickness:</th><td>{plantItem.grosorHoja}</td></tr>
-                          <tr><th>Feline Safety:</th><td><span style={{ color: plantItem.toxicidadFelina === 'Segura' ? '#16a34a' : '#ef4444', fontWeight: 'bold' }}>{plantItem.toxicidadFelina}</span></td></tr>
+                          <tr><th>{isEn ? 'Scientific Name:' : 'Nombre Científico:'}</th><td><em>{plantItem.nombreCientifico || (isEn ? 'Not specified' : 'Sin especificar')}</em></td></tr>
+                          <tr><th>{isEn ? 'Location:' : 'Ubicación:'}</th><td>{plantItem.ubicacionHabitacion}</td></tr>
+                          <tr><th>{isEn ? 'Zone Temp.:' : 'Temp. Zona:'}</th><td>🌡️ {plantItem.temperaturaZona}°C</td></tr>
+                          <tr><th>{isEn ? 'Watering Type:' : 'Tipo de Riego:'}</th><td>💧 {plantItem.tipoRiegoEspecifico}</td></tr>
+                          <tr><th>{isEn ? 'Watering Frequency:' : 'Frecuencia de Riego:'}</th><td>{isEn ? `Every ${plantItem.intervaloRiegoDias} days` : `Cada ${plantItem.intervaloRiegoDias} días`}</td></tr>
+                          <tr><th>{isEn ? 'Next Watering:' : 'Próximo Riego:'}</th><td>{formatDate(plantItem.proximaFechaRiego)}</td></tr>
+                          <tr><th>{isEn ? 'Leaf Thickness:' : 'Grosor de Hoja:'}</th><td>{plantItem.grosorHoja}</td></tr>
+                          <tr><th>{isEn ? 'Feline Safety:' : 'Seguridad Felina:'}</th><td><span style={{ color: plantItem.toxicidadFelina === 'Segura' ? '#16a34a' : '#ef4444', fontWeight: 'bold' }}>{plantItem.toxicidadFelina}</span></td></tr>
                         </tbody>
                       </table>
                     )}
@@ -1492,7 +1496,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                   {/* Preventative (solo mascotas) */}
                   {isPet && petVaccines && (
                     <div className="preview-section">
-                      <h3>Preventive Care & Vaccines</h3>
+                      <h3>{isEn ? 'Preventive Care & Vaccines' : 'Vacunas y Medicina Preventiva'}</h3>
                       <div className="preview-checklist">
                         {petVaccines.map((v, idx) => {
                           const isChecked = (petItem.vacunasChecklist || []).includes(v);
@@ -1505,11 +1509,11 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                         })}
                         <div className={`preview-chk-item ${lastIntVal ? 'checked' : ''}`}>
                           <span className="chk-box">{lastIntVal ? '✓' : '✗'}</span>
-                          <span className="chk-lbl">Internal {lastIntVal ? `(${lastIntVal})` : ''}</span>
+                          <span className="chk-lbl">{isEn ? 'Internal' : 'Interna'} {lastIntVal ? `(${lastIntVal})` : ''}</span>
                         </div>
                         <div className={`preview-chk-item ${lastExtVal ? 'checked' : ''}`}>
                           <span className="chk-box">{lastExtVal ? '✓' : '✗'}</span>
-                          <span className="chk-lbl">External {lastExtVal ? `(${lastExtVal})` : ''}</span>
+                          <span className="chk-lbl">{isEn ? 'External' : 'Externa'} {lastExtVal ? `(${lastExtVal})` : ''}</span>
                         </div>
                       </div>
                     </div>
@@ -1521,7 +1525,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                   {/* Gráfico de peso */}
                   {isPet && includeWeightChart && petItem.registroPeso && petItem.registroPeso.length > 0 && (
                     <div className="preview-section">
-                      <h3>Weight Tracking Curve</h3>
+                      <h3>{isEn ? 'Weight Tracking Curve' : 'Curva de Crecimiento (Peso)'}</h3>
                       {drawWeightChartSVG()}
                     </div>
                   )}
@@ -1531,15 +1535,15 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                     <div className={`preview-section preview-urgent-card ${activeDiag.esUrgente ? 'preview-urgent-border' : ''}`}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${colors.border}`, paddingBottom: '3px', marginBottom: '6px' }}>
                         <h4 style={{ margin: 0, color: colors.primary, fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          🩺 AI Clinical Diagnosis
+                          🩺 {isEn ? 'AI Clinical Diagnosis' : 'Diagnóstico Clínico por IA'}
                         </h4>
                         <span style={{ fontSize: '8.5px', fontWeight: 'bold', background: activeDiag.esUrgente ? '#fde8e8' : colors.bgLight, color: activeDiag.esUrgente ? '#e11d48' : colors.primary, padding: '1px 5px', borderRadius: '4px' }}>
-                          {activeDiag.esUrgente ? '🚨 URGENT' : 'CONSULTATION'}
+                          {activeDiag.esUrgente ? (isEn ? '🚨 URGENT' : '🚨 URGENTE') : (isEn ? 'CONSULTATION' : 'CONSULTA')}
                         </span>
                       </div>
-                      <p style={{ margin: '0 0 4px 0', fontSize: '10px' }}><strong>Diagnosis:</strong> {activeDiag.diagnostico}</p>
-                      <p style={{ margin: '0 0 4px 0', fontSize: '10px' }}><strong>Treatment:</strong> {activeDiag.tratamiento}</p>
-                      {activeDiag.advertencia && <p style={{ margin: '0 0 4px 0', fontSize: '10px' }}><strong>Alert:</strong> <span style={{ color: '#c2410c', fontWeight: '500' }}>{activeDiag.advertencia}</span></p>}
+                      <p style={{ margin: '0 0 4px 0', fontSize: '10px' }}><strong>{isEn ? 'Diagnosis:' : 'Diagnóstico:'}</strong> {activeDiag.diagnostico}</p>
+                      <p style={{ margin: '0 0 4px 0', fontSize: '10px' }}><strong>{isEn ? 'Treatment:' : 'Tratamiento:'}</strong> {activeDiag.tratamiento}</p>
+                      {activeDiag.advertencia && <p style={{ margin: '0 0 4px 0', fontSize: '10px' }}><strong>{isEn ? 'Alert:' : 'Alerta:'}</strong> <span style={{ color: '#c2410c', fontWeight: '500' }}>{activeDiag.advertencia}</span></p>}
                       <div style={{ fontSize: '8px', color: '#94a3b8', textAlign: 'right', marginTop: '2px' }}>{formatDate(activeDiag.fecha)}</div>
                     </div>
                   )}
@@ -1547,7 +1551,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                   {/* Historial Clínico */}
                   {includeHistoryLogs && displayedHistory.length > 0 && (
                     <div className="preview-section">
-                      <h3>Clinical Daily History</h3>
+                      <h3>{isEn ? 'Clinical Daily History' : 'Diario Clínico e Historial'}</h3>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {displayedHistory.map((h, idx) => (
                           <div className="preview-timeline-item" style={{ borderLeftColor: h.color }} key={idx}>
@@ -1567,7 +1571,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                   {/* Observaciones manuales */}
                   {customObservations.trim() && (
                     <div className="preview-section" style={{ background: '#f8fafc', border: '1.5px dashed #cbd5e1', borderRadius: '8px', padding: '10px' }}>
-                      <h4 style={{ margin: '0 0 5px 0', color: colors.primary, fontSize: '10.5px' }}>📝 Professional Observations</h4>
+                      <h4 style={{ margin: '0 0 5px 0', color: colors.primary, fontSize: '10.5px' }}>📝 {isEn ? 'Professional Observations' : 'Observaciones Profesionales'}</h4>
                       <div style={{ color: '#334155', fontSize: '9.5px', whiteSpace: 'pre-wrap' }}>{customObservations}</div>
                     </div>
                   )}
@@ -1576,11 +1580,11 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
                   {includeSignature && (
                     <div className="preview-signature-block">
                       <div style={{ width: '45%' }}>
-                        <div className="preview-sig-line">Professional Signature</div>
-                        <div style={{ fontSize: '7.5px', color: '#94a3b8', marginTop: '3px' }}>Date: {new Date().toLocaleDateString('en-US')}</div>
+                        <div className="preview-sig-line">{isEn ? 'Professional Signature' : 'Firma Profesional'}</div>
+                        <div style={{ fontSize: '7.5px', color: '#94a3b8', marginTop: '3px' }}>{isEn ? 'Date:' : 'Fecha:'} {new Date().toLocaleDateString(isEn ? 'en-US' : 'es-ES')}</div>
                       </div>
                       <div className="preview-stamp-box">
-                        <span>Clinical Stamp</span>
+                        <span>{isEn ? 'Clinical Stamp' : 'Sello Clínico'}</span>
                       </div>
                     </div>
                   )}

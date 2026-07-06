@@ -78,6 +78,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   abandonarHogar
 }) => {
   const { locale, setLocale, t } = useTranslations();
+  const isEn = locale === 'en';
 
   // QR code toggle
   const [showQR, setShowQR] = useState(false);
@@ -1061,10 +1062,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             fontWeight: 'bold',
             fontFamily: 'var(--game-font, sans-serif)'
           }}>
-            🔑 Personal Gemini API Key
+            {isEn ? '🔑 Personal Gemini API Key' : '🔑 Clave API de Gemini Personalizada'}
           </h3>
           <p style={{ margin: '0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', lineHeight: '1.4' }}>
-            Avoid the daily quota limit of the public key by adding your own free Google Gemini API key. Your data is stored locally in your browser securely.
+            {isEn ? 'Avoid the daily quota limit of the public key by adding your own free Google Gemini API key. Your data is stored locally in your browser securely.' : 'Evita el límite de cuota diario de la clave pública añadiendo tu propia clave API gratuita de Google Gemini. Tus datos se guardan localmente en tu navegador de forma segura.'}
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', maxWidth: '500px' }}>
@@ -1096,7 +1097,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               cursor: 'pointer',
               fontSize: '14px'
             }}
-            title={showApiKey ? "Hide key" : "Show key"}
+            title={showApiKey ? (isEn ? "Hide key" : "Ocultar clave") : (isEn ? "Show key" : "Mostrar clave")}
           >
             {showApiKey ? "👁️" : "🙈"}
           </button>
@@ -1106,10 +1107,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             onClick={() => {
               if (customApiKey.trim()) {
                 localStorage.setItem('petplant_gemini_api_key', customApiKey.trim());
-                dispararLogroVisual("API KEY SAVED", "Using your personal Gemini key", 'lvl_up');
+                dispararLogroVisual(isEn ? "API KEY SAVED" : "CLAVE API GUARDADA", isEn ? "Using your personal Gemini key" : "Usando tu clave personal de Gemini", 'lvl_up');
               } else {
                 localStorage.removeItem('petplant_gemini_api_key');
-                dispararLogroVisual("KEY REMOVED", "Using default demo key", 'victory');
+                dispararLogroVisual(isEn ? "KEY REMOVED" : "CLAVE REMOVIDA", isEn ? "Using default demo key" : "Usando clave de demostración por defecto", 'victory');
               }
             }}
             style={{
@@ -1125,14 +1126,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
             }}
           >
-            Save API Key
+            {isEn ? 'Save API Key' : 'Guardar Clave API'}
           </button>
           {localStorage.getItem('petplant_gemini_api_key') && (
             <button
               onClick={() => {
                 localStorage.removeItem('petplant_gemini_api_key');
                 setCustomApiKey('');
-                dispararLogroVisual("KEY REMOVED", "Using default demo key", 'victory');
+                dispararLogroVisual(isEn ? "KEY REMOVED" : "CLAVE REMOVIDA", isEn ? "Usando clave de demostración por defecto" : "Usando clave de demostración por defecto", 'victory');
               }}
               style={{
                 padding: '10px 20px',
@@ -1146,7 +1147,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 fontFamily: 'var(--game-font, sans-serif)'
               }}
             >
-              Remove Key
+              {isEn ? 'Remove Key' : 'Eliminar Clave'}
             </button>
           )}
         </div>
@@ -1172,7 +1173,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </h3>
           {user ? (
             <p style={{ margin: '0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)' }}>
-              Connected with {localStorage.getItem('petplant_login_provider') === 'microsoft' ? 'Microsoft / Hotmail' : 'Google'} account as <strong>{user.name}</strong> ({user.email})
+              {isEn 
+                ? `Connected with ${localStorage.getItem('petplant_login_provider') === 'microsoft' ? 'Microsoft / Hotmail' : 'Google'} account as `
+                : `Conectado con cuenta de ${localStorage.getItem('petplant_login_provider') === 'microsoft' ? 'Microsoft / Hotmail' : 'Google'} como `}
+              <strong>{user.name}</strong> ({user.email})
             </p>
           ) : (
             <p style={{ margin: '0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)' }}>
@@ -1321,10 +1325,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             fontWeight: 'bold',
             fontFamily: 'var(--game-font, sans-serif)'
           }}>
-            💾 Local Backup (Export/Import)
+            {isEn ? '💾 Local Backup (Export/Import)' : '💾 Copia de Seguridad Local (Exportar/Importar)'}
           </h3>
           <p style={{ margin: '0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', lineHeight: '1.4' }}>
-            Save a complete backup of your ecosystem (pets, plants, exotics, calendar and chats) in a JSON file on your computer, or restore your data from a previously saved file.
+            {isEn ? 'Save a complete backup of your ecosystem (pets, plants, exotics, calendar and chats) in a JSON file on your computer, or restore your data from a previously saved file.' : 'Guarda una copia de respaldo completa de tu ecosistema (mascotas, plantas, exóticos, agenda y chats) en un archivo JSON en tu ordenador, o restaura tus datos desde un archivo guardado previamente.'}
           </p>
         </div>
         
@@ -1345,7 +1349,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               transition: 'all 0.2s'
             }}
           >
-            Export Data (JSON) 📤
+            {isEn ? 'Export Data (JSON) 📤' : 'Exportar Datos (JSON) 📤'}
           </button>
           
           <label
@@ -1365,7 +1369,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               transition: 'all 0.2s'
             }}
           >
-            Import Data (JSON) 📥
+            {isEn ? 'Import Data (JSON) 📥' : 'Importar Datos (JSON) 📥'}
             <input
               type="file"
               accept=".json"
@@ -1701,28 +1705,28 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           }}>
             <div>
               <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', color: 'var(--game-text-bright, #1a1a1a)', fontWeight: 'bold' }}>
-                🔄 Sync Conflict Resolution
+                {isEn ? '🔄 Sync Conflict Resolution' : '🔄 Resolución de Conflictos de Sincro'}
               </h3>
               <p style={{ margin: 0, fontSize: '12px', color: 'var(--game-text, #666)' }}>
-                Local device and cloud server data have been compared. Please select how you want to resolve the differences.
+                {isEn ? 'Local device and cloud server data have been compared. Please select how you want to resolve the differences.' : 'Se han comparado los datos del dispositivo local y el servidor de la nube. Por favor selecciona cómo deseas resolver las diferencias.'}
               </p>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginTop: '4px' }}>
               {/* Local Column */}
               <div style={{ padding: '12px', background: 'rgba(25, 118, 210, 0.03)', border: '1px solid rgba(25, 118, 210, 0.2)', borderRadius: '8px' }}>
-                <strong style={{ fontSize: '13px', color: '#1976d2', display: 'block', marginBottom: '8px' }}>💻 Local Data (Device)</strong>
-                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Last Sync:</strong> {localDataInfo.timestamp > 0 ? new Date(localDataInfo.timestamp).toLocaleString() : 'Never (Local Mode)'}</p>
-                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Pets ({localDataInfo.mascotasCount}):</strong> {localDataInfo.mascotasNames || 'None'}</p>
-                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Plants ({localDataInfo.plantasCount}):</strong> {localDataInfo.plantasNames || 'None'}</p>
+                <strong style={{ fontSize: '13px', color: '#1976d2', display: 'block', marginBottom: '8px' }}>{isEn ? '💻 Local Data (Device)' : '💻 Datos Locales (Dispositivo)'}</strong>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>{isEn ? 'Last Sync:' : 'Última Sincro:'}</strong> {localDataInfo.timestamp > 0 ? new Date(localDataInfo.timestamp).toLocaleString() : (isEn ? 'Never (Local Mode)' : 'Nunca (Modo Local)')}</p>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>{isEn ? 'Pets' : 'Mascotas'} ({localDataInfo.mascotasCount}):</strong> {localDataInfo.mascotasNames || (isEn ? 'None' : 'Ninguna')}</p>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>{isEn ? 'Plants' : 'Plantas'} ({localDataInfo.plantasCount}):</strong> {localDataInfo.plantasNames || (isEn ? 'None' : 'Ninguna')}</p>
               </div>
 
               {/* Remote Column */}
               <div style={{ padding: '12px', background: 'rgba(76, 175, 80, 0.03)', border: '1px solid rgba(76, 175, 80, 0.2)', borderRadius: '8px' }}>
-                <strong style={{ fontSize: '13px', color: '#2e7d32', display: 'block', marginBottom: '8px' }}>☁️ Remote Data (Cloud)</strong>
-                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Last Sync:</strong> {remoteDataInfo.timestamp > 0 ? new Date(remoteDataInfo.timestamp).toLocaleString() : 'No data'}</p>
-                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Pets ({remoteDataInfo.mascotasCount}):</strong> {remoteDataInfo.mascotasNames || 'None'}</p>
-                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>Plants ({remoteDataInfo.plantasCount}):</strong> {remoteDataInfo.plantasNames || 'None'}</p>
+                <strong style={{ fontSize: '13px', color: '#2e7d32', display: 'block', marginBottom: '8px' }}>{isEn ? '☁️ Remote Data (Cloud)' : '☁️ Datos Remotos (Nube)'}</strong>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>{isEn ? 'Last Sync:' : 'Última Sincro:'}</strong> {remoteDataInfo.timestamp > 0 ? new Date(remoteDataInfo.timestamp).toLocaleString() : (isEn ? 'No data' : 'Sin datos')}</p>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>{isEn ? 'Pets' : 'Mascotas'} ({remoteDataInfo.mascotasCount}):</strong> {remoteDataInfo.mascotasNames || (isEn ? 'None' : 'Ninguna')}</p>
+                <p style={{ margin: '4px 0', fontSize: '11px' }}><strong>{isEn ? 'Plants' : 'Plantas'} ({remoteDataInfo.plantasCount}):</strong> {remoteDataInfo.plantasNames || (isEn ? 'None' : 'Ninguna')}</p>
               </div>
             </div>
 
@@ -1749,7 +1753,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   textAlign: 'center'
                 }}
               >
-                🤝 Merge Both Sets (Smart Lossless Merge)
+                {isEn ? '🤝 Merge Both Sets (Smart Lossless Merge)' : '🤝 Fusionar Ambos Conjuntos (Fusión Inteligente sin pérdidas)'}
               </button>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -1767,7 +1771,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     cursor: 'pointer'
                   }}
                 >
-                  💻 Keep Local
+                  {isEn ? '💻 Keep Local' : '💻 Conservar Local'}
                 </button>
                 <button
                   type="button"
@@ -1783,7 +1787,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     cursor: 'pointer'
                   }}
                 >
-                  ☁️ Keep Cloud
+                  {isEn ? '☁️ Keep Cloud' : '☁️ Conservar Nube'}
                 </button>
               </div>
 
@@ -1801,7 +1805,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   marginTop: '4px'
                 }}
               >
-                Cancel
+                {isEn ? 'Cancel' : 'Cancelar'}
               </button>
             </div>
           </div>

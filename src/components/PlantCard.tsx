@@ -810,11 +810,15 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
         width: '100%',
         maxWidth: '100%'
       }}>
-        <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: 'var(--game-text-bright, #333)', fontWeight: 'bold' }}>Editar Planta ✏️</h3>
+        <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: 'var(--game-text-bright, #333)', fontWeight: 'bold' }}>
+          {locale === 'en' ? 'Edit Plant ✏️' : 'Editar Planta ✏️'}
+        </h3>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div>
-            <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Nombre Común:</label>
+            <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
+              {locale === 'en' ? 'Common Name:' : 'Nombre Común:'}
+            </label>
             <input 
               type="text" 
               value={editNombreComun} 
@@ -824,7 +828,9 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
           </div>
 
           <div>
-            <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Nombre Científico:</label>
+            <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
+              {locale === 'en' ? 'Scientific Name:' : 'Nombre Científico:'}
+            </label>
             <input 
               type="text" 
               value={editNombreCientifico} 
@@ -835,7 +841,9 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
 
           <div className="responsive-form-grid-2" style={{ gap: '10px' }}>
             <div>
-              <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Ubicación:</label>
+              <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
+                {locale === 'en' ? 'Location:' : 'Ubicación:'}
+              </label>
               <input 
                 type="text" 
                 value={editUbicacion} 
@@ -844,7 +852,9 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
               />
             </div>
             <div>
-              <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Riego (días):</label>
+              <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
+                {locale === 'en' ? 'Watering (days):' : 'Riego (días):'}
+              </label>
               <input 
                 type="number" 
                 value={editIntervalo} 
@@ -856,36 +866,42 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
 
           <div className="responsive-form-grid-2" style={{ gap: '10px' }}>
             <div>
-              <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Toxicidad Felina:</label>
+              <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
+                {locale === 'en' ? 'Feline Toxicity:' : 'Toxicidad Felina:'}
+              </label>
               <select 
                 value={editToxicidadFelina} 
                 onChange={(e) => setEditToxicidadFelina(e.target.value as any)} 
                 style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: '#fff', color: '#000', fontSize: '13px', boxSizing: 'border-box' }}
               >
-                <option value="Segura">Segura 🐈</option>
-                <option value="Tóxica leve (irritante)">Tóxica Leve ⚠️</option>
-                <option value="Altamente tóxica (urgencia)">Muy Tóxica 🚨</option>
+                <option value="Segura">{locale === 'en' ? 'Safe 🐈' : 'Segura 🐈'}</option>
+                <option value="Tóxica leve (irritante)">{locale === 'en' ? 'Mildly Toxic ⚠️' : 'Tóxica Leve ⚠️'}</option>
+                <option value="Altamente tóxica (urgencia)">{locale === 'en' ? 'Highly Toxic 🚨' : 'Muy Tóxica 🚨'}</option>
               </select>
             </div>
             <div>
-              <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Toxicidad Canina:</label>
+              <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
+                {locale === 'en' ? 'Canine Toxicity:' : 'Toxicidad Canina:'}
+              </label>
               <select 
                 value={editToxicidadCanina} 
                 onChange={(e) => setEditToxicidadCanina(e.target.value as any)} 
                 style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: '#fff', color: '#000', fontSize: '13px', boxSizing: 'border-box' }}
               >
-                <option value="Segura">Segura 🐕</option>
-                <option value="Tóxica leve (irritante)">Tóxica Leve ⚠️</option>
-                <option value="Altamente tóxica (urgencia)">Muy Tóxica 🚨</option>
+                <option value="Segura">{locale === 'en' ? 'Safe 🐕' : 'Segura 🐕'}</option>
+                <option value="Tóxica leve (irritante)">{locale === 'en' ? 'Mildly Toxic ⚠️' : 'Tóxica Leve ⚠️'}</option>
+                <option value="Altamente tóxica (urgencia)">{locale === 'en' ? 'Highly Toxic 🚨' : 'Muy Tóxica 🚨'}</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Compuestos:</label>
+            <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
+              {locale === 'en' ? 'Compounds:' : 'Compuestos:'}
+            </label>
             <input 
               type="text" 
-              placeholder="Ej: Oxalatos" 
+              placeholder={locale === 'en' ? "E.g.: Oxalates" : "Ej: Oxalatos"} 
               value={editCompuestosToxicos} 
               onChange={(e) => setEditCompuestosToxicos(e.target.value)} 
               style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: '#fff', color: '#000', fontSize: '13px', boxSizing: 'border-box' }}

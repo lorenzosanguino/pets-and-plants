@@ -17,6 +17,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
   plantas = [],
 }) => {
   const { locale } = useTranslations();
+  const isEn = locale === 'en';
   const [prevMode, setPrevMode] = useState(mode);
   const [activeTab, setActiveTab] = useState<'plants' | 'cats' | 'dogs'>(() => {
     if (mode === 'plants') return 'plants';
@@ -111,12 +112,12 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
     }}>
       <div>
         <h3 style={{ margin: '0 0 6px 0', fontSize: '18px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>
-          ✈️ Travel & Vacation Guide
+          {isEn ? '✈️ Travel & Vacation Guide' : '✈️ Guía de Viajes y Vacaciones'}
         </h3>
         <p style={{ margin: '0', fontSize: '13px', color: '#666', lineHeight: '1.4' }}>
-          {mode === 'plants' && 'Find expert tips and ideas to keep your plants safe while you are away.'}
-          {mode === 'pets' && 'Guidelines and checklist for caring for your dogs and cats when you go on a trip.'}
-          {mode === 'travels' && 'Select a category to see expert tips and ideas for your vacation absences.'}
+          {mode === 'plants' && (isEn ? 'Find expert tips and ideas to keep your plants safe while you are away.' : 'Encuentra consejos de expertos e ideas para mantener tus plantas a salvo mientras estás fuera.')}
+          {mode === 'pets' && (isEn ? 'Guidelines and checklist for caring for your dogs and cats when you go on a trip.' : 'Pautas y lista de control para cuidar de tus perros y gatos cuando sales de viaje.')}
+          {mode === 'travels' && (isEn ? 'Select a category to see expert tips and ideas for your vacation absences.' : 'Selecciona una categoría para ver consejos de expertos e ideas para tus ausencias por vacaciones.')}
         </p>
       </div>
 
@@ -133,7 +134,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
                 fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap'
               }}
             >
-              🌿 Plants
+              {isEn ? '🌿 Plants' : '🌿 Plantas'}
             </button>
           )}
           <button
@@ -145,7 +146,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
               fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap'
             }}
           >
-            🐱 Cats
+            {isEn ? '🐱 Cats' : '🐱 Gatos'}
           </button>
           <button
             onClick={() => { setActiveTab('dogs'); setChatMessages([]); }}
@@ -156,7 +157,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
               fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap'
             }}
           >
-            🐶 Dogs
+            {isEn ? '🐶 Dogs' : '🐶 Perros'}
           </button>
 
         </div>
@@ -172,15 +173,15 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
         border: '1px solid #f0f0f0'
       }}>
         <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          💬 Ask the AI Travel Advisor
+          {isEn ? '💬 Ask the AI Travel Advisor' : '💬 Preguntar al Asesor de Viaje IA'}
         </h4>
         <form onSubmit={handleAIQuery} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: chatMessages.length > 0 ? '16px' : 0 }}>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <input
               type="text"
               placeholder={
-                activeTab === 'plants' ? 'Ask about your plants...' : 
-                activeTab === 'cats' ? 'Ask about your cats...' : 'Ask about your dogs...'
+                activeTab === 'plants' ? (isEn ? 'Ask about your plants...' : 'Pregunta sobre tus plantas...') : 
+                activeTab === 'cats' ? (isEn ? 'Ask about your cats...' : 'Pregunta sobre tus gatos...') : (isEn ? 'Ask about your dogs...' : 'Pregunta sobre tus perros...')
               }
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -202,7 +203,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
                 textAlign: 'center'
               }}
             >
-              {loading ? 'Consulting...' : 'Ask 🤖'}
+              {loading ? (isEn ? 'Consulting...' : 'Consultando...') : (isEn ? 'Ask 🤖' : 'Preguntar 🤖')}
             </button>
           </div>
         </form>
@@ -244,7 +245,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', gap: '8px' }}>
                   <strong style={{ fontSize: '10px', color: msg.sender === 'user' ? (theme === 'gaming' ? '#8892b0' : '#555555') : '#666' }}>
-                    {msg.sender === 'user' ? 'You:' : 'AI Travel Advisor:'}
+                    {msg.sender === 'user' ? (isEn ? 'You:' : 'Tú:') : (isEn ? 'AI Travel Advisor:' : 'Asesor de Viajes IA:')}
                   </strong>
                 </div>
                 <div dangerouslySetInnerHTML={{ __html: renderMarkdownToHTML(msg.text) }} style={{ fontFamily: 'var(--game-font, sans-serif)' }} />

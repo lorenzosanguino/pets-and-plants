@@ -1030,11 +1030,15 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
         width: '100%',
         maxWidth: '100%'
       }}>
-        <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: 'var(--game-text-bright, #333)', fontWeight: 'bold' }}>Editar Mascota ✏️</h3>
+        <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: 'var(--game-text-bright, #333)', fontWeight: 'bold' }}>
+          {locale === 'en' ? 'Edit Pet ✏️' : 'Editar Mascota ✏️'}
+        </h3>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div>
-            <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Nombre:</label>
+            <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
+              {locale === 'en' ? 'Name:' : 'Nombre:'}
+            </label>
             <input 
               type="text" 
               value={editNombre} 
@@ -1045,20 +1049,22 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
 
           <div className="responsive-form-grid-2" style={{ gap: '10px' }}>
             <div>
-              <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Especie:</label>
+              <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
+                {locale === 'en' ? 'Species:' : 'Especie:'}
+              </label>
               <select 
                 value={editEspecie} 
                 onChange={(e) => setEditEspecie(e.target.value as EspecieMascota)}
                 style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: '#fff', color: '#000', fontSize: '13px' }}
               >
-                <option value="Felino">Felino 🐱</option>
-                <option value="Canino">Canino 🐶</option>
-                <option value="Hamster">Hámster 🐹</option>
-                <option value="Conejo">Conejo 🐰</option>
-                <option value="Peces">Peces 🐠</option>
-                <option value="Pájaro">Pájaro 🐦</option>
-                <option value="Cobaya">Cobaya 🐹</option>
-                <option value="Otro">Otro 🐾</option>
+                <option value="Felino">{locale === 'en' ? 'Feline 🐱' : 'Felino 🐱'}</option>
+                <option value="Canino">{locale === 'en' ? 'Canine 🐶' : 'Canino 🐶'}</option>
+                <option value="Hamster">{locale === 'en' ? 'Hamster 🐹' : 'Hámster 🐹'}</option>
+                <option value="Conejo">{locale === 'en' ? 'Rabbit 🐰' : 'Conejo 🐰'}</option>
+                <option value="Peces">{locale === 'en' ? 'Fish 🐠' : 'Peces 🐠'}</option>
+                <option value="Pájaro">{locale === 'en' ? 'Bird 🐦' : 'Pájaro 🐦'}</option>
+                <option value="Cobaya">{locale === 'en' ? 'Guinea Pig 🐹' : 'Cobaya 🐹'}</option>
+                <option value="Otro">{locale === 'en' ? 'Other 🐾' : 'Otro 🐾'}</option>
               </select>
             </div>
             
@@ -1071,24 +1077,30 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                   onChange={(e) => setEditEsMamifero(e.target.checked)}
                   style={{ cursor: 'pointer' }}
                 />
-                <label htmlFor="edit-es-mamifero" style={{ fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}>Es mamífero</label>
+                <label htmlFor="edit-es-mamifero" style={{ fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}>
+                  {locale === 'en' ? 'Is mammal' : 'Es mamífero'}
+                </label>
               </div>
             )}
           </div>
 
           <div>
-            <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Raza:</label>
+            <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
+              {locale === 'en' ? 'Breed:' : 'Raza:'}
+            </label>
             <input 
               type="text" 
               value={editRaza} 
               onChange={(e) => setEditRaza(e.target.value)} 
-              placeholder="Ej: Mestizo, Siamés, Golden Retriever..."
+              placeholder={locale === 'en' ? "E.g.: Mixed, Siamese, Golden Retriever..." : "Ej: Mestizo, Siamés, Golden Retriever..."}
               style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: '#fff', color: '#000', fontSize: '13px', boxSizing: 'border-box' }}
             />
           </div>
 
           <div>
-            <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Fecha de Nacimiento:</label>
+            <label style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
+              {locale === 'en' ? 'Date of Birth:' : 'Fecha de Nacimiento:'}
+            </label>
             <input 
               type="date" 
               value={editFechaNacimiento} 

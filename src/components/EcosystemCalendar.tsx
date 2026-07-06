@@ -556,7 +556,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                   cursor: 'pointer'
                 }}
               >
-                Add Note ➕
+                {locale === 'en' ? 'Add Note ➕' : 'Añadir Nota ➕'}
               </button>
             )}
           </div>
@@ -600,13 +600,13 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                   onClick={() => setShowEventForm(false)}
                   style={{ padding: '4px 10px', fontSize: '11px', background: '#ccc', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                 >
-                  Cancel
+                  {locale === 'en' ? 'Cancel' : 'Cancelar'}
                 </button>
                 <button 
                   type="submit" 
                   style={{ padding: '4px 12px', fontSize: '11px', background: '#2e7d32', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}
                 >
-                  Save Note 💾
+                  {locale === 'en' ? 'Save Note 💾' : 'Guardar Nota 💾'}
                 </button>
               </div>
             </form>
