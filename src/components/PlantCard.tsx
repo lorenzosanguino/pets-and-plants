@@ -25,6 +25,7 @@ interface PlantCardProps {
 
 const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, clima, onUpdate, onOpenScanner, isExpanded, onToggleExpand, theme: propTheme }) => {
   const { locale } = useTranslations();
+  const isEn = locale === 'en';
   const obtenerTipoRiegoTraducido = (tipo: string) => {
     if (locale !== 'en') return tipo;
     if (tipo === 'Agua del grifo reposada') return 'Rested tap water';
@@ -1818,7 +1819,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                 fontFamily: 'var(--game-font, sans-serif)'
               }}
             >
-              Export Record 📄
+              {isEn ? 'Export Record 📄' : 'Exportar Ficha 📄'}
             </button>
             <button
               onClick={startLuxmeter}
@@ -1835,7 +1836,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                 fontFamily: 'var(--game-font, sans-serif)'
               }}
             >
-              Measure Light ☀️
+              {isEn ? 'Measure Light ☀️' : 'Medir Luz ☀️'}
             </button>
             <button
               onClick={runChefIA}
@@ -1852,7 +1853,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                 fontFamily: 'var(--game-font, sans-serif)'
               }}
             >
-              Nutritional Chef 🌱
+              {isEn ? 'Nutritional Chef 🌱' : 'Chef Nutricional 🌱'}
             </button>
           </div>
 

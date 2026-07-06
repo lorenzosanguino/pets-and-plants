@@ -438,10 +438,10 @@ export const StatsView: React.FC<StatsViewProps> = ({
             gap: '12px'
           }}>
             <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid var(--game-border-color, #e0e0e0)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>⚠️</span> Cohabitation & Cross-Toxicity
+              <span>⚠️</span> {isEn ? 'Cohabitation & Cross-Toxicity' : 'Convivencia y Toxicidad Cruzada'}
             </h3>
             {!tieneFelino && !tieneCanino ? (
-              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>Add dogs or cats to check cross-toxicity with your plants.</p>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>{isEn ? 'Add dogs or cats to check cross-toxicity with your plants.' : 'Añade perros o gatos para comprobar la toxicidad cruzada con tus plantas.'}</p>
             ) : plantasToxicas.length === 0 ? (
               <div style={{
                 padding: '10px 12px',
@@ -453,7 +453,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
                 gap: '8px'
               }}>
                 <span style={{ fontSize: '18px' }}>✅</span>
-                <span style={{ fontSize: '12.5px', color: '#2e7d32', fontWeight: 'bold' }}>🏡 Safe home! None of the plants in your home are toxic to your pets.</span>
+                <span style={{ fontSize: '12.5px', color: '#2e7d32', fontWeight: 'bold' }}>{isEn ? '🏡 Safe home! None of the plants in your home are toxic to your pets.' : '🏡 ¡Hogar seguro! Ninguna planta de tu hogar es tóxica para tus mascotas.'}</span>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -467,7 +467,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
                   fontWeight: 'bold',
                   marginBottom: '4px'
                 }}>
-                  ⚠️ We detected potentially dangerous plants for your animals:
+                  {isEn ? '⚠️ We detected potentially dangerous plants for your animals:' : '⚠️ Hemos detectado plantas potencialmente peligrosas para tus animales:'}
                 </div>
                 {plantasToxicas.map(p => {
                   const esFelinoTox = tieneFelino && p.toxicidadFelina && p.toxicidadFelina !== 'Segura';
@@ -528,10 +528,10 @@ export const StatsView: React.FC<StatsViewProps> = ({
             gap: '12px'
           }}>
             <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid var(--game-border-color, #e0e0e0)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>⚖️</span> Weight Curves & Trends
+              <span>⚖️</span> {isEn ? 'Weight Curves & Trends' : 'Curvas y Tendencias de Peso'}
             </h3>
             {tendenciasMascotas.length === 0 ? (
-              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>Add at least 2 weight records for your pets to analyze the trend.</p>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>{isEn ? 'Add at least 2 weight records for your pets to analyze the trend.' : 'Añade al menos 2 registros de peso en tus mascotas para analizar la tendencia.'}</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {tendenciasMascotas.map((t, idx) => (

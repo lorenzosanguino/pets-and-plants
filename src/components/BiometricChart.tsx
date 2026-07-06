@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { triggerHaptic } from '../utils/audioFeedback';
+import { useTranslations } from '../utils/i18n';
 
 interface BiometricDataPoint {
   fecha: string;
@@ -19,6 +20,8 @@ export const BiometricChart: React.FC<BiometricChartProps> = ({
   color,
   theme = 'nature'
 }) => {
+  const { locale } = useTranslations();
+  const isEn = locale === 'en';
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   // Sort data chronologically
@@ -27,7 +30,7 @@ export const BiometricChart: React.FC<BiometricChartProps> = ({
   if (sortedData.length === 0) {
     return (
       <div style={{ padding: '20px', textAlign: 'center', color: '#888', fontSize: '12px', background: 'rgba(0,0,0,0.01)', borderRadius: '8px', border: '1px dashed rgba(0,0,0,0.1)' }}>
-        No data recorded yet. Add at least one record to get started.
+        {isEn ? 'No data recorded yet. Add at least one record to get started.' : 'No hay datos registrados todavía. Añade al menos un registro para comenzar.'}
       </div>
     );
   }

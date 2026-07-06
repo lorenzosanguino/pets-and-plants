@@ -3,6 +3,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { ImageOptimizer } from '../utils/imageOptimizer';
 import { PhotoEditorModal } from './PhotoEditorModal';
 import { ImageLightbox } from './ImageLightbox';
+import { useTranslations } from '../utils/i18n';
 
 interface CardPhotoManagerProps {
   currentPhotoUrl?: string;
@@ -21,6 +22,8 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
   onEditCard,
   onDeleteCard
 }) => {
+  const { locale } = useTranslations();
+  const isEn = locale === 'en';
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activePhoto, setActivePhoto] = useState<string>(currentPhotoUrl || (photos.length > 0 ? photos[0] : ''));
   const [loading, setLoading] = useState(false);
@@ -181,7 +184,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0' }}>
         <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>
-          📸 Record Photo Gallery
+          {isEn ? '📸 Record Photo Gallery' : '📸 Galería de Fotos del Expediente'}
         </h4>
         <button
           type="button"
@@ -200,7 +203,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
             fontFamily: 'var(--game-font, sans-serif)'
           }}
         >
-          {loading ? 'Uploading...' : '+ Add Photo 📷'}
+          {loading ? (isEn ? 'Uploading...' : 'Subiendo...') : (isEn ? '+ Add Photo 📷' : '+ Añadir Foto 📷')}
         </button>
       </div>
 
@@ -223,7 +226,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
                 fontFamily: 'var(--game-font, sans-serif)'
               }}
             >
-              ✏️ Edit Record
+              {isEn ? '✏️ Edit Record' : '✏️ Editar Ficha'}
             </button>
           ) : <div />}
           {onDeleteCard ? (
@@ -243,7 +246,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
                 fontFamily: 'var(--game-font, sans-serif)'
               }}
             >
-              🗑️ Delete Record
+              {isEn ? '🗑️ Delete Record' : '🗑️ Eliminar Ficha'}
             </button>
           ) : <div />}
         </div>
@@ -380,7 +383,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
                 boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
                 zIndex: 2
               }}>
-                Primary ★
+                {isEn ? 'Primary ★' : 'Principal ★'}
               </span>
             )}
             
@@ -409,7 +412,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
                     boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
                   }}
                 >
-                  Set as Primary ⭐
+                  {isEn ? 'Set as Primary ⭐' : 'Definir como Principal ⭐'}
                 </button>
               )}
               <button
@@ -427,7 +430,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
                   boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
                 }}
               >
-                Edit 🎨
+                {isEn ? 'Edit 🎨' : 'Editar 🎨'}
               </button>
               <button
                 type="button"
@@ -444,7 +447,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
                   boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
                 }}
               >
-                Delete 🗑️
+                {isEn ? 'Delete 🗑️' : 'Eliminar 🗑️'}
               </button>
             </div>
           </div>
@@ -541,7 +544,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
           fontSize: '12px',
           color: '#777'
         }}>
-          No photos uploaded for this record. Press the button above to upload photos of your pet or plant.
+          {isEn ? 'No photos uploaded for this record. Press the button above to upload photos of your pet or plant.' : 'No hay fotos cargadas en este expediente. Pulsa el botón superior para subir fotos de tu mascota o planta.'}
         </div>
       )}
 

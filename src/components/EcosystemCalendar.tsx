@@ -16,6 +16,7 @@ interface EcosystemCalendarProps {
 
 export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = [], mascotas = [], onUpdate }) => {
   const { locale } = useTranslations();
+  const isEn = locale === 'en';
   const [currentDate, setCurrentDate] = useState(new Date());
   const [eventos, setEventos] = useState<EventoCalendario[]>([]);
   const [selectedDayStr, setSelectedDayStr] = useState<string | null>(() => {
@@ -220,10 +221,9 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
   const daysInMonth = getDaysInMonth(year, month);
   const firstDayIndex = getFirstDayOfMonth(year, month);
 
-  const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
+  const monthNames = isEn
+    ? ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+    : ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
   const handleDayClick = (dayNum: number) => {
     const paddedMonth = String(month + 1).padStart(2, '0');
@@ -377,7 +377,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
       {/* Calendar Header */}
       <div className="calendar-header-container">
         <h3 style={{ margin: '0', fontSize: '18px', fontWeight: 'bold', color: 'var(--game-text-bright)' }}>
-          📅 Ecosystem Agenda & Calendar
+          {isEn ? '📅 Ecosystem Agenda & Calendar' : '📅 Agenda y Calendario del Ecosistema'}
         </h3>
         <div className="calendar-controls-wrapper">
           <button 
@@ -397,10 +397,10 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
               gap: '4px',
               marginRight: '4px'
             }}
-            title="Export calendar to iCal format (.ics)"
+            title={isEn ? "Export calendar to iCal format (.ics)" : "Exportar calendario al formato iCal (.ics)"}
             className="no-print calendar-export-btn"
           >
-            📅 Export iCal
+            {isEn ? '📅 Export iCal' : '📅 Exportar iCal'}
           </button>
           
           <div className="calendar-nav-group">
@@ -425,13 +425,13 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
 
       {/* Weekdays Labels */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', fontSize: '12px', fontWeight: 'bold', borderBottom: '1px solid #eee', paddingBottom: '6px' }}>
-        <span>Mo</span>
-        <span>Tu</span>
-        <span>We</span>
-        <span>Th</span>
-        <span>Fr</span>
-        <span>Sa</span>
-        <span style={{ color: '#ef4444' }}>Su</span>
+        <span>{isEn ? 'Mo' : 'Lu'}</span>
+        <span>{isEn ? 'Tu' : 'Ma'}</span>
+        <span>{isEn ? 'We' : 'Mi'}</span>
+        <span>{isEn ? 'Th' : 'Ju'}</span>
+        <span>{isEn ? 'Fr' : 'Vi'}</span>
+        <span>{isEn ? 'Sa' : 'Sá'}</span>
+        <span style={{ color: '#ef4444' }}>{isEn ? 'Su' : 'Do'}</span>
       </div>
 
       {/* Days Grid */}
@@ -540,7 +540,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h4 style={{ margin: '0', fontSize: '14px', fontWeight: 'bold' }}>
-              Notes for: <strong style={{ color: 'var(--game-border-color, #1976d2)' }}>{selectedDayStr}</strong>
+              {isEn ? 'Notes for:' : 'Notas para:'} <strong style={{ color: 'var(--game-border-color, #1976d2)' }}>{selectedDayStr}</strong>
             </h4>
             {!showEventForm && (
               <button 
@@ -632,7 +632,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
                   <span style={{ fontSize: '9px', fontWeight: 'bold', color: t.color, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    {t.emoji} Ecosystem Task • {t.type.toUpperCase()}
+                    {t.emoji} {isEn ? 'Ecosystem Task •' : 'Tarea del Ecosistema •'} {t.type.toUpperCase()}
                   </span>
                   <span style={{ color: 'var(--game-text-bright, #333)', fontWeight: 'bold' }}>{t.title}</span>
                   <span style={{ fontSize: '10px', color: '#666' }}>{t.detail}</span>
@@ -789,14 +789,14 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                       flexShrink: 0
                     }}
                   >
-                    Complete ✓
+                    {isEn ? 'Complete ✓' : 'Completar ✓'}
                   </button>
                 )}
               </div>
             ))}
 
             {selectedDayEvents.length === 0 && obtenerTareasAutomaticas(selectedDayStr).length === 0 ? (
-              <p style={{ margin: '0', fontSize: '12px', color: '#888', fontStyle: 'italic', textAlign: 'center' }}>No reminders or notes recorded.</p>
+              <p style={{ margin: '0', fontSize: '12px', color: '#888', fontStyle: 'italic', textAlign: 'center' }}>{isEn ? 'No reminders or notes recorded.' : 'No hay recordatorios ni notas registradas.'}</p>
             ) : (
               selectedDayEvents.map(ev => (
                 <div
