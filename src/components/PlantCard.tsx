@@ -1641,10 +1641,14 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                           </button>
                           <span style={{ fontSize: '10px', color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#c62828' : 'var(--game-text, #666)', textAlign: 'center', display: 'block', fontWeight: '500' }}>
                             {cuota.esIlimitado 
-                              ? '✅ Premium Mode: Unlimited analyses' 
+                              ? (locale === 'en' ? '✅ Premium Mode: Unlimited analyses' : '✅ Modo Premium: Análisis ilimitados') 
                               : cuota.restantes === 0 
-                                ? `⚠️ Daily limit reached (Wait ${IAQuotaManager.obtenerMensajeTiempoRestante()} or add your API Key in Settings 🔑)` 
-                                : `🔬 You have ${cuota.restantes} AI analyses left today`}
+                                ? (locale === 'en' 
+                                    ? `⚠️ Daily limit reached (Wait ${IAQuotaManager.obtenerMensajeTiempoRestante()} or add your API Key in Settings 🔑)` 
+                                    : `⚠️ Límite diario alcanzado (Espera ${IAQuotaManager.obtenerMensajeTiempoRestante()} o añade tu API Key en Ajustes 🔑)`) 
+                                : (locale === 'en' 
+                                    ? `🔬 You have ${cuota.restantes} AI analyses left today` 
+                                    : `🔬 Te quedan ${cuota.restantes} análisis de IA hoy`)}
                           </span>
                         </div>
                       )}

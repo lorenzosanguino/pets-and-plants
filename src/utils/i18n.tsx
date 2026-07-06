@@ -103,7 +103,63 @@ const translations: Record<Language, TranslationDictionary> = {
     hogarDiagRunning: "Ejecutando...",
     hogarDiagBtn: "Ejecutar Diagnóstico 🔍",
     cloudSessionTitle: "☁️ Sesión en la Nube",
-    cloudSessionNoLogin: "No has iniciado sesión. Tus datos se guardan de forma local en tu navegador. Inicia sesión para guardar tus datos de forma segura en la nube."
+    cloudSessionNoLogin: "No has iniciado sesión. Tus datos se guardan de forma local en tu navegador. Inicia sesión para guardar tus datos de forma segura en la nube.",
+    
+    // Weather alerts
+    weatherPanelTitle: "Panel de Alertas y Diagnóstico Climático",
+    weatherUpdating: "Sincronizando...",
+    weatherUpdateBtn: "Actualizar Clima 🔄",
+    weatherInactiveTitle: "Monitoreo Satelital de Clima Extremo Inactivo",
+    weatherInactiveDesc: "Activa la sincronización GPS para obtener mediciones de temperatura y humedad en tiempo real y recibir alertas automatizadas para tus mascotas y plantas.",
+    weatherActiveGpsBtn: "Activar Sincronización GPS 🛰️",
+    weatherWaitingGps: "Esperando lecturas de sensores satelitales GPS... 🛰️",
+    weatherPetCareTitle: "🐾 Cuidado de Mascotas",
+    weatherPlantCareTitle: "🌿 Manejo de Cultivos",
+
+    // PWA & Installation
+    pwaTitle: "📱 Aplicación de Escritorio y Móvil",
+    pwaDesc: "Instala Pet & Plant Pro directamente en tu dispositivo para un acceso rápido y soporte completo sin conexión.",
+    pwaInstallBtn: "Instalar Aplicación en Dispositivo 📲",
+    pwaInstalledText: "✓ Aplicación instalada o funcionando en modo standalone de pantalla de inicio.",
+
+    // Privacy & OWASP
+    owaspTitle: "🔒 Auditoría de Privacidad y OWASP",
+    owaspDesc: "Tu privacidad y seguridad son prioritarias. A continuación se detallan los controles de seguridad locales y remotos validados por el estándar OWASP ASVS aplicados a este ecosistema.",
+    owaspLocalIsolationTitle: "Aislamiento de Datos IndexedDB local",
+    owaspLocalIsolationDesc: "Todos los datos biométricos, médicos y diarios clínicos permanecen aislados localmente en el navegador, previniendo fugas no deseadas.",
+    owaspXssTitle: "Sanitización XSS Preventiva",
+    owaspXssDesc: "Cualquier entrada de texto en formularios de registro o diarios clínicos es filtrada antes de renderizarse para evitar scripts maliciosos.",
+    owaspHttpsTitle: "Sincronización HTTPS HSTS",
+    owaspHttpsDesc: "La comunicación con Firestore y Microsoft Graph se realiza mediante HTTPS SSL/TLS estricto con cabeceras HSTS preventivas de interceptación.",
+
+    // Sessions
+    btnSignOut: "Cerrar Sesión 🚪",
+    btnSignInGoogle: "Iniciar Sesión con Google 🔑",
+    btnSignInMicrosoft: "Iniciar Sesión con Microsoft 🔑",
+
+    // Clinical & Cards
+    clinicalHistoryTitle: "🦷 Historial Clínico e Incidencias",
+    clinicalRecordManual: "Registrar incidencia médica manualmente:",
+    noClinicalRecords: "Sin registros clínicos ni incidencias.",
+    clinicalDigitalRecord: "EXPEDIENTE CLÍNICO DIGITAL",
+    clinicalDownloadScan: "Escanea para descargar historial clínico",
+    deletePetTitle: "⚠️ ¿Eliminar Mascota?",
+    deletePetConfirm: "¿Estás seguro de que deseas eliminar permanentemente el expediente de {nombre}? Esta acción no se puede deshacer.",
+    deletePlantTitle: "⚠️ ¿Eliminar Planta?",
+    deletePlantConfirm: "¿Estás seguro de que deseas eliminar permanentemente el expediente de {nombre}? Esta acción no se puede deshacer.",
+    btnConfirmDelete: "Sí, eliminar 🗑️",
+    healthDiagnosisTitle: "💉 Diagnóstico de Salud",
+    phytosanitaryDiagnosisTitle: "🦠 Diagnóstico Fitosanitario por IA",
+    leafDiaryTitle: "🌱 Diario Foliar y Diagnóstico",
+    homeLightMeterTitle: "Luxómetro Doméstico 🔦",
+    homeLightMeterDesc: "Mide la radiación solar para optimizar la ubicación de la planta.",
+    cameraActiveLight: "📹 Cámara Activa (Analizando Luz)",
+    startingCamera: "Iniciando cámara...",
+    manualLuxSimulation: "Simulación manual de Luxes:",
+    btnSaveMeasurement: "Guardar Medición 💾",
+    btnCancelSession: "Cancelar Sesión",
+    owaspGeminiMaskingTitle: "Enmascaramiento de Clave Gemini",
+    owaspGeminiMaskingDesc: "Tu clave API personal de Gemini se almacena encriptada localmente y nunca se comparte ni se expone a servidores externos."
   },
   en: {
     // Header & Navigation
@@ -209,7 +265,52 @@ const translations: Record<Language, TranslationDictionary> = {
     weatherActiveGpsBtn: "Activate GPS Sync 🛰️",
     weatherWaitingGps: "Waiting for GPS satellite sensor readings... 🛰️",
     weatherPetCareTitle: "🐾 Pet Care",
-    weatherPlantCareTitle: "🌿 Crop Management"
+    weatherPlantCareTitle: "🌿 Crop Management",
+
+    // PWA & Installation
+    pwaTitle: "📱 Desktop & Mobile App",
+    pwaDesc: "Install Pet & Plant Pro directly on your device for quick access and full offline support.",
+    pwaInstallBtn: "Install App on Device 📲",
+    pwaInstalledText: "✓ App installed or running in home screen standalone mode.",
+
+    // Privacy & OWASP
+    owaspTitle: "🔒 Privacy & OWASP Audit",
+    owaspDesc: "Your privacy and security are a priority. Below are the local and remote security controls validated by the OWASP ASVS standard applied to this ecosystem.",
+    owaspLocalIsolationTitle: "Local IndexedDB Data Isolation",
+    owaspLocalIsolationDesc: "All biometric, medical and clinical diary data remains locally isolated in the browser, preventing unwanted leaks.",
+    owaspXssTitle: "Preventive XSS Sanitization",
+    owaspXssDesc: "Any text input in registration forms or clinical diaries is filtered before rendering to prevent malicious scripts.",
+    owaspHttpsTitle: "HTTPS HSTS Synchronization",
+    owaspHttpsDesc: "Communication with Firestore and Microsoft Graph is carried out via strict HTTPS SSL/TLS with HSTS headers to prevent interception.",
+
+    // Sessions
+    btnSignOut: "Sign Out 🚪",
+    btnSignInGoogle: "Sign in with Google 🔑",
+    btnSignInMicrosoft: "Sign in with Microsoft 🔑",
+
+    // Clinical & Cards
+    clinicalHistoryTitle: "🦷 Clinical History and Incidents",
+    clinicalRecordManual: "Register medical incident manually:",
+    noClinicalRecords: "No clinical records or incidents.",
+    clinicalDigitalRecord: "DIGITAL CLINICAL RECORD",
+    clinicalDownloadScan: "Scan to download clinical history",
+    deletePetTitle: "⚠️ Delete Pet?",
+    deletePetConfirm: "Are you sure you want to permanently delete the record for {nombre}? This action cannot be undone.",
+    deletePlantTitle: "⚠️ Delete Plant?",
+    deletePlantConfirm: "Are you sure you want to permanently delete the record for {nombre}? This action cannot be undone.",
+    btnConfirmDelete: "Yes, delete 🗑️",
+    healthDiagnosisTitle: "💉 Health Diagnosis",
+    phytosanitaryDiagnosisTitle: "🦠 AI Phytosanitary Diagnosis",
+    leafDiaryTitle: "🌱 Leaf Diary and Diagnosis",
+    homeLightMeterTitle: "Home Light Meter 🔦",
+    homeLightMeterDesc: "Measure solar radiation to optimize plant placement.",
+    cameraActiveLight: "📹 Camera Active (Analyzing Light)",
+    startingCamera: "Starting camera...",
+    manualLuxSimulation: "Manual Lux Simulation:",
+    btnSaveMeasurement: "Save Measurement 💾",
+    btnCancelSession: "Cancel Session",
+    owaspGeminiMaskingTitle: "Gemini Key Masking",
+    owaspGeminiMaskingDesc: "Your personal Gemini API key is stored encrypted locally and is never shared or exposed to external servers."
   }
 };
 

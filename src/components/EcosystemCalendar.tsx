@@ -295,13 +295,14 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
   };
 
   const getCategoryLabel = (cat: string) => {
+    const isEn = locale === 'en';
     switch (cat) {
-      case 'riego': return 'Watering 💧';
-      case 'veterinario': return 'Veterinary 🩺';
-      case 'peluqueria': return 'Grooming ✂️';
-      case 'medicacion': return 'Medication 💊';
-      case 'abono': return 'Fertilizer 🌱';
-      default: return 'Other 📝';
+      case 'riego': return isEn ? 'Watering 💧' : 'Riego 💧';
+      case 'veterinario': return isEn ? 'Veterinary 🩺' : 'Veterinario 🩺';
+      case 'peluqueria': return isEn ? 'Grooming ✂️' : 'Peluquería ✂️';
+      case 'medicacion': return isEn ? 'Medication 💊' : 'Medicación 💊';
+      case 'abono': return isEn ? 'Fertilizer 🌱' : 'Abono 🌱';
+      default: return isEn ? 'Other 📝' : 'Otro 📝';
     }
   };
 
@@ -577,17 +578,17 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                   onChange={(e) => setNewCategoria(e.target.value as any)}
                   style={{ padding: '6px', fontSize: '11px', border: '1px solid #ccc', borderRadius: '6px', background: '#fff', color: '#000' }}
                 >
-                  <option value="riego">Watering 💧</option>
-                  <option value="veterinario">Veterinary 🩺</option>
-                  <option value="peluqueria">Grooming ✂️</option>
-                  <option value="medicacion">Medication 💊</option>
-                  <option value="abono">Fertilizer 🌱</option>
-                  <option value="otro">Other 📝</option>
+                  <option value="riego">{locale === 'en' ? 'Watering 💧' : 'Riego 💧'}</option>
+                  <option value="veterinario">{locale === 'en' ? 'Veterinary 🩺' : 'Veterinario 🩺'}</option>
+                  <option value="peluqueria">{locale === 'en' ? 'Grooming ✂️' : 'Peluquería ✂️'}</option>
+                  <option value="medicacion">{locale === 'en' ? 'Medication 💊' : 'Medicación 💊'}</option>
+                  <option value="abono">{locale === 'en' ? 'Fertilizer 🌱' : 'Abono 🌱'}</option>
+                  <option value="otro">{locale === 'en' ? 'Other 📝' : 'Otro 📝'}</option>
                 </select>
                 <input 
                   type="text" 
                   required
-                  placeholder="Write the reminder or note..."
+                  placeholder={locale === 'en' ? "Write the reminder or note..." : "Escribe el recordatorio o nota..."}
                   value={newTexto}
                   onChange={(e) => setNewTexto(e.target.value)}
                   style={{ flex: 1, padding: '6px 10px', fontSize: '11px', border: '1px solid #ccc', borderRadius: '6px', background: '#fff', color: '#000' }}

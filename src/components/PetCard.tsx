@@ -2317,7 +2317,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                 }}
               >
                 <p style={{ margin: '0', fontSize: '12px', fontWeight: 'bold', color: 'var(--game-text-bright, #333)', fontFamily: 'var(--game-font, sans-serif)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  🏥 Historial Clínico e Incidencias
+                  {locale === 'en' ? '🏥 Clinical History and Incidents' : '🏥 Historial Clínico e Incidencias'}
                 </p>
                 <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontWeight: 'bold' }}>
                   {showHistorialClinico ? '▲' : '▼'}
@@ -2347,20 +2347,24 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                           boxSizing: 'border-box'
                         }}
                       >
-                        Analizar Salud por IA 🩺 📷
+                        {locale === 'en' ? 'Analyze Health with AI 🩺 📷' : 'Analizar Salud por IA 🩺 📷'}
                       </button>
                       <span style={{ fontSize: '10px', color: (!cuota.esIlimitado && cuota.restantes === 0) ? '#c62828' : 'var(--game-text, #666)', textAlign: 'center', display: 'block', fontWeight: '500' }}>
                         {cuota.esIlimitado 
-                          ? '✅ Premium Mode: Unlimited analyses' 
+                          ? (locale === 'en' ? '✅ Premium Mode: Unlimited analyses' : '✅ Modo Premium: Análisis ilimitados') 
                           : cuota.restantes === 0 
-                            ? `⚠️ Daily limit reached (Wait ${IAQuotaManager.obtenerMensajeTiempoRestante()} or add your API Key in Settings 🔑)` 
-                            : `🔬 You have ${cuota.restantes} AI analyses left today`}
+                            ? (locale === 'en' 
+                                ? `⚠️ Daily limit reached (Wait ${IAQuotaManager.obtenerMensajeTiempoRestante()} or add your API Key in Settings 🔑)` 
+                                : `⚠️ Límite diario alcanzado (Espera ${IAQuotaManager.obtenerMensajeTiempoRestante()} o añade tu API Key en Ajustes 🔑)`) 
+                            : (locale === 'en' 
+                                ? `🔬 You have ${cuota.restantes} AI analyses left today` 
+                                : `🔬 Te quedan ${cuota.restantes} análisis de IA hoy`)}
                       </span>
                     </div>
                   )}
 
                   <form onSubmit={agregarIncidenciaPasada} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '4px' }} className="no-print">
-                    <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--game-text, #666)' }}>Register medical incident manually:</span>
+                    <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--game-text, #666)' }}>{locale === 'en' ? 'Register medical incident manually:' : 'Registrar incidencia médica manualmente:'}</span>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
                       <input 
                         type="date" 
@@ -2374,30 +2378,30 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                         onChange={(e) => setHistTipo(e.target.value as 'Enfermedad' | 'Parásito' | 'Tratamiento' | 'Otro')}
                         style={{ width: '100%', boxSizing: 'border-box', padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
                       >
-                        <option value="Enfermedad">Enfermedad</option>
-                        <option value="Parásito">Parasite</option>
-                        <option value="Tratamiento">Tratamiento</option>
-                        <option value="Otro">Otro</option>
+                        <option value="Enfermedad">{locale === 'en' ? 'Disease' : 'Enfermedad'}</option>
+                        <option value="Parásito">{locale === 'en' ? 'Parasite' : 'Parásito'}</option>
+                        <option value="Tratamiento">{locale === 'en' ? 'Treatment' : 'Tratamiento'}</option>
+                        <option value="Otro">{locale === 'en' ? 'Other' : 'Otro'}</option>
                       </select>
                     </div>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <input 
                         type="text" 
-                        placeholder="Description of the condition or treatment..." 
+                        placeholder={locale === 'en' ? 'Description of the condition or treatment...' : 'Descripción de la dolencia o tratamiento...'} 
                         value={histDesc} 
                         onChange={(e) => setHistDesc(e.target.value)} 
                         required
                         style={{ flex: 1, minWidth: 0, padding: '6px 8px', fontSize: '12px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
                       />
                       <button type="submit" style={{ padding: '6px 12px', background: '#1a1a1a', color: theme === 'gaming' ? '#000' : '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
-                        Add
+                        {locale === 'en' ? 'Add' : 'Añadir'}
                       </button>
                     </div>
                   </form>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '220px', overflowY: 'auto' }}>
                     {unifiedHistory.length === 0 ? (
-                      <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>No clinical records or incidents.</span>
+                      <span style={{ fontSize: '11px', color: 'var(--game-text, #888)', fontStyle: 'italic', fontFamily: 'var(--game-font, sans-serif)' }}>{locale === 'en' ? 'No clinical records or incidents.' : 'Sin registros clínicos ni incidencias.'}</span>
                     ) : (
                       unifiedHistory.map(item => {
                         const esIAReporte = item.tipo === 'IA Reporte';

@@ -422,7 +422,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
         </button>
 
         <h2 style={{ marginTop: '0', fontSize: '20px', color: 'var(--game-text-bright, #333)' }}>
-          🔬 Smart Clinical Scanner
+          {locale === 'en' ? '🔬 Smart Clinical Scanner' : '🔬 Escáner Clínico Inteligente'}
         </h2>
 
         <div style={{
@@ -440,10 +440,14 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
         }}>
           <span>
             {cuota.esIlimitado 
-              ? '✅ Premium Mode: Unlimited analyses with your API key.' 
+              ? (locale === 'en' ? '✅ Premium Mode: Unlimited analyses with your API key.' : '✅ Modo Premium: Análisis ilimitados con tu clave API.') 
               : cuota.restantes === 0 
-                ? `❌ Daily analysis limit reached (Wait ${IAQuotaManager.obtenerMensajeTiempoRestante()} or add your API Key in Settings 🔑)` 
-                : `🔬 You have ${cuota.restantes} AI analyses available today.`}
+                ? (locale === 'en' 
+                    ? `❌ Daily analysis limit reached (Wait ${IAQuotaManager.obtenerMensajeTiempoRestante()} or add your API Key in Settings 🔑)` 
+                    : `❌ Límite diario alcanzado (Espera ${IAQuotaManager.obtenerMensajeTiempoRestante()} o añade tu API Key en Ajustes 🔑)`) 
+                : (locale === 'en' 
+                    ? `🔬 You have ${cuota.restantes} AI analyses available today.` 
+                    : `🔬 Te quedan ${cuota.restantes} análisis de IA hoy.`)}
           </span>
         </div>
 
@@ -504,9 +508,13 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
               color: 'var(--game-text-bright)'
             }}>
               <span style={{ fontSize: '48px', display: 'block', marginBottom: '16px' }}>⚠️</span>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#c62828', fontWeight: 'bold' }}>Scanner Disabled</h3>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#c62828', fontWeight: 'bold' }}>
+                {locale === 'en' ? 'Scanner Disabled' : 'Escáner Deshabilitado'}
+              </h3>
               <p style={{ fontSize: '13px', margin: '0 0 16px 0', color: 'var(--game-text)' }}>
-                {`You have reached your daily free analysis limit. It will be available again in ${IAQuotaManager.obtenerMensajeTiempoRestante()}. For immediate unlimited analyses, enter your API key in Settings 🔑.`}
+                {locale === 'en' 
+                  ? `You have reached your daily free analysis limit. It will be available again in ${IAQuotaManager.obtenerMensajeTiempoRestante()}. For immediate unlimited analyses, enter your API key in Settings 🔑.`
+                  : `Has alcanzado tu límite diario de análisis gratuitos. Estará disponible de nuevo en ${IAQuotaManager.obtenerMensajeTiempoRestante()}. Para análisis ilimitados inmediatos, introduce tu clave API en Ajustes 🔑.`}
               </p>
             </div>
           ) : (
@@ -622,7 +630,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
               </div>
             )}
 
-            {loading && <p style={{ textAlign: 'center', fontSize: '14px', color: accentColor }}>Processing molecular AI analysis...</p>}
+            {loading && <p style={{ textAlign: 'center', fontSize: '14px', color: accentColor }}>{locale === 'en' ? 'Processing molecular AI analysis...' : 'Procesando análisis molecular por IA...'}</p>}
             
             {errorMsg && (
               <p style={{ 
@@ -696,10 +704,10 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
                         </select>
                       </div>
                       <div>
-                        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Neutered/Spayed?:</label>
+                        <label style={{ fontSize: '11px', fontWeight: 'bold' }}>{locale === 'en' ? 'Neutered/Spayed?:' : '¿Castrado/a?:'}</label>
                         <select value={petCastrado ? 'si' : 'no'} onChange={(e) => setPetCastrado(e.target.value === 'si')} style={{ width: '100%', padding: '6px', border: '1px solid #ccc', borderRadius: '4px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}>
-                          <option value="no">No</option>
-                          <option value="si">Yes</option>
+                          <option value="no">{locale === 'en' ? 'No' : 'No'}</option>
+                          <option value="si">{locale === 'en' ? 'Yes' : 'Sí'}</option>
                         </select>
                       </div>
                     </div>
@@ -886,15 +894,15 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
                     <div style={{ padding: '12px', background: 'rgba(0,0,0,0.03)', borderRadius: '8px', border: '1px solid var(--game-border-color)' }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
-                        <TTSButton text={`Diagnosis: ${scanResult.diagnostico}. Suggested treatment: ${scanResult.tratamiento}.${scanResult.advertencia ? ` Alert: ${scanResult.advertencia}` : ''}`} />
+                        <TTSButton text={isEn ? `Diagnosis: ${scanResult.diagnostico}. Suggested treatment: ${scanResult.tratamiento}.${scanResult.advertencia ? ` Alert: ${scanResult.advertencia}` : ''}` : `Diagnóstico: ${scanResult.diagnostico}. Tratamiento sugerido: ${scanResult.tratamiento}.${scanResult.advertencia ? ` Alerta: ${scanResult.advertencia}` : ''}`} />
                       </div>
-                      <p><strong>Diagnosis:</strong> {scanResult.diagnostico}</p>
-                      <p><strong>Tratamiento sugerido:</strong> {scanResult.tratamiento}</p>
-                      <p style={{ color: scanResult.esUrgente ? '#f44336' : 'inherit' }}><strong>Alerta:</strong> {scanResult.advertencia}</p>
+                      <p><strong>{isEn ? 'Diagnosis:' : 'Diagnóstico:'}</strong> {scanResult.diagnostico}</p>
+                      <p><strong>{isEn ? 'Suggested treatment:' : 'Tratamiento sugerido:'}</strong> {scanResult.tratamiento}</p>
+                      <p style={{ color: scanResult.esUrgente ? '#f44336' : 'inherit' }}><strong>{isEn ? 'Warning:' : 'Alerta:'}</strong> {scanResult.advertencia}</p>
                     </div>
 
                     {mascotas.length === 0 ? (
-                      <p style={{ fontStyle: 'italic', fontSize: '12px', color: '#666' }}>{isEn ? 'Register a pet first to save this diagnosis to its history.' : 'Register a pet first to save this diagnosis to its history.'}</p>
+                      <p style={{ fontStyle: 'italic', fontSize: '12px', color: '#666' }}>{isEn ? 'Register a pet first to save this diagnosis to its history.' : 'Registra una mascota primero para poder guardar este diagnóstico en su historial.'}</p>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <label style={{ fontWeight: 'bold' }}>{isEn ? 'Associate to the record of:' : 'Asociar al expediente de:'}</label>
@@ -918,10 +926,10 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
                     <div style={{ padding: '12px', background: 'rgba(0,0,0,0.03)', borderRadius: '8px', border: '1px solid var(--game-border-color)' }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
-                        <TTSButton text={`Phytosanitary Diagnosis: ${scanResult.diagnostico}. Recommended Action: ${scanResult.tratamiento}.${scanResult.advertencia ? ` Danger: ${scanResult.advertencia}` : ''}`} />
+                        <TTSButton text={isEn ? `Phytosanitary Diagnosis: ${scanResult.diagnostico}. Recommended Action: ${scanResult.tratamiento}.${scanResult.advertencia ? ` Danger: ${scanResult.advertencia}` : ''}` : `Diagnóstico fitosanitario: ${scanResult.diagnostico}. Acción recomendada: ${scanResult.tratamiento}.${scanResult.advertencia ? ` Peligro: ${scanResult.advertencia}` : ''}`} />
                       </div>
-                      <p><strong>Phytosanitary Diagnosis:</strong> {scanResult.diagnostico}</p>
-                      <p><strong>Recommended Action:</strong> {scanResult.tratamiento}</p>
+                      <p><strong>{isEn ? 'Phytosanitary Diagnosis:' : 'Diagnóstico Fitosanitario:'}</strong> {scanResult.diagnostico}</p>
+                      <p><strong>{isEn ? 'Recommended Action:' : 'Acción Recomendada:'}</strong> {scanResult.tratamiento}</p>
                       <p style={{ color: scanResult.esUrgente ? '#f44336' : 'inherit' }}><strong>{isEn ? 'Danger:' : 'Peligro:'}</strong> {scanResult.advertencia}</p>
                     </div>
 

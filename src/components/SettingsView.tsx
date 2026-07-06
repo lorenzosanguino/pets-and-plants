@@ -1196,7 +1196,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               fontFamily: 'var(--game-font, sans-serif)'
             }}
           >
-            Sign Out 🚪
+            {t('btnSignOut')}
           </button>
         ) : (
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
@@ -1218,7 +1218,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
               }}
             >
-              Sign in with Google 🔑
+              {t('btnSignInGoogle')}
             </button>
             <button
               onClick={handleMicrosoftSignIn}
@@ -1244,7 +1244,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <rect x="0" y="11.5" width="10.5" height="10.5" fill="#00a4ef"/>
                 <rect x="11.5" y="11.5" width="10.5" height="10.5" fill="#ffb900"/>
               </svg>
-              Sign in with Microsoft 🔑
+              {t('btnSignInMicrosoft')}
             </button>
           </div>
         )}
@@ -1266,12 +1266,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             fontWeight: 'bold',
             fontFamily: 'var(--game-font, sans-serif)'
           }}>
-            📱 Desktop & Mobile App
+            {t('pwaTitle')}
           </h3>
           {deferredPrompt ? (
             <>
               <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', lineHeight: '1.4' }}>
-                Install Pet & Plant Pro directly on your device for quick access and full offline support.
+                {t('pwaDesc')}
               </p>
               <button
                 onClick={handleInstallPWA}
@@ -1290,12 +1290,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   transition: 'all 0.2s'
                 }}
               >
-                Install App on Device 📲
+                {t('pwaInstallBtn')}
               </button>
             </>
           ) : (
             <p style={{ margin: '0', fontSize: '13px', color: '#2e7d32', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              ✓ App installed or running in home screen standalone mode.
+              {t('pwaInstalledText')}
             </p>
           )}
         </div>
@@ -1527,10 +1527,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             fontWeight: 'bold',
             fontFamily: 'var(--game-font, sans-serif)'
           }}>
-            🛡️ Privacy & OWASP Audit
+            {t('owaspTitle')}
           </h3>
           <p style={{ margin: '0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', lineHeight: '1.4' }}>
-            Your privacy and security are a priority. Below are the local and remote security controls validated by the OWASP ASVS standard applied to this ecosystem.
+            {t('owaspDesc')}
           </p>
         </div>
 
@@ -1551,10 +1551,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <span style={{ fontSize: '20px' }}>🔒</span>
             <div>
               <strong style={{ fontSize: '13px', display: 'block', color: 'var(--game-text-bright, #333)', marginBottom: '4px' }}>
-                Local IndexedDB Sandbox
+                {t('owaspLocalIsolationTitle')}
               </strong>
               <span style={{ fontSize: '11px', color: 'var(--game-text, #555)', lineHeight: '1.4' }}>
-                All biometric, medical and clinical diary data remains locally isolated in the browser, preventing unwanted leaks.
+                {t('owaspLocalIsolationDesc')}
               </span>
               <span style={{
                 marginTop: '6px',
@@ -1584,10 +1584,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <span style={{ fontSize: '20px' }}>🧹</span>
             <div>
               <strong style={{ fontSize: '13px', display: 'block', color: 'var(--game-text-bright, #333)', marginBottom: '4px' }}>
-                Preventive XSS Sanitization
+                {t('owaspXssTitle')}
               </strong>
               <span style={{ fontSize: '11px', color: 'var(--game-text, #555)', lineHeight: '1.4' }}>
-                Any text input in registration forms or clinical diaries is filtered before rendering to prevent malicious scripts.
+                {t('owaspXssDesc')}
               </span>
               <span style={{
                 marginTop: '6px',
@@ -1617,10 +1617,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <span style={{ fontSize: '20px' }}>🔑</span>
             <div>
               <strong style={{ fontSize: '13px', display: 'block', color: 'var(--game-text-bright, #333)', marginBottom: '4px' }}>
-                Gemini Key Masking
+                {t('owaspGeminiMaskingTitle')}
               </strong>
               <span style={{ fontSize: '11px', color: 'var(--game-text, #555)', lineHeight: '1.4' }}>
-                Your personal Gemini API key is stored encrypted locally and is never shared or exposed to external servers.
+                {t('owaspGeminiMaskingDesc')}
               </span>
               <span style={{
                 marginTop: '6px',
@@ -1650,10 +1650,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <span style={{ fontSize: '20px' }}>📡</span>
             <div>
               <strong style={{ fontSize: '13px', display: 'block', color: 'var(--game-text-bright, #333)', marginBottom: '4px' }}>
-                HTTPS HSTS Synchronization
+                {t('owaspHttpsTitle')}
               </strong>
               <span style={{ fontSize: '11px', color: 'var(--game-text, #555)', lineHeight: '1.4' }}>
-                Communication with Firestore and Microsoft Graph is carried out via strict HTTPS SSL/TLS with HSTS headers to prevent interception.
+                {t('owaspHttpsDesc')}
               </span>
               <span style={{
                 marginTop: '6px',

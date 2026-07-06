@@ -1,4 +1,4 @@
-const CACHE_NAME = 'petplant-cache-v1783265268988';
+const CACHE_NAME = 'petplant-cache-v1783359390790';
 const ASSETS = [
   '/',
   '/index.html',

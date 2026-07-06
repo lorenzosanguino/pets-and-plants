@@ -445,6 +445,11 @@ El usuario se encuentra en las siguientes coordenadas y condiciones climáticas 
           systemInstruction = `${baseSystemInstruction}${dbContext}${gpsContext}${navigationInstruction}`;
         }
 
+        const languageInstruction = locale === 'en'
+          ? `\n\nCRITICAL LANGUAGE DIRECTIVE: You MUST respond strictly in ENGLISH. All values in your JSON response (especially 'diagnostico', 'tratamiento', and 'advertencia') MUST be in English. Do not write in Spanish under any circumstance. Speak to the user only in English.`
+          : `\n\nDIRECTIVA CRÍTICA DE IDIOMA: DEBES responder estrictamente en ESPAÑOL. Todos los valores en tu respuesta JSON (especialmente 'diagnostico', 'tratamiento' y 'advertencia') DEBEN estar en español. No escribas en inglés bajo ninguna circunstancia. Háblale al usuario solo en español.`;
+        systemInstruction += languageInstruction;
+
         const contents: any[] = [];
         if (historial && historial.length > 0) {
           let expectedRole: 'user' | 'model' = 'user';

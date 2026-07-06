@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Mascota, Planta } from '../database/types';
+import { useTranslations } from '../utils/i18n';
 
 interface StatsViewProps {
   mascotas: Mascota[];
@@ -13,6 +14,8 @@ export const StatsView: React.FC<StatsViewProps> = ({
   plantas = [],
   clima
 }) => {
+  const { locale } = useTranslations();
+  const isEn = locale === 'en';
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
 
@@ -248,15 +251,21 @@ export const StatsView: React.FC<StatsViewProps> = ({
             gap: '12px'
           }}>
             <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid var(--game-border-color, #e0e0e0)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>💧</span> Upcoming Waterings
+              <span>💧</span> {isEn ? 'Upcoming Waterings' : 'Próximos Riegos'}
             </h3>
             {proximosRiegos.length === 0 ? (
-              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>No waterings pending in the next 7 days.</p>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>{isEn ? 'No waterings pending in the next 7 days.' : 'No hay riegos pendientes en los próximos 7 días.'}</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {proximosRiegos.map(r => {
                   const isOverdue = r.dias < 0;
-                  const label = r.dias === 0 ? 'Today' : r.dias === 1 ? 'Tomorrow' : isOverdue ? `${Math.abs(r.dias)} days ago` : `In ${r.dias} days`;
+                  const label = r.dias === 0 
+                    ? (isEn ? 'Today' : 'Hoy') 
+                    : r.dias === 1 
+                      ? (isEn ? 'Tomorrow' : 'Mañana') 
+                      : isOverdue 
+                        ? (isEn ? `${Math.abs(r.dias)} days ago` : `Hace ${Math.abs(r.dias)} días`) 
+                        : (isEn ? `In ${r.dias} days` : `En ${r.dias} días`);
                   return (
                     <div key={r.id} style={{
                       display: 'flex',
@@ -300,10 +309,10 @@ export const StatsView: React.FC<StatsViewProps> = ({
             gap: '12px'
           }}>
             <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid var(--game-border-color, #e0e0e0)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>💊</span> Pending Medication (24h)
+              <span>💊</span> {isEn ? 'Pending Medication (24h)' : 'Medicación Pendiente (24h)'}
             </h3>
             {medicamentosAlertas.length === 0 ? (
-              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>No doses pending for today.</p>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>{isEn ? 'No doses pending for today.' : 'Sin dosis pendientes para hoy.'}</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {medicamentosAlertas.map((med, idx) => {
@@ -312,15 +321,15 @@ export const StatsView: React.FC<StatsViewProps> = ({
                   if (isOverdue) {
                     const absMin = Math.abs(med.minutos);
                     if (absMin < 60) {
-                      label = `Overdue ${absMin}m`;
+                      label = isEn ? `Overdue ${absMin}m` : `Retrasado ${absMin}m`;
                     } else {
-                      label = `Overdue ${Math.round(absMin / 60)}h`;
+                      label = isEn ? `Overdue ${Math.round(absMin / 60)}h` : `Retrasado ${Math.round(absMin / 60)}h`;
                     }
                   } else {
                     if (med.minutos < 60) {
-                      label = `In ${med.minutos}m`;
+                      label = isEn ? `In ${med.minutos}m` : `En ${med.minutos}m`;
                     } else {
-                      label = `In ${Math.round(med.minutos / 60)}h`;
+                      label = isEn ? `In ${Math.round(med.minutos / 60)}h` : `En ${Math.round(med.minutos / 60)}h`;
                     }
                   }
                   return (
@@ -366,15 +375,21 @@ export const StatsView: React.FC<StatsViewProps> = ({
             gap: '12px'
           }}>
             <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid var(--game-border-color, #e0e0e0)', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>💉</span> Vaccines & Checkups (30d)
+              <span>💉</span> {isEn ? 'Vaccines & Checkups (30d)' : 'Vacunas y Revisiones (30d)'}
             </h3>
             {proximasVacunas.length === 0 ? (
-              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>No vaccines or checkups pending in the next 30 days.</p>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--game-text)', opacity: 0.7 }}>{isEn ? 'No vaccines or checkups pending in the next 30 days.' : 'Sin vacunas ni revisiones pendientes en los próximos 30 días.'}</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {proximasVacunas.map((v, idx) => {
                   const isOverdue = v.dias < 0;
-                  const label = v.dias === 0 ? 'Today' : v.dias === 1 ? 'Tomorrow' : isOverdue ? `${Math.abs(v.dias)} days ago` : `In ${v.dias} days`;
+                  const label = v.dias === 0 
+                    ? (isEn ? 'Today' : 'Hoy') 
+                    : v.dias === 1 
+                      ? (isEn ? 'Tomorrow' : 'Mañana') 
+                      : isOverdue 
+                        ? (isEn ? `${Math.abs(v.dias)} days ago` : `Hace ${Math.abs(v.dias)} días`) 
+                        : (isEn ? `In ${v.dias} days` : `En ${v.dias} días`);
                   return (
                     <div key={idx} style={{
                       display: 'flex',

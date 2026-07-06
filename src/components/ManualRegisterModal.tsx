@@ -130,7 +130,7 @@ export const ManualPetForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
       margin: 'auto'
     }}>
       <h3 style={{ margin: '0', fontSize: '18px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid #f0f0f0', paddingBottom: '8px' }}>
-        Add Pet 🐾
+        {isEn ? 'Add Pet 🐾' : 'Añadir Mascota 🐾'}
       </h3>
 
       {errorMsg && <p style={{ color: '#f44336', fontSize: '12px', background: 'rgba(244,67,54,0.1)', padding: '8px', borderRadius: '6px', margin: '0' }}>{errorMsg}</p>}
@@ -288,7 +288,7 @@ export const ManualPlantForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
 
   const [nombreComun, setNombreComun] = useState('');
   const [nombreCientifico, setNombreCientifico] = useState('');
-  const [ubicacion, setUbicacion] = useState('Living Room');
+  const [ubicacion, setUbicacion] = useState(isEn ? 'Living Room' : 'Salón');
   const [tipoRiego, setTipoRiego] = useState<TipoRiego>('Agua del grifo reposada');
   const [intervaloRiego, setIntervaloRiego] = useState('7');
   const [toxicidad, setToxicidad] = useState<NivelToxicidadFelina>('Segura');
@@ -419,7 +419,7 @@ export const ManualPlantForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
       margin: 'auto'
     }}>
       <h3 style={{ margin: '0', fontSize: '18px', color: 'var(--game-text-bright, #111)', borderBottom: '1px solid #f0f0f0', paddingBottom: '8px' }}>
-        Add Plant 🌿
+        {isEn ? 'Add Plant 🌿' : 'Añadir Planta 🌿'}
       </h3>
 
       {errorMsg && <p style={{ color: '#f44336', fontSize: '12px', background: 'rgba(244,67,54,0.1)', padding: '8px', borderRadius: '6px', margin: '0' }}>{errorMsg}</p>}
@@ -466,7 +466,7 @@ export const ManualPlantForm: React.FC<FormProps> = ({ onClose, onUpdate }) => {
             type="text" 
             value={ubicacion} 
             onChange={(e) => setUbicacion(e.target.value)} 
-            placeholder="E.g.: Terrace, Living Room"
+            placeholder={isEn ? "E.g.: Terrace, Living Room" : "Ej: Terraza, Salón"}
             required
             style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '6px', background: 'var(--game-card-bg)', color: 'var(--game-text-bright)' }}
           />
