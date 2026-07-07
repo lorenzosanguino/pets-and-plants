@@ -202,9 +202,13 @@ export const useSyncManager = ({
         if (auth && !auth.currentUser) {
           console.log("No Firebase session found, signing in anonymously before force sync...");
           try {
-            await signInAnonymously(auth);
-          } catch (e) {
+            await Promise.race([
+              signInAnonymously(auth),
+              new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout de autenticación de fondo")), 5000))
+            ]);
+          } catch (e: any) {
             console.error("Failed anonymous signin fallback in force sync:", e);
+            throw new Error("Error de inicio de sesión en Firebase: " + (e.message || String(e)) + ". Verifica que esté activado el proveedor 'Anónimo' (Anonymous) en tu panel de Firebase Console -> Authentication -> Sign-in method.");
           }
         }
         
