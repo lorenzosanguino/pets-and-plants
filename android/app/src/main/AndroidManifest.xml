@@ -38,4 +38,10 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Permiso de Cámara para el Luxómetro y Escáner de IA -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Permiso de Vibración física para el plugin de Hápticos -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Permiso de Notificaciones de fondo para Android 13+ (Local Notifications) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>
