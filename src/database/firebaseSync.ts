@@ -260,14 +260,26 @@ export class FirebaseSyncService {
       // Subir imágenes en paralelo
       const uploadPromises = images.map(async (img) => {
         if (!uploadedImagesCache.has(img.id)) {
-          const imgDocRef = doc(db!, 'hogares', img.id);
-          await setDoc(imgDocRef, {
-            base64: img.base64,
-            isImage: true,
-            updatedAt: Date.now()
-          });
-          uploadedImagesCache.add(img.id);
-          resolvedImagesCache.set(img.id, img.base64);
+          try {
+            if (img.base64.length > 900000) {
+              console.warn(`La imagen ${img.id} supera el límite de Firestore. Se omite de la nube para no dar error.`);
+              return;
+            }
+            const imgDocRef = doc(db!, 'hogares', img.id);
+            await Promise.race([
+              setDoc(imgDocRef, {
+                base64: img.base64,
+                isImage: true,
+                updatedAt: Date.now()
+              }),
+              new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout de subida de imagen")), 3500))
+            ]);
+            uploadedImagesCache.add(img.id);
+            resolvedImagesCache.set(img.id, img.base64);
+          } catch (err) {
+            console.error(`Error al subir imagen ${img.id} en createHogar:`, err);
+            // Continuar silenciosamente para no congelar la app
+          }
         }
       });
       await Promise.all(uploadPromises);
@@ -335,14 +347,26 @@ export class FirebaseSyncService {
       // Subir imágenes en paralelo
       const uploadPromises = images.map(async (img) => {
         if (!uploadedImagesCache.has(img.id)) {
-          const imgDocRef = doc(db!, 'hogares', img.id);
-          await setDoc(imgDocRef, {
-            base64: img.base64,
-            isImage: true,
-            updatedAt: Date.now()
-          });
-          uploadedImagesCache.add(img.id);
-          resolvedImagesCache.set(img.id, img.base64);
+          try {
+            if (img.base64.length > 900000) {
+              console.warn(`La imagen ${img.id} supera el límite de Firestore. Se omite de la nube para no dar error.`);
+              return;
+            }
+            const imgDocRef = doc(db!, 'hogares', img.id);
+            await Promise.race([
+              setDoc(imgDocRef, {
+                base64: img.base64,
+                isImage: true,
+                updatedAt: Date.now()
+              }),
+              new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout de subida de imagen")), 3500))
+            ]);
+            uploadedImagesCache.add(img.id);
+            resolvedImagesCache.set(img.id, img.base64);
+          } catch (err) {
+            console.error(`Error al subir imagen ${img.id} en uploadChanges:`, err);
+            // Continuar silenciosamente para no congelar la app
+          }
         }
       });
       await Promise.all(uploadPromises);
