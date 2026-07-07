@@ -1,9 +1,31 @@
 import { safeUUID } from './uuid';
 import { LocalDatabase } from '../database/db';
 import type { NotificacionProgramada } from '../database/types';
+import { LocalNotifications } from '@capacitor/local-notifications';
+
+const isCapacitor = typeof window !== 'undefined' && (window as any).Capacitor;
+
+// Helper to convert UUID string into a unique 32-bit integer for native notifications
+function stringToIntId(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash & 0x7fffffff);
+}
 
 export class NotificationManager {
   static async requestPermission(): Promise<boolean> {
+    if (isCapacitor) {
+      try {
+        const status = await LocalNotifications.requestPermissions();
+        return status.display === 'granted';
+      } catch (err) {
+        console.error('Error requesting native notification permissions:', err);
+        return false;
+      }
+    }
+
     if (typeof window === 'undefined' || !('Notification' in window)) {
       console.warn('Este navegador no soporta notificaciones de escritorio');
       return false;
@@ -15,6 +37,25 @@ export class NotificationManager {
   static async sendNotification(title: string, body: string, icon = '/favicon.svg') {
     const permission = await this.requestPermission();
     if (!permission) return;
+
+    if (isCapacitor) {
+      try {
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              title,
+              body,
+              id: Math.floor(Math.random() * 1000000),
+              schedule: { at: new Date(Date.now() + 500) },
+              sound: 'default'
+            }
+          ]
+        });
+        return;
+      } catch (err) {
+        console.error('Failed to schedule native notification:', err);
+      }
+    }
 
     if ('serviceWorker' in navigator) {
       try {
@@ -58,6 +99,25 @@ export class NotificationManager {
       console.error('Error al guardar la notificación programada en IndexedDB:', err);
     }
 
+    if (isCapacitor) {
+      try {
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              title,
+              body,
+              id: stringToIntId(notifId),
+              schedule: { at: new Date(timeStamp) },
+              sound: 'default'
+            }
+          ]
+        });
+        return;
+      } catch (err) {
+        console.error('Failed to schedule native local notification:', err);
+      }
+    }
+
     if (delay > 0) {
       setTimeout(async () => {
         try {
@@ -83,6 +143,16 @@ export class NotificationManager {
       console.log(`Notificación cancelada: ${id}`);
     } catch (err) {
       console.error('Error al cancelar la notificación programada:', err);
+    }
+
+    if (isCapacitor) {
+      try {
+        await LocalNotifications.cancel({
+          notifications: [{ id: stringToIntId(id) }]
+        });
+      } catch (err) {
+        console.error('Error cancelling native local notification:', err);
+      }
     }
   }
 
