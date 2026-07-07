@@ -30,16 +30,11 @@ export let auth: Auth | null = null;
 if (isFirebaseEnabled) {
   try {
     const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    const isCapacitor = typeof window !== 'undefined' && ((window as any).Capacitor || window.location.protocol === 'capacitor:');
-    if (isCapacitor) {
-      // Forzar HTTP Long Polling solo en el empaquetado nativo móvil (Capacitor) para evitar bloqueos
-      db = initializeFirestore(app, {
-        experimentalForceLongPolling: true
-      });
-    } else {
-      // Usar conexión por defecto WebSocket/gRPC optimizada para navegadores de escritorio y PWA convencional
-      db = getFirestore(app);
-    }
+    // Utilizar initializeFirestore para forzar HTTP Long Polling en todos los entornos
+    // (móviles y escritorio) para garantizar la compatibilidad máxima contra bloqueos de red locales.
+    db = initializeFirestore(app, {
+      experimentalForceLongPolling: true
+    });
     auth = getAuth(app);
   } catch (e) {
     console.error("Failed to initialize Firebase sync, falling back to mock mode:", e);
