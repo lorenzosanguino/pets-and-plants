@@ -79,6 +79,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 }) => {
   const { locale, setLocale, t } = useTranslations();
   const isEn = locale === 'en';
+  const isCapacitor = (window as any).Capacitor || window.location.protocol === 'capacitor:';
 
   // QR code toggle
   const [showQR, setShowQR] = useState(false);
@@ -1255,55 +1256,57 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
 
       {/* APLICACIÓN DE ESCRITORIO Y MÓVIL (PWA) */}
-      <div style={{
-        borderTop: 'var(--game-border, 1px solid #f0f0f0)',
-        paddingTop: '24px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px'
-      }}>
-        <div>
-          <h3 style={{ 
-            margin: '0 0 4px 0', 
-            fontSize: '18px', 
-            color: 'var(--game-text-bright, #1a1a1a)', 
-            fontWeight: 'bold',
-            fontFamily: 'var(--game-font, sans-serif)'
-          }}>
-            {t('pwaTitle')}
-          </h3>
-          {deferredPrompt ? (
-            <>
-              <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', lineHeight: '1.4' }}>
-                {t('pwaDesc')}
+      {!isCapacitor && (
+        <div style={{
+          borderTop: 'var(--game-border, 1px solid #f0f0f0)',
+          paddingTop: '24px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px'
+        }}>
+          <div>
+            <h3 style={{ 
+              margin: '0 0 4px 0', 
+              fontSize: '18px', 
+              color: 'var(--game-text-bright, #1a1a1a)', 
+              fontWeight: 'bold',
+              fontFamily: 'var(--game-font, sans-serif)'
+            }}>
+              {t('pwaTitle')}
+            </h3>
+            {deferredPrompt ? (
+              <>
+                <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: 'var(--game-text, #666)', fontFamily: 'var(--game-font, sans-serif)', lineHeight: '1.4' }}>
+                  {t('pwaDesc')}
+                </p>
+                <button
+                  onClick={handleInstallPWA}
+                  style={{
+                    alignSelf: 'flex-start',
+                    padding: '10px 20px',
+                    background: 'linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--game-font, sans-serif)',
+                    boxShadow: '0 4px 12px rgba(46, 125, 50, 0.15)',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {t('pwaInstallBtn')}
+                </button>
+              </>
+            ) : (
+              <p style={{ margin: '0', fontSize: '13px', color: '#2e7d32', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {t('pwaInstalledText')}
               </p>
-              <button
-                onClick={handleInstallPWA}
-                style={{
-                  alignSelf: 'flex-start',
-                  padding: '10px 20px',
-                  background: 'linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  fontFamily: 'var(--game-font, sans-serif)',
-                  boxShadow: '0 4px 12px rgba(46, 125, 50, 0.15)',
-                  transition: 'all 0.2s'
-                }}
-              >
-                {t('pwaInstallBtn')}
-              </button>
-            </>
-          ) : (
-            <p style={{ margin: '0', fontSize: '13px', color: '#2e7d32', fontWeight: 'bold', fontFamily: 'var(--game-font, sans-serif)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              {t('pwaInstalledText')}
-            </p>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
 
 
