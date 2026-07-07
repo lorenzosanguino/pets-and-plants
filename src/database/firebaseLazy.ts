@@ -14,6 +14,7 @@ export interface LazyFirebase {
   GoogleAuthProvider: typeof import('firebase/auth').GoogleAuthProvider;
   signInWithPopup: typeof import('firebase/auth').signInWithPopup;
   signInWithCredential: typeof import('firebase/auth').signInWithCredential;
+  signInAnonymously: typeof import('firebase/auth').signInAnonymously;
   signOut: typeof import('firebase/auth').signOut;
   onAuthStateChanged: typeof import('firebase/auth').onAuthStateChanged;
 }
@@ -35,6 +36,7 @@ export async function initFirebase(): Promise<LazyFirebase> {
     GoogleAuthProvider: authModule.GoogleAuthProvider,
     signInWithPopup: authModule.signInWithPopup,
     signInWithCredential: authModule.signInWithCredential,
+    signInAnonymously: authModule.signInAnonymously,
     signOut: authModule.signOut,
     onAuthStateChanged: authModule.onAuthStateChanged,
   };

@@ -198,7 +198,17 @@ export const useSyncManager = ({
         setSyncErrorMessage(null);
         alert("✔️ Sincronización exitosa: copia de seguridad subida a Microsoft OneDrive.");
       } else if (activeHogar) {
-        const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
+        const { auth, FirebaseSyncService, signInAnonymously } = await initFirebase();
+        if (auth && !auth.currentUser) {
+          console.log("No Firebase session found, signing in anonymously before force sync...");
+          try {
+            await signInAnonymously(auth);
+          } catch (e) {
+            console.error("Failed anonymous signin fallback in force sync:", e);
+          }
+        }
+        
+        const fbSync = FirebaseSyncService;
         const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Mi Hogar";
         
         console.log('Subiendo copia a Firebase...');
@@ -247,7 +257,17 @@ export const useSyncManager = ({
         })()
       ]);
 
-      const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
+      const { auth, FirebaseSyncService, signInAnonymously } = await initFirebase();
+      if (auth && !auth.currentUser) {
+        console.log("No Firebase session found, signing in anonymously before direct upload...");
+        try {
+          await signInAnonymously(auth);
+        } catch (e) {
+          console.error("Failed anonymous signin fallback in direct upload:", e);
+        }
+      }
+      
+      const fbSync = FirebaseSyncService;
       await fbSync.uploadChanges(
         activeHogar, 
         activeNombre, 
@@ -635,7 +655,7 @@ export const useSyncManager = ({
           console.error("Error al inicializar sesión de Microsoft:", err);
         }
       } else {
-        initFirebase().then(({ auth, FirebaseSyncService, onAuthStateChanged }) => {
+        initFirebase().then(({ auth, FirebaseSyncService, onAuthStateChanged, signInAnonymously }) => {
           setFirebaseLoaded(true);
           if (!auth) {
             const saved = localStorage.getItem('petplant_user_session');
@@ -762,6 +782,13 @@ export const useSyncManager = ({
                 setUser(null);
                 localStorage.removeItem('petplant_login_provider');
                 localStorage.removeItem('petplant_user_session');
+              }
+
+              // Iniciar sesión anónima de fondo para tener credenciales activas en Firestore
+              if (FirebaseSyncService.isCloudEnabled()) {
+                signInAnonymously(auth).catch((err) => {
+                  console.error("Error al iniciar sesión de forma anónima:", err);
+                });
               }
 
               const localHogarId = localStorage.getItem('petplant_hogar_id');

@@ -708,19 +708,19 @@ export const PetPlantDashboard: React.FC = () => {
       info.title = t('appTitlePlants');
     } else if (experienceMode === 'travels') {
       info.icon = '✈️';
-      info.title = 'Travel & Vacation Guide';
+      info.title = isEn ? 'Travel & Vacation Guide' : 'Guía de Viajes y Vacaciones';
       info.desc = '';
     } else if (experienceMode === 'consultants') {
       info.icon = '💬';
-      info.title = 'AI Consultants';
+      info.title = isEn ? 'AI Consultants' : 'Consultores de IA';
       info.desc = '';
     } else if (experienceMode === 'stats') {
       info.icon = '📈';
-      info.title = 'Metrics & Statistics';
+      info.title = isEn ? 'Metrics & Statistics' : 'Métricas y Estadísticas';
       info.desc = '';
     } else if (experienceMode === 'settings') {
       info.icon = '⚙️';
-      info.title = 'System Settings';
+      info.title = isEn ? 'System Settings' : 'Ajustes del Sistema';
       info.desc = '';
     }
     return info;
