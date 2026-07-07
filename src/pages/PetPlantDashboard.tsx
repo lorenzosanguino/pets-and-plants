@@ -283,6 +283,25 @@ export const PetPlantDashboard: React.FC = () => {
     };
   }, []);
 
+  // Trigger one-time visual achievement when running inside native mobile wrapper (Capacitor)
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const isCapacitor = (window as any).Capacitor || window.location.protocol === 'capacitor:';
+    if (isCapacitor) {
+      const hasWelcomeBeenTriggered = localStorage.getItem('petplant_mobile_welcome_triggered');
+      if (!hasWelcomeBeenTriggered) {
+        localStorage.setItem('petplant_mobile_welcome_triggered', 'true');
+        setTimeout(() => {
+          dispararLogroVisual(
+            isEn ? "WELCOME TO MOBILE APP! 📲" : "¡BIENVENIDO A LA APP MÓVIL! 📲",
+            isEn ? "Ecosystem optimized for Android" : "Ecosistema optimizado para Android",
+            "victory"
+          );
+        }, 1500);
+      }
+    }
+  }, [isEn]);
+
   const {
     deferredPrompt,
     isOffline,
@@ -503,36 +522,42 @@ export const PetPlantDashboard: React.FC = () => {
 
     if (isOffline) {
       ledColor = '#f44336'; // Red
-      text = 'Offline';
+      text = isEn ? 'Offline' : 'Sin Conexión';
       isPulsing = true;
-      titleTip = 'No internet connection. Running in local mode.';
+      titleTip = isEn ? 'No internet connection. Running in local mode.' : 'Sin conexión a internet. Funcionando en modo local.';
     } else {
       // Online
       const provider = localStorage.getItem('petplant_login_provider');
       if (!hogarId) {
         ledColor = '#2196f3'; // Blue (Online, local database only)
-        text = 'Online (Local)';
+        text = isEn ? 'Online (Local)' : 'En Línea (Local)';
         isPulsing = false;
-        titleTip = 'Connected to the internet. Data saved locally. Configure the cloud in Settings to sync.';
+        titleTip = isEn 
+          ? 'Connected to the internet. Data saved locally. Configure the cloud in Settings to sync.' 
+          : 'Conectado a internet. Datos guardados localmente. Configura la nube en Ajustes para sincronizar.';
       } else {
         // Connected to Cloud (via Google, Microsoft or direct Hogar code)
         if (syncStatus === 'synced' || syncStatus === 'idle') {
           ledColor = '#4caf50'; // Green
-          text = provider === 'microsoft' ? 'Cloud (MS)' : 'Cloud (Home)';
+          text = provider === 'microsoft' 
+            ? (isEn ? 'Cloud (MS)' : 'Nube (MS)') 
+            : (isEn ? 'Cloud (Home)' : 'Nube (Hogar)');
           isPulsing = false;
           titleTip = provider === 'microsoft'
-            ? 'Microsoft OneDrive backup synced and up to date.'
-            : 'Home Group on cloud (Firebase Firestore) fully synced in real time.';
+            ? (isEn ? 'Microsoft OneDrive backup synced and up to date.' : 'Copia de seguridad en OneDrive sincronizada y al día.')
+            : (isEn ? 'Home Group on cloud (Firebase Firestore) fully synced in real time.' : 'Grupo Hogar en la nube (Firebase Firestore) sincronizado en tiempo real.');
         } else if (syncStatus === 'syncing') {
           ledColor = '#ffeb3b'; // Yellow
-          text = 'Syncing...';
+          text = isEn ? 'Syncing...' : 'Sincronizando...';
           isPulsing = true;
-          titleTip = 'Updating changes with the cloud...';
+          titleTip = isEn ? 'Updating changes with the cloud...' : 'Actualizando cambios con la nube...';
         } else {
           ledColor = '#ff9800'; // Orange
-          text = 'Cloud Error';
+          text = isEn ? 'Cloud Error' : 'Error de Nube';
           isPulsing = true;
-          titleTip = `Failed to communicate with the cloud. Details: ${syncErrorMessage || 'Unknown error'}.`;
+          titleTip = isEn 
+            ? `Failed to communicate with the cloud. Details: ${syncErrorMessage || 'Unknown error'}.`
+            : `Error al comunicarse con la nube. Detalles: ${syncErrorMessage || 'Error desconocido'}.`;
         }
       }
     }
@@ -542,7 +567,7 @@ export const PetPlantDashboard: React.FC = () => {
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', margin: '4px 0' }}>
           <button 
             type="button"
-            title={`${titleTip} (Click to force sync and check the cloud)`}
+            title={`${titleTip} ${isEn ? '(Click to force sync and check the cloud)' : '(Pulsa para forzar sincronización y comprobar la nube)'}`}
             onClick={forceSyncToCloud}
             style={{
               display: 'inline-flex',
