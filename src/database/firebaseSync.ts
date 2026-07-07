@@ -74,6 +74,49 @@ function simpleHash(str: string): string {
   return `${str.length}_${Math.abs(hash).toString(36)}`;
 }
 
+function limpiarDatosParaNube(data: HogarCloudData): HogarCloudData {
+  // Clonar el objeto de forma profunda
+  const copia = JSON.parse(JSON.stringify(data)) as HogarCloudData;
+
+  // 1. Sanear mascotas (quitar fotos de la galería pesadas del documento principal)
+  if (copia.mascotas) {
+    copia.mascotas.forEach(m => {
+      if (m.fotos && m.fotos.length > 0) {
+        // En la nube solo sincronizamos el array con la última foto para evitar sobrepeso
+        m.fotos = m.fotos.slice(-1);
+      }
+    });
+  }
+
+  // 2. Sanear plantas
+  if (copia.plantas) {
+    copia.plantas.forEach(p => {
+      if (p.fotos && p.fotos.length > 0) {
+        p.fotos = p.fotos.slice(-1);
+      }
+    });
+  }
+
+  // 3. Sanear chats (conservar solo últimos 10 mensajes y borrar base64s de imágenes del historial en la nube)
+  if (copia.chats) {
+    copia.chats.forEach(c => {
+      if (c.mensajes) {
+        c.mensajes = c.mensajes.slice(-10);
+        c.mensajes.forEach((msg: any) => {
+          if (msg.text && msg.text.length > 30000) {
+            msg.text = msg.text.substring(0, 500) + "... [Texto largo optimizado para la nube]";
+          }
+          if (msg.image) {
+            msg.image = "";
+          }
+        });
+      }
+    });
+  }
+
+  return copia;
+}
+
 function walkAndExtract(obj: any, code: string, images: { id: string; base64: string }[]): any {
   if (obj === null || obj === undefined) return obj;
 
@@ -255,7 +298,7 @@ export class FirebaseSyncService {
 
     if (this.isCloudEnabled() && db) {
       const images: { id: string; base64: string }[] = [];
-      const cleanedData = walkAndExtract(data, code, images);
+      const cleanedData = walkAndExtract(limpiarDatosParaNube(data), code, images);
 
       // Subir imágenes en paralelo
       const uploadPromises = images.map(async (img) => {
@@ -342,7 +385,7 @@ export class FirebaseSyncService {
 
     if (this.isCloudEnabled() && db) {
       const images: { id: string; base64: string }[] = [];
-      const cleanedData = walkAndExtract(data, code, images);
+      const cleanedData = walkAndExtract(limpiarDatosParaNube(data), code, images);
 
       // Subir imágenes en paralelo
       const uploadPromises = images.map(async (img) => {
