@@ -18,7 +18,9 @@
   },
   "dependencies": {
     "@azure/msal-browser": "^5.13.0",
+    "@capacitor/app": "^8.1.0",
     "@capacitor/core": "^8.4.1",
+    "@capacitor/haptics": "^8.0.2",
     "dompurify": "^3.4.11",
     "firebase": "^12.14.0",
     "qrcode.react": "^4.2.0",

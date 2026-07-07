@@ -14,8 +14,25 @@ function getAudioContext(): AudioContext | null {
   return audioCtx;
 }
 
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+
 // Trigger short vibration pulse
-export const triggerHaptic = (ms: number = 12) => {
+export const triggerHaptic = async (ms: number = 12) => {
+  if (typeof window !== 'undefined' && (window as any).Capacitor) {
+    try {
+      if (ms <= 12) {
+        await Haptics.impact({ style: ImpactStyle.Light });
+      } else if (ms <= 20) {
+        await Haptics.impact({ style: ImpactStyle.Medium });
+      } else {
+        await Haptics.impact({ style: ImpactStyle.Heavy });
+      }
+      return;
+    } catch {
+      // Fallback
+    }
+  }
+
   if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
     try {
       window.navigator.vibrate(ms);

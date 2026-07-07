@@ -251,6 +251,38 @@ export const PetPlantDashboard: React.FC = () => {
   const [scannerMode, setScannerMode] = useState<'registrar_mascota' | 'salud_mascota' | 'registrar_planta' | 'enfermedad_planta' | null>(null);
   const [scannerAssetId, setScannerAssetId] = useState<string | null>(null);
 
+  // Native back button interceptor for Android (Capacitor)
+  const modalStatesRef = React.useRef({ showScanner, showManualRegister, showCelebration });
+  React.useEffect(() => {
+    modalStatesRef.current = { showScanner, showManualRegister, showCelebration };
+  }, [showScanner, showManualRegister, showCelebration]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !(window as any).Capacitor) return;
+
+    let sub: any;
+    import('@capacitor/app').then(({ App }) => {
+      App.addListener('backButton', () => {
+        const { showScanner: sOpen, showManualRegister: rOpen, showCelebration: cOpen } = modalStatesRef.current;
+        if (sOpen) {
+          setShowScanner(false);
+        } else if (rOpen) {
+          setShowManualRegister(null);
+        } else if (cOpen) {
+          setShowCelebration(false);
+        } else {
+          App.exitApp();
+        }
+      }).then(listener => {
+        sub = listener;
+      });
+    });
+
+    return () => {
+      if (sub) sub.remove();
+    };
+  }, []);
+
   const {
     deferredPrompt,
     isOffline,
