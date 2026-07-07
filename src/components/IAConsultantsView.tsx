@@ -36,6 +36,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
   onUpdate
 }) => {
   const { locale } = useTranslations();
+  const isEn = locale === 'en';
   const theme = localStorage.getItem('petplant_game_theme') || 'adventure';
 
   const [activeConsultant, setActiveConsultant] = useState<'veterinario' | 'agronomo'>(
@@ -115,11 +116,17 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
         } else {
           let defaultText = '';
           if (activeConsultant === 'veterinario') {
-            defaultText = 'Hello. I am your animal wellness and veterinary prevention consultant. How can I advise you today on home enrichment or clinical monitoring? You can attach a photo of your pet or use a quick template to preventively analyze wounds or parasites.';
+            defaultText = isEn 
+              ? 'Hello. I am your animal wellness and veterinary prevention consultant. How can I advise you today on home enrichment or clinical monitoring? You can attach a photo of your pet or use a quick template to preventively analyze wounds or parasites.'
+              : 'Hola. Soy tu consultor de bienestar animal y prevención veterinaria. ¿Cómo puedo asesorarte hoy sobre enriquecimiento ambiental o control clínico? Puedes adjuntar una foto de tu mascota o usar una plantilla rápida para analizar heridas o parásitos de forma preventiva.';
           } else if (activeConsultant === 'agronomo') {
-            defaultText = 'Hello. I am your agronomist and landscape consultant. I am here to answer questions about domestic microclimates, substrates, and cultivation requirements. You can attach a photo of your plants or use a quick template to diagnose brown leaves or leaf pests.';
+            defaultText = isEn
+              ? 'Hello. I am your agronomist and landscape consultant. I am here to answer questions about domestic microclimates, substrates, and cultivation requirements. You can attach a photo of your plants or use a quick template to diagnose brown leaves or leaf pests.'
+              : 'Hola. Soy tu consultor agrónomo y de paisajismo. Estoy aquí para responder preguntas sobre microclimas domésticos, sustratos y necesidades de cultivo. Puedes adjuntar una foto de tus plantas o usar una plantilla rápida para diagnosticar hojas marrones o plagas foliares.';
           } else {
-            defaultText = 'Hello. I am your exotic animal specialist consultant. I can help with ideal temperature and humidity conditions for your terrarium, feeding frequency for reptiles and arthropods, or skin molting control. What exotic species do you have today?';
+            defaultText = isEn
+              ? 'Hello. I am your exotic animal specialist consultant. I can help with ideal temperature and humidity conditions for your terrarium, feeding frequency for reptiles and arthropods, or skin molting control. What exotic species do you have today?'
+              : 'Hola. Soy tu consultor especialista en animales exóticos. Puedo ayudarte con las condiciones ideales de temperatura y humedad para tu terrario, frecuencia de alimentación para reptiles y artrópodos, o control de muda de piel. ¿Qué especie exótica tienes hoy?';
           }
           setMessages([{
             id: '1',
@@ -247,11 +254,17 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
       
       let defaultText = '';
       if (activeConsultant === 'veterinario') {
-        defaultText = 'Hello. I am your animal wellness and veterinary prevention consultant. How can I advise you today on home enrichment or clinical monitoring? You can attach a photo of your pet or use a quick template to preventively analyze wounds or parasites.';
+        defaultText = isEn
+          ? 'Hello. I am your animal wellness and veterinary prevention consultant. How can I advise you today on home enrichment or clinical monitoring? You can attach a photo of your pet or use a quick template to preventively analyze wounds or parasites.'
+          : 'Hola. Soy tu consultor de bienestar animal y prevención veterinaria. ¿Cómo puedo asesorarte hoy sobre enriquecimiento ambiental o control clínico? Puedes adjuntar una foto de tu mascota o usar una plantilla rápida para analizar heridas o parásitos de forma preventiva.';
       } else if (activeConsultant === 'agronomo') {
-        defaultText = 'Hello. I am your agronomist and landscape consultant. I am here to answer questions about domestic microclimates, substrates, and cultivation requirements. You can attach a photo of your plants or use a quick template to diagnose brown leaves or leaf pests.';
+        defaultText = isEn
+          ? 'Hello. I am your agronomist and landscape consultant. I am here to answer questions about domestic microclimates, substrates, and cultivation requirements. You can attach a photo of your plants or use a quick template to diagnose brown leaves or leaf pests.'
+          : 'Hola. Soy tu consultor agrónomo y de paisajismo. Estoy aquí para responder preguntas sobre microclimas domésticos, sustratos y necesidades de cultivo. Puedes adjuntar una foto de tus plantas o usar una plantilla rápida para diagnosticar hojas marrones o plagas foliares.';
       } else {
-        defaultText = 'Hello. I am your exotic animal specialist consultant. I can help with ideal temperature and humidity conditions for your terrarium, feeding frequency for reptiles and arthropods, or skin molting control. What exotic species do you have today?';
+        defaultText = isEn
+          ? 'Hello. I am your exotic animal specialist consultant. I can help with ideal temperature and humidity conditions for your terrarium, feeding frequency for reptiles and arthropods, or skin molting control. What exotic species do you have today?'
+          : 'Hola. Soy tu consultor especialista en animales exóticos. Puedo ayudarte con las condiciones ideales de temperatura y humedad para tu terrario, frecuencia de alimentación para reptiles y artrópodos, o control de muda de piel. ¿Qué especie exótica tienes hoy?';
       }
       setMessages([{
         id: '1',

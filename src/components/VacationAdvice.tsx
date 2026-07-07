@@ -272,13 +272,33 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
         {activeTab === 'plants' && (
           <div>
             <h4 style={{ margin: '0 0 10px 0', color: '#2e7d32', fontWeight: 'bold', fontSize: '14px' }}>
-              💧 Autonomous Watering Solutions for Absences
+              {isEn ? '💧 Autonomous Watering Solutions for Absences' : '💧 Soluciones de Riego Autónomo para Ausencias'}
             </h4>
             <ul style={{ margin: '0', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li><strong>Watering Gel (Solidified Water):</strong> Ideal for medium-sized plants. Place a packet of hydrogel in moist soil; it will gradually release moisture for 10 to 15 days.</li>
-              <li><strong>Cotton Wick Self-Watering:</strong> Place a raised container filled with water next to your plants. Insert one end of a cotton or wool wick into the water and bury the other end in the potting mix of each pot.</li>
-              <li><strong>Inverted Plastic Bottles:</strong> Fill a plastic bottle with water, poke a tiny hole in the cap with a pin, and push it upside down firmly into the soil of the pot.</li>
-              <li><strong>Strategic Grouping:</strong> Gather all your plants in the coolest room. Grouping them creates a microclimate with higher ambient humidity, reducing evaporation.</li>
+              <li>
+                <strong>{isEn ? 'Watering Gel (Solidified Water):' : 'Gel de Riego (Agua Solidificada):'}</strong>{' '}
+                {isEn 
+                  ? 'Ideal for medium-sized plants. Place a packet of hydrogel in moist soil; it will gradually release moisture for 10 to 15 days.' 
+                  : 'Ideal para plantas medianas. Coloca un sobre de hidrogel en la tierra húmeda; irá liberando humedad gradualmente durante 10 a 15 días.'}
+              </li>
+              <li>
+                <strong>{isEn ? 'Cotton Wick Self-Watering:' : 'Autorriego por Cordón de Algodón:'}</strong>{' '}
+                {isEn 
+                  ? 'Place a raised container filled with water next to your plants. Insert one end of a cotton or wool wick into the water and bury the other end in the potting mix of each pot.' 
+                  : 'Coloca un recipiente elevado lleno de agua junto a las plantas. Introduce un extremo del cordón en el agua y entierra el otro extremo en la maceta.'}
+              </li>
+              <li>
+                <strong>{isEn ? 'Inverted Plastic Bottles:' : 'Botellas de Plástico Invertidas:'}</strong>{' '}
+                {isEn 
+                  ? 'Fill a plastic bottle with water, poke a tiny hole in the cap with a pin, and push it upside down firmly into the soil of the pot.' 
+                  : 'Llena una botella de plástico con agua, haz un diminuto agujero en el tapón con una aguja y clávala boca abajo firmemente en la tierra.'}
+              </li>
+              <li>
+                <strong>{isEn ? 'Strategic Grouping:' : 'Agrupación Estratégica:'}</strong>{' '}
+                {isEn 
+                  ? 'Gather all your plants in the coolest room. Grouping them creates a microclimate with higher ambient humidity, reducing evaporation.' 
+                  : 'Reúne todas tus plantas en la habitación más fresca. Agruparlas crea un microclima de mayor humedad ambiental y reduce la evaporación.'}
+              </li>
             </ul>
           </div>
         )}
@@ -286,13 +306,33 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
         {activeTab === 'cats' && (
           <div>
             <h4 style={{ margin: '0 0 10px 0', color: '#1976d2', fontWeight: 'bold', fontSize: '14px' }}>
-              🐱 Guidelines for Leaving Cats Alone at Home (Max. 1 Week)
+              {isEn ? '🐱 Guidelines for Leaving Cats Alone at Home (Max. 1 Week)' : '🐱 Pautas para Dejar Gatos Solos en Casa (Máx. 1 Semana)'}
             </h4>
             <ul style={{ margin: '0', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li><strong>Electric Water Fountains:</strong> Place at least two filtered water fountains. Cats prefer moving water, and this prevents them from running out of clean water if one fountain fails.</li>
-              <li><strong>Automatic Feeders:</strong> Set up an automatic dry-food dispenser to release controlled portions several times a day.</li>
-              <li><strong>Multiple Litter Boxes:</strong> Place at least one extra litter box per cat. It is vital to ensure enough clean surface area to avoid behavioural issues.</li>
-              <li><strong>Caretaker Visits (Mandatory):</strong> Even with autonomous food and water, ask a neighbour or carer to visit every 48 hours at most to clean the litter box and check their wellbeing.</li>
+              <li>
+                <strong>{isEn ? 'Electric Water Fountains:' : 'Fuentes de Agua Eléctricas:'}</strong>{' '}
+                {isEn 
+                  ? 'Place at least two filtered water fountains. Cats prefer moving water, and this prevents them from running out of clean water if one fountain fails.' 
+                  : 'Coloca al menos dos fuentes de agua con filtro. Los gatos prefieren agua en movimiento y esto evita que se queden sin ella si una fuente falla.'}
+              </li>
+              <li>
+                <strong>{isEn ? 'Automatic Feeders:' : 'Comederos Automáticos:'}</strong>{' '}
+                {isEn 
+                  ? 'Set up an automatic dry-food dispenser to release controlled portions several times a day.' 
+                  : 'Configura un dispensador automático de comida seca para liberar porciones controladas varias veces al día.'}
+              </li>
+              <li>
+                <strong>{isEn ? 'Multiple Litter Boxes:' : 'Múltiples Areneros:'}</strong>{' '}
+                {isEn 
+                  ? 'Place at least one extra litter box per cat. It is vital to ensure enough clean surface area to avoid behavioural issues.' 
+                  : 'Coloca al menos un arenero extra por cada gato. Es vital asegurar espacio limpio suficiente para evitar problemas de comportamiento.'}
+              </li>
+              <li>
+                <strong>{isEn ? 'Caretaker Visits (Mandatory):' : 'Visitas de Cuidador (Obligatorio):'}</strong>{' '}
+                {isEn 
+                  ? 'Even with autonomous food and water, ask a neighbour or carer to visit every 48 hours at most to clean the litter box and check their wellbeing.' 
+                  : 'Aunque tengan comida y agua autónomas, pide a un vecino o cuidador que los visite cada 48 horas como máximo para limpiar la arena y revisar su estado.'}
+              </li>
             </ul>
           </div>
         )}
@@ -300,13 +340,33 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
         {activeTab === 'dogs' && (
           <div>
             <h4 style={{ margin: '0 0 10px 0', color: '#e65100', fontWeight: 'bold', fontSize: '14px' }}>
-              🐶 Checklist & Tips for Travelling with Your Dog
+              {isEn ? '🐶 Checklist & Tips for Travelling with Your Dog' : '🐶 Checklist y Consejos para Viajar con tu Perro'}
             </h4>
             <ul style={{ margin: '0', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li><strong>Vehicle Safety:</strong> Dogs must never travel loose. Use a certified double-anchor safety harness connected to the seat belt, or a carrier crate.</li>
-              <li><strong>Documentation & Vaccinations:</strong> Bring their official vet record and make sure the Rabies vaccine and microchip are registered and up to date.</li>
-              <li><strong>Hydration on the Road:</strong> Stop every 2 hours so they can stretch, relieve themselves, and drink fresh water. Never leave them alone in a car in the sun.</li>
-              <li><strong>Traveller's First-Aid Kit:</strong> Prepare a small kit with gauze, antiseptic (chlorhexidine), their regular medications, and paw protectors.</li>
+              <li>
+                <strong>{isEn ? 'Vehicle Safety:' : 'Seguridad en el Vehículo:'}</strong>{' '}
+                {isEn 
+                  ? 'Dogs must never travel loose. Use a certified double-anchor safety harness connected to the seat belt, or a carrier crate.' 
+                  : 'Los perros nunca deben viajar sueltos. Usa un arnés de seguridad homologado de doble anclaje al cinturón, o un transportín rígido.'}
+              </li>
+              <li>
+                <strong>{isEn ? 'Documentation & Vaccinations:' : 'Documentación y Vacunas:'}</strong>{' '}
+                {isEn 
+                  ? 'Bring their official vet record and make sure the Rabies vaccine and microchip are registered and up to date.' 
+                  : 'Lleva su cartilla veterinaria oficial y asegúrate de que la vacuna de la Rabia y el microchip están vigentes y actualizados.'}
+              </li>
+              <li>
+                <strong>{isEn ? 'Hydration on the Road:' : 'Hidratación en Ruta:'}</strong>{' '}
+                {isEn 
+                  ? 'Stop every 2 hours so they can stretch, relieve themselves, and drink fresh water. Never leave them alone in a car in the sun.' 
+                  : 'Realiza paradas cada 2 horas para que estire las patas, haga sus necesidades y beba agua fresca. Nunca lo dejes solo en un coche al sol.'}
+              </li>
+              <li>
+                <strong>{isEn ? 'Traveller\'s First-Aid Kit:' : 'Botiquín del Viajero:'}</strong>{' '}
+                {isEn 
+                  ? 'Prepare a small kit with gauze, antiseptic (chlorhexidine), their regular medications, and paw protectors.' 
+                  : 'Prepara un pequeño neceser con gasas, desinfectante (clorhexidina), sus medicamentos habituales y protectores para las almohadillas.'}
+              </li>
             </ul>
           </div>
         )}

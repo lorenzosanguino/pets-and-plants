@@ -493,7 +493,12 @@ export const useSyncManager = ({
         await signInWithPopup(auth, provider);
       } catch (err: any) {
         console.error("Error al iniciar sesión con Google:", err);
-        alert("Error al iniciar sesión con Google: " + err.message);
+        const isCapacitor = (window as any).Capacitor || window.location.protocol === 'capacitor:';
+        if (isCapacitor) {
+          alert("📱 Sincronización en Móvil:\n\nEl inicio de sesión directo con Google requiere configuración OAuth nativa en Android.\n\nPara sincronizar y compartir tus datos en este móvil de forma instantánea, te recomendamos usar la clave de tu 'Grupo Hogar' en la pestaña Ajustes 🔑 (que es 100% compatible y gratuita).");
+        } else {
+          alert("Error al iniciar sesión con Google: " + err.message);
+        }
       }
     } else {
       const simulatedUser = {

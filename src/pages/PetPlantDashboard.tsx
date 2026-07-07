@@ -73,6 +73,7 @@ const ChunkLoader: React.FC<{ height?: string }> = ({ height = '120px' }) => (
 
 export const PetPlantDashboard: React.FC = () => {
   const { t, locale } = useTranslations();
+  const isEn = locale === 'en';
   
   const [uiTheme, setUiTheme] = useState<'gaming' | 'nature' | 'kawaii'>(() => {
     const saved = localStorage.getItem('petplant_game_theme');
@@ -876,7 +877,7 @@ export const PetPlantDashboard: React.FC = () => {
                 color: uiTheme === 'gaming' ? '#e0e0e0' : (uiTheme === 'kawaii' ? '#b05273' : '#2e7d32'),
                 fontWeight: uiTheme === 'gaming' ? '500' : 'normal'
               }}>
-                Loading your secure ecosystem...
+                {isEn ? 'Loading your secure ecosystem...' : 'Cargando tu ecosistema seguro...'}
               </p>
             </div>
           </div>
@@ -1018,7 +1019,7 @@ export const PetPlantDashboard: React.FC = () => {
                     <path d="M3.96 10.7c-.18-.54-.28-1.12-.28-1.7s.1-1.16.28-1.7V5H.92C.33 6.18 0 7.55 0 9s.33 2.82.92 4l3.04-2.3z" fill="#FBBC05"/>
                     <path d="M9 3.58c1.32 0 2.5.45 3.44 1.35L15 2.1C13.46.7 11.43 0 9 0 5.48 0 2.4 2.04.92 5.04l3.04 2.3c.7-2.13 2.69-3.76 5.04-3.76z" fill="#EA4335"/>
                   </svg>
-                  Sign in with Google
+                  {isEn ? 'Sign in with Google' : 'Iniciar Sesión con Google'}
                 </button>
 
                 <button
@@ -1049,7 +1050,7 @@ export const PetPlantDashboard: React.FC = () => {
                     <rect x="0" y="11.5" width="10.5" height="10.5" fill="#00a4ef"/>
                     <rect x="11.5" y="11.5" width="10.5" height="10.5" fill="#ffb900"/>
                   </svg>
-                  Sign in with Microsoft / Hotmail
+                  {isEn ? 'Sign in with Microsoft / Hotmail' : 'Iniciar Sesión con Microsoft / Hotmail'}
                 </button>
 
 
