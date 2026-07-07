@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { initializeFirestore, doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import type { Mascota, Planta, EventoCalendario, ChatHistorial } from './types';
 
@@ -30,11 +30,16 @@ export let auth: Auth | null = null;
 if (isFirebaseEnabled) {
   try {
     const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    // Utilizar initializeFirestore para forzar HTTP Long Polling en dispositivos móviles
-    // y redes que puedan tener WebSockets/gRPC bloqueados por los operadores.
-    db = initializeFirestore(app, {
-      experimentalForceLongPolling: true
-    });
+    const isCapacitor = typeof window !== 'undefined' && ((window as any).Capacitor || window.location.protocol === 'capacitor:');
+    if (isCapacitor) {
+      // Forzar HTTP Long Polling solo en el empaquetado nativo móvil (Capacitor) para evitar bloqueos
+      db = initializeFirestore(app, {
+        experimentalForceLongPolling: true
+      });
+    } else {
+      // Usar conexión por defecto WebSocket/gRPC optimizada para navegadores de escritorio y PWA convencional
+      db = getFirestore(app);
+    }
     auth = getAuth(app);
   } catch (e) {
     console.error("Failed to initialize Firebase sync, falling back to mock mode:", e);
