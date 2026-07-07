@@ -486,17 +486,40 @@ export const useSyncManager = ({
 
   const handleGoogleSignIn = async () => {
     localStorage.setItem('petplant_login_provider', 'google');
-    const { auth, GoogleAuthProvider, signInWithPopup } = await initFirebase();
+    const { auth, GoogleAuthProvider, signInWithPopup, signInWithCredential } = await initFirebase();
     if (auth) {
-      try {
-        const provider = new GoogleAuthProvider();
-        await signInWithPopup(auth, provider);
-      } catch (err: any) {
-        console.error("Error al iniciar sesión con Google:", err);
-        const isCapacitor = (window as any).Capacitor || window.location.protocol === 'capacitor:';
-        if (isCapacitor) {
-          alert("📱 Sincronización en Móvil:\n\nEl inicio de sesión directo con Google requiere configuración OAuth nativa en Android.\n\nPara sincronizar y compartir tus datos en este móvil de forma instantánea, te recomendamos usar la clave de tu 'Grupo Hogar' en la pestaña Ajustes 🔑 (que es 100% compatible y gratuita).");
-        } else {
+      const isCapacitor = (window as any).Capacitor || window.location.protocol === 'capacitor:';
+      if (isCapacitor) {
+        try {
+          const { GoogleSignIn } = await import('@capawesome/capacitor-google-sign-in');
+          const webClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1044210464501-dummy.apps.googleusercontent.com';
+          try {
+            await GoogleSignIn.initialize({ clientId: webClientId });
+          } catch {
+            // Ignore if already initialized
+          }
+          const result = await GoogleSignIn.signIn();
+          const idToken = result.idToken;
+          if (!idToken) {
+            throw new Error("No se pudo obtener el token de Google.");
+          }
+          const credential = GoogleAuthProvider.credential(idToken);
+          await signInWithCredential(auth, credential);
+        } catch (err: any) {
+          console.error("Error en inicio de sesión nativo con Google:", err);
+          const errMsg = err.message || String(err);
+          if (errMsg.includes('credential') || errMsg.includes('developer') || errMsg.includes('10') || errMsg.includes('internal')) {
+            alert("📱 Google Sign-In Nativo:\n\nPara que el inicio de sesión con Google funcione en este APK nativo, recuerda registrar la firma SHA-1 de tu debug.keystore en tu consola de Firebase.\n\nAlternativa: puedes sincronizar tus datos al instante usando la clave de tu 'Grupo Hogar' en Ajustes 🔑");
+          } else {
+            alert("Error al iniciar sesión nativo: " + errMsg);
+          }
+        }
+      } else {
+        try {
+          const provider = new GoogleAuthProvider();
+          await signInWithPopup(auth, provider);
+        } catch (err: any) {
+          console.error("Error al iniciar sesión con Google:", err);
           alert("Error al iniciar sesión con Google: " + err.message);
         }
       }
