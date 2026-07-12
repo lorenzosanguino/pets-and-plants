@@ -102,8 +102,8 @@ function limpiarDatosParaNube(data: HogarCloudData): HogarCloudData {
   if (copia.mascotas) {
     copia.mascotas.forEach(m => {
       if (m.fotos && m.fotos.length > 0) {
-        // En la nube solo sincronizamos el array con la última foto para evitar sobrepeso
-        m.fotos = m.fotos.slice(-1);
+        // Permitimos sincronizar hasta las últimas 12 fotos para evitar límites de Firestore
+        m.fotos = m.fotos.slice(-12);
       }
     });
   }
@@ -112,7 +112,7 @@ function limpiarDatosParaNube(data: HogarCloudData): HogarCloudData {
   if (copia.plantas) {
     copia.plantas.forEach(p => {
       if (p.fotos && p.fotos.length > 0) {
-        p.fotos = p.fotos.slice(-1);
+        p.fotos = p.fotos.slice(-12);
       }
     });
   }
