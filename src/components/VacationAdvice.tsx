@@ -224,10 +224,11 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
               <div 
                 key={index}
                 style={{
-                  alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                  maxWidth: '85%',
+                  alignSelf: 'stretch',
+                  width: '100%',
+                  boxSizing: 'border-box',
                   padding: '10px 14px',
-                  borderRadius: msg.sender === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+                  borderRadius: '12px',
                   background: msg.sender === 'user'
                     ? (theme === 'gaming'
                       ? (activeTab === 'plants' ? 'rgba(76, 175, 80, 0.15)' : (activeTab === 'cats' ? 'rgba(33, 150, 243, 0.15)' : 'rgba(255, 152, 0, 0.15)'))

@@ -1495,7 +1495,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
               color: 'var(--game-text-bright, #333)', 
               fontFamily: 'var(--game-font, sans-serif)',
               display: '-webkit-box',
-              WebkitLineClamp: 2,
+              WebkitLineClamp: expanded ? 2 : 1,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
               textOverflow: 'ellipsis',

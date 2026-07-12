@@ -559,7 +559,9 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
     if (theme === 'arcade') {
       return (
         <div key={m.id} style={{
-          alignSelf: m.sender === 'user' ? 'flex-end' : 'flex-start',
+          alignSelf: 'stretch',
+          width: '100%',
+          boxSizing: 'border-box',
           background: 'linear-gradient(135deg, #000080 0%, #000000 100%)',
           border: '3px solid #ffffff',
           boxShadow: '0 0 0 2px #000, 0 4px 10px rgba(0,0,0,0.8)',
@@ -568,9 +570,11 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
           color: '#fff',
           fontFamily: 'monospace',
           fontSize: '13px',
-          maxWidth: '80%',
           position: 'relative'
         }}>
+          <div style={{ fontWeight: 'bold', fontSize: '11px', marginBottom: '6px', color: '#00ffff', borderBottom: '1px dashed #fff', paddingBottom: '4px' }}>
+            {m.sender === 'user' ? (locale === 'en' ? '👤 USER' : '👤 USUARIO') : (locale === 'en' ? '🤖 AI CONSULTANT' : '🤖 CONSULTOR IA')}
+          </div>
           {m.sender === 'ia' && <span style={{ position: 'absolute', left: '-18px', top: '14px', fontSize: '14px', color: '#fff' }}>☞</span>}
           {m.imageUrl && (
             <div style={{ marginBottom: '8px', maxWidth: '240px', overflow: 'hidden', border: '1px solid #fff', background: '#000' }}>
@@ -594,13 +598,14 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
     if (theme === 'terminal') {
       return (
         <div key={m.id} style={{
-          alignSelf: 'flex-start',
+          alignSelf: 'stretch',
+          width: '100%',
+          boxSizing: 'border-box',
           color: '#33ff33',
           fontFamily: 'monospace',
           fontSize: '13px',
           padding: '8px 0',
           borderBottom: '1px dashed rgba(51, 255, 51, 0.3)',
-          width: '100%'
         }}>
           {m.sender === 'user' ? '> USUARIO: ' : '> SISTEMA: '}
           {m.imageUrl && (
@@ -621,7 +626,9 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
     // Default theme — burbuja de chat
     return (
       <div key={m.id} style={{
-        alignSelf: m.sender === 'user' ? 'flex-end' : 'flex-start',
+        alignSelf: 'stretch',
+        width: '100%',
+        boxSizing: 'border-box',
         background: m.sender === 'user' 
           ? (theme === 'gaming' ? 'rgba(51, 243, 255, 0.15)' : 'var(--game-accent-light, rgba(0,0,0,0.05))') 
           : (theme === 'gaming' ? 'var(--game-card-bg, #1f2833)' : '#ffffff'),
@@ -635,9 +642,21 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
         padding: '10px 14px',
         fontSize: '13px',
         fontFamily: 'var(--game-font, sans-serif)',
-        maxWidth: '85%',
         boxShadow: m.sender === 'ia' ? (theme === 'gaming' ? '0 2px 12px rgba(102, 252, 241, 0.2)' : '0 2px 8px rgba(0,0,0,0.08)') : 'none'
       }}>
+        <div style={{ 
+          fontWeight: 'bold', 
+          fontSize: '11px', 
+          marginBottom: '6px', 
+          opacity: 0.8,
+          color: m.sender === 'user' 
+            ? (theme === 'gaming' ? '#66fcf1' : 'var(--game-accent, #2e7d32)') 
+            : (theme === 'gaming' ? '#e0d0ff' : '#546e7a'),
+          borderBottom: '1px dashed rgba(0,0,0,0.08)',
+          paddingBottom: '4px'
+        }}>
+          {m.sender === 'user' ? (locale === 'en' ? '👤 YOU' : '👤 TÚ') : (locale === 'en' ? '🤖 AI CONSULTANT' : '🤖 CONSULTOR IA')}
+        </div>
         {m.imageUrl && (
           <div style={{ marginBottom: '8px', maxWidth: '280px', overflow: 'hidden', borderRadius: '4px', border: '1px solid var(--game-border-color)', background: '#111' }}>
             <img src={m.imageUrl} alt="Adjunto" style={{ width: '100%', display: 'block', objectFit: 'contain', height: 'auto', maxHeight: '240px' }} />

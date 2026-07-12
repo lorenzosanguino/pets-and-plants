@@ -67,7 +67,7 @@ export const useSyncManager = ({
   });
 
   const [isCloudEnabled] = useState(() => {
-    const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || "";
+    const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDGQWW8tVP8kk6Nss-GCutohfD6IouLzp0";
     return !!apiKey && !apiKey.includes('dummy') && localStorage.getItem('petplant_mock_auth') !== 'true';
   });
 

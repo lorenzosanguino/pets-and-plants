@@ -1146,7 +1146,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
               color: 'var(--game-text-bright, #333)', 
               fontFamily: 'var(--game-font, sans-serif)',
               display: '-webkit-box',
-              WebkitLineClamp: 2,
+              WebkitLineClamp: expanded ? 2 : 1,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
               textOverflow: 'ellipsis',

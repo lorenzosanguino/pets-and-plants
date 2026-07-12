@@ -88,7 +88,12 @@ export const useTTS = () => {
   }, []);
 
   const speak = useCallback((text: string) => {
-    if (!window.speechSynthesis) return;
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      alert(typeof localStorage !== 'undefined' && localStorage.getItem('petplant_locale') === 'en' 
+        ? "Text-to-Speech is not supported or active on this device/webview." 
+        : "La síntesis de voz (TTS) no está soportada o activa en este dispositivo.");
+      return;
+    }
 
     window.speechSynthesis.resume(); // Asegurar que no está pausado
     window.speechSynthesis.cancel(); // Detener cualquier reproducción previa de inmediato
@@ -162,7 +167,7 @@ export const useTTS = () => {
     };
   }, [stop]);
 
-  const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+  const isSupported = typeof window !== 'undefined';
 
   return { speak, stop, isSpeaking, isSupported, rate: currentRate, setSpeed };
 };
