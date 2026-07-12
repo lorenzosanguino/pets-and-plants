@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect, useRef, lazy } from 'react';
+import { createPortal } from 'react-dom';
 import type { Planta, NivelToxicidadFelina, NivelToxicidadCanina, EntradaDiarioFoliar } from '../database/types';
 import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
@@ -223,8 +224,8 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
 
   const theme = propTheme || localStorage.getItem('petplant_game_theme') || 'nature';
 
-  const registrarRiego = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const registrarRiego = async (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     
     const confirmar = window.confirm(`¿Vas a regar la planta "${planta.nombreComun}"?`);
     if (!confirmar) return;
@@ -1267,6 +1268,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
             onDeleteCard={() => {
               setShowDeleteConfirm(true);
             }}
+            onWaterCard={() => registrarRiego()}
           />
 
           {/* Nivel de Seguridad de Mascotas (Felina y Canina) */}
@@ -1387,27 +1389,6 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
             )}
           </div>
 
-          {/* Botón de Regar Planta (Ubicado entre Nivel de Hidratación y Algoritmo Climático) */}
-          <div style={{ marginTop: '10px', display: 'flex' }}>
-            <button 
-              onClick={(e) => registrarRiego(e)}
-              style={{
-                width: '100%',
-                padding: '10px 16px',
-                background: 'var(--game-accent, #4caf50)',
-                color: theme === 'gaming' ? '#000000' : '#fff',
-                border: 'var(--game-border, 1px solid #f0f0f0)',
-                borderRadius: 'var(--game-radius, 8px)',
-                fontSize: '14px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                fontFamily: 'var(--game-font, sans-serif)',
-                boxShadow: '0 2px 4px rgba(76,175,80,0.2)'
-              }}
-            >
-              {theme === 'gaming' ? 'WATER STRIKE' : (locale === 'en' ? 'Water Plant 💧' : 'Regar Planta 💧')}
-            </button>
-          </div>
 
           {/* Calendario de Riego Semanal Interactivo */}
           {renderCalendarioRiegoSemanal()}
@@ -1803,7 +1784,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
 
 
           {/* Botones de Acción */}
-          <div style={{ display: 'flex', gap: '8px', marginTop: '8px', borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px' }}>
             <button
               onClick={exportarFichaBotanica}
               style={{
@@ -1857,8 +1838,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
             </button>
           </div>
 
-          {/* MODAL DE DOBLE CONFIRMACIÓN DE BORRADO */}
-          {showDeleteConfirm && (
+          {showDeleteConfirm && createPortal(
             <div className="modal-backdrop" style={{
               position: 'fixed',
               top: 0, left: 0, right: 0, bottom: 0,
@@ -1930,11 +1910,11 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                   </button>
                 </div>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
 
-          {/* VENTANA EMERGENTE (MODAL) PARA REPORTE DE IA */}
-          {iaReporteModal && (
+          {iaReporteModal && createPortal(
             <div className="modal-backdrop" style={{
               position: 'fixed',
               top: 0,
@@ -2042,7 +2022,8 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                   </button>
                 </div>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
         </>
       )}
@@ -2054,8 +2035,9 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
       />
 
       {/* MODAL CHEF NUTRICIONAL IA — PLANTAS */}
-      {showChefModal && (
+      {showChefModal && createPortal(
         <div className="modal-backdrop" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setShowChefModal(false)}>
+
           <div className="chef-modal-content" style={{ background: 'var(--game-card-bg, #fff)', borderRadius: theme === 'gaming' ? '0px' : '16px', padding: '24px', maxWidth: '480px', width: '90%', maxHeight: '80vh', overflowY: 'auto', border: 'var(--game-border, none)', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <strong style={{ fontSize: '15px', color: 'var(--game-text-bright)', fontFamily: 'var(--game-font, sans-serif)' }}>🍽️ Nutritional Chef AI — {planta.nombreComun}</strong>
@@ -2077,18 +2059,18 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
               </div>
             ) : null}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* MODAL DEL LUXÓMETRO DOMÉSTICO */}
-      {showLuxmeter && (
+      {showLuxmeter && createPortal(
         <div style={{
           position: 'fixed',
           top: 0, left: 0, width: '100vw', height: '100vh',
           background: 'rgba(8,6,13,0.7)', backdropFilter: 'blur(8px)',
           zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: '20px', boxSizing: 'border-box'
-        }} className="modal-backdrop no-print">
+        }} className="modal-backdrop no-print" onClick={closeLuxmeter}>
           <div className="luxometer-modal-content" style={{
             background: 'var(--bg, #fff)',
             border: '1px solid var(--border, #e5e4e7)',
@@ -2097,7 +2079,7 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
             padding: '24px', boxSizing: 'border-box',
             textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '16px',
             boxShadow: 'var(--shadow)'
-          }}>
+          }} onClick={(e) => e.stopPropagation()}>
             <div>
               <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', color: 'var(--text-h, #08060d)', fontWeight: 800 }}>
                 {locale === 'en' ? 'Home Light Meter 🔦' : 'Luxómetro Doméstico 🔦'}
@@ -2235,7 +2217,8 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
                </button>
              </div>
            </div>
-         </div>
+        </div>,
+        document.body
       )}
 
       {showAvatarLightbox && planta.fotoUrl && (

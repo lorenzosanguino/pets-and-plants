@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Pet &amp; Plant Pro</string>
-    <string name="title_activity_main">Pet &amp; Plant Pro</string>
-    <string name="package_name">app.petplant.pro</string>
-    <string name="custom_url_scheme">app.petplant.pro</string>
+    <string name="app_name">Pets &amp; Plants Oasis</string>
+    <string name="title_activity_main">Pets &amp; Plants Oasis</string>
+    <string name="package_name">app.petsplants.oasis</string>
+    <string name="custom_url_scheme">app.petsplants.oasis</string>
 </resources>

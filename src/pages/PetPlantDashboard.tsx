@@ -148,18 +148,24 @@ export const PetPlantDashboard: React.FC = () => {
       else setSolarCycle('day');
     }, 10 * 60 * 1000);
 
+    let rafId: number | null = null;
     const handleMouseMove = (e: MouseEvent) => {
       if (window.innerWidth <= 600) return;
-      const x = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
-      const y = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
-      setBgOffsetX(-x * 15);
-      setBgOffsetY(-y * 15);
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        const x = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
+        const y = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+        setBgOffsetX(-x * 15);
+        setBgOffsetY(-y * 15);
+        rafId = null;
+      });
     };
 
     window.addEventListener('mousemove', handleMouseMove);
     return () => {
       clearInterval(interval);
       window.removeEventListener('mousemove', handleMouseMove);
+      if (rafId !== null) cancelAnimationFrame(rafId);
     };
   }, []);
 
@@ -242,7 +248,6 @@ export const PetPlantDashboard: React.FC = () => {
 
   const [showScanner, setShowScanner] = useState(false);
   const [showManualRegister, setShowManualRegister] = useState<'pet' | 'plant' | null>(null);
-  const [dbError, setDbError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFading, setIsFading] = useState(false);
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
@@ -261,7 +266,10 @@ export const PetPlantDashboard: React.FC = () => {
     if (typeof window === 'undefined' || !(window as any).Capacitor) return;
 
     let sub: any;
+    let isMounted = true;
+
     import('@capacitor/app').then(({ App }) => {
+      if (!isMounted) return;
       App.addListener('backButton', () => {
         const { showScanner: sOpen, showManualRegister: rOpen, showCelebration: cOpen } = modalStatesRef.current;
         if (sOpen) {
@@ -274,11 +282,16 @@ export const PetPlantDashboard: React.FC = () => {
           App.exitApp();
         }
       }).then(listener => {
-        sub = listener;
+        if (!isMounted) {
+          listener.remove();
+        } else {
+          sub = listener;
+        }
       });
     });
 
     return () => {
+      isMounted = false;
       if (sub) sub.remove();
     };
   }, []);
@@ -375,10 +388,30 @@ export const PetPlantDashboard: React.FC = () => {
     mascotas,
     plantas,
     climaActual,
+    dbError,
+    setDbError,
     refreshData,
     exportarCopiaSeguridad,
     importarCopiaSeguridad
   } = appData;
+
+  const filteredMascotas = React.useMemo(() => {
+    return mascotas.filter(m => {
+      const matchesSearch = m.nombre.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            (m.raza && m.raza.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesFilter = filterSubtype === 'all' || m.especie === filterSubtype;
+      return matchesSearch && matchesFilter;
+    });
+  }, [mascotas, searchQuery, filterSubtype]);
+
+  const filteredPlantas = React.useMemo(() => {
+    return plantas.filter(p => {
+      const matchesSearch = p.nombreComun.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            (p.nombreCientifico && p.nombreCientifico.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesFilter = filterSubtype === 'all' || p.ubicacionHabitacion === filterSubtype;
+      return matchesSearch && matchesFilter;
+    });
+  }, [plantas, searchQuery, filterSubtype]);
 
   // Instantiate GPS sync hook
   const {
@@ -507,6 +540,26 @@ export const PetPlantDashboard: React.FC = () => {
     // Recordatorios de deparasitación (cada 24h)
     NotificationManager.checkDewormingReminders().catch((err) => {
       console.error('Error al comprobar recordatorios de deparasitación:', err);
+    });
+
+    // Listener para navegar a la ficha al pulsar una notificación nativa
+    NotificationManager.setupNotificationClickListener((entityType, entityId) => {
+      if (entityType === 'mascota') {
+        setExperienceMode('pets');
+        setActiveTab('dashboard');
+        // Scroll to pet card using the entity id stored as data attribute
+        setTimeout(() => {
+          const el = document.querySelector(`[data-mascota-id="${entityId}"]`);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 400);
+      } else if (entityType === 'planta') {
+        setExperienceMode('plants');
+        setActiveTab('dashboard');
+        setTimeout(() => {
+          const el = document.querySelector(`[data-planta-id="${entityId}"]`);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 400);
+      }
     });
   }, []);
 
@@ -697,7 +750,7 @@ export const PetPlantDashboard: React.FC = () => {
 
 
 
-  const getHeaderInfo = () => {
+  const headerInfo = React.useMemo(() => {
     const info = {
       icon: '🐾',
       title: t('appTitlePets'),
@@ -724,9 +777,7 @@ export const PetPlantDashboard: React.FC = () => {
       info.desc = '';
     }
     return info;
-  };
-
-  const headerInfo = getHeaderInfo();
+  }, [experienceMode, locale]);
 
   return (
     <div 
@@ -820,7 +871,7 @@ export const PetPlantDashboard: React.FC = () => {
             <span style={{ fontSize: '28px' }}>📱</span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
               <strong style={{ fontSize: '14px', color: 'var(--game-text-bright, #1a1a1a)' }}>
-                Instalar Pet & Plant Pro
+                Instalar Pets & Plants Oasis
               </strong>
               <span style={{ fontSize: '12px', color: 'var(--game-text, #666)' }}>
                 Install the app on your home screen for instant access and full offline support.
@@ -925,7 +976,7 @@ export const PetPlantDashboard: React.FC = () => {
                 letterSpacing: '1px',
                 color: uiTheme === 'gaming' ? '#00ff7f' : (uiTheme === 'kawaii' ? '#ff6b8b' : '#2e7d32')
               }}>
-                Pet & Plant Pro
+                Pets & Plants Oasis
               </h2>
               <p style={{ 
                 margin: 0, 
@@ -960,11 +1011,11 @@ export const PetPlantDashboard: React.FC = () => {
                 boxSizing: 'border-box'
               }}>
                 <span style={{ fontSize: '9px', color: uiTheme === 'gaming' ? '#66fcf1' : '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Session Detected ({localStorage.getItem('petplant_login_provider') === 'microsoft' ? 'Microsoft / Hotmail' : 'Google'})
+                  {isEn ? 'Session Detected' : 'Sesión Detectada'} ({localStorage.getItem('petplant_login_provider') === 'microsoft' ? 'Microsoft / Hotmail' : 'Google'})
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', borderBottom: uiTheme === 'gaming' ? '1px solid #2e3b4e' : '1px solid #eee', paddingBottom: '4px' }}>
                   {user.photoURL ? (
-                    <img src={user.photoURL} alt="Foto de perfil" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--game-border-color, #1976d2)', objectFit: 'cover' }} />
+                    <img src={user.photoURL} alt={isEn ? `${user.name}'s profile picture` : `Foto de perfil de ${user.name}`} style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--game-border-color, #1976d2)', objectFit: 'cover' }} />
                   ) : (
                     <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#eaeaea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>👤</div>
                   )}
@@ -996,7 +1047,7 @@ export const PetPlantDashboard: React.FC = () => {
                       transition: 'all 0.2s'
                     }}
                   >
-                    Continue to Dashboard 🚀
+                    {isEn ? 'Continue to Dashboard 🚀' : 'Continuar al Panel 🚀'}
                   </button>
 
                   {deferredPrompt && (
@@ -1021,7 +1072,7 @@ export const PetPlantDashboard: React.FC = () => {
                         transition: 'all 0.2s'
                       }}
                     >
-                      Install App on your Device 📱
+                      {isEn ? 'Install App on your Device 📱' : 'Instalar Aplicación en tu Dispositivo 📱'}
                     </button>
                   )}
 
@@ -1041,7 +1092,7 @@ export const PetPlantDashboard: React.FC = () => {
                       transition: 'all 0.2s'
                     }}
                   >
-                    Sign Out / Use another account 🚪
+                    {isEn ? 'Sign Out / Use another account 🚪' : 'Cerrar Sesión / Usar otra cuenta 🚪'}
                   </button>
 
                 </div>
@@ -1587,33 +1638,39 @@ export const PetPlantDashboard: React.FC = () => {
                       </div>
                       
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', boxSizing: 'border-box' }}>
-                        {(() => {
-                          const filtered = mascotas.filter(m => {
-                            const matchesSearch = m.nombre.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                                  (m.raza && m.raza.toLowerCase().includes(searchQuery.toLowerCase()));
-                            const matchesFilter = filterSubtype === 'all' || m.especie === filterSubtype;
-                            return matchesSearch && matchesFilter;
-                          });
-                          if (filtered.length === 0) {
-                            return <p style={{ fontSize: '12px', color: 'var(--game-text, #888)', fontStyle: 'italic', textAlign: 'center', padding: '12px', fontFamily: 'var(--game-font, sans-serif)' }}>{locale === 'en' ? 'No pets found.' : 'No se encontraron mascotas.'}</p>;
-                          }
-                          return filtered.map(m => (
-                            <Suspense key={m.id} fallback={<ChunkLoader height="80px" />}>
-                              <PetCard
-                                mascota={m}
-                                onUpdate={refreshData}
-                                onOpenScanner={(mode, assetId) => {
-                                  setScannerMode(mode);
-                                  setScannerAssetId(assetId);
-                                  setShowScanner(true);
-                                }}
-                                isExpanded={expandedCardId === m.id}
-                                onToggleExpand={() => setExpandedCardId(expandedCardId === m.id ? null : m.id)}
-                                theme={uiTheme}
-                              />
-                            </Suspense>
-                          ));
-                        })()}
+                        {filteredMascotas.length === 0 ? (
+                          <p style={{ fontSize: '12px', color: 'var(--game-text, #888)', fontStyle: 'italic', textAlign: 'center', padding: '12px', fontFamily: 'var(--game-font, sans-serif)' }}>{locale === 'en' ? 'No pets found.' : 'No se encontraron mascotas.'}</p>
+                        ) : (
+                          filteredMascotas.map(m => (
+                            <div key={m.id} data-mascota-id={m.id}>
+                              <Suspense fallback={<ChunkLoader height="80px" />}>
+                                <PetCard
+                                  mascota={m}
+                                  onUpdate={refreshData}
+                                  onOpenScanner={(mode, assetId) => {
+                                    setScannerMode(mode);
+                                    setScannerAssetId(assetId);
+                                    setShowScanner(true);
+                                  }}
+                                  isExpanded={expandedCardId === m.id}
+                                  onToggleExpand={() => {
+                                    const nextId = expandedCardId === m.id ? null : m.id;
+                                    setExpandedCardId(nextId);
+                                    if (nextId) {
+                                      setTimeout(() => {
+                                        const card = document.querySelector(`[data-mascota-id="${m.id}"]`);
+                                        const photo = card?.querySelector('.photo-manager-container');
+                                        const elToScroll = photo || card;
+                                        if (elToScroll) elToScroll.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                      }, 350);
+                                    }
+                                  }}
+                                  theme={uiTheme}
+                                />
+                              </Suspense>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
                   )}
@@ -1626,34 +1683,40 @@ export const PetPlantDashboard: React.FC = () => {
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', boxSizing: 'border-box' }}>
-                        {(() => {
-                          const filtered = plantas.filter(p => {
-                            const matchesSearch = p.nombreComun.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                                  (p.nombreCientifico && p.nombreCientifico.toLowerCase().includes(searchQuery.toLowerCase()));
-                            const matchesFilter = filterSubtype === 'all' || p.ubicacionHabitacion === filterSubtype;
-                            return matchesSearch && matchesFilter;
-                          });
-                          if (filtered.length === 0) {
-                            return <p style={{ fontSize: '12px', color: 'var(--game-text, #888)', fontStyle: 'italic', textAlign: 'center', padding: '12px', fontFamily: 'var(--game-font, sans-serif)' }}>{locale === 'en' ? 'No plants found.' : 'No se encontraron plantas.'}</p>;
-                          }
-                          return filtered.map(p => (
-                            <Suspense key={p.id} fallback={<ChunkLoader height="80px" />}>
-                              <PlantCard
-                                planta={p}
-                                clima={climaActual}
-                                onUpdate={refreshData}
-                                onOpenScanner={(mode, assetId) => {
-                                  setScannerMode(mode);
-                                  setScannerAssetId(assetId);
-                                  setShowScanner(true);
-                                }}
-                                isExpanded={expandedCardId === p.id}
-                                onToggleExpand={() => setExpandedCardId(expandedCardId === p.id ? null : p.id)}
-                                theme={uiTheme}
-                              />
-                            </Suspense>
-                          ));
-                        })()}
+                        {filteredPlantas.length === 0 ? (
+                          <p style={{ fontSize: '12px', color: 'var(--game-text, #888)', fontStyle: 'italic', textAlign: 'center', padding: '12px', fontFamily: 'var(--game-font, sans-serif)' }}>{locale === 'en' ? 'No plants found.' : 'No se encontraron plantas.'}</p>
+                        ) : (
+                          filteredPlantas.map(p => (
+                            <div key={p.id} data-planta-id={p.id}>
+                              <Suspense fallback={<ChunkLoader height="80px" />}>
+                                <PlantCard
+                                  planta={p}
+                                  clima={climaActual}
+                                  onUpdate={refreshData}
+                                  onOpenScanner={(mode, assetId) => {
+                                    setScannerMode(mode);
+                                    setScannerAssetId(assetId);
+                                    setShowScanner(true);
+                                  }}
+                                  isExpanded={expandedCardId === p.id}
+                                  onToggleExpand={() => {
+                                    const nextId = expandedCardId === p.id ? null : p.id;
+                                    setExpandedCardId(nextId);
+                                    if (nextId) {
+                                      setTimeout(() => {
+                                        const card = document.querySelector(`[data-planta-id="${p.id}"]`);
+                                        const photo = card?.querySelector('.photo-manager-container');
+                                        const elToScroll = photo || card;
+                                        if (elToScroll) elToScroll.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                      }, 350);
+                                    }
+                                  }}
+                                  theme={uiTheme}
+                                />
+                              </Suspense>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
                   )}

@@ -7,6 +7,10 @@ export class ImageOptimizer {
    * @returns Promesa que resuelve a un objeto con la URL temporal (objectURL) y el Blob optimizado
    */
   static optimize(file: File): Promise<{ blob: Blob; dataUrl: string }> {
+    if (!file.type.startsWith('image/')) {
+      return Promise.reject(new Error("Solo se admiten archivos de imagen para optimizar"));
+    }
+
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -44,6 +48,9 @@ export class ImageOptimizer {
             // Convertir dataURL a Blob de forma síncrona (altamente compatible con iOS Safari/WebKit)
             const arr = dataUrl.split(',');
             const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+            if (!arr[1]) {
+              throw new Error("Formato de Data URL inválido al codificar imagen");
+            }
             const bstr = atob(arr[1]);
             let n = bstr.length;
             const u8arr = new Uint8Array(n);

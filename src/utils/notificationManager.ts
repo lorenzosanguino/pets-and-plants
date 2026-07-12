@@ -14,12 +14,18 @@ function stringToIntId(str: string): number {
   return Math.abs(hash & 0x7fffffff);
 }
 
+let _permissionGrantedCache: boolean | null = null;
+
 export class NotificationManager {
   static async requestPermission(): Promise<boolean> {
+    if (_permissionGrantedCache !== null) return _permissionGrantedCache;
+
     if (isCapacitor) {
       try {
         const status = await LocalNotifications.requestPermissions();
-        return status.display === 'granted';
+        const granted = status.display === 'granted';
+        _permissionGrantedCache = granted;
+        return granted;
       } catch (err) {
         console.error('Error requesting native notification permissions:', err);
         return false;
@@ -31,7 +37,9 @@ export class NotificationManager {
       return false;
     }
     const permission = await Notification.requestPermission();
-    return permission === 'granted';
+    const granted = permission === 'granted';
+    _permissionGrantedCache = granted;
+    return granted;
   }
 
   static async sendNotification(title: string, body: string, icon = '/favicon.svg') {
@@ -40,12 +48,13 @@ export class NotificationManager {
 
     if (isCapacitor) {
       try {
+        const notifId = stringToIntId(title + body + Date.now().toString());
         await LocalNotifications.schedule({
           notifications: [
             {
               title,
               body,
-              id: Math.floor(Math.random() * 1000000),
+              id: notifId,
               schedule: { at: new Date(Date.now() + 500) },
               sound: 'default'
             }
@@ -80,8 +89,17 @@ export class NotificationManager {
 
   /**
    * Schedules a notification to be sent at a specific timestamp and persists it in IndexedDB.
+   * @param entityId Optional ID of the pet or plant this notification belongs to (for deep-link navigation).
+   * @param entityType Optional 'mascota' | 'planta' so the app knows which section to navigate to.
    */
-  static async scheduleNotification(title: string, body: string, timeStamp: number, id?: string) {
+  static async scheduleNotification(
+    title: string,
+    body: string,
+    timeStamp: number,
+    id?: string,
+    entityId?: string,
+    entityType?: 'mascota' | 'planta'
+  ) {
     const delay = timeStamp - Date.now();
     const notifId = id || safeUUID();
 
@@ -108,7 +126,8 @@ export class NotificationManager {
               body,
               id: stringToIntId(notifId),
               schedule: { at: new Date(timeStamp) },
-              sound: 'default'
+              sound: 'default',
+              extra: entityId ? { entityId, entityType: entityType || '' } : undefined
             }
           ]
         });
@@ -194,17 +213,12 @@ export class NotificationManager {
     }
   }
 
-  /**
-   * Comprueba si alguna mascota tiene deparasitación próxima (≤ 7 días) o vencida
-   * y envía una notificación. Cooldown de 24 horas para no repetir.
-   */
   static async checkDewormingReminders() {
     if (typeof window === 'undefined') return;
 
-    const COOLDOWN_KEY = 'petplant_last_deworming_notif';
+    const locale = localStorage.getItem('petplant_locale') || 'es';
+    const isEn = locale === 'en';
     const COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 horas
-    const lastNotif = Number(localStorage.getItem(COOLDOWN_KEY) || 0);
-    if (Date.now() - lastNotif < COOLDOWN_MS) return;
 
     try {
       const mascotas = await LocalDatabase.getMascotas();
@@ -217,9 +231,18 @@ export class NotificationManager {
 
       for (const mascota of mascotas) {
         if (mascota.especie !== 'Felino' && mascota.especie !== 'Canino') continue;
+        
+        const cooldownKey = `petplant_last_deworming_notif_${mascota.id}`;
+        const lastNotif = Number(localStorage.getItem(cooldownKey) || 0);
+        if (Date.now() - lastNotif < COOLDOWN_MS) continue;
+
         const checklist = mascota.vacunasChecklist || [];
 
         for (const tipo of tipos) {
+          const tipoLabel = isEn
+            ? (tipo === 'Desparasitación Interna' ? 'Internal Deworming' : 'External Deworming')
+            : tipo;
+
           const prefix = `${tipo}_`;
           const dates = checklist
             .filter(item => item.startsWith(prefix))
@@ -235,24 +258,54 @@ export class NotificationManager {
           const diasRestantes = Math.ceil((nextDate.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
 
           if (diasRestantes < 0) {
+            const absDias = Math.abs(diasRestantes);
             await this.sendNotification(
-              `💊 ${tipo} overdue — ${mascota.nombre}`,
-              `${mascota.nombre}'s ${tipo.toLowerCase()} was due ${Math.abs(diasRestantes)} day${Math.abs(diasRestantes) === 1 ? '' : 's'} ago. Time to get it up to date!`
+              isEn
+                ? `💊 ${tipoLabel} overdue — ${mascota.nombre}`
+                : `💊 ${tipoLabel} pendiente — ${mascota.nombre}`,
+              isEn
+                ? `${mascota.nombre}'s ${tipoLabel.toLowerCase()} was due ${absDias} day${absDias === 1 ? '' : 's'} ago. Time to get it up to date!`
+                : `Hace ${absDias} día${absDias === 1 ? '' : 's'} que ${mascota.nombre} necesita ${tipoLabel.toLowerCase()}. ¡Es momento de ponerse al día!`
             );
-            localStorage.setItem(COOLDOWN_KEY, Date.now().toString());
-            return; // One notification per session is enough
+            localStorage.setItem(cooldownKey, Date.now().toString());
+            return;
           } else if (diasRestantes <= 7) {
             await this.sendNotification(
-              `💊 ${tipo} upcoming — ${mascota.nombre}`,
-              `${mascota.nombre}'s ${tipo.toLowerCase()} is due in ${diasRestantes} day${diasRestantes === 1 ? '' : 's'}. Remember to administer it on time!`
+              isEn
+                ? `💊 ${tipoLabel} upcoming — ${mascota.nombre}`
+                : `💊 ${tipoLabel} próximamente — ${mascota.nombre}`,
+              isEn
+                ? `${mascota.nombre}'s ${tipoLabel.toLowerCase()} is due in ${diasRestantes} day${diasRestantes === 1 ? '' : 's'}. Remember to administer it on time!`
+                : `Quedan ${diasRestantes} día${diasRestantes === 1 ? '' : 's'} para la ${tipoLabel.toLowerCase()} de ${mascota.nombre}. ¡Recúérdalo!`
             );
-            localStorage.setItem(COOLDOWN_KEY, Date.now().toString());
+            localStorage.setItem(cooldownKey, Date.now().toString());
             return;
           }
         }
       }
     } catch (err) {
       console.error('Error al comprobar recordatorios de deparasitación:', err);
+    }
+  }
+
+  /**
+   * Sets up a listener so that tapping a native local notification navigates
+   * the app to the corresponding pet or plant card.
+   * Must be called once on app startup (after Capacitor is ready).
+   */
+  static setupNotificationClickListener(
+    navigateFn: (entityType: 'mascota' | 'planta', entityId: string) => void
+  ): void {
+    if (!isCapacitor) return;
+    try {
+      LocalNotifications.addListener('localNotificationActionPerformed', (notifAction) => {
+        const extra = (notifAction.notification as any).extra;
+        if (extra && extra.entityId && extra.entityType) {
+          navigateFn(extra.entityType as 'mascota' | 'planta', extra.entityId as string);
+        }
+      });
+    } catch (err) {
+      console.error('Error setting up notification click listener:', err);
     }
   }
 
@@ -335,7 +388,11 @@ function urlBase64ToUint8Array(base64String: string) {
     .replace(/-/g, '+')
     .replace(/_/g, '/');
 
-  const rawData = window.atob(base64);
+  const globalScope = typeof window !== 'undefined' ? window : (typeof self !== 'undefined' ? self : null);
+  if (!globalScope) {
+    throw new Error("No global decoder scope found");
+  }
+  const rawData = globalScope.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
 
   for (let i = 0; i < rawData.length; ++i) {

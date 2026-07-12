@@ -12,6 +12,7 @@ interface CardPhotoManagerProps {
   theme?: string;
   onEditCard?: () => void;
   onDeleteCard?: () => void;
+  onWaterCard?: () => void;
 }
 
 export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
@@ -20,7 +21,8 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
   onPhotosChange,
   theme = 'nature',
   onEditCard,
-  onDeleteCard
+  onDeleteCard,
+  onWaterCard
 }) => {
   const { locale } = useTranslations();
   const isEn = locale === 'en';
@@ -99,7 +101,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
   };
 
   const handleDeletePhoto = (photoToDelete: string) => {
-    if (!window.confirm("Are you sure you want to delete this photo?")) {
+    if (!window.confirm(isEn ? "Are you sure you want to delete this photo?" : "¿Seguro que quieres eliminar esta foto?")) {
       return;
     }
     const updatedPhotos = allPhotos.filter(p => p !== photoToDelete);
@@ -120,6 +122,19 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
 
   const triggerInput = () => {
     fileInputRef.current?.click();
+  };
+
+  // Navigate between photos with arrows
+  const activeIndex = allPhotos.indexOf(activePhoto);
+  const handlePrevPhoto = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newIdx = activeIndex <= 0 ? allPhotos.length - 1 : activeIndex - 1;
+    setActivePhoto(allPhotos[newIdx]);
+  };
+  const handleNextPhoto = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newIdx = activeIndex >= allPhotos.length - 1 ? 0 : activeIndex + 1;
+    setActivePhoto(allPhotos[newIdx]);
   };
 
   // Theme-specific colors
@@ -162,8 +177,49 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
     ? '#ff4081'
     : '#d32f2f';
 
+  const waterBg = theme === 'gaming'
+    ? 'rgba(0, 200, 255, 0.15)'
+    : theme === 'kawaii'
+    ? '#f0f7ff'
+    : '#e3f2fd';
+
+  const waterColor = theme === 'gaming'
+    ? '#00cfff'
+    : theme === 'kawaii'
+    ? '#1e88e5'
+    : '#1565c0';
+
+  const waterBorder = theme === 'gaming'
+    ? '#00cfff'
+    : theme === 'kawaii'
+    ? '#42a5f5'
+    : '#1976d2';
+
+  const arrowBtnStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    background: 'rgba(0,0,0,0.45)',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '50%',
+    width: '36px',
+    height: '36px',
+    fontSize: '18px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    zIndex: 3,
+    boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+    transition: 'background 0.15s',
+    flexShrink: 0,
+    lineHeight: 1,
+    padding: 0,
+  };
+
   return (
-    <div style={{
+    <div className="photo-manager-container" style={{
       display: 'flex',
       flexDirection: 'column',
       gap: '12px',
@@ -207,14 +263,38 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
         </button>
       </div>
 
-      {(onEditCard || onDeleteCard) && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0', marginTop: '2px', marginBottom: '2px', width: '100%', boxSizing: 'border-box' }}>
-          {onEditCard ? (
+      {/* Regar / Edit / Delete row */}
+      {(onEditCard || onDeleteCard || onWaterCard) && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
+          {onWaterCard && (
+            <button
+              type="button"
+              onClick={onWaterCard}
+              style={{
+                flex: '1 1 auto',
+                padding: '7px 10px',
+                background: waterBg,
+                color: waterColor,
+                border: `1px solid ${waterBorder}`,
+                borderRadius: '20px',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                fontFamily: 'var(--game-font, sans-serif)',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {isEn ? '💧 Water Plant' : '💧 Regar Planta'}
+            </button>
+          )}
+          {onEditCard && (
             <button
               type="button"
               onClick={onEditCard}
               style={{
-                padding: '6px 14px',
+                flex: '1 1 auto',
+                padding: '7px 10px',
                 background: editBg,
                 color: editColor,
                 border: `1px solid ${editBorder}`,
@@ -223,18 +303,20 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
                 fontWeight: 'bold',
                 cursor: 'pointer',
                 boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
-                fontFamily: 'var(--game-font, sans-serif)'
+                fontFamily: 'var(--game-font, sans-serif)',
+                whiteSpace: 'nowrap'
               }}
             >
               {isEn ? '✏️ Edit Record' : '✏️ Editar Ficha'}
             </button>
-          ) : <div />}
-          {onDeleteCard ? (
+          )}
+          {onDeleteCard && (
             <button
               type="button"
               onClick={onDeleteCard}
               style={{
-                padding: '6px 14px',
+                flex: '1 1 auto',
+                padding: '7px 10px',
                 background: deleteBg,
                 color: deleteColor,
                 border: `1px solid ${deleteBorder}`,
@@ -243,12 +325,13 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
                 fontWeight: 'bold',
                 cursor: 'pointer',
                 boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
-                fontFamily: 'var(--game-font, sans-serif)'
+                fontFamily: 'var(--game-font, sans-serif)',
+                whiteSpace: 'nowrap'
               }}
             >
               {isEn ? '🗑️ Delete Record' : '🗑️ Eliminar Ficha'}
             </button>
-          ) : <div />}
+          )}
         </div>
       )}
 
@@ -369,6 +452,8 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
                 boxSizing: 'border-box' as const
               };
             })()} />
+
+            {/* Primary label */}
             {activePhoto === currentPhotoUrl && (
               <span style={{
                 position: 'absolute',
@@ -381,10 +466,52 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
                 fontSize: '10px',
                 fontWeight: 'bold',
                 boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-                zIndex: 2
+                zIndex: 3
               }}>
                 {isEn ? 'Primary ★' : 'Principal ★'}
               </span>
+            )}
+
+            {/* Photo counter badge (when multiple photos) */}
+            {allPhotos.length > 1 && (
+              <span style={{
+                position: 'absolute',
+                top: '12px',
+                right: '20px',
+                background: 'rgba(0,0,0,0.55)',
+                color: '#fff',
+                padding: '3px 8px',
+                borderRadius: '20px',
+                fontSize: '10px',
+                fontWeight: 'bold',
+                zIndex: 3
+              }}>
+                {activeIndex + 1} / {allPhotos.length}
+              </span>
+            )}
+
+            {/* Left arrow */}
+            {allPhotos.length > 1 && (
+              <button
+                type="button"
+                onClick={handlePrevPhoto}
+                style={{ ...arrowBtnStyle, left: '10px' }}
+                aria-label={isEn ? 'Previous photo' : 'Foto anterior'}
+              >
+                ‹
+              </button>
+            )}
+
+            {/* Right arrow */}
+            {allPhotos.length > 1 && (
+              <button
+                type="button"
+                onClick={handleNextPhoto}
+                style={{ ...arrowBtnStyle, right: '10px' }}
+                aria-label={isEn ? 'Next photo' : 'Foto siguiente'}
+              >
+                ›
+              </button>
             )}
             
             {/* Actions overlay */}
@@ -394,7 +521,7 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
               right: '20px',
               display: 'flex',
               gap: '6px',
-              zIndex: 2
+              zIndex: 3
             }}>
               {activePhoto !== currentPhotoUrl && (
                 <button
@@ -562,6 +689,8 @@ export const CardPhotoManager: React.FC<CardPhotoManagerProps> = ({
           imageUrl={activePhoto}
           onClose={() => setShowLightbox(false)}
           theme={theme}
+          photos={allPhotos}
+          initialIndex={allPhotos.indexOf(activePhoto)}
         />
       )}
     </div>

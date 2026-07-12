@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "app.petplant.pro"
+    namespace = "app.petsplants.oasis"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "app.petplant.pro"
+        applicationId "app.petsplants.oasis"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

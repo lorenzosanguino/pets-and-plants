@@ -173,7 +173,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
       icsContent.push(`DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`);
       icsContent.push(`DTSTART;VALUE=DATE:${dateStr}`);
       
-      const nextDay = new Date(ev.fecha);
+      const nextDay = new Date(ev.fecha + 'T00:00:00');
       nextDay.setDate(nextDay.getDate() + 1);
       const nextDayStr = `${nextDay.getFullYear()}${String(nextDay.getMonth() + 1).padStart(2, '0')}${String(nextDay.getDate()).padStart(2, '0')}`;
       icsContent.push(`DTEND;VALUE=DATE:${nextDayStr}`);
@@ -837,7 +837,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <button 
                       onClick={() => {
-                        const dateObj = new Date(ev.fecha);
+                        const dateObj = new Date(ev.fecha + 'T00:00:00');
                         const startStr = ev.fecha.replace(/-/g, '');
                         const endDate = new Date(dateObj);
                         endDate.setDate(endDate.getDate() + 1);
@@ -845,7 +845,7 @@ export const EcosystemCalendar: React.FC<EcosystemCalendarProps> = ({ plantas = 
                         const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
                         const endDay = String(endDate.getDate()).padStart(2, '0');
                         const endStr = `${endYear}${endMonth}${endDay}`;
-                        const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(getCategoryLabel(ev.categoria) + ': ' + ev.texto)}&dates=${startStr}/${endStr}&details=${encodeURIComponent('Recordatorio creado desde Pet & Plant Pro')}`;
+                        const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(getCategoryLabel(ev.categoria) + ': ' + ev.texto)}&dates=${startStr}/${endStr}&details=${encodeURIComponent('Recordatorio creado desde Pets & Plants Oasis')}`;
                         window.open(url, '_blank');
                       }}
                       style={{

@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type { Mascota, Planta } from '../database/types';
 import { calcularEdadMascota } from '../utils/age';
 import { escapeHTML } from '../utils/escape';
@@ -791,7 +792,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
     }
   };
 
-  return (
+  return createPortal(
     <div className="report-modal-overlay">
       <style>{`
         .report-modal-overlay {
@@ -1594,6 +1595,7 @@ export const ReportGeneratorModal: React.FC<ReportGeneratorModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

@@ -64,6 +64,26 @@ const deviceSessionId = Math.random().toString(36).substring(2, 11);
 const uploadedImagesCache = new Set<string>();
 const resolvedImagesCache = new Map<string, string>();
 
+function addToUploadedCache(key: string) {
+  if (uploadedImagesCache.size >= 50) {
+    const firstValue = uploadedImagesCache.values().next().value;
+    if (firstValue !== undefined) {
+      uploadedImagesCache.delete(firstValue);
+    }
+  }
+  uploadedImagesCache.add(key);
+}
+
+function addToResolvedCache(key: string, value: string) {
+  if (resolvedImagesCache.size >= 50) {
+    const firstKey = resolvedImagesCache.keys().next().value;
+    if (firstKey !== undefined) {
+      resolvedImagesCache.delete(firstKey);
+    }
+  }
+  resolvedImagesCache.set(key, value);
+}
+
 function simpleHash(str: string): string {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -162,7 +182,7 @@ async function walkAndResolve(obj: any): Promise<any> {
           if (snap.exists()) {
             const data = snap.data();
             if (data && data.base64) {
-              resolvedImagesCache.set(imgId, data.base64);
+              addToResolvedCache(imgId, data.base64);
               return data.base64;
             }
           }
@@ -218,18 +238,23 @@ export class FirebaseSyncService {
       const docRef = doc(db, 'hogares', `user_hogar_${uid}`);
       const getDocPromise = getDoc(docRef);
       // Timeout de 10 segundos en lectura para no congelar la app en redes lentas
-      const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error("Timeout al obtener hogar del usuario en Firestore")), 10000)
-      );
-      const snap = await Promise.race([getDocPromise, timeoutPromise]);
-      if (snap.exists()) {
-        const data = snap.data();
-        if (data && data.hogarId) {
-          return {
-            hogarId: data.hogarId,
-            hogarNombre: data.hogarNombre || "Mi Hogar"
-          };
+      let timeoutId: any;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error("Timeout al obtener hogar del usuario en Firestore")), 10000);
+      });
+      try {
+        const snap = await Promise.race([getDocPromise, timeoutPromise]);
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data && data.hogarId) {
+            return {
+              hogarId: data.hogarId,
+              hogarNombre: data.hogarNombre || "Mi Hogar"
+            };
+          }
         }
+      } finally {
+        clearTimeout(timeoutId);
       }
     }
     return null;
@@ -297,31 +322,36 @@ export class FirebaseSyncService {
     if (chats !== undefined) data.chats = chats;
 
     if (this.isCloudEnabled() && db) {
+
       const images: { id: string; base64: string }[] = [];
       const cleanedData = walkAndExtract(limpiarDatosParaNube(data), code, images);
 
       // Subir imágenes en paralelo
       const uploadPromises = images.map(async (img) => {
         if (!uploadedImagesCache.has(img.id)) {
+          let timeoutId: any;
           try {
             if (img.base64.length > 900000) {
               console.warn(`La imagen ${img.id} supera el límite de Firestore. Se omite de la nube para no dar error.`);
               return;
             }
             const imgDocRef = doc(db!, 'hogares', img.id);
-            await Promise.race([
-              setDoc(imgDocRef, {
-                base64: img.base64,
-                isImage: true,
-                updatedAt: Date.now()
-              }),
-              new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout de subida de imagen")), 3500))
-            ]);
-            uploadedImagesCache.add(img.id);
-            resolvedImagesCache.set(img.id, img.base64);
+            const uploadPromise = setDoc(imgDocRef, {
+              base64: img.base64,
+              isImage: true,
+              updatedAt: Date.now()
+            });
+            const timeoutPromise = new Promise<never>((_, reject) => {
+              timeoutId = setTimeout(() => reject(new Error("Timeout de subida de imagen")), 3500);
+            });
+            await Promise.race([uploadPromise, timeoutPromise]);
+            addToUploadedCache(img.id);
+            addToResolvedCache(img.id, img.base64);
           } catch (err) {
             console.error(`Error al subir imagen ${img.id} en createHogar:`, err);
             // Continuar silenciosamente para no congelar la app
+          } finally {
+            if (timeoutId) clearTimeout(timeoutId);
           }
         }
       });
@@ -345,13 +375,18 @@ export class FirebaseSyncService {
       const docRef = doc(db, 'hogares', code);
       const getDocPromise = getDoc(docRef);
       // Timeout de 10 segundos en lectura para no congelar la app en redes lentas
-      const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error("Timeout al obtener datos del hogar en Firestore")), 10000)
-      );
-      const snap = await Promise.race([getDocPromise, timeoutPromise]);
-      if (snap.exists()) {
-        const rawData = snap.data() as HogarCloudData;
-        return await walkAndResolve(rawData);
+      let timeoutId: any;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error("Timeout al obtener datos del hogar en Firestore")), 10000);
+      });
+      try {
+        const snap = await Promise.race([getDocPromise, timeoutPromise]);
+        if (snap.exists()) {
+          const rawData = snap.data() as HogarCloudData;
+          return await walkAndResolve(rawData);
+        }
+      } finally {
+        clearTimeout(timeoutId);
       }
       return null;
     } else {
@@ -384,31 +419,36 @@ export class FirebaseSyncService {
     if (chats !== undefined) data.chats = chats;
 
     if (this.isCloudEnabled() && db) {
+
       const images: { id: string; base64: string }[] = [];
       const cleanedData = walkAndExtract(limpiarDatosParaNube(data), code, images);
 
       // Subir imágenes en paralelo
       const uploadPromises = images.map(async (img) => {
         if (!uploadedImagesCache.has(img.id)) {
+          let timeoutId: any;
           try {
             if (img.base64.length > 900000) {
               console.warn(`La imagen ${img.id} supera el límite de Firestore. Se omite de la nube para no dar error.`);
               return;
             }
             const imgDocRef = doc(db!, 'hogares', img.id);
-            await Promise.race([
-              setDoc(imgDocRef, {
-                base64: img.base64,
-                isImage: true,
-                updatedAt: Date.now()
-              }),
-              new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout de subida de imagen")), 3500))
-            ]);
-            uploadedImagesCache.add(img.id);
-            resolvedImagesCache.set(img.id, img.base64);
+            const uploadPromise = setDoc(imgDocRef, {
+              base64: img.base64,
+              isImage: true,
+              updatedAt: Date.now()
+            });
+            const timeoutPromise = new Promise<never>((_, reject) => {
+              timeoutId = setTimeout(() => reject(new Error("Timeout de subida de imagen")), 3500);
+            });
+            await Promise.race([uploadPromise, timeoutPromise]);
+            addToUploadedCache(img.id);
+            addToResolvedCache(img.id, img.base64);
           } catch (err) {
             console.error(`Error al subir imagen ${img.id} en uploadChanges:`, err);
             // Continuar silenciosamente para no congelar la app
+          } finally {
+            if (timeoutId) clearTimeout(timeoutId);
           }
         }
       });
@@ -438,19 +478,26 @@ export class FirebaseSyncService {
   ): () => void {
     if (this.isCloudEnabled() && db) {
       const docRef = doc(db, 'hogares', code);
-      const unsubscribe = onSnapshot(docRef, async (snapshot) => {
-        if (snapshot.exists()) {
-          const rawData = snapshot.data() as HogarCloudData;
-          // Solo llamamos al callback si el cambio lo hizo otro dispositivo/pestaña
-          if (rawData.lastUpdatedBy !== deviceSessionId) {
-            const resolved = await walkAndResolve(rawData);
-            callback(resolved);
+      let debounceTimeout: any = null;
+      const unsubscribe = onSnapshot(docRef, (snapshot) => {
+        if (debounceTimeout) clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(async () => {
+          if (snapshot.exists()) {
+            const rawData = snapshot.data() as HogarCloudData;
+            // Solo llamamos al callback si el cambio lo hizo otro dispositivo/pestaña
+            if (rawData.lastUpdatedBy !== deviceSessionId) {
+              const resolved = await walkAndResolve(rawData);
+              callback(resolved);
+            }
           }
-        }
+        }, 500);
       }, (err) => {
         console.error("Firestore onSnapshot error:", err);
       });
-      return unsubscribe;
+      return () => {
+        unsubscribe();
+        if (debounceTimeout) clearTimeout(debounceTimeout);
+      };
     } else {
       // Mock listener using BroadcastChannel
       const listener = (event: MessageEvent) => {

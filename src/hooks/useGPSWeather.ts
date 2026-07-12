@@ -13,31 +13,41 @@ const evaluarYNotificarClimaExtremo = (c: any) => {
 
   const temp = c.temperatura;
   const hum = c.humedad;
+  const locale = localStorage.getItem('petplant_locale') || 'es';
+  const isEn = locale === 'en';
 
   let notifEnviada = false;
 
   if (temp > 32) {
     NotificationManager.sendNotification(
-      "🔥 Extreme Heat Alert",
-      `The current temperature is ${Math.round(temp)}°C. Keep your pets hydrated and protect your plants from direct sunlight.`
+      isEn ? "🔥 Extreme Heat Alert" : "🔥 Alerta de Calor Extremo",
+      isEn
+        ? `The current temperature is ${Math.round(temp)}°C. Keep your pets hydrated and protect your plants from direct sunlight.`
+        : `La temperatura actual es ${Math.round(temp)}°C. Mantén a tus mascotas hidratadas y protege tus plantas del sol directo.`
     );
     notifEnviada = true;
   } else if (temp < 10) {
     NotificationManager.sendNotification(
-      "❄️ Extreme Cold Alert",
-      `The current temperature is ${Math.round(temp)}°C. Shelter your sensitive plants and keep your pets warm indoors.`
+      isEn ? "❄️ Extreme Cold Alert" : "❄️ Alerta de Frío Extremo",
+      isEn
+        ? `The current temperature is ${Math.round(temp)}°C. Shelter your sensitive plants and keep your pets warm indoors.`
+        : `La temperatura actual es ${Math.round(temp)}°C. Protege tus plantas sensibles y mantén a tus mascotas calientes en casa.`
     );
     notifEnviada = true;
   } else if (hum < 30) {
     NotificationManager.sendNotification(
-      "🏜️ Low Humidity Alert",
-      `Relative humidity is very low (${Math.round(hum)}%). Check your plants' soil in case they need extra watering.`
+      isEn ? "🏜️ Low Humidity Alert" : "🏜️ Alerta de Humedad Baja",
+      isEn
+        ? `Relative humidity is very low (${Math.round(hum)}%). Check your plants' soil in case they need extra watering.`
+        : `La humedad relativa es muy baja (${Math.round(hum)}%). Revisa el sustrato de tus plantas por si necesitan riego extra.`
     );
     notifEnviada = true;
   } else if (hum > 85) {
     NotificationManager.sendNotification(
-      "🌧️ High Humidity Alert",
-      `Ambient humidity at ${Math.round(hum)}%. High risk of fungus. Avoid watering succulents/cacti today.`
+      isEn ? "🌧️ High Humidity Alert" : "🌧️ Alerta de Humedad Alta",
+      isEn
+        ? `Ambient humidity at ${Math.round(hum)}%. High risk of fungus. Avoid watering succulents/cacti today.`
+        : `Humedad ambiental al ${Math.round(hum)}%. Alto riesgo de hongos. Evita regar suculentas/cactus hoy.`
     );
     notifEnviada = true;
   }
@@ -56,6 +66,27 @@ export const useGPSWeather = (refreshData: (force?: boolean) => Promise<void>) =
     if (saved === 'false') return 'inactive';
     return 'undecided';
   });
+
+  const actualizarPlantasConClima = async (clima: any) => {
+    const listPlantas = await LocalDatabase.getPlantas();
+    for (const p of listPlantas) {
+      const baseIntervalo = p.intervaloRiegoBase || p.intervaloRiegoDias || 7;
+      const nuevoIntervalo = WeatherService.calcularIntervaloRiegoClimatico(
+        baseIntervalo,
+        p.grosorHoja || 'Normal',
+        clima
+      );
+      const proximaFecha = new Date(Date.now() + nuevoIntervalo * 24 * 3600 * 1000).toISOString();
+      const plantaActualizada = {
+        ...p,
+        intervaloRiegoDias: nuevoIntervalo,
+        intervaloRiegoBase: baseIntervalo,
+        proximaFechaRiego: proximaFecha,
+        temperaturaZona: Math.round(clima.temperatura),
+      };
+      await LocalDatabase.savePlanta(plantaActualizada);
+    }
+  };
 
   const sincronizarTodasLasPlantasPorGPS = async () => {
     setLoadingGPS(true);
@@ -81,24 +112,7 @@ export const useGPSWeather = (refreshData: (force?: boolean) => Promise<void>) =
       // Evaluar y notificar clima extremo
       evaluarYNotificarClimaExtremo(clima);
 
-      const listPlantas = await LocalDatabase.getPlantas();
-      for (const p of listPlantas) {
-        const baseIntervalo = p.intervaloRiegoBase || p.intervaloRiegoDias || 7;
-        const nuevoIntervalo = WeatherService.calcularIntervaloRiegoClimatico(
-          baseIntervalo,
-          p.grosorHoja || 'Normal',
-          clima
-        );
-        const proximaFecha = new Date(Date.now() + nuevoIntervalo * 24 * 3600 * 1000).toISOString();
-        const plantaActualizada = {
-          ...p,
-          intervaloRiegoDias: nuevoIntervalo,
-          intervaloRiegoBase: baseIntervalo,
-          proximaFechaRiego: proximaFecha,
-          temperaturaZona: Math.round(clima.temperatura),
-        };
-        await LocalDatabase.savePlanta(plantaActualizada);
-      }
+      await actualizarPlantasConClima(clima);
 
       await refreshData(true);
       setGpsSyncSuccess(
@@ -107,17 +121,17 @@ export const useGPSWeather = (refreshData: (force?: boolean) => Promise<void>) =
     } catch (err: any) {
       console.warn('Fallo GPS en hook useGPSWeather:', err);
       try {
-        // Prioridad 1: reusar el último clima en caché si existe (puede tener coords reales del usuario)
+        // Prioridad 1: reusar el último clima en caché si es menor de 24h
         const cachedWeather = localStorage.getItem('petplant_last_gps_weather');
+        const cachedTime = Number(localStorage.getItem('petplant_last_gps_time') || 0);
         let climaSimulado;
 
-        if (cachedWeather) {
+        if (cachedWeather && Date.now() - cachedTime < 24 * 60 * 60 * 1000) {
           console.log('GPS sin acceso, usando último clima guardado en caché.');
           climaSimulado = JSON.parse(cachedWeather);
         } else {
           // Prioridad 2: estimar clima genérico basado únicamente en el mes (sin coords fijas)
-          console.log('GPS sin acceso y sin caché. Usando estimación climática por mes.');
-          // Usamos coordenadas neutrales (lat=40 genérica) — WeatherService ya tiene fallback por mes/estación
+          console.log('GPS sin acceso y sin caché válida. Usando estimación climática por mes.');
           climaSimulado = await WeatherService.obtenerClimaEnVivo(40, 0).catch(() =>
             // Última opción: objeto climático mínimo seguro
             ({ latitud: 0, longitud: 0, temperatura: 20, humedad: 55, estacion: 'Primavera/Otoño' as const, mesNombre: 'Unknown' })
@@ -130,31 +144,15 @@ export const useGPSWeather = (refreshData: (force?: boolean) => Promise<void>) =
         // Evaluar y notificar clima extremo
         evaluarYNotificarClimaExtremo(climaSimulado);
 
-        const listPlantas = await LocalDatabase.getPlantas();
-        for (const p of listPlantas) {
-          const baseIntervalo = p.intervaloRiegoBase || p.intervaloRiegoDias || 7;
-          const nuevoIntervalo = WeatherService.calcularIntervaloRiegoClimatico(
-            baseIntervalo,
-            p.grosorHoja || 'Normal',
-            climaSimulado
-          );
-          const proximaFecha = new Date(Date.now() + nuevoIntervalo * 24 * 3600 * 1000).toISOString();
-          const plantaActualizada = {
-            ...p,
-            intervaloRiegoDias: nuevoIntervalo,
-            intervaloRiegoBase: baseIntervalo,
-            proximaFechaRiego: proximaFecha,
-            temperaturaZona: Math.round(climaSimulado.temperatura),
-          };
-          await LocalDatabase.savePlanta(plantaActualizada);
-        }
+        await actualizarPlantasConClima(climaSimulado);
+        
         await refreshData(true);
         setGpsSyncSuccess(
           `Synced! (Estimated weather): ${Math.round(climaSimulado.temperatura)}°C, RH: ${climaSimulado.humedad}%`
         );
       } catch (innerErr) {
         console.warn('No se pudo realizar la sincronización climática GPS:', innerErr);
-        alert('GPS weather sync could not be completed.');
+        console.error('GPS weather sync could not be completed.');
       }
     } finally {
       setLoadingGPS(false);

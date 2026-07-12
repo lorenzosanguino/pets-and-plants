@@ -380,6 +380,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
     setPlantToxicidadCanina('Segura');
     setPlantCompuestosToxicos('');
     setPlantUltimoRiegoOpcion('hoy');
+    setSelectedAssetId(forcedAssetId || '');
   };
 
   const accentColor = (mode === 'registrar_mascota' || mode === 'salud_mascota') 

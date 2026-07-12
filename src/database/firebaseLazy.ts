@@ -19,18 +19,17 @@ export interface LazyFirebase {
   onAuthStateChanged: typeof import('firebase/auth').onAuthStateChanged;
 }
 
-let _cached: LazyFirebase | null = null;
+let _initPromise: Promise<LazyFirebase> | null = null;
+let _cachedResult: LazyFirebase | null = null;
 
-export async function initFirebase(): Promise<LazyFirebase> {
-  if (_cached) return _cached;
-
-  // Cargar ambos módulos en paralelo
+async function _doInit(): Promise<LazyFirebase> {
+  // Cargar módulos en paralelo
   const [authModule, syncModule] = await Promise.all([
     import('firebase/auth'),
     import('./firebaseSync')
   ]);
 
-  _cached = {
+  _cachedResult = {
     auth: syncModule.auth,
     FirebaseSyncService: syncModule.FirebaseSyncService,
     GoogleAuthProvider: authModule.GoogleAuthProvider,
@@ -41,10 +40,14 @@ export async function initFirebase(): Promise<LazyFirebase> {
     onAuthStateChanged: authModule.onAuthStateChanged,
   };
 
-  return _cached;
+  return _cachedResult;
+}
+
+export function initFirebase(): Promise<LazyFirebase> {
+  return _initPromise ?? (_initPromise = _doInit());
 }
 
 /** Versión síncrona — solo usar si ya se llamó a initFirebase() antes */
 export function getFirebaseCached(): LazyFirebase | null {
-  return _cached;
+  return _cachedResult;
 }

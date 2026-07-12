@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 
-test.describe('Pet & Plant Pro E2E Flow', () => {
+test.describe('Pets & Plants Oasis E2E Flow', () => {
   // Set window size for standard desktop use
   test.use({ viewport: { width: 1280, height: 720 } });
 
@@ -38,7 +38,7 @@ test.describe('Pet & Plant Pro E2E Flow', () => {
     });
 
     // Verify Title on Landing View
-    await expect(page).toHaveTitle(/Pet & Plant Pro/i);
+    await expect(page).toHaveTitle(/Pets & Plants Oasis/i);
 
     // Dismiss the welcome splash screen overlay
     await page.locator('text=Continue to Dashboard 🚀').first().click({ force: true });

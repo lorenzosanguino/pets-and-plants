@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Offline - Pet & Plant Pro</title>
+  <title>Offline - Pets & Plants Oasis</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
@@ -84,7 +84,7 @@
   <div class="container">
     <div class="emoji-box">📡❌</div>
     <h1 id="title">Offline Mode Active</h1>
-    <p id="desc">You are currently disconnected from the internet. Pet & Plant Pro works fully offline using your local database, but cloud synchronization requires a network connection.</p>
+    <p id="desc">You are currently disconnected from the internet. Pets & Plants Oasis works fully offline using your local database, but cloud synchronization requires a network connection.</p>
     <button class="btn" onclick="window.location.reload()"><span id="btn-text">Retry Connection 🔄</span></button>
   </div>
 
@@ -93,7 +93,7 @@
     const locale = localStorage.getItem('petplant_locale') || 'es';
     if (locale === 'es') {
       document.getElementById('title').innerText = 'Modo Sin Conexión';
-      document.getElementById('desc').innerText = 'Actualmente no estás conectado a internet. Pet & Plant Pro funciona completamente offline usando tu base de datos local, pero la sincronización en la nube requiere conexión de red.';
+      document.getElementById('desc').innerText = 'Actualmente no estás conectado a internet. Pets & Plants Oasis funciona completamente offline usando tu base de datos local, pero la sincronización en la nube requiere conexión de red.';
       document.getElementById('btn-text').innerText = 'Reintentar Conexión 🔄';
     }
   </script>

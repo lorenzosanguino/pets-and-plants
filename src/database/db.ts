@@ -274,19 +274,18 @@ export class LocalDatabase {
   private static _isSeedingInProgress = false;
   static async getMascotas(): Promise<Mascota[]> {
     const db = await openDB();
-    return new Promise((resolve, reject) => {
+    const rawList = await new Promise<any[]>((resolve, reject) => {
       const tx = db.transaction('mascotas', 'readonly');
       const store = tx.objectStore('mascotas');
       const req = store.getAll();
 
-      req.onsuccess = async () => {
-        const list = req.result || [];
-        const decrypted = await Promise.all(list.map(m => LocalDatabase.decryptMascota(m)));
-        resolve(decrypted);
+      req.onsuccess = () => {
+        resolve(req.result || []);
       };
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
     });
+    return Promise.all(rawList.map(m => LocalDatabase.decryptMascota(m)));
   }
 
   static async saveMascota(mascota: Mascota): Promise<void> {
@@ -312,19 +311,18 @@ export class LocalDatabase {
 
   static async getPlantas(): Promise<Planta[]> {
     const db = await openDB();
-    return new Promise((resolve, reject) => {
+    const rawList = await new Promise<any[]>((resolve, reject) => {
       const tx = db.transaction('plantas', 'readonly');
       const store = tx.objectStore('plantas');
       const req = store.getAll();
 
-      req.onsuccess = async () => {
-        const list = req.result || [];
-        const decrypted = await Promise.all(list.map(p => LocalDatabase.decryptPlanta(p)));
-        resolve(decrypted);
+      req.onsuccess = () => {
+        resolve(req.result || []);
       };
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
     });
+    return Promise.all(rawList.map(p => LocalDatabase.decryptPlanta(p)));
   }
 
   static async savePlanta(planta: Planta): Promise<void> {
@@ -398,21 +396,18 @@ export class LocalDatabase {
 
   static async getChatHistorial(id: string): Promise<ChatHistorial | null> {
     const db = await openDB();
-    return new Promise((resolve, reject) => {
+    const rawResult = await new Promise<any>((resolve, reject) => {
       const tx = db.transaction('chats_consultor', 'readonly');
       const store = tx.objectStore('chats_consultor');
       const req = store.get(id);
-      req.onsuccess = async () => {
-        if (!req.result) {
-          resolve(null);
-        } else {
-          const decrypted = await LocalDatabase.decryptChat(req.result);
-          resolve(decrypted);
-        }
+      req.onsuccess = () => {
+        resolve(req.result || null);
       };
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
     });
+    if (!rawResult) return null;
+    return LocalDatabase.decryptChat(rawResult);
   }
 
   static async saveChatHistorial(chat: ChatHistorial): Promise<void> {
@@ -597,24 +592,7 @@ export class LocalDatabase {
     });
   }
 
-  static async overwriteDatabase(mascotas: Mascota[], plantas: Planta[]): Promise<void> {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(['mascotas', 'plantas'], 'readwrite');
-      const petStore = tx.objectStore('mascotas');
-      const plantStore = tx.objectStore('plantas');
 
-      petStore.clear();
-      plantStore.clear();
-
-      mascotas.forEach(m => petStore.put(m));
-      plantas.forEach(p => plantStore.put(p));
-
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-      tx.onabort = () => reject(tx.error || new Error("Transaction aborted"));
-    });
-  }
 
   static async overwriteFullDatabase(
     mascotas: Mascota[],

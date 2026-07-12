@@ -20,6 +20,7 @@ export const useAppData = (
 ) => {
   const [mascotas, setMascotas] = useState<Mascota[]>([]);
   const [plantas, setPlantas] = useState<Planta[]>([]);
+  const [dbError, setDbError] = useState<string | null>(null);
   const [climaActual, setClimaActual] = useState<any>(() => {
     try {
       const saved = localStorage.getItem('petplant_last_gps_weather');
@@ -108,13 +109,16 @@ export const useAppData = (
       const permisoConcedido = await NotificationManager.requestPermission();
       if (!permisoConcedido) return;
 
+      const locale = localStorage.getItem('petplant_locale') || 'es';
+      const isEn = locale === 'en';
+
       for (const ev of eventosHoy) {
         markNotificado(ev.id);
-        let prefijo = '📅 Reminder Today';
-        if (ev.categoria === 'veterinario') prefijo = '🐾 Vet Today';
-        else if (ev.categoria === 'riego') prefijo = '💧 Watering Today';
-        else if (ev.categoria === 'medicacion') prefijo = '💊 Medication Today';
-        else if (ev.categoria === 'abono') prefijo = '🌿 Fertilizer Today';
+        let prefijo = isEn ? '📅 Reminder Today' : '📅 Recordatorio Hoy';
+        if (ev.categoria === 'veterinario') prefijo = isEn ? '🐾 Vet Today' : '🐾 Veterinario Hoy';
+        else if (ev.categoria === 'riego') prefijo = isEn ? '💧 Watering Today' : '💧 Riego Hoy';
+        else if (ev.categoria === 'medicacion') prefijo = isEn ? '💊 Medication Today' : '💊 Medicación Hoy';
+        else if (ev.categoria === 'abono') prefijo = isEn ? '🌿 Fertilizer Today' : '🌿 Abono Hoy';
 
         await NotificationManager.sendNotification(
           prefijo,
@@ -124,11 +128,11 @@ export const useAppData = (
 
       for (const ev of eventosMañana) {
         markNotificado(ev.id);
-        let prefijo = '📅 Reminder Tomorrow';
-        if (ev.categoria === 'veterinario') prefijo = '🐾 Vet Tomorrow';
-        else if (ev.categoria === 'riego') prefijo = '💧 Watering Tomorrow';
-        else if (ev.categoria === 'medicacion') prefijo = '💊 Medication Tomorrow';
-        else if (ev.categoria === 'abono') prefijo = '🌿 Fertilizer Tomorrow';
+        let prefijo = isEn ? '📅 Reminder Tomorrow' : '📅 Recordatorio Mañana';
+        if (ev.categoria === 'veterinario') prefijo = isEn ? '🐾 Vet Tomorrow' : '🐾 Veterinario Mañana';
+        else if (ev.categoria === 'riego') prefijo = isEn ? '💧 Watering Tomorrow' : '💧 Riego Mañana';
+        else if (ev.categoria === 'medicacion') prefijo = isEn ? '💊 Medication Tomorrow' : '💊 Medicación Mañana';
+        else if (ev.categoria === 'abono') prefijo = isEn ? '🌿 Fertilizer Tomorrow' : '🌿 Abono Mañana';
 
         await NotificationManager.sendNotification(
           prefijo,
@@ -139,8 +143,10 @@ export const useAppData = (
       for (const p of plantasPendientes) {
         markNotificado(`riego-${p.id}`);
         await NotificationManager.sendNotification(
-          `💧 Watering Pending`,
-          `Time to water your ${p.nombreComun}! (${p.ubicacionHabitacion})`
+          isEn ? '💧 Watering Pending' : '💧 Riego Pendiente',
+          isEn
+            ? `Time to water your ${p.nombreComun}! (${p.ubicacionHabitacion})`
+            : `¡Es hora de regar tu ${p.nombreComun}! (${p.ubicacionHabitacion})`
         );
       }
 
@@ -151,6 +157,7 @@ export const useAppData = (
 
   const refreshData = async (isLocalEdit = true) => {
     try {
+      setDbError(null);
       if (isLocalEdit) {
         localStorage.setItem('petplant_db_last_updated', Date.now().toString());
       }
@@ -198,8 +205,9 @@ export const useAppData = (
       setTimeout(() => {
         evaluarRecordatoriosYPendientes(listPlantas).catch(err => console.warn(err));
       }, 100);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Fallo al refrescar IndexedDB:", err);
+      setDbError(err.message || String(err));
     }
   };
 
@@ -286,6 +294,10 @@ export const useAppData = (
         e.target.value = '';
       }
     };
+    reader.onerror = () => {
+      alert("Error reading backup file.");
+      e.target.value = '';
+    };
     reader.readAsText(file);
   };
 
@@ -297,6 +309,8 @@ export const useAppData = (
     mascotas,
     plantas,
     climaActual,
+    dbError,
+    setDbError,
     setMascotas,
     setPlantas,
     setClimaActual,

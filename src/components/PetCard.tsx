@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
 import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
+import { createPortal } from 'react-dom';
 import type { Mascota, EspecieMascota } from '../database/types';
 import { LocalDatabase } from '../database/db';
 import { safeUUID } from '../utils/uuid';
@@ -2571,7 +2572,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
           </div>}
 
           {/* Botones de Acción: Exportar, Nutrición */}
-          <div style={{ display: 'flex', gap: '8px', marginTop: '8px', borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px' }} className="no-print">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px', borderTop: 'var(--game-border, 1px solid #f0f0f0)', paddingTop: '12px' }} className="no-print">
             <button
               onClick={exportarFichaClinica}
               style={{
@@ -2609,7 +2610,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
           </div>
 
           {/* MODAL DE DOBLE CONFIRMACIÓN DE BORRADO */}
-          {showDeleteConfirm && (
+          {showDeleteConfirm && createPortal(
             <div className="modal-backdrop" style={{
               position: 'fixed',
               top: 0, left: 0, right: 0, bottom: 0,
@@ -2681,11 +2682,11 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                   </button>
                 </div>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
 
-          {/* VENTANA EMERGENTE (MODAL) PARA REPORTE DE IA */}
-          {iaReporteModal && (
+          {iaReporteModal && createPortal(
             <div className="modal-backdrop" style={{
               position: 'fixed',
               top: 0,
@@ -2793,7 +2794,8 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
                   </button>
                 </div>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
         </>
       )}
@@ -2805,13 +2807,13 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
       />
 
       {/* MODAL DEL CHEF NUTRICIONAL IA */}
-      {showChefModal && (
+      {showChefModal && createPortal(
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
           background: 'rgba(8,6,13,0.7)', backdropFilter: 'blur(8px)',
           zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: '20px', boxSizing: 'border-box'
-        }} className="modal-backdrop no-print">
+        }} className="modal-backdrop no-print" onClick={() => setShowChefModal(false)}>
           <div className="chef-modal-content" style={{
             background: 'var(--bg, #fff)',
             border: '1px solid var(--border, #e5e4e7)',
@@ -2821,7 +2823,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
             padding: '24px', boxSizing: 'border-box',
             textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '16px',
             boxShadow: 'var(--shadow)', overflowY: 'auto'
-          }}>
+          }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
               <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--text-h, #08060d)', fontWeight: 800 }}>
                 Chef Nutricional IA 🍖
@@ -2915,17 +2917,17 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
               Cerrar
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* MODAL DE ENTRENAMIENTO ACTIVO */}
-      {activeTrainingTrick && (
+      {activeTrainingTrick && createPortal(
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
           background: 'rgba(8,6,13,0.7)', backdropFilter: 'blur(8px)',
           zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: '20px', boxSizing: 'border-box'
-        }} className="modal-backdrop no-print">
+        }} className="modal-backdrop no-print" onClick={() => { if (trainingTimer === 0) setActiveTrainingTrick(null); }}>
           <div className="training-modal-content" style={{
             background: 'var(--bg, #fff)',
             border: '1px solid var(--border, #e5e4e7)',
@@ -2934,7 +2936,7 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
             padding: '24px', boxSizing: 'border-box',
             textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '16px',
             boxShadow: 'var(--shadow)'
-          }}>
+          }} onClick={e => e.stopPropagation()}>
             <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--text-h)', fontWeight: 'bold' }}>
               Entrenando "{activeTrainingTrick}" ⏱️
             </h3>
@@ -2984,7 +2986,8 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
               </button>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* CONFETTI ANIMATION ON COMMAND DOMINADO */}

@@ -118,7 +118,7 @@ const translations: Record<Language, TranslationDictionary> = {
 
     // PWA & Installation
     pwaTitle: "📱 Aplicación de Escritorio y Móvil",
-    pwaDesc: "Instala Pet & Plant Pro directamente en tu dispositivo para un acceso rápido y soporte completo sin conexión.",
+    pwaDesc: "Instala Pets & Plants Oasis directamente en tu dispositivo para un acceso rápido y soporte completo sin conexión.",
     pwaInstallBtn: "Instalar Aplicación en Dispositivo 📲",
     pwaInstalledText: "✓ Aplicación instalada o funcionando en modo standalone de pantalla de inicio.",
 
@@ -269,7 +269,7 @@ const translations: Record<Language, TranslationDictionary> = {
 
     // PWA & Installation
     pwaTitle: "📱 Desktop & Mobile App",
-    pwaDesc: "Install Pet & Plant Pro directly on your device for quick access and full offline support.",
+    pwaDesc: "Install Pets & Plants Oasis directly on your device for quick access and full offline support.",
     pwaInstallBtn: "Install App on Device 📲",
     pwaInstalledText: "✓ App installed or running in home screen standalone mode.",
 

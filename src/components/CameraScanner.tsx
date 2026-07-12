@@ -1,10 +1,13 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { ImageOptimizer } from '../utils/imageOptimizer';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 
 interface CameraScannerProps {
   mode: 'mascota' | 'planta';
   onCapture: (optimizedData: { blob: Blob; dataUrl: string }[]) => void;
 }
+
+const isCapacitor = typeof window !== 'undefined' && (window as any).Capacitor;
 
 export const CameraScanner: React.FC<CameraScannerProps> = ({ mode, onCapture }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -55,9 +58,43 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({ mode, onCapture })
     fileInputRef.current?.click();
   };
 
-  const triggerCameraInput = () => {
-    cameraInputRef.current?.click();
+  const triggerCameraInput = async () => {
+    if (isCapacitor) {
+      setCapturing(true);
+      setError(null);
+      try {
+        const image = await Camera.getPhoto({
+          quality: 90,
+          allowEditing: false,
+          resultType: CameraResultType.Uri,
+          source: CameraSource.Camera
+        });
+        
+        if (image.webPath) {
+          const response = await fetch(image.webPath);
+          const blob = await response.blob();
+          const file = new File([blob], `scan_capture.${image.format}`, { type: `image/${image.format}` });
+          const optimized = await ImageOptimizer.optimize(file);
+          onCapture([optimized]);
+        }
+      } catch (err: any) {
+        // Only set error if not cancelled by user
+        if (err.message && err.message.toLowerCase().indexOf('cancel') === -1) {
+          setError("Fallo al capturar foto con la cámara nativa.");
+          console.error(err);
+        }
+      } finally {
+        setCapturing(false);
+      }
+    } else {
+      cameraInputRef.current?.click();
+    }
   };
+
+  useEffect(() => {
+    // Auto-open camera on mount
+    triggerCameraInput();
+  }, []);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '500px', margin: '0 auto', gap: '16px' }}>

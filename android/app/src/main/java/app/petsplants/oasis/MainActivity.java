@@ -1,4 +1,4 @@
-package app.petplant.pro;
+package app.petsplants.oasis;
 
 import com.getcapacitor.BridgeActivity;
 

@@ -452,8 +452,9 @@ El usuario se encuentra en las siguientes coordenadas y condiciones climáticas 
 
         const contents: any[] = [];
         if (historial && historial.length > 0) {
+          const historialReciente = historial.slice(-10); // Conservar solo los últimos 10 mensajes (5 turnos de ida y vuelta)
           let expectedRole: 'user' | 'model' = 'user';
-          for (const msg of historial) {
+          for (const msg of historialReciente) {
             const role = msg.sender === 'user' ? 'user' : 'model';
             if (role === expectedRole) {
               contents.push({
@@ -467,7 +468,8 @@ El usuario se encuentra en las siguientes coordenadas y condiciones climáticas 
         
         const currentParts: any[] = [];
         if (imageBlob && base64Data) {
-          currentParts.push({ inlineData: { mimeType: 'image/jpeg', data: base64Data } });
+          const mimeType = imageBlob.type || 'image/jpeg';
+          currentParts.push({ inlineData: { mimeType, data: base64Data } });
         }
         currentParts.push({ text: promptTexto });
 

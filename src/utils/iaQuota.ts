@@ -75,17 +75,20 @@ export class IAQuotaManager {
    */
   static obtenerTiempoRestanteMs(): number {
     const ahora = Date.now();
-    const historialReciente = this.getHistorialUso();
+    const hace24Horas = ahora - 24 * 60 * 60 * 1000;
+    const historialReciente = this.getHistorialUso().filter(time => time > hace24Horas);
     
-    let msRestante = 0;
-    if (historialReciente.length > 0) {
-      const masAntiguo = Math.min(...historialReciente);
-      const tiempoParaLiberarse = masAntiguo + 24 * 60 * 60 * 1000;
-      msRestante = Math.max(0, tiempoParaLiberarse - ahora);
+    // Si no ha agotado la cuota, no hay tiempo de espera
+    if (historialReciente.length < LIMITE_DIARIO_GRATUITO) {
+      return 0;
     }
     
-    // Si el tiempo restante es 0 o menor a 5 minutos, estimamos el tiempo restante
-    // hasta la medianoche local para asegurar que se muestren horas y minutos legibles.
+    const masAntiguo = historialReciente.reduce((min, t) => t < min ? t : min, Infinity);
+    const tiempoParaLiberarse = masAntiguo + 24 * 60 * 60 * 1000;
+    let msRestante = Math.max(0, tiempoParaLiberarse - ahora);
+    
+    // Si el tiempo restante es menor a 5 minutos y la cuota está agotada, 
+    // estimamos hasta la medianoche local para asegurar legibilidad.
     if (msRestante < 5 * 60 * 1000) {
       const ahoraDate = new Date();
       const medianoche = new Date(ahoraDate);

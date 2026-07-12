@@ -41,6 +41,43 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1044210464501:android:30c6e5d30277892477f7bc",
+        "android_client_info": {
+          "package_name": "app.petsplants.oasis"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1044210464501-djkageamu0cl3fea717kas0poude4dcp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.petsplants.oasis",
+            "certificate_hash": "195a4c70f38e677b09c0182fdbd8b90b57e0e1ad"
+          }
+        },
+        {
+          "client_id": "1044210464501-u0cojl928ub6mnt55e3orpkea8uvpr3h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCT5jTgRrfpdXEL6O4DLHK1SKR3W1BfRVQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1044210464501-u0cojl928ub6mnt55e3orpkea8uvpr3h.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
     }
   ],
   "configuration_version": "1"

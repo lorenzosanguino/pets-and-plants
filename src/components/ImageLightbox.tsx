@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 
 interface ImageLightboxProps {
@@ -6,14 +6,30 @@ interface ImageLightboxProps {
   onClose: () => void;
   title?: string;
   theme?: string;
+  /** All photos of this record, for left/right navigation */
+  photos?: string[];
+  /** Index of imageUrl within photos array */
+  initialIndex?: number;
 }
 
 export const ImageLightbox: React.FC<ImageLightboxProps> = ({
   imageUrl,
   onClose,
   title,
-  theme = 'nature'
+  theme = 'nature',
+  photos = [],
+  initialIndex,
 }) => {
+  // Resolve the starting index
+  const startIndex = initialIndex !== undefined
+    ? initialIndex
+    : (photos.length > 0 ? Math.max(0, photos.indexOf(imageUrl)) : 0);
+
+  const [currentIndex, setCurrentIndex] = useState(startIndex);
+
+  // The actual displayed URL (either from gallery or the single passed URL)
+  const displayUrl = photos.length > 1 ? photos[currentIndex] : imageUrl;
+
   // Lock body scroll when open
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -22,7 +38,29 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
     };
   }, []);
 
-  if (!imageUrl) return null;
+  const handlePrev = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex(i => (i <= 0 ? photos.length - 1 : i - 1));
+  }, [photos.length]);
+
+  const handleNext = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentIndex(i => (i >= photos.length - 1 ? 0 : i + 1));
+  }, [photos.length]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (photos.length <= 1) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') setCurrentIndex(i => (i <= 0 ? photos.length - 1 : i - 1));
+      if (e.key === 'ArrowRight') setCurrentIndex(i => (i >= photos.length - 1 ? 0 : i + 1));
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [photos.length, onClose]);
+
+  if (!displayUrl) return null;
 
   // Theme-specific borders and glows
   const getBorderStyles = () => {
@@ -50,6 +88,29 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
     };
   };
 
+  const navBtnStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    background: 'rgba(0,0,0,0.55)',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '50%',
+    width: '52px',
+    height: '52px',
+    fontSize: '26px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    zIndex: 100001,
+    boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+    transition: 'background 0.15s',
+    lineHeight: '1',
+    padding: '0',
+    flexShrink: 0,
+  };
+
   return createPortal(
     <div
       onClick={onClose}
@@ -59,7 +120,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(0, 0, 0, 0.85)',
+        background: 'rgba(0, 0, 0, 0.92)',
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)',
         zIndex: 99999,
@@ -89,6 +150,9 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
         }
         .lightbox-close-btn:active {
           transform: scale(0.95);
+        }
+        .lightbox-nav-btn:hover {
+          background: rgba(0,0,0,0.8) !important;
         }
       `}</style>
 
@@ -124,6 +188,52 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
         ×
       </button>
 
+      {/* Photo counter */}
+      {photos.length > 1 && (
+        <div style={{
+          position: 'absolute',
+          top: '22px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(0,0,0,0.6)',
+          color: '#fff',
+          padding: '6px 18px',
+          borderRadius: '20px',
+          fontSize: '13px',
+          fontWeight: 'bold',
+          zIndex: 100000,
+          letterSpacing: '0.5px'
+        }}>
+          {currentIndex + 1} / {photos.length}
+        </div>
+      )}
+
+      {/* Left arrow */}
+      {photos.length > 1 && (
+        <button
+          type="button"
+          className="lightbox-nav-btn"
+          onClick={handlePrev}
+          style={{ ...navBtnStyle, left: '16px' }}
+          aria-label="Foto anterior"
+        >
+          ‹
+        </button>
+      )}
+
+      {/* Right arrow */}
+      {photos.length > 1 && (
+        <button
+          type="button"
+          className="lightbox-nav-btn"
+          onClick={handleNext}
+          style={{ ...navBtnStyle, right: '16px' }}
+          aria-label="Foto siguiente"
+        >
+          ›
+        </button>
+      )}
+
       {/* Contenedor de la Imagen */}
       <div
         onClick={(e) => e.stopPropagation()} // Evita cerrar al hacer click sobre la propia imagen
@@ -131,14 +241,15 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          maxWidth: '90%',
+          maxWidth: photos.length > 1 ? 'calc(90% - 120px)' : '90%',
           maxHeight: '80%',
           animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
           cursor: 'default'
         }}
       >
         <img
-          src={imageUrl}
+          key={displayUrl}
+          src={displayUrl}
           alt={title || "Imagen a tamaño completo"}
           style={{
             maxWidth: '100%',
@@ -170,6 +281,39 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
           </div>
         )}
       </div>
+
+      {/* Thumbnail dots for quick navigation */}
+      {photos.length > 1 && photos.length <= 12 && (
+        <div style={{
+          position: 'absolute',
+          bottom: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          gap: '8px',
+          zIndex: 100000
+        }}>
+          {photos.map((_, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setCurrentIndex(idx); }}
+              style={{
+                width: idx === currentIndex ? '22px' : '8px',
+                height: '8px',
+                borderRadius: '4px',
+                background: idx === currentIndex ? '#fff' : 'rgba(255,255,255,0.4)',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+                transition: 'all 0.2s ease',
+                flexShrink: 0
+              }}
+              aria-label={`Foto ${idx + 1}`}
+            />
+          ))}
+        </div>
+      )}
     </div>,
     document.body
   );

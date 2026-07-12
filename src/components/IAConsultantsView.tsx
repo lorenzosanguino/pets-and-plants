@@ -660,13 +660,18 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
   return (
     <div className="ia-view-wrapper" style={{
       width: '100%',
-      maxWidth: '100%',
+      maxWidth: '720px',
+      margin: '0 auto',
       fontFamily: 'var(--game-font, sans-serif)',
       color: 'var(--game-text, #333)',
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center'
     }}>
-      {/* Spacer izquierdo para centrado en grid */}
-      <div className="chat-spacer-left" />
+      {/* Spacer izquierdo */}
+      <div className="chat-spacer-left" style={{ display: 'none' }} />
 
       {/* Contenedor del Chat */}
       <div 
@@ -1053,8 +1058,8 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
 
       </div>
 
-      {/* Spacer derecho para centrado en grid */}
-      <div className="chat-spacer-right" />
+      {/* Spacer derecho */}
+      <div className="chat-spacer-right" style={{ display: 'none' }} />
     </div>
   );
 };

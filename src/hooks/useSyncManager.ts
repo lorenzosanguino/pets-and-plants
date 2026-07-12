@@ -1,9 +1,19 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef } from 'react';
 import { LocalDatabase } from '../database/db';
-import type { Mascota, Planta } from '../database/types';
+import type { Mascota, Planta, ChatHistorial } from '../database/types';
 import { initFirebase, getFirebaseCached } from '../database/firebaseLazy';
 import { MicrosoftSyncService } from '../services/microsoftSync';
+
+async function fetchAllChats(): Promise<ChatHistorial[]> {
+  const consultantIds = ['veterinario', 'agronomo'];
+  const chats: ChatHistorial[] = [];
+  for (const id of consultantIds) {
+    const chat = await LocalDatabase.getChatHistorial(id);
+    if (chat) chats.push(chat);
+  }
+  return chats;
+}
 
 const getNowTimestamp = (): number => Date.now();
 
@@ -131,12 +141,7 @@ export const useSyncManager = ({
       const listPlantas = await LocalDatabase.getPlantas();
             const listEventos = await LocalDatabase.getEventosCalendario();
       
-      const chats = [];
-      const consultantIds = ['veterinario', 'agronomo'];
-      for (const id of consultantIds) {
-        const chat = await LocalDatabase.getChatHistorial(id);
-        if (chat) chats.push(chat);
-      }
+      const chats = await fetchAllChats();
 
       await MicrosoftSyncService.uploadBackup({
         mascotas: listMascotas,
@@ -178,12 +183,7 @@ export const useSyncManager = ({
       const listPlantas = await LocalDatabase.getPlantas();
             const listEventos = await LocalDatabase.getEventosCalendario();
       
-      const chats = [];
-      const consultantIds = ['veterinario', 'agronomo'];
-      for (const id of consultantIds) {
-        const chat = await LocalDatabase.getChatHistorial(id);
-        if (chat) chats.push(chat);
-      }
+      const chats = await fetchAllChats();
 
       if (provider === 'microsoft') {
         console.log('Subiendo copia a OneDrive...');
@@ -250,15 +250,7 @@ export const useSyncManager = ({
     try {
       const [listEventos, chats] = await Promise.all([
         LocalDatabase.getEventosCalendario(),
-        (async () => {
-          const res = [];
-          const consultantIds = ['veterinario', 'agronomo'];
-          for (const id of consultantIds) {
-            const chat = await LocalDatabase.getChatHistorial(id);
-            if (chat) res.push(chat);
-          }
-          return res;
-        })()
+        fetchAllChats()
       ]);
 
       const { auth, FirebaseSyncService, signInAnonymously } = await initFirebase();
@@ -326,15 +318,7 @@ export const useSyncManager = ({
         LocalDatabase.getMascotas(),
         LocalDatabase.getPlantas(),
         LocalDatabase.getEventosCalendario(),
-        (async () => {
-          const res = [];
-          const consultantIds = ['veterinario', 'agronomo'];
-          for (const id of consultantIds) {
-            const chat = await LocalDatabase.getChatHistorial(id);
-            if (chat) res.push(chat);
-          }
-          return res;
-        })()
+        fetchAllChats()
       ]);
       
       const code = await (getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService).createHogar(
@@ -549,8 +533,8 @@ export const useSyncManager = ({
       }
     } else {
       const simulatedUser = {
-        name: "Lorenzo Sanguino (Simulado)",
-        email: "lorenzo@sanguino.com"
+        name: "Demo User",
+        email: "demo@example.com"
       };
       localStorage.setItem('petplant_user_session', JSON.stringify(simulatedUser));
       setUser(simulatedUser);
@@ -687,12 +671,7 @@ export const useSyncManager = ({
                   const listPlantas = await LocalDatabase.getPlantas();
                                     const listEventos = await LocalDatabase.getEventosCalendario();
                   
-                  const chats = [];
-                  const consultantIds = ['veterinario', 'agronomo'];
-                  for (const id of consultantIds) {
-                    const chat = await LocalDatabase.getChatHistorial(id);
-                    if (chat) chats.push(chat);
-                  }
+                  const chats = await fetchAllChats();
 
                   if (userHogar) {
                     const { hogarId: cloudHogarId, hogarNombre: cloudHogarNombre } = userHogar;
@@ -804,12 +783,7 @@ export const useSyncManager = ({
                     const listPlantas = await LocalDatabase.getPlantas();
                                         const listEventos = await LocalDatabase.getEventosCalendario();
                     
-                    const chats = [];
-                    const consultantIds = ['veterinario', 'agronomo'];
-                    for (const id of consultantIds) {
-                      const chat = await LocalDatabase.getChatHistorial(id);
-                      if (chat) chats.push(chat);
-                    }
+                    const chats = await fetchAllChats();
 
                     if (data && (data.nombre === "Test de Diagnóstico" || !data.nombre)) {
                       const localHogarNombre = localStorage.getItem('petplant_hogar_nombre') || 'Mi Hogar';
@@ -952,12 +926,7 @@ export const useSyncManager = ({
           const listMascotas = await LocalDatabase.getMascotas();
           const listPlantas = await LocalDatabase.getPlantas();
                     const listEventos = await LocalDatabase.getEventosCalendario();
-          const chats = [];
-          const consultantIds = ['veterinario', 'agronomo'];
-          for (const id of consultantIds) {
-            const chat = await LocalDatabase.getChatHistorial(id);
-            if (chat) chats.push(chat);
-          }
+          const chats = await fetchAllChats();
           const fbSync = getFirebaseCached()?.FirebaseSyncService ?? (await initFirebase()).FirebaseSyncService;
           const activeNombre = localStorage.getItem('petplant_hogar_nombre') || "Hogar Sincronizado";
           await fbSync.uploadChanges(

@@ -33,6 +33,7 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
   // Crop rect state in canvas display pixels
   const [cropRect, setCropRect] = useState({ x: 0, y: 0, w: 0, h: 0 });
   const [dragMode, setDragMode] = useState<'none' | 'move' | 'nw' | 'ne' | 'se' | 'sw'>('none');
+  const [hoverCorner, setHoverCorner] = useState<'nw' | 'ne' | 'se' | 'sw' | 'move' | 'none'>('none');
   const dragStart = useRef({ x: 0, y: 0, rect: { x: 0, y: 0, w: 0, h: 0 } });
 
   // Theme Colors
@@ -189,29 +190,34 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
     };
   };
 
+  const getHoverMode = (pos: { x: number; y: number }): 'nw' | 'ne' | 'se' | 'sw' | 'move' | 'none' => {
+    const handleDist = 28;
+    if (Math.hypot(pos.x - cropRect.x, pos.y - cropRect.y) < handleDist) return 'nw';
+    if (Math.hypot(pos.x - (cropRect.x + cropRect.w), pos.y - cropRect.y) < handleDist) return 'ne';
+    if (Math.hypot(pos.x - (cropRect.x + cropRect.w), pos.y - (cropRect.y + cropRect.h)) < handleDist) return 'se';
+    if (Math.hypot(pos.x - cropRect.x, pos.y - (cropRect.y + cropRect.h)) < handleDist) return 'sw';
+    if (pos.x >= cropRect.x && pos.x <= cropRect.x + cropRect.w && pos.y >= cropRect.y && pos.y <= cropRect.y + cropRect.h) return 'move';
+    return 'none';
+  };
+
+  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (dragMode !== 'none') return; // While dragging, cursor is set globally
+    const pos = getMousePos(e);
+    setHoverCorner(getHoverMode(pos));
+  };
+
+  const handleCanvasMouseLeave = () => {
+    if (dragMode === 'none') setHoverCorner('none');
+  };
+
   const handleStart = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!img) return;
     const pos = getMousePos(e);
-    
-    // Check if clicked near corners
-    const handleDist = 20; // Aumentado a 20px
-    const isNW = Math.hypot(pos.x - cropRect.x, pos.y - cropRect.y) < handleDist;
-    const isNE = Math.hypot(pos.x - (cropRect.x + cropRect.w), pos.y - cropRect.y) < handleDist;
-    const isSE = Math.hypot(pos.x - (cropRect.x + cropRect.w), pos.y - (cropRect.y + cropRect.h)) < handleDist;
-    const isSW = Math.hypot(pos.x - cropRect.x, pos.y - (cropRect.y + cropRect.h)) < handleDist;
-
-    let mode: typeof dragMode = 'none';
-    if (isNW) mode = 'nw';
-    else if (isNE) mode = 'ne';
-    else if (isSE) mode = 'se';
-    else if (isSW) mode = 'sw';
-    // Check if clicked inside crop rect
-    else if (pos.x >= cropRect.x && pos.x <= cropRect.x + cropRect.w && pos.y >= cropRect.y && pos.y <= cropRect.y + cropRect.h) {
-      mode = 'move';
-    }
+    const mode = getHoverMode(pos);
 
     if (mode !== 'none') {
       setDragMode(mode);
+      setHoverCorner(mode);
       dragStart.current = { x: pos.x, y: pos.y, rect: { ...cropRect } };
     }
   };
@@ -276,6 +282,7 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
 
     const handleWindowEnd = () => {
       setDragMode('none');
+      setHoverCorner('none');
     };
 
     window.addEventListener('mousemove', handleWindowMove);
@@ -419,9 +426,19 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
             ref={canvasRef}
             onMouseDown={handleStart}
             onTouchStart={handleStart}
+            onMouseMove={handleCanvasMouseMove}
+            onMouseLeave={handleCanvasMouseLeave}
             style={{
               display: 'block',
-              cursor: dragMode === 'move' ? 'move' : 'crosshair',
+              cursor: (() => {
+                const mode = dragMode !== 'none' ? dragMode : hoverCorner;
+                if (mode === 'move') return 'move';
+                if (mode === 'nw') return 'nw-resize';
+                if (mode === 'ne') return 'ne-resize';
+                if (mode === 'se') return 'se-resize';
+                if (mode === 'sw') return 'sw-resize';
+                return 'crosshair';
+              })(),
               touchAction: 'none',
               maxWidth: '100%',
               boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
