@@ -154,6 +154,13 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
         .lightbox-nav-btn:hover {
           background: rgba(0,0,0,0.8) !important;
         }
+        @media (max-width: 480px) {
+          .lightbox-nav-btn {
+            width: 40px !important;
+            height: 40px !important;
+            font-size: 20px !important;
+          }
+        }
       `}</style>
 
       {/* Botón Cerrar */}
@@ -241,7 +248,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          maxWidth: photos.length > 1 ? 'calc(90% - 120px)' : '90%',
+          maxWidth: '92%',
           maxHeight: '80%',
           animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
           cursor: 'default'
