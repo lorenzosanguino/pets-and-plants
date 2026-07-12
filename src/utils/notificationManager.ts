@@ -1,6 +1,6 @@
 import { safeUUID } from './uuid';
 import { LocalDatabase } from '../database/db';
-import type { NotificacionProgramada } from '../database/types';
+import type { NotificacionProgramada, Planta } from '../database/types';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
 const isCapacitor = typeof window !== 'undefined' && (window as any).Capacitor;
@@ -285,6 +285,89 @@ export class NotificationManager {
       }
     } catch (err) {
       console.error('Error al comprobar recordatorios de deparasitación:', err);
+    }
+  }
+
+  /**
+   * Calculates and schedules/reschedules native local notifications for all plants' watering dates.
+   */
+  static async scheduleWateringNotifications(plantas: Planta[], climaActual?: any) {
+    if (typeof window === 'undefined') return;
+    const permission = await this.requestPermission();
+    if (!permission) return;
+
+    const locale = localStorage.getItem('petplant_locale') || 'es';
+    const isEn = locale === 'en';
+
+    for (const planta of plantas) {
+      let baseIntervalo = planta.intervaloRiegoDias || 3;
+      let factor = 1.0;
+
+      if (climaActual) {
+        const desc = (climaActual.clima || '').toLowerCase();
+        const temp = climaActual.temperatura || 20;
+        const hum = climaActual.humedad || 50;
+
+        if (desc.includes('lluvia') || desc.includes('rain') || desc.includes('drizzle')) {
+          factor = 1.5;
+        } else if (temp > 30) {
+          factor = 0.7;
+        } else if (temp < 15) {
+          factor = 1.3;
+        }
+        if (hum > 80) {
+          factor *= 1.2;
+        } else if (hum < 30) {
+          factor *= 0.8;
+        }
+        factor = Math.max(0.5, Math.min(2.5, factor));
+      }
+
+      const intervaloAjustado = Math.max(1, Math.round(baseIntervalo * factor));
+
+      const lastWateredStr = planta.ultimaFechaRiego || null;
+
+      let nextTime: number;
+      if (lastWateredStr) {
+        nextTime = new Date(lastWateredStr).getTime() + (intervaloAjustado * 24 * 60 * 60 * 1000);
+      } else {
+        nextTime = Date.now() + (intervaloAjustado * 24 * 60 * 60 * 1000);
+      }
+
+      const targetDate = new Date(nextTime);
+      targetDate.setHours(9, 0, 0, 0);
+
+      let finalTimestamp = targetDate.getTime();
+      if (finalTimestamp <= Date.now()) {
+        const regadaHoy = lastWateredStr && (new Date(lastWateredStr).toDateString() === new Date().toDateString());
+        if (!regadaHoy) {
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          tomorrow.setHours(9, 0, 0, 0);
+          finalTimestamp = tomorrow.getTime();
+        } else {
+          const nextTarget = new Date(Date.now() + (intervaloAjustado * 24 * 60 * 60 * 1000));
+          nextTarget.setHours(9, 0, 0, 0);
+          finalTimestamp = nextTarget.getTime();
+        }
+      }
+
+      const notifId = `riego-${planta.id}`;
+      const title = isEn 
+        ? `💧 Time to water ${planta.nombreComun}!` 
+        : `💧 ¡Toca regar tu ${planta.nombreComun}!`;
+      const body = isEn
+        ? `Your ${planta.nombreComun} in the ${planta.ubicacionHabitacion || 'room'} needs water.`
+        : `Tu ${planta.nombreComun} en el/la ${planta.ubicacionHabitacion || 'habitación'} necesita agua hoy.`;
+
+      await this.scheduleNotification(
+        title,
+        body,
+        finalTimestamp,
+        notifId,
+        planta.id,
+        'planta'
+      );
     }
   }
 

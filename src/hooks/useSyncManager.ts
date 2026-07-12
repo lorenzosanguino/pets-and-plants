@@ -761,11 +761,7 @@ export const useSyncManager = ({
                 }
               }
             } else {
-              if (localStorage.getItem('petplant_login_provider') === 'google') {
-                setUser(null);
-                localStorage.removeItem('petplant_login_provider');
-                localStorage.removeItem('petplant_user_session');
-              }
+              // No hacer logout automático al recibir null (puede ser temporal en el inicio de la app)
 
               // Iniciar sesión anónima de fondo para tener credenciales activas en Firestore
               if (FirebaseSyncService.isCloudEnabled()) {

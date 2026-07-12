@@ -545,21 +545,28 @@ export const PetPlantDashboard: React.FC = () => {
 
     // Listener para navegar a la ficha al pulsar una notificación nativa
     NotificationManager.setupNotificationClickListener((entityType, entityId) => {
+      setExpandedCardId(entityId);
       if (entityType === 'mascota') {
         setExperienceMode('pets');
         setActiveTab('dashboard');
         // Scroll to pet card using the entity id stored as data attribute
         setTimeout(() => {
           const el = document.querySelector(`[data-mascota-id="${entityId}"]`);
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 400);
+          if (el) {
+            const photoEl = el.querySelector('.photo-manager-container') || el;
+            photoEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 500);
       } else if (entityType === 'planta') {
         setExperienceMode('plants');
         setActiveTab('dashboard');
         setTimeout(() => {
           const el = document.querySelector(`[data-planta-id="${entityId}"]`);
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 400);
+          if (el) {
+            const photoEl = el.querySelector('.photo-manager-container') || el;
+            photoEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 500);
       }
     });
   }, []);

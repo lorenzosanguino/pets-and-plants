@@ -150,6 +150,13 @@ export const useAppData = (
         );
       }
 
+      // Programar notificaciones en segundo plano nativas para cada planta
+      if (listPlantas.length > 0) {
+        NotificationManager.scheduleWateringNotifications(listPlantas, climaActual).catch(e => {
+          console.warn("Fallo al programar notificaciones de riego nativas:", e);
+        });
+      }
+
     } catch (err) {
       console.warn("Error al evaluar recordatorios y tareas pendientes:", err);
     }
