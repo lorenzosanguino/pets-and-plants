@@ -1,6 +1,6 @@
 import { safeUUID } from './uuid';
 import { LocalDatabase } from '../database/db';
-import type { NotificacionProgramada, Planta } from '../database/types';
+import type { NotificacionProgramada, Planta, EventoCalendario } from '../database/types';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
 const isCapacitor = typeof window !== 'undefined' && (window as any).Capacitor;
@@ -367,6 +367,62 @@ export class NotificationManager {
         notifId,
         planta.id,
         'planta'
+      );
+    }
+  }
+
+  /**
+   * Calculates and schedules native local notifications for all future calendar events (vaccines, vet, meds, etc.).
+   */
+  static async scheduleCalendarNotifications(eventos: EventoCalendario[]) {
+    if (typeof window === 'undefined') return;
+    const permission = await this.requestPermission();
+    if (!permission) return;
+
+    const locale = localStorage.getItem('petplant_locale') || 'es';
+    const isEn = locale === 'en';
+
+    const hoyStr = new Date().toISOString().split('T')[0];
+
+    for (const ev of eventos) {
+      if (ev.completado) {
+        await this.cancelNotification(ev.id);
+        continue;
+      }
+
+      if (ev.fecha < hoyStr) continue;
+
+      const [year, month, day] = ev.fecha.split('-').map(Number);
+      const targetDate = new Date(year, month - 1, day, 9, 0, 0, 0);
+
+      let finalTimestamp = targetDate.getTime();
+      if (finalTimestamp <= Date.now()) {
+        continue; // Skip if date is today but 9 AM is already past
+      }
+
+      let prefijo = isEn ? 'Reminder' : 'Recordatorio';
+      let icon = '📅';
+      if (ev.categoria === 'veterinario') {
+        prefijo = isEn ? 'Vet Visit' : 'Cita Veterinaria';
+        icon = '🐾';
+      } else if (ev.categoria === 'riego') {
+        prefijo = isEn ? 'Plant Watering' : 'Riego de Planta';
+        icon = '💧';
+      } else if (ev.categoria === 'medicacion') {
+        prefijo = isEn ? 'Pet Medication' : 'Medicación de Mascota';
+        icon = '💊';
+      } else if (ev.categoria === 'abono') {
+        prefijo = isEn ? 'Plant Fertilizer' : 'Abonado de Planta';
+        icon = '🌿';
+      }
+
+      await this.scheduleNotification(
+        `${icon} ${prefijo}`,
+        ev.texto,
+        finalTimestamp,
+        ev.id,
+        undefined,
+        undefined
       );
     }
   }

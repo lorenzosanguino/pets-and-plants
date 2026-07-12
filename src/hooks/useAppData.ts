@@ -157,6 +157,13 @@ export const useAppData = (
         });
       }
 
+      // Programar recordatorios del calendario nativos en segundo plano
+      if (listEventos.length > 0) {
+        NotificationManager.scheduleCalendarNotifications(listEventos).catch(e => {
+          console.warn("Fallo al programar notificaciones de calendario nativas:", e);
+        });
+      }
+
     } catch (err) {
       console.warn("Error al evaluar recordatorios y tareas pendientes:", err);
     }
