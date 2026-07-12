@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { createPortal } from 'react-dom';
 import { useAppData } from '../hooks/useAppData';
 import { useSyncManager } from '../hooks/useSyncManager';
 import { NotificationManager } from '../utils/notificationManager';
@@ -1866,7 +1867,7 @@ export const PetPlantDashboard: React.FC = () => {
             </Suspense>
           )}
 
-          {showManualRegister && (
+          {showManualRegister && createPortal(
             <div className="modal-backdrop" style={{
               position: 'fixed',
               top: 0, left: 0, right: 0, bottom: 0,
@@ -1893,10 +1894,11 @@ export const PetPlantDashboard: React.FC = () => {
                   />
                 )}
               </Suspense>
-            </div>
+            </div>,
+            document.body
           )}
 
-          {dbError && (
+          {dbError && createPortal(
             <div className="modal-backdrop" style={{
               position: 'fixed',
               top: 0, left: 0, right: 0, bottom: 0,
@@ -1965,7 +1967,8 @@ export const PetPlantDashboard: React.FC = () => {
                   Entendido
                 </button>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
 
 

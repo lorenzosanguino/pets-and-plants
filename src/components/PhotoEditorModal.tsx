@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import React, { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface PhotoEditorModalProps {
   imageUrl: string;
@@ -349,7 +350,7 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
     }
   };
 
-  return (
+  return createPortal(
     <div className="modal-backdrop" style={{
       position: 'fixed',
       top: 0, left: 0, right: 0, bottom: 0,
@@ -694,6 +695,7 @@ export const PhotoEditorModal: React.FC<PhotoEditorModalProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

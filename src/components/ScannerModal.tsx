@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { TTSButton } from '../utils/useTTS';
 import { CameraScanner } from './CameraScanner';
 import { GeminiAPIService } from '../services/geminiAPI';
@@ -387,7 +388,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
     ? 'var(--game-accent, #1976d2)' 
     : 'var(--game-accent, #2e7d32)';
 
-  return (
+  return createPortal(
     <div className="modal-backdrop" style={{
       position: 'fixed',
       top: 0, left: 0, right: 0, bottom: 0,
@@ -966,6 +967,7 @@ export const ScannerModal: React.FC<ScannerModalProps> = ({ onClose, mascotas, p
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
