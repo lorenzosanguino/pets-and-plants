@@ -1,0 +1,35 @@
+workflows:
+  capacitor-ios-unsigned:
+    name: Build Unsigned iOS IPA
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          npm install
+      - name: Build web assets
+        script: |
+          npm run build
+      - name: Sync Capacitor
+        script: |
+          npx cap sync ios
+      - name: Compile Unsigned iOS App
+        script: |
+          xcodebuild build \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -sdk iphoneos \
+            -configuration Debug \
+            SYMROOT=$PWD/build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            ARCHS="arm64"
+      - name: Package Unsigned IPA
+        script: |
+          mkdir -p Payload
+          cp -r build/Debug-iphoneos/App.app Payload/
+          zip -r pets-and-plants.ipa Payload
+          rm -rf Payload build
+    artifacts:
+      - "*.ipa"
