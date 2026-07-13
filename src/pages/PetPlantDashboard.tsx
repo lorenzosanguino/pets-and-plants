@@ -10,6 +10,8 @@ import { useTranslations } from '../utils/i18n';
 import { ExtremeWeatherPanel } from '../components/ExtremeWeatherPanel';
 import { playSoundClick, playSoundSuccess } from '../utils/audioFeedback';
 import { WeatherFXOverlay } from '../components/WeatherFXOverlay';
+import { PremiumManager } from '../utils/premiumManager';
+import { UpgradeModal } from '../components/UpgradeModal';
 
 
 // ── Lazy-loaded components (se descargan solo cuando se necesitan) ──────────
@@ -256,6 +258,7 @@ export const PetPlantDashboard: React.FC = () => {
   const [showApiKey, setShowApiKey] = useState<boolean>(false);
   const [scannerMode, setScannerMode] = useState<'registrar_mascota' | 'salud_mascota' | 'registrar_planta' | 'enfermedad_planta' | null>(null);
   const [scannerAssetId, setScannerAssetId] = useState<string | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState<{ reason: 'mascotas' | 'plantas' | 'ia'; currentCount?: number; agentName?: string } | null>(null);
 
   // Native back button interceptor for Android (Capacitor)
   const modalStatesRef = React.useRef({ showScanner, showManualRegister, showCelebration });
@@ -569,6 +572,14 @@ export const PetPlantDashboard: React.FC = () => {
         }, 500);
       }
     });
+
+    // Inicializar fecha de instalación para el sistema freemium
+    PremiumManager.getOrSetInstallDate();
+
+    // Listener: desde UpgradeModal → navegar a Ajustes
+    const onGotoSettings = () => setActiveTab('settings');
+    window.addEventListener('petplant_goto_settings', onGotoSettings);
+    return () => window.removeEventListener('petplant_goto_settings', onGotoSettings);
   }, []);
 
 
@@ -1559,8 +1570,19 @@ export const PetPlantDashboard: React.FC = () => {
                     </button>
                     <button
                       onClick={() => {
-                        if (experienceMode === 'pets') setShowManualRegister('pet');
-                        else if (experienceMode === 'plants') setShowManualRegister('plant');
+                        if (experienceMode === 'pets') {
+                          if (!PremiumManager.canAddMascota(mascotas.length)) {
+                            setShowUpgradeModal({ reason: 'mascotas', currentCount: mascotas.length });
+                          } else {
+                            setShowManualRegister('pet');
+                          }
+                        } else if (experienceMode === 'plants') {
+                          if (!PremiumManager.canAddPlanta(plantas.length)) {
+                            setShowUpgradeModal({ reason: 'plantas', currentCount: plantas.length });
+                          } else {
+                            setShowManualRegister('plant');
+                          }
+                        }
 
                       }}
                       style={{
@@ -1988,6 +2010,16 @@ export const PetPlantDashboard: React.FC = () => {
         <Suspense fallback={null}>
           <ConfettiOverlay />
         </Suspense>
+      )}
+
+      {/* Upgrade to Premium modal */}
+      {showUpgradeModal && (
+        <UpgradeModal
+          reason={showUpgradeModal.reason}
+          currentCount={showUpgradeModal.currentCount}
+          agentName={showUpgradeModal.agentName}
+          onClose={() => setShowUpgradeModal(null)}
+        />
       )}
 
       {/* Toast de Logro Visual (dispararLogroVisual) */}

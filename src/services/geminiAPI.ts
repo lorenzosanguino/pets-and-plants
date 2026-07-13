@@ -301,7 +301,10 @@ export class GeminiAPIService {
           signal
         });
       } else {
-        const endpoint = '/api/gemini';
+        const isMobile = typeof window !== 'undefined' && 
+          (window.location.hostname === 'localhost' || window.location.protocol === 'file:' || (window as any).Capacitor);
+        const baseUrl = isMobile ? 'https://pet-plant-app.vercel.app' : '';
+        const endpoint = `${baseUrl}/api/gemini`;
         response = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -13,6 +13,8 @@ import { GeminiAPIService } from '../services/geminiAPI';
 import { TTSButton } from '../utils/useTTS';
 import { useTranslations } from '../utils/i18n';
 import { playSoundWater } from '../utils/audioFeedback';
+import { PremiumManager } from '../utils/premiumManager';
+import { UpgradeModal } from './UpgradeModal';
 import { WeatherFXOverlay } from './WeatherFXOverlay';
 interface PlantCardProps {
   planta: Planta;
@@ -60,9 +62,17 @@ const PlantCardComponent: React.FC<PlantCardProps> = ({ planta, clima, onUpdate,
   const [showChefModal, setShowChefModal] = useState(false);
   const [chefLoading, setChefLoading] = useState(false);
   const [chefRecipe, setChefRecipe] = useState<{ receta: string; advertencia?: string } | null>(null);
+  const [showUpgradeChef, setShowUpgradeChef] = useState(false);
 
   const runChefIA = async (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    // ── Límite freemium ──────────────────────────────────────────────────────
+    if (!PremiumManager.canUseAI('chef_plantas')) {
+      setShowUpgradeChef(true);
+      return;
+    }
+
     setChefLoading(true);
     setChefRecipe(null);
     setShowChefModal(true);
@@ -97,6 +107,8 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
         receta: res.diagnostico + (res.tratamiento ? (locale === 'en' ? `\n\nAdditional recommendations:\n${res.tratamiento}` : `\n\nRecomendaciones adicionales:\n${res.tratamiento}`) : ''),
         advertencia: res.advertencia
       });
+      // Contabilizar uso IA para plan gratuito
+      PremiumManager.incrementAIResponse('chef_plantas');
     } catch {
       setChefRecipe({
         receta: locale === 'en'
@@ -2227,6 +2239,15 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
           onClose={() => setShowAvatarLightbox(false)}
           title={planta.nombreComun}
           theme={theme}
+        />
+      )}
+
+      {/* Upgrade modal para chef nutricional */}
+      {showUpgradeChef && (
+        <UpgradeModal
+          reason="ia"
+          agentName={locale === 'en' ? 'Plant Nutritional Chef' : 'Chef Nutricional Plantas'}
+          onClose={() => setShowUpgradeChef(false)}
         />
       )}
     </div>

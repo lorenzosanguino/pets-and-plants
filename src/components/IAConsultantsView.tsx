@@ -7,6 +7,8 @@ import { TTSButton } from '../utils/useTTS';
 import type { ChatMensaje } from '../database/types';
 import { renderMarkdownToHTML } from '../utils/markdown';
 import { useTranslations } from '../utils/i18n';
+import { PremiumManager } from '../utils/premiumManager';
+import { UpgradeModal } from './UpgradeModal';
 
 interface ChatMessage {
   id: string;
@@ -49,6 +51,7 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
   const [attachedImage, setAttachedImage] = useState<{ blob: Blob; dataUrl: string } | null>(null);
   const [selectedTemplateKey, setSelectedTemplateKey] = useState<'vet_garrapata' | 'vet_herida' | 'plant_marron' | 'plant_parasito' | undefined>(undefined);
   const [loadingIA, setLoadingIA] = useState(false);
+  const [showUpgradeAI, setShowUpgradeAI] = useState(false);
 
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
@@ -281,6 +284,12 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
     e.preventDefault();
     if (!inputText.trim() && !attachedImage) return;
 
+    // ── Límite freemium ──────────────────────────────────────────────────────
+    if (!PremiumManager.canUseAI(activeConsultant)) {
+      setShowUpgradeAI(true);
+      return;
+    }
+
     const currentText = inputText;
     const currentImage = attachedImage;
     const currentTemplate = selectedTemplateKey;
@@ -377,6 +386,8 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
         ultimaActualizacion: new Date().toISOString()
       };
       await LocalDatabase.saveChatHistorial(chatHist);
+      // Contabilizar respuesta IA para plan gratuito
+      PremiumManager.incrementAIResponse(activeConsultant);
       onUpdate?.();
     } catch (err) {
       console.error("Error al procesar el mensaje por IA:", err);
@@ -1079,6 +1090,15 @@ export const IAConsultantsView: React.FC<IAConsultantsViewProps> = ({
 
       {/* Spacer derecho */}
       <div className="chat-spacer-right" style={{ display: 'none' }} />
+
+      {/* Modal de upgrade cuando se alcanza el límite de IA en plan gratuito */}
+      {showUpgradeAI && (
+        <UpgradeModal
+          reason="ia"
+          agentName={activeConsultant === 'veterinario' ? 'Veterinario IA' : 'Agrónomo IA'}
+          onClose={() => setShowUpgradeAI(false)}
+        />
+      )}
     </div>
   );
 };

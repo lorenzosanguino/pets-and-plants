@@ -14,6 +14,8 @@ const BiometricChart = lazy(() => import('./BiometricChart').then(m => ({ defaul
 import { TTSButton } from '../utils/useTTS';
 import { useTranslations } from '../utils/i18n';
 import { playSoundSuccess } from '../utils/audioFeedback';
+import { PremiumManager } from '../utils/premiumManager';
+import { UpgradeModal } from './UpgradeModal';
 
 interface PetCardProps {
   mascota: Mascota;
@@ -72,6 +74,7 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
   const [trainingTimer, setTrainingTimer] = useState<number>(0);
   const [showConfettiTrick, setShowConfettiTrick] = useState<string | null>(null);
   const [showChefModal, setShowChefModal] = useState(false);
+  const [showUpgradeChef, setShowUpgradeChef] = useState(false);
   const [chefLoading, setChefLoading] = useState(false);
   const [chefRecipe, setChefRecipe] = useState<{ receta: string; advertencia?: string } | null>(null);
   // Estado local para deparasitación — refleja cambios inmediatamente sin esperar al padre
@@ -234,6 +237,13 @@ const PetCardComponent: React.FC<PetCardProps> = ({ mascota, onUpdate, onOpenSca
 
   const runChefIA = async (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    // ── Límite freemium ──────────────────────────────────────────────────────
+    if (!PremiumManager.canUseAI('chef_mascotas')) {
+      setShowUpgradeChef(true);
+      return;
+    }
+
     setChefLoading(true);
     setChefRecipe(null);
     setShowChefModal(true);
@@ -269,6 +279,8 @@ IMPORTANTE: Sé muy breve, conciso y directo. Estructura la respuesta en puntos 
         receta: res.diagnostico + (res.tratamiento ? (locale === 'en' ? `\n\nPreparation Instructions:\n${res.tratamiento}` : `\n\nInstrucciones de Preparación:\n${res.tratamiento}`) : ''),
         advertencia: res.advertencia
       });
+      // Contabilizar uso IA para plan gratuito
+      PremiumManager.incrementAIResponse('chef_mascotas');
     } catch (err: any) {
       console.warn("Chef IA error, using offline builder:", err);
       const activityVal = mascota.actividad || 'Moderada';
@@ -3048,6 +3060,14 @@ Instrucciones: Cocinar las proteínas y verduras sin sal, ajos o cebolla. Mezcla
           onClose={() => setShowAvatarLightbox(false)}
           title={mascota.nombre}
           theme={theme}
+        />
+      )}
+      {/* Upgrade modal para chef nutricional */}
+      {showUpgradeChef && (
+        <UpgradeModal
+          reason="ia"
+          agentName={locale === 'en' ? 'Pet Nutritional Chef' : 'Chef Nutricional Mascotas'}
+          onClose={() => setShowUpgradeChef(false)}
         />
       )}
     </div>

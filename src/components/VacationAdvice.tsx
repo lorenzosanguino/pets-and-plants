@@ -3,6 +3,8 @@ import { GeminiAPIService } from '../services/geminiAPI';
 import { TTSButton } from '../utils/useTTS';
 import { renderMarkdownToHTML } from '../utils/markdown';
 import { useTranslations } from '../utils/i18n';
+import { PremiumManager } from '../utils/premiumManager';
+import { UpgradeModal } from './UpgradeModal';
 interface VacationAdviceProps {
   mode: 'plants' | 'pets' | 'travels';
   theme?: string;
@@ -27,6 +29,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
   const [query, setQuery] = useState('');
   const [chatMessages, setChatMessages] = useState<{ sender: 'user' | 'ia'; text: string }[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showUpgradeAI, setShowUpgradeAI] = useState(false);
 
   if (mode !== prevMode) {
     setPrevMode(mode);
@@ -38,6 +41,12 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
   const handleAIQuery = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
+
+    // ── Límite freemium ──────────────────────────────────────────────────────
+    if (!PremiumManager.canUseAI('vacaciones')) {
+      setShowUpgradeAI(true);
+      return;
+    }
 
     const currentQuery = query;
     const userMsg = { sender: 'user' as const, text: currentQuery };
@@ -84,6 +93,8 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
       const iaText = res.diagnostico + (res.tratamiento ? "\n\n" + res.tratamiento : "");
       const iaMsg = { sender: 'ia' as const, text: iaText };
       setChatMessages(prev => [...prev, iaMsg]);
+      // Contabilizar respuesta IA para plan gratuito
+      PremiumManager.incrementAIResponse('vacaciones');
     } catch (err) {
       console.error(err);
       const errorMsg = { 
@@ -99,6 +110,7 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
   };
 
   return (
+    <>
     <div style={{
       background: 'var(--game-card-bg, #ffffff)',
       borderRadius: '16px',
@@ -373,6 +385,18 @@ export const VacationAdvice: React.FC<VacationAdviceProps> = ({
         )}
       </div>
     </div>
+
+      {/* Modal upgrade IA vacaciones */}
+      {showUpgradeAI && (
+        <UpgradeModal
+          reason="ia"
+          agentName={isEn ? 'Vacation Advisor' : 'Asesor de Vacaciones'}
+          onClose={() => setShowUpgradeAI(false)}
+        />
+      )}
+    </>
   );
 };
+
+
 
